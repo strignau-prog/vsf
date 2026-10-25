@@ -1,0 +1,21 @@
+# Documents de travail : ils contiennent des données de personnes réelles (besoins d'accès, postes) et
+# des contrats / CGV en brouillon. Ils ne vont jamais dans le dépôt.
+*.docx
+*.doc
+~$*
+
+# Secrets : jamais de clé Stripe, de clé de service Supabase ou de mot de passe dans le dépôt.
+.env
+.env.*
+*.key
+*.pem
+
+# Fichiers produits par les scripts d'import (à relire puis exécuter à la main dans Supabase)
+scripts/sortie/
+
+# Bruit système
+.DS_Store
+Thumbs.db
+desktop.ini
+.netlify/
+node_modules/
