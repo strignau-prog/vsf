@@ -24,9 +24,11 @@ préfixées `vsf_` ; aucune table de Maurice n'est modifiée.
 
 ## Étape 2 : catalogue
 
-1. Exécuter `supabase/migrations/vsf_1_catalogue.sql`.
-2. Exécuter `supabase/migrations/vsf_1_verification.sql` : tous les contrôles doivent afficher `OK`, sauf « modules
-   provisoires restants », qui affiche `ÉCART` tant que le vrai catalogue n'est pas importé.
+1. Exécuter `supabase/migrations/vsf_1_catalogue.sql`, puis `vsf_2_pratique_durees.sql` (pratique recommandée par
+   module, durées de progression dans le métier par niveau).
+2. Exécuter `vsf_1_verification.sql` et `vsf_2_verification.sql` : tous les contrôles doivent afficher `OK`, sauf
+   « modules provisoires restants » et « pratique recommandée renseignée », qui affichent `ÉCART` tant que le vrai
+   catalogue (avec sa pratique recommandée) n'est pas importé.
 3. Pour remplacer les modules provisoires par le vrai catalogue (Excel ou CSV, format dans `scripts/exemple-catalogue.csv`) :
    `powershell -ExecutionPolicy Bypass -File scripts/import-catalogue.ps1 -Fichier catalogue.xlsx -RemplacerProvisoires`,
    relire `scripts/sortie/import_catalogue.sql`, l'exécuter, puis relancer la vérification.

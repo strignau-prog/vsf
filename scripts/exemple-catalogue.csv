@@ -1,21 +1,21 @@
-niveau;code;titre;duree_min;socle;situations;piste;ordre
-1;PEL-01;[PROVISOIRE] Observation et prise de besoin;300;non;S1;;1
-1;PEL-02;[PROVISOIRE] Vocabulaire du geste;360;non;S4;;2
-1;PEL-03;[PROVISOIRE] Matières et supports;300;non;S3;;3
-1;QUIZ-N1;[PROVISOIRE] Quiz de niveau 1;60;oui;;;4
-1;EPR-N1;[PROVISOIRE] Épreuve pratique de niveau 1;390;oui;;;5
-2;PEL-02;[PROVISOIRE] Vocabulaire du geste (pratique);420;non;S4;;1
-2;PEL-03;[PROVISOIRE] Matières et supports (pratique);360;non;S3;;2
-2;PEL-04;[PROVISOIRE] Composition;270;non;S2;;3
-2;QUIZ-N2;[PROVISOIRE] Quiz de niveau 2;60;oui;;;4
-2;EPR-N2;[PROVISOIRE] Épreuve pratique de niveau 2;300;oui;;;5
-3;PEL-05;[PROVISOIRE] Relation client;240;non;S5;;1
-3;PEL-04;[PROVISOIRE] Composition (autonomie);240;non;S2;;2
-3;PEL-02;[PROVISOIRE] Geste en situation réelle;180;non;S4;;3
-3;PEL-03;[PROVISOIRE] Diagnostic du support;120;non;S3;;4
-3;QUIZ-N3;[PROVISOIRE] Quiz de niveau 3;50;oui;;;5
-3;EPR-N3;[PROVISOIRE] Épreuve pratique de niveau 3;120;oui;;;6
-4;PEL-02+;[PROVISOIRE] Dorure à la feuille;120;non;S4;;1
-4;PEL-04+;[PROVISOIRE] Composition avancée;90;non;S2;;2
-4;QUIZ-N4;[PROVISOIRE] Quiz de niveau 4;30;oui;;;3
-4;EPR-N4;[PROVISOIRE] Épreuve pratique de niveau 4;100;oui;;;4
+niveau;code;titre;duree_min;pratique_min;socle;situations;piste;ordre
+1;PEL-01;[PROVISOIRE] Observation et prise de besoin;300;;non;S1;;1
+1;PEL-02;[PROVISOIRE] Vocabulaire du geste;360;;non;S4;;2
+1;PEL-03;[PROVISOIRE] Matières et supports;300;;non;S3;;3
+1;QUIZ-N1;[PROVISOIRE] Quiz de niveau 1;60;;oui;;;4
+1;EPR-N1;[PROVISOIRE] Épreuve pratique de niveau 1;390;;oui;;;5
+2;PEL-02;[PROVISOIRE] Vocabulaire du geste (pratique);420;;non;S4;;1
+2;PEL-03;[PROVISOIRE] Matières et supports (pratique);360;;non;S3;;2
+2;PEL-04;[PROVISOIRE] Composition;270;;non;S2;;3
+2;QUIZ-N2;[PROVISOIRE] Quiz de niveau 2;60;;oui;;;4
+2;EPR-N2;[PROVISOIRE] Épreuve pratique de niveau 2;300;;oui;;;5
+3;PEL-05;[PROVISOIRE] Relation client;240;;non;S5;;1
+3;PEL-04;[PROVISOIRE] Composition (autonomie);240;;non;S2;;2
+3;PEL-02;[PROVISOIRE] Geste en situation réelle;180;;non;S4;;3
+3;PEL-03;[PROVISOIRE] Diagnostic du support;120;;non;S3;;4
+3;QUIZ-N3;[PROVISOIRE] Quiz de niveau 3;50;;oui;;;5
+3;EPR-N3;[PROVISOIRE] Épreuve pratique de niveau 3;120;;oui;;;6
+4;PEL-02+;[PROVISOIRE] Dorure à la feuille;120;;non;S4;;1
+4;PEL-04+;[PROVISOIRE] Composition avancée;90;;non;S2;;2
+4;QUIZ-N4;[PROVISOIRE] Quiz de niveau 4;30;;oui;;;3
+4;EPR-N4;[PROVISOIRE] Épreuve pratique de niveau 4;100;;oui;;;4

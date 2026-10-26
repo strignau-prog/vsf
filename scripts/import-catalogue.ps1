@@ -14,6 +14,9 @@
     titre       titre du module                                (obligatoire)
     duree_min   duree en minutes                               (ou bien la colonne "heures")
     heures      duree en heures decimales, ex. 1,5             (utilisee seulement si duree_min est vide)
+    pratique_min      pratique recommandee, en minutes         (facultatif ; ou bien la colonne "pratique_heures")
+    pratique_heures   pratique recommandee, heures decimales   (facultatif ; utilisee si pratique_min est vide)
+                      Necessite la migration vsf_2 : si aucune ligne n'en a, la colonne n'est pas touchee.
     socle       oui / non : quiz de niveau, epreuve pratique    (facultatif, non par defaut)
     situations  codes des situations liees, ex. S1,S4          (facultatif ; vide pour le socle ;
                 separateurs acceptes : virgule, barre oblique, espace, et point-virgule dans un .xlsx)
@@ -119,6 +122,21 @@ foreach ($l in $lignes) {
   }
   else { throw "Ligne ${num} : renseigner duree_min (minutes) ou heures (decimal)." }
 
+  $pratique = $null
+  $pm = [string]$h['pratique_min']
+  $ph = [string]$h['pratique_heures']
+  if ($pm -ne '') {
+    $pv = 0
+    if (-not [int]::TryParse($pm, [ref]$pv) -or $pv -lt 0) { throw "Ligne ${num} : pratique_min invalide ('$pm')." }
+    $pratique = $pv
+  }
+  elseif ($ph -ne '') {
+    $pd = 0.0
+    $ok2 = [double]::TryParse($ph.Replace(',', '.'), [Globalization.NumberStyles]::Float, [Globalization.CultureInfo]::InvariantCulture, [ref]$pd)
+    if (-not $ok2 -or $pd -lt 0) { throw "Ligne ${num} : pratique_heures invalide ('$ph')." }
+    $pratique = [int][Math]::Round($pd * 60)
+  }
+
   $socle = @('oui', 'o', 'true', 'vrai', '1', 'x', 'yes') -contains ([string]$h['socle']).ToLower()
   $sits = @(([string]$h['situations']).ToUpper() -split '[;,/\s]+' | Where-Object { $_ -ne '' })
   $piste = [string]$h['piste']
@@ -128,7 +146,7 @@ foreach ($l in $lignes) {
     $ordreAuto[$niv] = $ordreAuto[$niv] + 1
     $ord = $ordreAuto[$niv]
   }
-  [void]$modules.Add([pscustomobject]@{ Niveau = $niv; Code = $code; Titre = $titre; Duree = $duree; Socle = $socle; Situations = $sits; Piste = $piste; Ordre = $ord })
+  [void]$modules.Add([pscustomobject]@{ Niveau = $niv; Code = $code; Titre = $titre; Duree = $duree; Pratique = $pratique; Socle = $socle; Situations = $sits; Piste = $piste; Ordre = $ord })
 }
 if ($modules.Count -eq 0) { throw "Aucun module trouve dans $Fichier." }
 
@@ -158,12 +176,23 @@ $sql = New-Object System.Collections.ArrayList
 if ($RemplacerProvisoires) {
   [void]$sql.Add("-- Remplacement des modules d'essai par le catalogue reel.`ndelete from vsf_modules where offre_id = (select id from _vsf_offre_cible) and provisoire;")
 }
+$avecPratique = (@($modules | Where-Object { $null -ne $_.Pratique }).Count -gt 0)
+$colPratique = ''
+$majPratique = ''
+if ($avecPratique) {
+  $colPratique = ', temps_pratique_recommande_min'
+  $majPratique = ', temps_pratique_recommande_min = excluded.temps_pratique_recommande_min'
+}
 foreach ($m in $modules) {
   $pisteSql = 'null'
   if ($m.Piste -ne '') { $pisteSql = '(select p.id from vsf_offre_pistes p where p.offre_id = (select id from _vsf_offre_cible) and p.code = ' + (Sq $m.Piste) + ')' }
   $socleSql = 'false'
   if ($m.Socle) { $socleSql = 'true' }
-  [void]$sql.Add('insert into vsf_modules (offre_id, piste_id, niveau, code, titre, duree_min, socle, provisoire, ordre) values ((select id from _vsf_offre_cible), ' + $pisteSql + ', ' + $m.Niveau + ', ' + (Sq $m.Code) + ', ' + (Sq $m.Titre) + ', ' + $m.Duree + ', ' + $socleSql + ', false, ' + $m.Ordre + ')' + "`n" + '  on conflict (offre_id, niveau, code) do update set piste_id = excluded.piste_id, titre = excluded.titre, duree_min = excluded.duree_min, socle = excluded.socle, provisoire = false, ordre = excluded.ordre;')
+  $valPratique = ''
+  if ($avecPratique) {
+    if ($null -eq $m.Pratique) { $valPratique = ', null' } else { $valPratique = ', ' + $m.Pratique }
+  }
+  [void]$sql.Add('insert into vsf_modules (offre_id, piste_id, niveau, code, titre, duree_min, socle, provisoire, ordre' + $colPratique + ') values ((select id from _vsf_offre_cible), ' + $pisteSql + ', ' + $m.Niveau + ', ' + (Sq $m.Code) + ', ' + (Sq $m.Titre) + ', ' + $m.Duree + ', ' + $socleSql + ', false, ' + $m.Ordre + $valPratique + ')' + "`n" + '  on conflict (offre_id, niveau, code) do update set piste_id = excluded.piste_id, titre = excluded.titre, duree_min = excluded.duree_min, socle = excluded.socle, provisoire = false, ordre = excluded.ordre' + $majPratique + ';')
 }
 [void]$sql.Add("-- Situations liees (on remplace les liens des modules du fichier).`ndelete from vsf_module_situations where module_id in (select id from vsf_modules where offre_id = (select id from _vsf_offre_cible) and (niveau, code) in (" + $paires + "));")
 if ($triplets.Count -gt 0) {
@@ -200,7 +229,13 @@ foreach ($g in ($modules | Group-Object Niveau | Sort-Object Name)) {
   $minutes = ($g.Group | Measure-Object Duree -Sum).Sum
   $h = [Math]::Floor($minutes / 60)
   $mn = $minutes - 60 * $h
-  Write-Host ("  Niveau {0} : {1} modules, {2} min ({3} h {4:00})" -f $g.Name, $g.Count, $minutes, $h, $mn)
+  $ligne = ("  Niveau {0} : {1} modules, {2} min ({3} h {4:00})" -f $g.Name, $g.Count, $minutes, $h, $mn)
+  if ($avecPratique) {
+    $pr = ($g.Group | Where-Object { $null -ne $_.Pratique } | Measure-Object Pratique -Sum).Sum
+    $ligne += (" ; pratique recommandee : {0} min" -f [int]$pr)
+  }
+  Write-Host $ligne
 }
+if ($avecPratique) { Write-Host 'Colonne pratique incluse : la migration vsf_2 doit etre appliquee avant d''executer ce SQL.' }
 Write-Host "SQL ecrit : $Sortie"
 if (-not $RemplacerProvisoires) { Write-Host 'Astuce : ajouter -RemplacerProvisoires pour supprimer les modules d''essai en meme temps.' }
