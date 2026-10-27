@@ -4,8 +4,8 @@
 (function () {
   var SUPABASE_URL = 'https://uuuigousvpijskbdhcal.supabase.co';
   var SUPABASE_KEY = 'sb_publishable__YuNj5XCo5YF8lwhwTu5OQ_RDM1Eesp';
-  var ACCUEIL = 'https://benevolent-marigold-64a0a1.netlify.app/12mars-accueil';
-  var SUITE_PAR_DEFAUT = 'https://benevolent-marigold-64a0a1.netlify.app/12mars-mon-passage';
+  var ACCUEIL = location.origin + '/';
+  var SUITE_PAR_DEFAUT = location.origin + '/';
 
   var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
     auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
