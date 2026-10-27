@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="color-scheme" content="light">
+<title>Mon compte — VraiSavoirFaire</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;800;900&display=swap">
+<link rel="stylesheet" href="vsf.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="vsf-auth.js"></script>
+</head>
+<body>
+<header class="haut">
+  <a class="marque" id="lienAccueil" href="#">VraiSavoirFaire</a>
+  <a class="bouton discret" href="manifeste.html">Manifeste</a>
+</header>
+<main class="wrap" id="app"><p class="legende">Chargement…</p></main>
+
+<script>
+var $ = function (id) { return document.getElementById(id); };
+var E = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; }); };
+var P = new URLSearchParams(location.search);
+var suite = VSF.suiteSure(P.get('suite'));
+var etat = { mode: P.get('mode') === 'connexion' ? 'connexion' : 'creation', prenom: '', nom: '', mail: '', envoye: 0 };
+$('lienAccueil').href = VSF.ACCUEIL;
+
+function ecran(html) { $('app').innerHTML = html; window.scrollTo(0, 0); var f = $('app').querySelector('input'); if (f) setTimeout(function () { f.focus(); }, 30); }
+function dire(texte) { var m = $('msg'); if (m) m.textContent = texte || ''; }
+
+/* ───── 1. saisie ───── */
+function vueSaisie() {
+  var conn = etat.mode === 'connexion';
+  ecran('<p class="etiquette">' + (conn ? 'Connexion' : 'Créer mon compte') + '</p>' +
+    '<h1>' + (conn ? 'Content de vous revoir.' : 'Votre parcours commence ici.') + '</h1>' +
+    '<p class="legende">' + (conn
+      ? 'Indiquez votre adresse e-mail. Vous recevez un code, sans mot de passe.'
+      : 'Une adresse e-mail suffit. Vous recevez un code pour confirmer que c’est bien la vôtre. Aucun mot de passe à retenir.') + '</p>' +
+    (conn ? '' :
+      '<label class="champ" for="iPrenom">Prénom</label><input id="iPrenom" type="text" autocomplete="given-name" value="' + E(etat.prenom) + '">' +
+      '<label class="champ" for="iNom">Nom</label><input id="iNom" type="text" autocomplete="family-name" value="' + E(etat.nom) + '">') +
+    '<label class="champ" for="iMail">Adresse e-mail</label><input id="iMail" type="email" autocomplete="email" inputmode="email" placeholder="prenom@exemple.fr" value="' + E(etat.mail) + '">' +
+    '<p class="legende">Votre adresse ne sert qu’à vous connecter. Rien de ce que vous faites ici n’est visible sans votre accord.</p>' +
+    '<p class="message" id="msg" role="alert"></p>' +
+    '<button class="bouton" id="bEnvoi" onclick="envoyerCode()">Recevoir mon code</button><br>' +
+    '<button class="bouton discret" onclick="etat.mode=\'' + (conn ? 'creation' : 'connexion') + '\';lireSaisie();vueSaisie()">' +
+      (conn ? 'Je n’ai pas encore de compte' : 'J’ai déjà un compte') + '</button>');
+  var ok = $('iMail'); if (ok) ok.addEventListener('keydown', function (e) { if (e.key === 'Enter') envoyerCode(); });
+}
+function lireSaisie() {
+  if ($('iPrenom')) etat.prenom = $('iPrenom').value.trim();
+  if ($('iNom')) etat.nom = $('iNom').value.trim();
+  if ($('iMail')) etat.mail = $('iMail').value.trim().toLowerCase();
+}
+async function envoyerCode() {
+  lireSaisie();
+  var conn = etat.mode === 'connexion';
+  if (!conn && (!etat.prenom || !etat.nom)) return dire('Indiquez votre prénom et votre nom.');
+  if (!/^\S+@\S+\.\S+$/.test(etat.mail)) return dire('Cette adresse e-mail ne semble pas valide.');
+  if (Date.now() - etat.envoye < 20000) return dire('Un code vient d’être envoyé. Patientez quelques secondes avant d’en demander un autre.');
+  $('bEnvoi').disabled = true; dire('Envoi du code…');
+  var opts = { shouldCreateUser: !conn, emailRedirectTo: location.origin + location.pathname + '?suite=' + encodeURIComponent(suite) };
+  if (!conn) opts.data = { prenom: etat.prenom, nom: etat.nom };
+  var r = await VSF.sb.auth.signInWithOtp({ email: etat.mail, options: opts });
+  if (r.error) {
+    console.error(r.error);
+    $('bEnvoi').disabled = false;
+    var m = String(r.error.message || '');
+    if (/rate|seconds|limit/i.test(m)) return dire('Trop de demandes de code. Patientez une minute puis réessayez.');
+    if (/not allowed|not found|signups/i.test(m)) return dire('Aucun compte ne correspond à cette adresse. Choisissez « Créer mon compte ».');
+    return dire('Le code n’a pas pu être envoyé. Réessayez dans un instant.');
+  }
+  etat.envoye = Date.now();
+  vueCode();
+}
+
+/* ───── 2. code reçu ───── */
+function vueCode() {
+  ecran('<p class="etiquette">Code de connexion</p>' +
+    '<h1>Regardez vos e-mails.</h1>' +
+    '<p class="legende">Un code a été envoyé à ' + E(etat.mail) + '. Pensez aux courriers indésirables.</p>' +
+    '<label class="champ" for="iCode">Code reçu</label>' +
+    '<input id="iCode" class="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="10">' +
+    '<p class="message" id="msg" role="alert"></p>' +
+    '<button class="bouton" id="bCode" onclick="verifierCode()">Valider le code</button><br>' +
+    '<button class="bouton discret" onclick="vueSaisie()">Changer d’adresse ou demander un nouveau code</button>');
+  $('iCode').addEventListener('keydown', function (e) { if (e.key === 'Enter') verifierCode(); });
+}
+async function verifierCode() {
+  var token = ($('iCode').value || '').replace(/\s/g, '');
+  if (token.length < 4) return dire('Saisissez le code reçu.');
+  $('bCode').disabled = true; dire('Vérification…');
+  var ok = false;
+  for (var t of ['email', 'signup', 'magiclink']) {
+    var r = await VSF.sb.auth.verifyOtp({ email: etat.mail, token: token, type: t });
+    if (!r.error && r.data && r.data.session) { ok = true; break; }
+  }
+  if (!ok) { $('bCode').disabled = false; return dire('Ce code n’est pas bon ou a expiré. Vérifiez-le, ou demandez-en un nouveau.'); }
+  finaliser();
+}
+
+/* ───── 3. compte vérifié (ou refusé) ───── */
+async function finaliser() {
+  ecran('<p class="legende">Un instant…</p>');
+  var r = await VSF.enregistrerPersonne(etat.prenom, etat.nom);
+  if (r.error) {
+    console.error(r.error);
+    var absent = /vsf_enregistrer_personne|schema cache|does not exist|PGRST202/i.test(String(r.error.message || '') + String(r.error.code || ''));
+    return ecran('<p class="etiquette">Compte</p><h1>Presque.</h1>' +
+      '<p class="message">' + (absent
+        ? 'Vous êtes bien connecté, mais l’espace VSF n’est pas encore ouvert côté serveur. Prévenez l’équipe : la migration 3 reste à exécuter.'
+        : 'Vous êtes bien connecté, mais votre compte n’a pas pu être enregistré. Réessayez dans un instant.') + '</p>' +
+      '<button class="bouton" onclick="finaliser()">Réessayer</button>');
+  }
+  var p = r.data || {};
+  if (p.statut === 'suspendu') {
+    await VSF.sb.auth.signOut();
+    return ecran('<p class="etiquette">Compte</p><h1>Compte suspendu.</h1><p class="message">Ce compte est suspendu. Écrivez-nous pour en savoir plus.</p>' +
+      '<a class="bouton discret" href="' + E(VSF.ACCUEIL) + '">Retour à l’accueil</a>');
+  }
+  if (p.statut !== 'verifie') {
+    return ecran('<p class="etiquette">Compte</p><h1>Compte à confirmer.</h1><p class="message">Votre adresse e-mail n’est pas encore confirmée. Redemandez un code.</p>' +
+      '<button class="bouton" onclick="etat.mode=\'connexion\';vueSaisie()">Recevoir un nouveau code</button>');
+  }
+  var prenom = p.prenom ? ', ' + E(p.prenom) : '';
+  ecran('<p class="etiquette">Compte vérifié</p>' +
+    '<h1>Bienvenue' + prenom + '.</h1>' +
+    '<p class="legende">Votre adresse ' + E(p.email || etat.mail) + ' est confirmée. Vous pouvez commencer par votre point de départ.</p>' +
+    '<a class="bouton" href="' + E(suite) + '">Continuer</a><br>' +
+    '<button class="bouton discret" onclick="sortir()">Me déconnecter</button>');
+}
+async function sortir() { await VSF.sb.auth.signOut(); etat.mode = 'connexion'; vueSaisie(); }
+
+/* ───── démarrage : déjà connecté (ou arrivé par le lien reçu par e-mail) ? ───── */
+(async function () {
+  var s = await VSF.sb.auth.getSession();
+  if (s.data.session) { etat.mail = s.data.session.user.email || ''; return finaliser(); }
+  vueSaisie();
+})();
+</script>
+</body>
+</html>

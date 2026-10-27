@@ -1,0 +1,40 @@
+/* Charte VSF : une seule feuille pour tout le parcours.
+   Fond blanc, texte #111, légendes #767676, filets #e6e6e6, encart #fafafa.
+   Aucune couleur d'accent, aucun émoji, aucune ombre. Les états se disent par des mots et par la graisse. */
+:root{--ink:#111;--cap:#767676;--line:#e6e6e6;--panel:#fafafa}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:#fff;color:var(--ink);font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-weight:400;font-size:17px;line-height:1.5;-webkit-tap-highlight-color:transparent}
+.wrap{max-width:560px;margin:0 auto;padding:0 20px calc(56px + env(safe-area-inset-bottom))}
+.haut{display:flex;justify-content:space-between;align-items:center;max-width:560px;margin:0 auto;padding:6px 20px;min-height:56px;border-bottom:1px solid var(--line)}
+.marque{font-weight:900;letter-spacing:.02em;color:var(--ink);text-decoration:none}
+a{color:var(--ink)}
+h1{font-size:38px;line-height:1.05;font-weight:900;letter-spacing:-.02em;margin:28px 0 12px}
+h2{font-size:24px;line-height:1.15;font-weight:800;letter-spacing:-.01em;margin:36px 0 8px}
+p{margin:12px 0}
+.etiquette{font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--cap);margin:28px 0 6px}
+.legende{font-size:14px;color:var(--cap);margin:6px 0}
+.fort{font-weight:800}
+.filet{border:0;border-top:1px solid var(--line);margin:28px 0}
+.encart{background:var(--panel);padding:14px 16px;margin:18px 0}
+
+/* Boutons : des mots en gras soulignés d'un trait de 3 px, jamais de rectangle coloré */
+.bouton{display:inline-block;min-height:44px;background:none;border:0;padding:10px 0;margin:0;font:inherit;font-size:15px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:var(--ink);text-decoration:underline;text-decoration-thickness:3px;text-underline-offset:6px;cursor:pointer;text-align:left}
+.bouton.discret{font-weight:500;text-transform:none;letter-spacing:0;text-decoration-thickness:1px;color:var(--cap)}
+.bouton[disabled]{color:var(--cap);text-decoration:none;cursor:default}
+.bouton:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+
+/* Champs : un titre en petites capitales, une ligne de saisie soulignée */
+label.champ{display:block;font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--cap);margin-top:22px}
+input[type=text],input[type=email]{width:100%;min-height:44px;border:0;border-bottom:1.5px solid var(--ink);border-radius:0;padding:10px 0;font:inherit;font-size:17px;background:transparent;color:var(--ink)}
+input[type=text]:focus,input[type=email]:focus{outline:none;box-shadow:0 2px 0 0 var(--ink)}
+input.code{font-size:30px;font-weight:800;letter-spacing:.3em}
+
+/* Messages : dits par des mots, en gras, à gauche d'un filet */
+.message{border-left:3px solid var(--ink);padding:2px 0 2px 12px;margin:16px 0;font-weight:500}
+.message:empty{display:none}
+
+/* Manifeste : lecture longue */
+.lecture p{font-size:19px;line-height:1.55;margin:18px 0}
+.lecture .refrain{font-size:26px;line-height:1.2;font-weight:900;letter-spacing:-.01em;margin:30px 0}
+.lecture .fort{font-weight:800}

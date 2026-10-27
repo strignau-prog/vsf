@@ -39,5 +39,17 @@ Ce dossier ne contient que les fichiers créés par Claude. Les maquettes, docum
 
 Retour arrière : `supabase/migrations/vsf_1_rollback.sql`.
 
+## Lot A : arriver et créer son compte (parcours Personne, étapes 1 et 2)
+
+- `site/manifeste.html` : le manifeste, en page à part.
+- `site/connexion.html` : création de compte et connexion par code reçu par e-mail. L'adresse est vérifiée
+  automatiquement (décision de Stéphane, 2026-10-27) : le serveur lit dans Supabase Auth que l'e-mail est confirmé
+  et pose le statut `verifie`. Un compte Maurice existant se connecte tel quel.
+- `site/vsf-auth.js`, `site/vsf.css` : connexion partagée et charte (blanc, Inter, aucune couleur).
+- `supabase/migrations/vsf_3_personnes.sql` (+ vérification, retour arrière) : table `vsf_personnes` et fonction
+  `vsf_enregistrer_personne()`. À exécuter après la migration 1.
+- Dans Supabase (Authentication, Email Templates), le message « code de connexion » doit contenir `{{ .Token }}`,
+  sinon l'e-mail envoie un lien et pas de code.
+
 Pour ouvrir l'administration (validation des vendeurs), ajouter le compte Skolantreuz concerné :
 `insert into vsf_admins (user_id) values ('<uuid du compte>');`
