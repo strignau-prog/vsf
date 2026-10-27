@@ -6,11 +6,14 @@ Outil de Skolantreuz. Ce dépôt contient le parcours Travailleur jusqu'à l'ach
 La base Supabase est partagée avec Maurice/Thérèse (autre dépôt, `ERP`). Toutes les tables de VSF sont
 préfixées `vsf_` ; aucune table de Maurice n'est modifiée.
 
+Ce dossier ne contient que les fichiers créés par Claude. Les maquettes, documents et cartes de Stéphane
+(maquettes HTML, cahier des charges, fiches métier, `Repartition_pages_VSF.xlsx`) sont dans le dossier parent
+`!VSF` : ils n'entrent jamais dans ce dépôt et Claude ne les modifie pas.
+
 ## Contenu
 
 | Dossier | Rôle |
 | --- | --- |
-| `*.html` (racine) | Maquettes de référence (Travailleur, Entreprise, site, Neurone). Elles ne sont pas publiées. |
 | `supabase/migrations/` | Migrations SQL, à exécuter à la main dans l'éditeur SQL de Supabase, dans l'ordre. |
 | `scripts/` | Import du catalogue (Excel ou CSV) vers du SQL. |
 | `site/` | À venir : les pages publiées. Seul ce dossier sera publié. |
