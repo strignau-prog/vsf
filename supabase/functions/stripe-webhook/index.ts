@@ -7,7 +7,7 @@
 //  • les écritures passent par les fonctions SQL vsf_confirmer_paiement / vsf_enregistrer_remboursement (réservées à la clé de service).
 // Évènements traités : checkout.session.completed (payé), checkout.session.async_payment_succeeded, charge.refunded.
 // Déploiement : Supabase > Edge Functions > « stripe-webhook », « Verify JWT » DÉSACTIVÉ (Stripe n'envoie pas de jeton Supabase).
-// Dans Stripe : Développeurs > Webhooks > ajouter un point de terminaison, cocher « Écouter les évènements des comptes connectés »,
+// Dans Stripe : Développeurs > Webhooks > ajouter un point de terminaison (évènements du compte, pas de compte connecté),
 // adresse : https://<projet>.supabase.co/functions/v1/stripe-webhook.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 

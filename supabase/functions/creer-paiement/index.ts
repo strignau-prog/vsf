@@ -4,11 +4,12 @@
 // Sécurité :
 //  • le montant ne vient JAMAIS du navigateur : il est lu dans la commande, que le serveur a calculée (vsf_creer_commande) ;
 //  • la commande doit appartenir à la personne connectée et être « en_attente_paiement » ;
-//  • le vendeur doit être validé et avoir un compte de paiement Stripe (stripe_account_id) ;
+//  • le vendeur de l'offre doit être validé (il n'a PAS besoin de compte Stripe : il est payé par virement) ;
 //  • aucune donnée de carte ne passe ici : la personne paie sur la page hébergée par Stripe (Checkout) ;
 //  • la clé secrète est un secret Supabase (STRIPE_SECRET_KEY, de la forme sk_test_…) ; la fonction refuse toute clé qui n'est pas de test.
-// Facturation : le maître artisan vend (paiement « direct » sur son compte connecté) ; Skolantreuz prélève sa part
-// (application_fee_amount = part de la plateforme de la commande, copiée de l'offre au moment de l'achat).
+// Modèle B (décision du 2026-10-29) : Skolantreuz est le vendeur et encaisse la totalité sur son propre compte Stripe ;
+// la part du maître artisan est reversée ensuite par virement bancaire (état de reversement dans le tableau de bord).
+// Aucun Stripe Connect : ni compte connecté, ni prélèvement automatique.
 // L'accès ne s'ouvre PAS ici : seulement à la confirmation de Stripe (fonction « stripe-webhook »).
 // Déploiement : Supabase > Edge Functions > « creer-paiement », « Verify JWT » ACTIVÉ. Secrets : STRIPE_SECRET_KEY, SITE_URL (facultatif).
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -46,9 +47,8 @@ Deno.serve(async (req) => {
   if (c.statut !== "en_attente_paiement") return reponse({ erreur: "Cette commande n'est plus en attente de paiement." }, 409);
   if (!(c.montant_eur > 0)) return reponse({ erreur: "Montant nul : rien à payer." }, 400);
 
-  const { data: v } = await admin.from("vsf_vendeurs").select("statut,stripe_account_id,nom").eq("id", c.vendeur_id).maybeSingle();
+  const { data: v } = await admin.from("vsf_vendeurs").select("statut,nom").eq("id", c.vendeur_id).maybeSingle();
   if (!v || v.statut !== "valide") return reponse({ erreur: "Le vendeur n'est pas validé." }, 409);
-  if (!v.stripe_account_id) return reponse({ erreur: "Le vendeur n'a pas encore ouvert son compte de paiement." }, 409);
 
   const { data: o } = await admin.from("vsf_offres").select("intitule").eq("id", c.offre_id).maybeSingle();
 
@@ -64,13 +64,11 @@ Deno.serve(async (req) => {
   f.set("line_items[0][price_data][product_data][name]", `Formation ${o?.intitule ?? ""} — niveaux 1 à ${c.niveau_max}`.replace(/\s+—/, " —"));
   f.set("metadata[commande_id]", c.id);
   f.set("payment_intent_data[metadata][commande_id]", c.id);
-  f.set("payment_intent_data[application_fee_amount]", String(c.part_plateforme_eur * 100));
 
   const r = await fetch("https://api.stripe.com/v1/checkout/sessions", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${cleStripe}`,
-      "Stripe-Account": v.stripe_account_id,           // paiement direct : le maître artisan vend et facture
       "Content-Type": "application/x-www-form-urlencoded",
       "Idempotency-Key": `vsf-commande-${c.id}`,       // un clic répété ne crée pas deux paiements
     },
