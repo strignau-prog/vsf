@@ -125,6 +125,10 @@ async function finaliser() {
     return ecran('<p class="etiquette">Compte</p><h1>Compte à confirmer.</h1><p class="message">Votre adresse e-mail n’est pas encore confirmée. Redemandez un code.</p>' +
       '<button class="bouton" onclick="etat.mode=\'connexion\';vueSaisie()">Recevoir un nouveau code</button>');
   }
+  // Un administrateur qui n'a pas demandé une page précise arrive directement sur son tableau de bord.
+  if (!P.get('suite')) {
+    try { var a = await VSF.sb.rpc('vsf_est_admin'); if (a.data === true) { location.replace('admin.html'); return; } } catch (e) { /* on reste sur l'accueil */ }
+  }
   var prenom = p.prenom ? ', ' + E(p.prenom) : '';
   ecran('<p class="etiquette">Compte vérifié</p>' +
     '<h1>Bienvenue' + prenom + '.</h1>' +

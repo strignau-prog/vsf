@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="color-scheme" content="light">
+<title>Tableau de bord — VraiSavoirFaire</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;800;900&display=swap">
+<link rel="stylesheet" href="vsf.css">
+<style>
+  .wrap.large{max-width:760px}
+  .chiffres{display:flex;flex-wrap:wrap;gap:6px 28px;margin:10px 0 4px}
+  .chiffres div{min-width:90px}
+  .chiffres b{display:block;font-size:34px;font-weight:900;line-height:1.05;letter-spacing:-.02em}
+  .chiffres span{font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--cap)}
+  .ligne{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:12px 0;border-top:1px solid var(--line)}
+  .ligne:last-child{border-bottom:1px solid var(--line)}
+  .ligne .qui{min-width:0}
+  .ligne .qui b{display:block;font-weight:800;overflow-wrap:anywhere}
+  .ligne .qui span{font-size:14px;color:var(--cap);overflow-wrap:anywhere}
+  .ligne .actions{flex:none;display:flex;gap:16px;flex-wrap:wrap;justify-content:flex-end}
+  .etat{font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;white-space:nowrap}
+  .etat.fort{border:1.5px solid var(--ink);padding:2px 7px}
+  .bouton.petit{min-height:44px;font-size:12px;padding:10px 0}
+  @media (max-width:520px){.ligne{flex-direction:column;align-items:flex-start}.ligne .actions{justify-content:flex-start}}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="vsf-auth.js"></script>
+</head>
+<body>
+<header class="haut">
+  <a class="marque" href="./">VraiSavoirFaire</a>
+  <button class="bouton discret" id="bSortir" style="display:none" onclick="sortir()">Me déconnecter</button>
+</header>
+<main class="wrap large" id="app"><p class="legende">Chargement…</p></main>
+
+<script>
+var $ = function (id) { return document.getElementById(id); };
+var E = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; }); };
+var sb = VSF.sb;
+var moi = { id: null, super: false };
+var ADMIN_METIERS = 'https://fastidious-kringle-8ac4c1.netlify.app/admin-metiers.html';
+var jour = function (d) { try { return new Date(d).toLocaleDateString('fr-FR'); } catch (e) { return ''; } };
+
+function dire(id, texte) { var m = $(id); if (m) m.textContent = texte || ''; }
+function messageErreur(e) {
+  var m = String((e && e.message) || e || '');
+  if (e && e.code === 'VSF01' || /VSF01|vendeur est valid/i.test(m)) return 'Cette offre ne peut pas sortir du brouillon : son vendeur n’est pas validé.';
+  if (/permission|row-level|policy/i.test(m)) return 'Action refusée : ce compte n’a pas ce droit.';
+  return 'Impossible d’enregistrer pour le moment. Réessayez dans un instant.';
+}
+
+/* ───── accès ───── */
+async function demarrer() {
+  var s = await sb.auth.getSession();
+  if (!s.data.session) { location.replace('connexion.html?suite=' + encodeURIComponent(location.href)); return; }
+  moi.id = s.data.session.user.id;
+  $('bSortir').style.display = '';
+  var a = await sb.rpc('vsf_est_admin');
+  if (a.error || a.data !== true) {
+    return $('app').innerHTML = '<p class="etiquette">Tableau de bord</p><h1>Accès réservé.</h1>' +
+      '<p class="message">Cette page est réservée à l’équipe de VraiSavoirFaire.</p><a class="bouton" href="./">Retour à l’accueil</a>';
+  }
+  var su = await sb.rpc('vsf_est_super');
+  moi.super = su.data === true;
+  dessiner();
+  await Promise.all([chargerComptes(), chargerVendeurs()]);
+}
+async function sortir() { await sb.auth.signOut(); location.replace('./'); }
+
+/* ───── squelette ───── */
+function dessiner() {
+  $('app').innerHTML =
+    '<p class="etiquette">' + (moi.super ? 'Super administrateur' : 'Administrateur') + '</p>' +
+    '<h1>Tableau de bord</h1>' +
+    '<p class="legende">Ce que vous avez à regarder aujourd’hui. Aucune note, aucun classement : seulement l’état des comptes et des ventes.</p>' +
+
+    '<h2>Comptes</h2><div class="chiffres" id="chiffres"><div><b>…</b><span>Personnes</span></div></div>' +
+    '<p class="legende">Les comptes entreprise et collectif arriveront avec leur parcours.</p>' +
+    '<p class="message" id="msgComptes" role="alert"></p><div id="listeComptes"></div>' +
+
+    '<h2>Vendeurs et offres à valider</h2>' +
+    '<p class="legende">Aucune offre ne s’ouvre à la vente tant que son vendeur n’est pas validé.</p>' +
+    '<p class="message" id="msgVendeurs" role="alert"></p>' +
+    '<p class="etiquette">Vendeurs</p><div id="listeVendeurs"></div>' +
+    '<p class="etiquette">Offres</p><div id="listeOffres"></div>' +
+
+    '<h2>Fiches métier</h2>' +
+    '<p class="legende">La page d’administration des métiers existe déjà.</p>' +
+    '<a class="bouton" href="' + E(ADMIN_METIERS) + '">Ouvrir l’administration des métiers</a>' +
+
+    '<h2>CGV et refacturations</h2>' +
+    '<p class="legende">Les versions des CGV et le suivi des 30 % arriveront avec l’achat. Rien à faire pour le moment.</p>';
+}
+
+/* ───── comptes ───── */
+async function chargerComptes() {
+  var comptes = await Promise.all(['verifie', 'en_attente', 'suspendu'].map(function (st) {
+    return sb.from('vsf_personnes').select('user_id', { count: 'exact', head: true }).eq('statut', st);
+  }));
+  var n = comptes.map(function (r) { return r.count || 0; });
+  $('chiffres').innerHTML =
+    '<div><b>' + (n[0] + n[1] + n[2]) + '</b><span>Personnes</span></div>' +
+    '<div><b>' + n[0] + '</b><span>Vérifiées</span></div>' +
+    '<div><b>' + n[1] + '</b><span>À confirmer</span></div>' +
+    '<div><b>' + n[2] + '</b><span>Suspendues</span></div>';
+  var r = await sb.from('vsf_personnes').select('user_id,prenom,nom,email,statut,cree_le').order('cree_le', { ascending: false }).limit(50);
+  if (r.error) { dire('msgComptes', messageErreur(r.error)); return; }
+  var lignes = (r.data || []).map(function (p) {
+    var nom = ((p.prenom || '') + ' ' + (p.nom || '')).trim() || 'Sans nom';
+    var soi = p.user_id === moi.id;
+    var action = soi ? '' :
+      (p.statut === 'suspendu'
+        ? '<button class="bouton petit" onclick="changerCompte(\'' + p.user_id + '\',\'verifie\',this)">Rétablir</button>'
+        : '<button class="bouton petit discret" onclick="confirmer(this,\'Suspendre ?\',function(){changerCompte(\'' + p.user_id + '\',\'suspendu\')})">Suspendre</button>');
+    return '<div class="ligne"><div class="qui"><b>' + E(nom) + '</b><span>' + E(p.email || '') + ' · ' + jour(p.cree_le) + '</span></div>' +
+      '<div class="actions"><span class="etat' + (p.statut === 'suspendu' ? ' fort' : '') + '">' +
+      ({ verifie: 'Vérifié', en_attente: 'À confirmer', suspendu: 'Suspendu' })[p.statut] + '</span>' + action + '</div></div>';
+  });
+  $('listeComptes').innerHTML = lignes.length ? lignes.join('') : '<p class="legende">Aucun compte pour le moment.</p>';
+}
+async function changerCompte(uid, statut) {
+  dire('msgComptes', '');
+  var r = await sb.from('vsf_personnes').update({ statut: statut }).eq('user_id', uid);
+  if (r.error) { console.error(r.error); return dire('msgComptes', messageErreur(r.error)); }
+  chargerComptes();
+}
+
+/* ───── vendeurs et offres ───── */
+async function chargerVendeurs() {
+  var v = await sb.from('vsf_vendeurs').select('id,nom,atelier,email,statut,contrat_accepte_le,cree_le').order('cree_le', { ascending: false });
+  if (v.error) { dire('msgVendeurs', messageErreur(v.error)); return; }
+  var lv = (v.data || []).map(function (x) {
+    var contrat = x.contrat_accepte_le ? 'contrat accepté le ' + jour(x.contrat_accepte_le) : 'contrat non accepté';
+    var actions = x.statut === 'valide'
+      ? '<button class="bouton petit discret" onclick="confirmer(this,\'Suspendre ?\',function(){changerVendeur(\'' + x.id + '\',\'suspendu\')})">Suspendre</button>'
+      : '<button class="bouton petit" onclick="confirmer(this,\'Valider ?\',function(){changerVendeur(\'' + x.id + '\',\'valide\')})">Valider</button>';
+    return '<div class="ligne"><div class="qui"><b>' + E(x.nom) + (x.atelier ? ' · ' + E(x.atelier) : '') + '</b><span>' + E(x.email || 'sans e-mail') + ' · ' + contrat + '</span></div>' +
+      '<div class="actions"><span class="etat' + (x.statut === 'valide' ? ' fort' : '') + '">' +
+      ({ valide: 'Validé', en_attente: 'En attente', suspendu: 'Suspendu' })[x.statut] + '</span>' + actions + '</div></div>';
+  });
+  $('listeVendeurs').innerHTML = lv.length ? lv.join('') : '<p class="legende">Aucun vendeur pour le moment.</p>';
+
+  var o = await sb.from('vsf_offres').select('id,intitule,statut,vendeur:vsf_vendeurs(nom)').order('cree_le', { ascending: false });
+  if (o.error) { dire('msgVendeurs', messageErreur(o.error)); return; }
+  var ORDRE = ['brouillon', 'pilote', 'publiee'];
+  var NOMS = { brouillon: 'Brouillon', pilote: 'Pilote', publiee: 'Publiée' };
+  var lo = (o.data || []).map(function (x) {
+    var i = ORDRE.indexOf(x.statut);
+    var act = '';
+    if (i < ORDRE.length - 1) act += '<button class="bouton petit" onclick="confirmer(this,\'Passer en ' + NOMS[ORDRE[i + 1]].toLowerCase() + ' ?\',function(){changerOffre(\'' + x.id + '\',\'' + ORDRE[i + 1] + '\')})">Passer en ' + NOMS[ORDRE[i + 1]].toLowerCase() + '</button>';
+    if (i > 0) act += '<button class="bouton petit discret" onclick="changerOffre(\'' + x.id + '\',\'brouillon\')">Remettre en brouillon</button>';
+    return '<div class="ligne"><div class="qui"><b>' + E(x.intitule) + '</b><span>' + E((x.vendeur && x.vendeur.nom) || 'sans vendeur') + '</span></div>' +
+      '<div class="actions"><span class="etat' + (x.statut !== 'brouillon' ? ' fort' : '') + '">' + NOMS[x.statut] + '</span>' + act + '</div></div>';
+  });
+  $('listeOffres').innerHTML = lo.length ? lo.join('') : '<p class="legende">Aucune offre pour le moment.</p>';
+}
+async function changerVendeur(id, statut) {
+  dire('msgVendeurs', '');
+  var m = { statut: statut };
+  if (statut === 'valide') { m.valide_par = moi.id; m.valide_le = new Date().toISOString(); }
+  var r = await sb.from('vsf_vendeurs').update(m).eq('id', id);
+  if (r.error) { console.error(r.error); return dire('msgVendeurs', messageErreur(r.error)); }
+  chargerVendeurs();
+}
+async function changerOffre(id, statut) {
+  dire('msgVendeurs', '');
+  var r = await sb.from('vsf_offres').update({ statut: statut }).eq('id', id);
+  if (r.error) { console.error(r.error); return dire('msgVendeurs', messageErreur(r.error)); }
+  chargerVendeurs();
+}
+
+/* Confirmation en deux temps, sans fenêtre : le bouton change de texte, un second clic confirme. */
+function confirmer(bouton, texte, action) {
+  if (bouton.dataset.attente === '1') { bouton.dataset.attente = ''; return action(); }
+  var avant = bouton.textContent;
+  bouton.dataset.attente = '1'; bouton.textContent = texte;
+  setTimeout(function () { if (bouton.dataset.attente === '1') { bouton.dataset.attente = ''; bouton.textContent = avant; } }, 4000);
+}
+
+demarrer();
+</script>
+</body>
+</html>
