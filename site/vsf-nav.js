@@ -14,7 +14,7 @@
     var h = document.createElement('header');
     h.className = 'vsf-haut';
     h.innerHTML =
-      '<a class="vsf-marque" href="./">VraiSavoirFaire</a>' +
+      '<a class="vsf-marque" href="./">VRAI-SAVOIRFAIRE</a>' +
       '<nav class="vsf-etapes" aria-label="Mon parcours">' +
       ETAPES.map(function (e) {
         return '<a href="' + e[0] + '"' + (e[0] === page ? ' aria-current="page" class="ici"' : '') + '>' + e[1] + '</a>';

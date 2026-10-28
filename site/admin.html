@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex">
 <meta name="color-scheme" content="light">
-<title>Tableau de bord — VraiSavoirFaire</title>
+<title>Tableau de bord — VRAI-SAVOIRFAIRE</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;800;900&display=swap">
 <link rel="stylesheet" href="vsf.css">
@@ -31,7 +31,7 @@
 </head>
 <body>
 <header class="haut">
-  <a class="marque" href="./">VraiSavoirFaire</a>
+  <a class="marque" href="./">VRAI-SAVOIRFAIRE</a>
   <button class="bouton discret" id="bSortir" style="display:none" onclick="sortir()">Me déconnecter</button>
 </header>
 <main class="wrap large" id="app"><p class="legende">Chargement…</p></main>
@@ -61,7 +61,7 @@ async function demarrer() {
   var a = await sb.rpc('vsf_est_admin');
   if (a.error || a.data !== true) {
     return $('app').innerHTML = '<p class="etiquette">Tableau de bord</p><h1>Accès réservé.</h1>' +
-      '<p class="message">Cette page est réservée à l’équipe de VraiSavoirFaire.</p><a class="bouton" href="./">Retour à l’accueil</a>';
+      '<p class="message">Cette page est réservée à l’équipe de VRAI-SAVOIRFAIRE.</p><a class="bouton" href="./">Retour à l’accueil</a>';
   }
   var su = await sb.rpc('vsf_est_super');
   moi.super = su.data === true;
