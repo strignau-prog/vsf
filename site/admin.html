@@ -44,7 +44,7 @@ var moi = { id: null, super: false };
 var ADMIN_METIERS = 'https://fastidious-kringle-8ac4c1.netlify.app/admin-metiers.html';
 var jour = function (d) { try { return new Date(d).toLocaleDateString('fr-FR'); } catch (e) { return ''; } };
 
-function dire(id, texte) { var m = $(id); if (m) m.textContent = texte || ''; }
+function dire(id, texte) { var m = $(id); if (m) { m.textContent = texte || ''; if (texte && m.scrollIntoView) m.scrollIntoView({ block: "center" }); } }
 function messageErreur(e) {
   var m = String((e && e.message) || e || '');
   if (e && e.code === 'VSF01' || /VSF01|vendeur est valid/i.test(m)) return 'Cette offre ne peut pas sortir du brouillon : son vendeur n’est pas validé.';
@@ -173,11 +173,15 @@ async function changerOffre(id, statut) {
 }
 
 /* Confirmation en deux temps, sans fenêtre : le bouton change de texte, un second clic confirme. */
+/* Confirmation visible, sans fenêtre : la ligne propose « Oui » ou « Non ». Rien ne part tant que l'on n'a pas répondu. */
 function confirmer(bouton, texte, action) {
-  if (bouton.dataset.attente === '1') { bouton.dataset.attente = ''; return action(); }
-  var avant = bouton.textContent;
-  bouton.dataset.attente = '1'; bouton.textContent = texte;
-  setTimeout(function () { if (bouton.dataset.attente === '1') { bouton.dataset.attente = ''; bouton.textContent = avant; } }, 4000);
+  var zone = bouton.parentNode, memoire = zone.innerHTML;
+  zone.innerHTML = '<span class="etat fort">' + E(texte) + '</span>';
+  var oui = document.createElement('button'); oui.type = 'button'; oui.className = 'bouton petit'; oui.textContent = 'Oui';
+  var non = document.createElement('button'); non.type = 'button'; non.className = 'bouton petit discret'; non.textContent = 'Non';
+  oui.onclick = function () { zone.innerHTML = '<span class="etat">En cours…</span>'; action(); };
+  non.onclick = function () { zone.innerHTML = memoire; };
+  zone.appendChild(oui); zone.appendChild(non); oui.focus();
 }
 
 demarrer();
