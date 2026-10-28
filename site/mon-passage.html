@@ -1,0 +1,1170 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>VraiSavoirFaire — Mon métier qui aurait du sens</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;800;900&display=swap">
+  <style>
+    /* Charte VSF : fond blanc, texte #111, légendes #767676, filets #e6e6e6, encart #fafafa.
+       Aucune couleur d'accent, aucune ombre. Les états se disent par des mots et par la graisse.
+       Les anciennes variables de couleur restent définies (le script les utilise encore) mais valent toutes de l'encre ou du gris. */
+    :root{ --bg:#fff; --paper:#fff; --soft:#fafafa; --ink:#111; --muted:#767676; --line:#e6e6e6; --accent:#111; --accent-ink:#767676; --sage:#111; --gold:#111; }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:#fff;color:#111;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+    body{font-size:17px;line-height:1.5;-webkit-text-size-adjust:100%}
+    button,input,select{font:inherit;color:inherit}
+    button{cursor:pointer}
+    h1,h2,h3,h4,h5{font-family:inherit;font-weight:900;letter-spacing:-.02em}
+    .haut{display:flex;justify-content:space-between;align-items:center;max-width:820px;margin:0 auto;padding:6px 20px;min-height:56px;border-bottom:1px solid var(--line)}
+    .marque{font-weight:900;letter-spacing:.02em;color:#111;text-decoration:none}
+    .wrap{max-width:820px;margin:0 auto;padding:12px 20px 100px 20px}
+    .wrap.wrapWide{max-width:1280px}
+    .hero h1{font-size:38px !important;line-height:1.05;margin:22px 0 0 0 !important}
+    .hero p{color:var(--muted);font-size:15px;line-height:1.6;margin:10px 0 0 0}
+    .steps{display:flex;gap:4px;margin:24px 0;flex-wrap:wrap}
+    .stepDot{flex:1;min-width:84px;min-height:44px;text-align:center;padding:8px 4px;background:none;border:none;border-bottom:3px solid var(--line);font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+    .stepDot:disabled{cursor:default;opacity:.4}
+    .stepDot.on{border-color:#111;color:#111}
+    .stepDot.done{border-color:#111;color:#111;font-weight:500}
+
+    .field{position:relative;margin-bottom:10px}
+    .field label{display:block;font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+    input[type=text]{width:100%;min-height:44px;border:0;border-bottom:1.5px solid #111;border-radius:0;padding:10px 0;font-size:17px;background:transparent;color:#111}
+    input[type=text]:focus{outline:none;box-shadow:0 2px 0 0 #111}
+    .results{position:absolute;left:0;right:0;top:100%;background:#fff;border:1.5px solid #111;z-index:5;max-height:260px;overflow:auto}
+    .results button{display:block;width:100%;text-align:left;background:none;border:none;padding:12px 13px;min-height:44px;font-size:15px;border-bottom:1px solid var(--line)}
+    .results button:hover,.results button:focus-visible{background:var(--soft);font-weight:800}
+    .results .rc{color:var(--muted);font-size:12px}
+
+    .expCard{border:0;border-top:1px solid var(--line);padding:18px 0 8px 0;margin-bottom:10px;background:#fff}
+    .expCard .head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+    .expCard .head b{font-size:18px;font-weight:800}
+    .anciennete{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px;margin-top:4px}
+    .anciennete select{border:0;border-bottom:1.5px solid #111;border-radius:0;padding:6px 4px;min-height:44px;font-size:14px;background:transparent}
+    .ghostBtn{border:0;background:none;padding:10px 0;min-height:44px;font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:4px;color:var(--muted)}
+    .accordeon{border:0;border-top:1px solid var(--line);margin-top:8px;overflow:hidden}
+    .accordeonHead{width:100%;min-height:44px;border:none;text-align:left;display:flex;justify-content:space-between;align-items:center;padding:9px 0;background:none;font-size:15px;font-weight:800;color:#111}
+    .accordeonBody{padding:8px 0 12px 0}
+    .checkRow{display:flex;align-items:flex-start;gap:10px;padding:8px 0;min-height:44px;font-size:15px}
+    .checkRow input[type=checkbox]{width:20px;height:20px;accent-color:#111;flex:none;margin-top:2px}
+    .checkRow.toutCocher{border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:4px;font-weight:800;font-size:13px}
+    .disabledNote{font-size:13px;color:var(--muted);padding:8px 0}
+    .diplomeToggle{font-size:13px;color:var(--muted);margin-top:8px;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+
+    .toolbar{display:flex;justify-content:space-between;margin-top:24px;gap:12px;flex-wrap:wrap}
+    .btn{min-height:44px;border:0;background:none;border-radius:0;padding:10px 0;font-size:15px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:#111;text-decoration:underline;text-decoration-thickness:3px;text-underline-offset:6px}
+    .btnPrimary{background:none;color:#111;border:0}
+    .btn:disabled{color:var(--muted);text-decoration:none;cursor:default}
+    .btn:focus-visible,.ghostBtn:focus-visible,.chip:focus-visible,.stepDot:focus-visible{outline:2px solid #111;outline-offset:3px}
+
+    .axeCard{border:0;border-top:1px solid var(--line);padding:22px 0;margin-bottom:8px;background:#fff}
+    .axeCard .q{font-size:19px;font-weight:800;margin:0 0 16px 0}
+    .chips{display:flex;flex-wrap:wrap;gap:8px}
+    .chip{min-height:44px;border:1.5px solid #111;background:#fff;border-radius:0;padding:9px 14px;font-size:14px;font-weight:500;color:#111}
+    .chip.on{background:#111;color:#fff;border-color:#111;font-weight:800}
+    .sliderRow{margin-bottom:12px}
+    .sliderRow .lbl2{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-bottom:4px}
+    input[type=range]{width:100%;accent-color:#111}
+    .disclaimerBox{background:var(--soft);border-left:3px solid #111;border-radius:0;padding:13px 15px;font-size:14px;margin:16px 0;line-height:1.6}
+
+    .pisteCard{border:0;border-top:1px solid var(--line);padding:20px 0;margin-bottom:6px;text-align:left;width:100%;background:#fff}
+    .pisteCard:hover{background:var(--soft)}
+    .pisteCard .tag{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin-bottom:6px}
+    .pisteCard h3{font-size:19px;margin:0 0 6px 0}
+    .pisteCard p{color:var(--muted);font-size:14px;margin:0}
+
+    /* ---- écran de préparation ---- */
+    .prepWrap{text-align:center;padding:30px 10px}
+    .prepWrap h3{font-size:22px;margin:0 0 10px 0}
+    .prepWrap p{color:var(--muted);font-size:15px;max-width:52ch;margin:0 auto 26px auto}
+    .prepList{display:flex;flex-direction:column;gap:2px;max-width:340px;margin:0 auto}
+    .prepItem{display:flex;align-items:center;gap:10px;padding:8px 14px;font-size:14px;color:var(--muted);opacity:.35;transition:opacity .3s}
+    .prepItem.on{opacity:1;color:#111;background:var(--soft);font-weight:800}
+    .prepItem .dot{width:8px;height:8px;border-radius:50%;background:var(--line);flex:none}
+    .prepItem.on .dot{background:#111}
+
+    /* ---- orbite du passage : départ, étapes, cible (rond plein = cible, rond vide = départ) ---- */
+    .orbitWrap{margin:20px 0 28px 0}
+    .orbitStage{position:relative;width:100%;height:220px}
+    .orbCenter{position:absolute;top:50%;transform:translateY(-50%);border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;font-weight:800}
+    .orbCenter.dep{width:84px;height:84px;left:0;background:#fff;color:#111;border:2px solid #111;font-size:11.5px}
+    .orbCenter.cib{width:112px;height:112px;left:100%;transform:translate(-100%,-50%);background:#111;color:#fff;font-size:13.5px}
+    .orbCenter .sub{font-size:9.5px;font-weight:800;opacity:.85;text-transform:uppercase;letter-spacing:.07em;margin-top:3px}
+    .orbitPath{position:absolute;inset:0;width:100%;height:100%}
+    .orbitPath *{stroke:#111 !important}
+    .orbStep{position:absolute;transform:translate(-50%,-50%);width:84px;min-height:60px;border:1.5px solid #111;cursor:pointer;display:flex;align-items:center;justify-content:center;text-align:center;font-size:12px;font-weight:800;color:#111;background:#fff !important}
+    .orbStep.active{background:#111 !important;color:#fff;outline:2px solid #111;outline-offset:2px}
+    .phraseCentrale{text-align:center;font-style:normal;font-weight:500;color:#111;font-size:15px;margin:6px 0 10px 0}
+    @media (max-width:640px){ .orbitWrap{display:none} }
+
+    /* ---- parcours vertical : niveaux d'autonomie ---- */
+    .parcoursSection{margin-top:34px;padding-top:26px;border-top:1px solid var(--line)}
+    .parcoursSection h3{font-size:22px;margin:0 0 4px 0}
+    .parcoursSection .sub{color:var(--muted);font-size:14px;margin-bottom:20px}
+    .parcoursWrap{display:grid;grid-template-columns:220px 1fr;gap:30px;align-items:start}
+    @media (max-width:640px){ .parcoursWrap{grid-template-columns:1fr} }
+    .serpent{position:relative;height:480px;margin-top:20px}
+    @media (max-width:640px){ .serpent{height:440px} }
+    .lvlNode{position:absolute;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;background:none;border:none;font:inherit;text-align:center;width:150px}
+    .lvlDot{width:20px;height:20px;border-radius:50%;background:#fff;border:2px solid #111;flex:none}
+    .lvlNode.done .lvlDot{background:#111}
+    .lvlNode.objective .lvlDot{width:30px;height:30px;background:#111;box-shadow:0 0 0 6px #fff,0 0 0 8px #111}
+    .lvlLabel{font-size:13px;color:var(--muted);line-height:1.25}
+    .lvlNode.done .lvlLabel,.lvlNode.objective .lvlLabel{color:#111;font-weight:800}
+    .lvlNode.objective .lvlLabel{font-size:15px}
+    .parcoursDetail{background:var(--soft);border:0;border-radius:0;padding:22px 20px}
+    .parcoursDetail .objLine{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:800;margin-bottom:6px}
+    .parcoursDetail h5{font-size:21px;font-weight:900;margin:0 0 14px 0;color:#111}
+    .condGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px 20px;margin-top:16px}
+    .condGrid .c{font-size:14px}
+    .condGrid .c .k{color:var(--muted);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.09em;display:block;margin-bottom:2px}
+    .promiseLine{margin-top:18px;padding-top:16px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
+
+    /* ---- les cinq calques ---- */
+    .calquesSection{margin-top:34px;padding-top:26px;border-top:1px solid var(--line)}
+    .calquesSection h3{font-size:22px;margin:0 0 4px 0}
+    .calquesSection .sub{color:var(--muted);font-size:14px;margin-bottom:20px}
+    .calquesWrap{display:grid;grid-template-columns:260px 1fr;gap:30px;align-items:center}
+    @media (max-width:640px){ .calquesWrap{grid-template-columns:1fr} }
+    .rings{position:relative;width:240px;height:240px;margin:0 auto}
+    .ring{position:absolute;border-radius:50%;border:1.5px solid var(--line);cursor:pointer;display:flex;align-items:flex-start;justify-content:center;padding-top:10px}
+    .ring .ringLbl{font-size:10px;font-weight:800;letter-spacing:.07em;color:var(--muted)}
+    .ring.active{border-color:#111;border-width:3px;background:#fff}
+    .ring.active .ringLbl{color:#111}
+    .r5{inset:0} .r4{inset:24px} .r3{inset:48px} .r2{inset:72px}
+    .r1{inset:96px;display:flex;align-items:center;justify-content:center;background:#111;border-color:#111}
+    .r1 .ringLbl{color:#fff;padding-top:0}
+    .calqueDetail{background:var(--soft);border:0;border-radius:0;padding:22px 20px;min-height:150px}
+    .calqueDetail .cqEyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:800}
+    .calqueDetail h5{font-size:19px;font-weight:900;margin:8px 0 8px 0;color:#111}
+    .calqueDetail p{margin:0;font-size:15px;color:#111}
+
+    /* ---- la roue du métier cible : cinq quartiers, distingués par leur titre ---- */
+    .roueSection{margin-top:34px;padding-top:26px;border-top:1px solid var(--line)}
+    .roueSection h3{font-size:22px;margin:0 0 4px 0}
+    .roueSection .sub{color:var(--muted);font-size:14px;margin-bottom:24px}
+    .roueWrap{position:relative;width:100%;max-width:420px;height:340px;margin:0 auto 20px auto}
+    .roueCentre{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:110px;height:110px;border-radius:50%;background:#111 !important;color:#fff;display:flex;align-items:center;justify-content:center;text-align:center;font-weight:800;font-size:13px}
+    .quartBtn{position:absolute;transform:translate(-50%,-50%);width:130px;min-height:64px;border:1.5px solid #111;border-radius:0;padding:10px 14px;text-align:center;font-size:12px;font-weight:800;color:#111 !important;background:#fff !important;cursor:pointer}
+    .quartBtn.active{background:#111 !important;color:#fff !important;outline:2px solid #111;outline-offset:2px}
+    .quartBtn .n{display:block;font-weight:400;font-size:11px;margin-top:3px}
+    .roueDetail{background:var(--soft);border:0;border-radius:0;padding:20px}
+    .roueDetail h5{font-size:19px;font-weight:900;margin:0 0 10px 0;color:#111}
+    .roueDetail ul{margin:0;padding-left:18px;font-size:15px;line-height:1.7}
+    .roueDetail .note{font-size:13px;color:var(--muted);margin-top:10px}
+
+    /* ---- accueil : deux portes ---- */
+    .doors{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:22px 0}
+    @media (max-width:600px){ .doors{grid-template-columns:1fr} }
+    .doorCard{border:1.5px solid #111;border-radius:0;padding:26px 22px;text-align:left;color:#111;background:#fff;min-height:120px;display:flex;flex-direction:column;justify-content:center;gap:8px}
+    .doorCard:hover,.doorCard:focus-visible{background:#111;color:#fff}
+    .doorCard.art{background:#fff}
+    .doorCard.art:hover,.doorCard.art:focus-visible{background:#111}
+    .doorCard .dTitle{font-size:20px;font-weight:900;letter-spacing:-.01em}
+    .doorCard .dSub{font-size:14px;line-height:1.4}
+
+    /* ---- états : dits par des mots et par la graisse ---- */
+    .badge{display:inline-block;font-size:11px;padding:3px 8px;border:1.5px solid #111;border-radius:0;font-weight:800;text-transform:uppercase;letter-spacing:.07em;background:#fff;color:#111}
+    .b-repertorie{background:#111;color:#fff}
+    .b-proche{background:#fff;color:#111}
+    .b-a_verifier{background:#fff;color:#111;border-style:dashed}
+    .b-non_repertorie{background:#fff;color:var(--muted);border-color:var(--line)}
+    .stPiste{display:inline-block;font-size:11px;padding:3px 8px;border:1.5px solid #111;font-weight:800;background:#fff;color:#111;margin-left:6px;text-transform:uppercase;letter-spacing:.07em}
+    .projet{font-size:22px;font-weight:800;line-height:1.35;margin:18px 0 20px 0}
+    .cap3{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:20px}
+    .cap{flex:1;min-width:180px;background:var(--soft);border-radius:0;padding:14px 16px}
+    .cap h4{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin:0 0 6px 0}
+    .cap div.body{font-size:15px}
+    .zRow{margin-bottom:16px}
+    .zRow .k{display:flex;align-items:center;gap:7px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin-bottom:6px}
+    .kIcon{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border:1.5px solid #111;border-radius:50%;font-size:12px;flex:none;background:#fff;color:#111}
+    .kIcon-ok{background:#111;color:#fff}
+    .kIcon-dev{background:#fff;color:#111}
+    .kIcon-warn{background:#fff;color:#111;border-style:dashed}
+    .kCount{margin-left:auto;font-size:11px;text-transform:none;letter-spacing:0;color:var(--muted)}
+    .zRow ul{margin:0;padding-left:18px;font-size:15px;line-height:1.7}
+    .passageGrid{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:start;margin-top:22px}
+    @media (max-width:640px){ .passageGrid{grid-template-columns:1fr} }
+    .passageCol > .calquesSection, .passageCol > .roueSection{margin-top:0;padding-top:0;border-top:none}
+    .st{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;border:1px solid #111;padding:1px 6px;margin-left:6px;background:#fff;color:#111}
+    .st-doc,.st-hyp,.st-verif{background:#fff;color:#111}
+    .niveauSel{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+    .niveauSel button{min-height:44px;border:1.5px solid #111;background:#fff;border-radius:0;padding:8px 14px;font-size:14px}
+    .niveauSel button.on{background:#111;color:#fff;font-weight:800}
+    .repere{background:var(--soft);border-radius:0;padding:14px 16px;font-size:15px}
+    .fixedNote{font-size:13px;color:var(--muted);margin-top:8px}
+    .empty{color:var(--muted);font-size:15px}
+  </style>
+</head>
+<body>
+<header class="haut"><a class="marque" href="./">VraiSavoirFaire</a><a class="ghostBtn" href="connexion.html?suite=mon-passage.html">Mon compte</a></header>
+<div class="wrap">
+  <div class="hero">
+    <h1 style="font-size:24px;margin:0">Mon métier qui aurait du sens</h1>
+    <p>Un métier qui a du sens, c'est un métier qui rejoint ce que vous avez déjà vécu et ce que vous voulez vivre demain — jamais un score, jamais une promesse.</p>
+  </div>
+  <div class="steps" id="steps"></div>
+  <div id="app"></div>
+</div>
+
+<script>
+const ROME_SYNC_URL = 'https://uuuigousvpijskbdhcal.supabase.co/functions/v1/rome-sync';
+const KEY = 'sb_publishable__YuNj5XCo5YF8lwhwTu5OQ_RDM1Eesp';
+const MAURICE_REST = 'https://uuuigousvpijskbdhcal.supabase.co/rest/v1';
+const HEADERS = { apikey:KEY, Authorization:'Bearer '+KEY };
+function esc(s){ return String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function normaliser(s){ return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim(); }
+async function rechercherMetiers(v){
+  if(v.trim().length < 2) return [];
+  const res = await fetch(ROME_SYNC_URL, { method:'POST', headers:{ 'Content-Type':'application/json', ...HEADERS }, body: JSON.stringify({ recherche: v }) });
+  if(!res.ok) throw new Error('recherche indisponible ('+res.status+')');
+  const data = await res.json();
+  return data.resultats || [];
+}
+async function fetchCompetences(codeRome){
+  const res = await fetch(`${MAURICE_REST}/rome_competences_cache?code_rome=eq.${codeRome}&select=id,type,libelle,code_competence`, { headers: HEADERS });
+  if(!res.ok) throw new Error('compétences indisponibles ('+res.status+')');
+  return res.json();
+}
+
+// --- statut métiers d'art ---
+const STATUT_LABELS = { repertorie:"Répertorié métiers d'art", proche:"Proche d'un métier d'art", a_verifier:"Correspondance à vérifier", non_repertorie:"Hors liste métiers d'art" };
+const OVERRIDES = { 'peintre en lettres':'a_verifier' };
+const MOTS_TROP_GENERIQUES = new Set(['peinture','peintre','metier','ouvrage','fabricant','decorateur','artisan','atelier','graphique','restaurateur']);
+function calculerStatutMetierArt(libelle, referentiel){
+  // ROME nomme souvent un métier "Forme masculine / Forme féminine de X" (ex. "Tailleur /
+  // Tailleuse de pierre") alors que le référentiel métiers d'art liste la forme plane
+  // ("Tailleur de pierre") — sans ce nettoyage, une correspondance exacte réelle serait
+  // manquée à cause de la seule notation, pas d'une vraie différence de métier.
+  const sansVariante = String(libelle).replace(/\s*\/\s*\S+/, '');
+  const cle = normaliser(sansVariante);
+  if(OVERRIDES[cle]) return { statut:OVERRIDES[cle], domaine:null, correspondance:null };
+  for(const dom of referentiel.domaines) for(const m of dom.metiers) if(normaliser(m)===cle) return { statut:'repertorie', domaine:dom.nom, correspondance:m };
+  const sing = m => m.endsWith('s') && m.length>4 ? m.slice(0,-1) : m;
+  const motsApp = cle.split(/\s+/).filter(m=>m.length>=4).map(sing);
+  let candidatGenerique = null;
+  for(const dom of referentiel.domaines){
+    for(const m of dom.metiers){
+      const motsM = normaliser(m).split(/\s+/).filter(x=>x.length>=4).map(sing);
+      const communs = motsApp.filter(x=>motsM.includes(x));
+      if(!communs.length) continue;
+      const specifiques = communs.filter(x=>!MOTS_TROP_GENERIQUES.has(x));
+      if(specifiques.length) return { statut:'proche', domaine:dom.nom, correspondance:m };
+      if(!candidatGenerique) candidatGenerique = { domaine:dom.nom, correspondance:m };
+    }
+  }
+  if(candidatGenerique) return { statut:'a_verifier', domaine:candidatGenerique.domaine, correspondance:candidatGenerique.correspondance };
+  return { statut:'non_repertorie', domaine:null, correspondance:null };
+}
+const GOULOTS = {
+  F1606: ['Précision du geste de pinceau et régularité — geste de base, à vérifier par la pratique','Sécurité en hauteur et exposition aux produits — prérequis réglementaire, à valider par un professionnel'],
+  F1612: ['Maîtrise des outils de taille traditionnels — geste de base critique, à vérifier par la pratique','Port de charges et travail physique soutenu — condition à vérifier en immersion'],
+  // Cas-test Comptable → Graphiste (voir cadrage 11.3) : contenu rédigé à la main, aucune fiche ROME
+  // ne documente ces éléments comme des "goulots" — hypothèses à valider par un professionnel.
+  E1205: [
+    "Sensibilité et jugement esthétique — geste de base, non compensable par la seule rigueur — hypothèse, à valider par un professionnel",
+    "Maîtrise des logiciels de création (Photoshop, Illustrator, InDesign ou équivalents) — prérequis technique concret, à vérifier par la pratique",
+    "Composition, typographie et lisibilité — savoir-faire central du métier, à construire progressivement",
+  ],
+};
+const RYTHME = {
+  F1606: 'Formation initiale (CAP/BP) ou reconversion avec immersion progressive — plusieurs mois à ~2 ans selon le point de départ, à confirmer au cas par cas.',
+  F1612: 'Nouveau départ nécessitant un accompagnement — formation longue ou compagnonnage, à explorer au cas par cas.',
+  E1205: "Reconversion vers un métier créatif : généralement une formation dédiée (école ou titre professionnel) et un portfolio à construire — plusieurs mois à 2 ans selon le point de départ, à confirmer au cas par cas.",
+};
+const NIVEAUX = ['Découvrir','Premiers gestes','Autonomie ciblée','Situations courantes','Maîtriser et transmettre'];
+const LEVELS = [
+  { name:'Découvrir', gestes:'Comprendre les bases, observer et essayer avec accompagnement.', cond:['Pratique : ponctuelle, encadrée','Tutorat : permanent','Retours : à chaque essai','Situations : démonstration'] },
+  { name:'Premiers gestes', gestes:'Réaliser des travaux simples, avec accompagnement et corrections.', cond:['Pratique : régulière, encadrée','Tutorat : rapproché','Retours : après chaque réalisation','Situations : simples, définies'] },
+  { name:'Autonomie ciblée', gestes:'Réaliser seul·e des situations simples et définies, avec contrôle professionnel ponctuel.', cond:['Pratique : autonome sur périmètre restreint','Tutorat : ponctuel','Retours : sur demande','Situations : cadrées'] },
+  { name:'Situations courantes', gestes:'Gérer les cas habituels, des supports variés et les aléas courants.', cond:['Pratique : quotidienne','Tutorat : rare','Retours : occasionnels','Situations : variées'] },
+  { name:'Maîtriser et transmettre', gestes:'Diagnostiquer, ajuster, garantir une haute qualité et transmettre à d\'autres.', cond:['Pratique : experte','Tutorat : aucun (devient tuteur·rice)','Retours : par les pairs','Situations : toutes'] },
+];
+function renderParcoursVertical(statutArt){
+  const positions = [0,100,200,300,400];
+  const cotes = [34,66,34,66,50];
+  const pointsLigne = positions.map((p,i)=>`${cotes[i]},${480-p}`).join(' ');
+  return `<div class="parcoursSection">
+    <h3>Votre repère de parcours à explorer</h3>
+    <div class="sub">Choisissez le niveau d'autonomie que vous visez — ce n'est jamais imposé par le système. Cette estimation est un repère, pas une promesse.</div>
+    <div class="parcoursWrap">
+      <div class="serpent" id="serpent">
+        <svg viewBox="0 0 100 480" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none">
+          <polyline points="${pointsLigne}" fill="none" stroke="var(--sage)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity=".55"/>
+        </svg>
+        ${LEVELS.map((l,i)=>`<button type="button" class="lvlNode ${i<etat.niveauChoisi?'done':''} ${i===etat.niveauChoisi?'objective':''}" data-niveau-vertical="${i}" style="bottom:${positions[i]}px; left:${i===4?50:cotes[i]}%"><span class="lvlDot"></span><span class="lvlLabel">${esc(l.name)}</span></button>`).join('')}
+      </div>
+      <div class="parcoursDetail" id="parcoursDetail">${renderNiveauDetail(statutArt)}</div>
+    </div>
+  </div>`;
+}
+/* ============================ CALQUES D'ANALYSE (cadrage 12.6) ============================ */
+function calquesContenu(ctx){
+  return {
+    rome:{ titre: ctx.code?'ROME':'Métiers d\'art', sous: ctx.code?'Décrire le métier':"Pas de fiche ROME pour ce métier", texte: ctx.code
+      ? `Le socle officiel : ${ctx.comp.length} éléments (activités, savoir-faire, savoirs, savoir-être) synchronisés depuis France Travail pour « ${esc(ctx.nom)} ».`
+      : (ctx.ficheArt
+        ? `Aucune fiche ROME officielle pour « ${esc(ctx.nom)} » (recherche individuelle menée, correspondance ROME/RNCP : ${esc(ctx.ficheArt.niveauCorrespondanceRome)}). La structure ci-dessous reprend les ${ctx.comp.length} éléments de la fiche détaillée du référentiel métiers d'art (activités, savoir-faire, savoirs) — jamais une vraie liste de compétences ROME.`
+        : `Aucune fiche ROME officielle pour « ${esc(ctx.nom)} » — ce métier d'art n'a pas d'équivalent trouvé dans la nomenclature France Travail. La structure ci-dessous reprend, phrase par phrase, la définition du livret de l'Institut des Métiers d'Art (INMA), jamais une vraie liste de compétences ROME.`) },
+    esco:{ titre:'ESCO', sous:'Distinguer ce qui est central de ce qui dépend du contexte', texte:`Aucune correspondance ESCO documentée pour ce métier à ce jour — la fiche reste affichée à partir de ROME seul, sans rien inventer.` },
+    structure:{ titre:'Structure métier', sous:"Déplier une activité en gestes, outils, matières, qualité et sécurité", texte:`Grille de rangement inspirée d'O*NET, jamais une donnée américaine importée : ${ctx.comp.filter(c=>c.type==='savoir-faire').length} savoir-faire et ${ctx.comp.filter(c=>c.type==='savoir').length} savoirs classés pour s'y retrouver.` },
+    parcours:{ titre:'Parcours', sous:'Situer le passage entre ce que vous avez fait et le niveau visé', texte:`Niveau actuellement exploré : « ${esc(LEVELS[etat.niveauChoisi].name)} ». Jamais transformé en date de fin garantie.` },
+    skolantreuz:{ titre:'Skolantreuz', sous:"Faire entrer votre expérience, vos raisons, votre vécu de l'activité et votre place dans l'équipe", texte:`Méthode 12MARS : ${ctx.declares.length} éléments déclarés ou cochés, ${etat.axe2.motif.length+etat.axe2.destinataire.length+etat.axe2.rythme.length} réponses sur le sens, ${etat.axe4.quotidien.length+etat.axe4.hebdomadaire.length+etat.axe4.mensuel.length+etat.axe4.annuel.length} sur la vie en équipe — jamais le moteur de score retiré.` },
+  };
+}
+function renderCalques(ctx){
+  const c = calquesContenu(ctx);
+  const actif = etat.calqueActif || 'rome';
+  return `<div class="calquesSection">
+    <h3>Voir comment cette piste s'affine</h3>
+    <div class="sub">Cinq calques, pas un tableau technique — cliquez pour comprendre ce que chacun ajoute.</div>
+    <div class="calquesWrap">
+      <div class="rings">
+        <div class="ring r5 ${actif==='rome'?'active':''}" data-calque="rome"><span class="ringLbl">ROME</span></div>
+        <div class="ring r4 ${actif==='esco'?'active':''}" data-calque="esco"><span class="ringLbl">ESCO</span></div>
+        <div class="ring r3 ${actif==='structure'?'active':''}" data-calque="structure"><span class="ringLbl">STRUCTURE</span></div>
+        <div class="ring r2 ${actif==='parcours'?'active':''}" data-calque="parcours"><span class="ringLbl">PARCOURS</span></div>
+        <div class="ring r1 ${actif==='skolantreuz'?'active':''}" data-calque="skolantreuz"><span class="ringLbl">SKOLANTREUZ</span></div>
+      </div>
+      <div class="calqueDetail">
+        <div class="cqEyebrow">${esc(c[actif].titre)}</div>
+        <h5>${esc(c[actif].sous)}</h5>
+        <p>${c[actif].texte}</p>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ============================ ROUE MÉTIER CIBLE, 5 QUARTIERS (cadrage 12.8) ============================ */
+const QUARTIERS = [
+  { cle:'realiser', titre:"Ce que l'on réalise", couleur:'#111111', regex:/réalis|créat|créer|produi|conçoi|concevoi|fabriqu|construi|élabor/i },
+  { cle:'travailler', titre:"Ce que l'on travaille", couleur:'#111111', regex:/matière|support|outil|matériau|équipement|machine|logiciel|produit/i },
+  { cle:'attention', titre:"Ce qui demande de l'attention", couleur:'#111111', regex:/sécurité|qualité|précision|risque|contrôl|vérifi|conform|hygiène/i },
+  { cle:'apprendre', titre:"Ce que l'on apprend dans le temps", couleur:'#111111', regex:/perfectionn|évolu|actualis|formation|apprentiss|progress|veille/i },
+  { cle:'verifier', titre:"Ce qui se vérifie dans le réel", couleur:'#111111', regex:/condition|environnement|rythme|terrain|chantier|atelier|client/i },
+];
+function classerRoue(comp){
+  const buckets = { realiser:[], travailler:[], attention:[], apprendre:[], verifier:[] };
+  for(const c of comp){
+    const q = QUARTIERS.find(q=>q.regex.test(c.libelle));
+    if(q) buckets[q.cle].push(c.libelle);
+  }
+  return buckets;
+}
+// Le classement par mots-clés génériques (classerRoue) est calibré sur le vocabulaire ROME —
+// il échoue souvent sur les phrases du référentiel métiers d'art (vocabulaire différent) et
+// laisse la roue à 0 partout. Quand on a la fiche détaillée, on sait déjà quelle colonne
+// correspond à quel quartier : on range directement, sans deviner par mot-clé.
+function classerRoueDepuisFiche(fiche){
+  const buckets = { realiser:[], travailler:[], attention:[], apprendre:[], verifier:[] };
+  const ajouter = (cle, ...champs) => { for(const c of champs){ const v = fiche[c]; if(v) buckets[cle].push(v); } };
+  ajouter('realiser', 'actRealiser','actConcevoir','actAssembler','actRestaurer','sfVerbes');
+  ajouter('travailler', 'matieres','outils','produits','techniques');
+  ajouter('attention', 'ctxRisques','sfPrecision','saConservation');
+  ajouter('apprendre', 'transObservation','transRepetition','transSeuils','transVocabulaire','transConditions','evolNumerique','evolMateriaux');
+  ajouter('verifier', 'ctxStructure','ctxCollectif','ctxCadences','ctxCommande','actGerer','actPresenter','actAnalyser','actPreparer');
+  return buckets;
+}
+function renderRoue(nom, buckets, declares, code, ficheArt){
+  const actif = etat.quartActif || 'realiser';
+  const R = 42; // rayon en % du conteneur
+  const positions = QUARTIERS.map((q,i)=>{
+    const angle = -90 + i*72;
+    const rad = angle*Math.PI/180;
+    return { left: 50+R*Math.cos(rad), top: 50+R*Math.sin(rad) };
+  });
+  const q = QUARTIERS.find(x=>x.cle===actif);
+  const items = buckets[actif]||[];
+  const declNorm = declares.map(d=>normaliser(d.libelle));
+  const sourceLabel = code ? 'ROME' : (ficheArt ? 'référentiel métiers d\'art' : 'INMA');
+  const sourceLabelPhrase = code ? 'ROME' : (ficheArt ? 'du référentiel métiers d\'art' : 'INMA');
+  return `<div class="roueSection">
+    <h3>Le métier cible, en cinq briques</h3>
+    <div class="sub">Un classement approximatif par mots-clés sur les vraies données ${sourceLabelPhrase} de « ${esc(nom)} », pas une vérité scientifique.</div>
+    <div class="roueWrap">
+      <div class="roueCentre">${esc(nom)}</div>
+      ${QUARTIERS.map((qq,i)=>`<button type="button" class="quartBtn ${qq.cle===actif?'active':''}" data-quart="${qq.cle}" style="left:${positions[i].left}%;top:${positions[i].top}%;background:${qq.couleur}">${esc(qq.titre)}<span class="n">${(buckets[qq.cle]||[]).length}</span></button>`).join('')}
+    </div>
+    <div class="roueDetail">
+      <h5>${esc(q.titre)}</h5>
+      ${items.length ? `<ul>${items.slice(0,6).map(l=>`<li>${esc(l)}${declNorm.some(n=>normaliser(l).includes(n))?' <span class="st st-doc">déjà déclaré</span>':` <span class="st st-hyp">documenté ${sourceLabel}</span>`}</li>`).join('')}</ul>` : `<p style="font-size:13.5px;color:var(--muted)">Non disponible dans les données actuellement en cache pour ce métier.</p>`}
+      <div class="note">Ce que les sources décrivent · ce que vous avez déclaré · ce qu'il faudra vérifier avec un professionnel.</div>
+    </div>
+  </div>`;
+}
+
+function renderNiveauDetail(statutArt){
+  const lv = LEVELS[etat.niveauChoisi];
+  const estMaitreArt = etat.niveauChoisi===4 && statutArt && statutArt.statut==='repertorie';
+  return `<div class="objLine">Mon objectif</div><h5>${esc(lv.name)}</h5>
+    <div style="font-size:13.5px">${esc(lv.gestes)}</div>
+    <div class="condGrid">${lv.cond.map(c=>{ const [k,v]=c.split(' : '); return `<div class="c"><span class="k">${esc(k)}</span>${esc(v)}</div>`; }).join('')}</div>
+    ${estMaitreArt ? `<div class="promiseLine" style="border-top:none;padding-top:0;font-style:normal;margin-top:14px">En France, le dispositif Maître d'art‑Élèves du ministère de la Culture incarne ce niveau d'exigence : transmission structurée sur plusieurs années, reconnue par les pairs — un horizon réel, jamais une promesse.</div>` : ''}
+    <div class="promiseLine">Cette estimation est un repère de parcours, pas une promesse. Elle doit être confirmée par une mise en situation et un positionnement avec un professionnel.</div>`;
+}
+const CATEGORIES = [ ['savoir','Connaissances'], ['savoir-faire','Savoir-faire'], ['savoir-etre','Savoir-être'] ];
+const MOTS_VIDES = new Set(['dans','avec','pour','selon','leur','leurs','ainsi','plus','être','faire','tout','tous','toute','cette','ceux','celle','elle','elles','ils','sans','entre','autre','autres','afin','lors','aux','des','les','une','un','de','du','la','le','et','ou','en','au','sur']);
+
+let referentielMetiersArt = null;
+async function chargerReferentiel(){ if(referentielMetiersArt) return referentielMetiersArt; try{ referentielMetiersArt = await (await fetch('data/referentiel-metiers-art-v2.json')).json(); }catch(e){ referentielMetiersArt = null; } return referentielMetiersArt; }
+
+// Fiches détaillées (finalité, matières, contexte de travail, correspondance ROME/RNCP
+// individuellement recherchée métier par métier) — fournies par l'utilisateur le 2026-09-14,
+// bien plus fiables qu'une recherche automatique par mot-clé pour établir la correspondance ROME.
+let fichesMetiersArt = null;
+let fichesMetiersArtIndex = null;
+async function chargerFichesDetaillees(){
+  if(fichesMetiersArt) return fichesMetiersArt;
+  try{
+    fichesMetiersArt = await (await fetch('data/fiches-metiers-art-detaillees.json')).json();
+    fichesMetiersArtIndex = new Map();
+    for(const ligne of fichesMetiersArt.lignes){
+      const cle = normaliser(ligne.metier);
+      if(!fichesMetiersArtIndex.has(cle)) fichesMetiersArtIndex.set(cle, ligne);
+    }
+  }catch(e){ fichesMetiersArt = null; fichesMetiersArtIndex = null; }
+  return fichesMetiersArt;
+}
+function trouverFicheArt(nom){
+  return fichesMetiersArtIndex ? fichesMetiersArtIndex.get(normaliser(nom)) || null : null;
+}
+// "F1503 / F1501" -> "F1503" ; "B1302 (à confirmer)" -> "B1302" ; "Non identifié" -> null
+function premierCodeRome(fiche){
+  if(!fiche || !fiche.codesRome) return null;
+  const m = fiche.codesRome.match(/[A-Z]\d{4}/);
+  return m ? m[0] : null;
+}
+
+const CLE_LOCAL = '12mars_mon_passage_v1';
+function charger(){ try{ return JSON.parse(localStorage.getItem(CLE_LOCAL)||'{}'); }catch(e){ return {}; } }
+function sauver(){ try{ localStorage.setItem(CLE_LOCAL, JSON.stringify(etat)); }catch(e){} }
+
+// Fusion volontairement profonde d'un niveau (pas Object.assign, qui écraserait entièrement
+// un sous-objet comme axe1 s'il existe déjà en localStorage sans les derniers champs ajoutés —
+// ça a réellement fait planter le premier rendu la première fois qu'un champ a été ajouté).
+function fusionner(defaut, sauve){
+  const r = { ...defaut };
+  for(const cle in sauve){
+    r[cle] = (sauve[cle] && typeof sauve[cle]==='object' && !Array.isArray(sauve[cle]) && defaut[cle] && typeof defaut[cle]==='object')
+      ? { ...defaut[cle], ...sauve[cle] } : sauve[cle];
+  }
+  return r;
+}
+let etat = fusionner({
+  etape:'accueil', metierArtMode:null,
+  experiences:[], expRecherche:'', expSuggestions:[],
+  voeu:null, voeuRecherche:'', voeuSuggestions:[], voeuAutresSuggestions:[],
+  axe1:{ verbesChoisis:[], verbesDisponibles:null, adaptatif:false, matieresCible:[], sensoriel:[], modesApprentissage:[], cibleChargee:null },
+  axe2:{ motif:[], destinataire:[], rythme:[] },
+  axe3:{ seul:50, equipe:50, clients:50, style:'', conditions:[], qvct:{}, rse:[] },
+  axe4:{ quotidien:[], hebdomadaire:[], mensuel:[], annuel:[], tailleCollectif:'', intensiteClient:'', consulte:false },
+  diplomes:[], voeuArtFiltre:'', voeuArtOuvert:{}, voeuArtErreur:'',
+  pisteChoisie:null, pistes:null, niveauChoisi:1, calqueActif:'rome', quartActif:'realiser',
+}, charger());
+
+const ETAPES = ['experience','aspirations','pistes','objectif','passage'];
+const LABELS_ETAPE = { experience:'Mon expérience', aspirations:'Mes aspirations', pistes:'Mes 3 pistes', objectif:'Mon objectif', passage:'Mon passage' };
+function etapeAccessible(id){
+  if(id==='experience') return true;
+  if(id==='aspirations') return etat.experiences.length>0;
+  if(id==='pistes') return !!etat.pistes;
+  if(id==='objectif' || id==='passage') return !!etat.pisteChoisie;
+  return false;
+}
+function renderSteps(){
+  if(etat.etape==='accueil'){ document.getElementById('steps').innerHTML = ''; return; }
+  const idx = ETAPES.indexOf(etat.etape);
+  document.getElementById('steps').innerHTML = ETAPES.map((id,i)=>{
+    const ok = etapeAccessible(id);
+    return `<button type="button" class="stepDot ${etat.etape===id?'on':''} ${idx>i?'done':''}" data-step="${id}" ${ok?'':'disabled'}>${LABELS_ETAPE[id]}</button>`;
+  }).join('') + (etat.metierArtMode ? `<span class="badge b-repertorie" style="align-self:center;margin-left:8px;white-space:nowrap">Mode métiers d'art</span>` : '');
+  document.querySelectorAll('#steps .stepDot').forEach(b=>b.addEventListener('click', ()=>{ if(b.disabled) return; etat.etape=b.dataset.step; sauver(); render(); }));
+}
+
+/* ============================ ÉTAPE 0 — ACCUEIL, DEUX PORTES ============================ */
+function renderEtapeAccueil(){
+  return `
+  <div style="text-align:center;padding:10px 0 6px 0">
+    <div class="tag" style="font-size:13px;text-transform:uppercase;letter-spacing:.1em;color:var(--accent-ink);margin-bottom:10px">Votre transition professionnelle</div>
+    <h2 style="font-size:24px;margin:0 0 6px 0">Quel savoir-faire voulez-vous faire grandir ?</h2>
+  </div>
+  <div class="doors">
+    <button type="button" class="doorCard" data-porte="tous">
+      <div class="dTitle">Explorer tous les métiers</div>
+      <div class="dSub">Partez d'un geste, d'une matière, d'un résultat ou de votre expérience.</div>
+    </button>
+    <button type="button" class="doorCard art" data-porte="art">
+      <div class="dTitle">Explorer les métiers d'art</div>
+      <div class="dSub">281 activités officiellement répertoriées, 16 domaines.</div>
+    </button>
+  </div>
+  <div class="disclaimerBox">Les métiers d'art sont un repère officiel. D'autres métiers permettent aussi de construire et transmettre des savoir-faire rares — cette porte ne ferme aucune autre voie.</div>
+  `;
+}
+
+/* ============================ ÉTAPE 1 — EXPÉRIENCE ============================ */
+let expTimer = null;
+function renderEtapeExperience(){
+  return `
+  ${etat.experiences.map((exp,ei)=>renderExpCard(exp,ei)).join('')}
+  ${renderDiplomesGlobal()}
+  <div class="field">
+    <label>${etat.experiences.length ? 'Ajouter une autre expérience passée' : 'Un métier que vous avez exercé (actuel ou passé)'}</label>
+    <input type="text" id="expRecherche" placeholder="ex : Comptable, Vendeur, Aide-soignant…" value="${esc(etat.expRecherche)}" autocomplete="off">
+    ${etat.expSuggestions.length ? `<div class="results">${etat.expSuggestions.map((s,i)=>`<button type="button" data-i="${i}">${esc(s.libelle)} <span class="rc">${esc(s.libelleMetier)} · ${s.codeRome}</span></button>`).join('')}</div>` : ''}
+  </div>
+  <div class="toolbar"><button class="btn" id="btnRecommencer">Recommencer</button><button class="btn btnPrimary" id="btnSuivant1" ${etat.experiences.length?'':'disabled'}>Suivant →</button></div>
+  `;
+}
+const ANCIENNETE_OPTIONS = ["Moins d'1 an",'1 à 3 ans','3 à 5 ans','5 à 10 ans','Plus de 10 ans'];
+function estDiplomeOuCertification(libelle){
+  const l = String(libelle||'').trim();
+  return /^(CAP|BEP|BP|BPJEPS|Bac\s*pro|BTS|BUT|BMA|DMA|DUT|DEUG|Licence|Master|Doctorat|MBA|EMBA|Titre professionnel|CQPI?|Mention compl[ée]mentaire|MC|DEUST)\b/i.test(l)
+      || /\bDipl[oô]me\b/i.test(l)
+      || /Certificat d.aptitude|CACES|habilitation [ée]lectrique/i.test(l)
+      || /\bR486\b|\bR408\b|\bR457\b/.test(l);
+}
+function renderExpCard(exp, ei){
+  return `<div class="expCard">
+    <div class="head">
+      <div><b>${esc(exp.choix.libelleMetier)} <span style="color:var(--muted);font-weight:400;font-size:12px">${exp.choix.codeRome}</span></b>
+        <div class="anciennete">Depuis <select data-anciennete="${ei}"><option value="">— à préciser —</option>${ANCIENNETE_OPTIONS.map(o=>`<option value="${esc(o)}" ${exp.anciennete===o?'selected':''}>${esc(o)}</option>`).join('')}</select></div>
+      </div>
+      <button class="ghostBtn" data-retirer="${ei}">Retirer ✕</button></div>
+    ${CATEGORIES.map(([cle,titre])=>{
+      const items = exp.comp[cle]||[];
+      const nb = items.filter(x=>x.coche).length;
+      const ouvert = exp.ouvert[cle];
+      const toutCoche = items.length && items.every(x=>x.coche);
+      return `<div class="accordeon">
+        <button class="accordeonHead" data-toggle="${ei}|${cle}"><span>${titre} (${items.length}${nb?' · '+nb+' coché'+(nb>1?'s':''):''})</span><span>${ouvert?'▲':'▼'}</span></button>
+        ${ouvert ? `<div class="accordeonBody">${items.length ? `
+          <label class="checkRow toutCocher"><input type="checkbox" data-tout-cocher="${ei}|${cle}" ${toutCoche?'checked':''}><span>Tout cocher / tout décocher</span></label>
+          ${items.map((it,i)=>`
+          <label class="checkRow"><input type="checkbox" data-check="${ei}|${cle}|${i}" ${it.coche?'checked':''}><span>${esc(it.libelle)}</span></label>`).join('')}` : '<div class="empty">Aucune donnée dans cette catégorie pour ce métier.</div>'}</div>` : ''}
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+function renderDiplomesGlobal(){
+  if(!etat.experiences.length) return '';
+  const toutCoche = etat.diplomes.length && etat.diplomes.every(d=>d.coche);
+  return `<div class="expCard">
+    <div class="head"><b>Mes diplômes et certifications obtenus</b></div>
+    <div style="font-size:12.5px;color:var(--muted);margin:-4px 0 10px 0">Rassemblés depuis les métiers ci-dessus — cochez ceux que vous avez réellement obtenus, séparément de vos connaissances pratiques.</div>
+    ${etat.diplomes.length ? `<label class="checkRow toutCocher"><input type="checkbox" data-tout-cocher-diplome ${toutCoche?'checked':''}><span>Tout cocher / tout décocher</span></label>
+    ${etat.diplomes.map((d,i)=>`<label class="checkRow"><input type="checkbox" data-check-diplome="${i}" ${d.coche?'checked':''}><span>${esc(d.libelle)} <span style="color:var(--muted);font-size:11.5px">(${d.sources.join(', ')})</span></span></label>`).join('')}` : `<div class="empty" style="margin-bottom:4px">Aucun diplôme détecté automatiquement pour l'instant.</div>`}
+    <div class="field" style="margin-top:12px;margin-bottom:0">
+      <label>Autre diplôme ou certification obtenu, non listé ci-dessus</label>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="diplomeAutreInput" placeholder="ex : BTS Design graphique" style="flex:1">
+        <button type="button" class="btn" id="btnAjouterDiplomeAutre">Ajouter</button>
+      </div>
+    </div>
+  </div>`;
+}
+async function ajouterExperience(s){
+  etat.expRecherche = ''; etat.expSuggestions = [];
+  render();
+  const comp = await fetchCompetences(s.codeRome);
+  const parType = { savoir:[], 'savoir-faire':[], 'savoir-etre':[] };
+  for(const c of comp){
+    const t = c.type==='savoir-être'?'savoir-etre':c.type;
+    if(t==='savoir' && estDiplomeOuCertification(c.libelle)){
+      const cle = normaliser(c.libelle);
+      let d = etat.diplomes.find(x=>normaliser(x.libelle)===cle);
+      if(!d){ d = { libelle:c.libelle, coche:false, sources:[] }; etat.diplomes.push(d); }
+      if(!d.sources.includes(s.codeRome)) d.sources.push(s.codeRome);
+      continue;
+    }
+    if(parType[t]) parType[t].push({ libelle:c.libelle, code:c.code_competence||null, coche:false });
+  }
+  etat.experiences.push({ choix:s, comp:parType, anciennete:'', ouvert:{savoir:false,'savoir-faire':false,'savoir-etre':false} });
+  sauver(); render();
+}
+
+/* ============================ ÉTAPE 2 — ASPIRATIONS (refonte adaptative) ============================ */
+const AXE1_GENERIQUES = ['Fabriquer','Réparer','Organiser','Expliquer','Vérifier','Créer','Résoudre','Accompagner','Soigner','Transmettre'];
+const SENSORIEL_GENERIQUE = ['Les outils','Les odeurs','Les couleurs et les textures','Le geste répétitif et apaisant','Le son du travail','Le contact avec les mains','Voir le résultat prendre forme sous vos yeux','Le calme et la concentration que ça demande'];
+const MODES_APPRENTISSAGE = ['Observer un professionnel au travail','Essayer avec un accompagnement rapproché','Suivre une formation théorique','Apprendre par la vidéo ou le tutoriel','Lire et comprendre par soi-même','Être corrigé·e et recommencer','Apprendre en petit groupe','Apprendre seul·e, à son rythme'];
+const AXE2A_MOTIF = ['Être utile à quelqu\'un','Créer','Rendre beau','Réparer','Faire durer','Protéger','Améliorer','Résoudre','Rendre service','Travailler avec précision','Être autonome','Gagner sa vie et sécuriser sa situation','Être fier·e d\'un résultat visible','Transmettre à terme'];
+const AXE2B_DESTINATAIRE = ['Un client','Un usager ou une personne accompagnée','Une équipe, des collègues','Contribuer à un territoire, un patrimoine, une équipe ou un client','Moi-même, mon propre développement'];
+const AXE2C_RYTHME = ["Dans l'urgence, l'imprévu",'Planifié à l\'avance','Saisonnier, cyclique','En continu, régulier','Ça dépend des missions'];
+const AXE3_CONDITIONS = ['Atelier','Chantier','Extérieur','Bureau','Domicile','Lieux variés','Résultat visible','Précision','Créativité','Répétition','Diversité','Effort physique','Bruit / poussière','Hauteur','Port de charges'];
+const AXE3_STYLES = ['Plutôt seul','Un équilibre','Plutôt en équipe','Cela dépend de la mission'];
+const QVCT_DIMENSIONS = [
+  { cle:'charge', q:'Charge de travail souhaitée', options:['Légère','Modérée','Soutenue'] },
+  { cle:'autonomie', q:'Autonomie et marge de décision souhaitées', options:['Suivre des consignes claires','Un équilibre','Décider seul·e souvent'] },
+  { cle:'relations', q:'Qualité des relations de travail attendue', options:['Peu importante','Importante','Essentielle'] },
+  { cle:'conciliation', q:'Conciliation vie professionnelle / vie personnelle', options:['Horaires fixes et prévisibles','Flexible','Peu de contrainte horaire'] },
+  { cle:'securite', q:'Attention à la santé et à la sécurité', options:['Standard','Vigilance particulière souhaitée'] },
+];
+const RSE_OPTIONS = ['Contribution à la durabilité','Réemploi, matériaux recyclés','Low-tech, sobriété','Économie locale','Transmission d\'un patrimoine','Pas de préférence particulière'];
+const AXE4_CADENCES = [
+  { cle:'quotidien', titre:'Quotidien', options:['Brief du matin','Entraide informelle','Pouvoir poser des questions','Relation avec un tuteur ou une personne expérimentée'] },
+  { cle:'hebdomadaire', titre:'Hebdomadaire', options:["Réunion d'équipe",'Retour de chantier ou de mission','Coopération entre métiers'] },
+  { cle:'mensuel', titre:'Mensuel', options:["Bilan d'équipe",'Atelier collectif','Retours structurés sur le travail'] },
+  { cle:'annuel', titre:'Annuel', options:['Entretien de progression','Reconnaissance des réalisations','Rituel de transmission'] },
+];
+const AXE4_TAILLE = ['Seul','Binôme','Petite équipe','Grand collectif'];
+const AXE4_CLIENT = ['Forte et régulière','Ponctuelle','Limitée'];
+function chip(label,on,attr){ return `<button type="button" class="chip ${on?'on':''}" ${attr}>${esc(label)}</button>`; }
+function extraireVerbe(libelle){
+  const m = String(libelle).trim().match(/^([A-ZÉÈÀÂÊÎÔÛÇ][a-zà-öø-ÿ]+(?:er|ir|re|oir))\b/);
+  return m ? m[1] : null;
+}
+const MOTS_MATIERE_DICO = ['bois','métal','métaux','pierre','verre','cuir','tissu','textile','terre','argile','céramique','papier','carton','plastique','résine','peinture','couleur','texture','fil','laine','coton','soie','cire','émail','or','argent','bronze','cuivre','acier','marbre','plâtre','béton','osier','paille','porcelaine','faïence'];
+function extraireMatieresCible(comp){
+  const trouvees = new Set();
+  for(const c of comp){
+    const texte = normaliser(c.libelle);
+    for(const mot of MOTS_MATIERE_DICO) if(new RegExp('\\b'+mot+'\\b').test(texte)) trouvees.add(mot);
+  }
+  return [...trouvees].slice(0,8);
+}
+function extraireMatieresDeTexte(texte){
+  const trouvees = new Set();
+  const t = normaliser(texte);
+  for(const mot of MOTS_MATIERE_DICO) if(new RegExp('\\b'+mot+'\\b').test(t)) trouvees.add(mot);
+  return [...trouvees].slice(0,8);
+}
+// Les fiches métiers d'art (INMA) sont rédigées en prose ("Le X réalise...", pas des listes
+// ROME à l'infinitif) : on ne peut pas réutiliser extraireVerbe() telle quelle. On reconnaît
+// ici les verbes conjugués les plus courants du livret et on affiche leur infinitif.
+const LEMMES_VERBES_INMA = { 'réalise':'Réaliser','restaure':'Restaurer','utilise':'Utiliser','travaille':'Travailler','fabrique':'Fabriquer','assemble':'Assembler','façonne':'Façonner','crée':'Créer','taille':'Tailler','sculpte':'Sculpter','tresse':'Tresser','tisse':'Tisser','peint':'Peindre','dessine':'Dessiner','grave':'Graver','polit':'Polir','coupe':'Couper','colle':'Coller','chauffe':'Chauffer','moule':'Mouler','coule':'Couler','découpe':'Découper','choisit':'Choisir','maîtrise':'Maîtriser','transforme':'Transformer','décore':'Décorer','applique':'Appliquer','construit':'Construire','prépare':'Préparer','orne':'Orner','monte':'Monter','pose':'Poser','conçoit':'Concevoir','produit':'Produire','fixe':'Fixer','installe':'Installer','entretient':'Entretenir','répare':'Réparer','imprime':'Imprimer','dore':'Dorer','sertit':'Sertir','tourne':'Tourner','perce':'Percer','ajuste':'Ajuster','mélange':'Mélanger','assure':'Assurer','forge':'Forger','soude':'Souder','plie':'Plier','recouvre':'Recouvrir','habille':'Habiller','tend':'Tendre','fond':'Fondre','sculptent':'Sculpter' };
+function extraireVerbesDeTexte(texte){
+  const trouves = []; const vus = new Set();
+  const mots = String(texte).toLowerCase().match(/[a-zàâäéèêëïîôöùûüçœ]+/g) || [];
+  for(const m of mots){
+    const inf = LEMMES_VERBES_INMA[m];
+    if(inf && !vus.has(inf)){ vus.add(inf); trouves.push({ verbe:inf, origine:null }); }
+    if(trouves.length>=12) break;
+  }
+  return trouves;
+}
+function cleCibleAspirations(voeu){
+  if(!voeu) return null;
+  return voeu.codeRome!=null ? voeu.codeRome : 'inma:'+voeu.libelleMetier;
+}
+async function chargerVerbesCible(){
+  if(!etat.voeu){ etat.axe1.adaptatif = false; etat.axe1.verbesDisponibles = AXE1_GENERIQUES.map(v=>({verbe:v,origine:null})); etat.axe1.matieresCible = []; etat.axe1.cibleChargee = null; return; }
+  if(etat.voeu.codeRome==null){
+    const fiche = etat.voeu.ficheArt;
+    // La fiche métier d'art fournit des verbes déjà à l'infinitif (ex. "Fendre, tailler,
+    // percer, poser") — bien plus fiable que d'en déduire depuis la prose du livret INMA.
+    const verbes = fiche && fiche.sfVerbes
+      ? fiche.sfVerbes.split(',').map(v=>v.trim()).filter(Boolean).slice(0,12).map(v=>({ verbe: v.charAt(0).toUpperCase()+v.slice(1), origine:null }))
+      : (etat.voeu.descriptionInma ? extraireVerbesDeTexte(etat.voeu.descriptionInma) : []);
+    const texteMatieres = fiche ? [fiche.matieres, fiche.produits, fiche.outils].filter(Boolean).join(' ') : (etat.voeu.descriptionInma||'');
+    etat.axe1.adaptatif = verbes.length>0;
+    etat.axe1.verbesDisponibles = verbes.length ? verbes : AXE1_GENERIQUES.map(v=>({verbe:v,origine:null}));
+    etat.axe1.matieresCible = extraireMatieresDeTexte(texteMatieres);
+    etat.axe1.cibleChargee = cleCibleAspirations(etat.voeu);
+    sauver();
+    return;
+  }
+  try{
+    const comp = await fetchCompetences(etat.voeu.codeRome);
+    const sf = comp.filter(c=>c.type==='savoir-faire');
+    const vus = new Set(); const verbes = [];
+    for(const c of sf){
+      const v = extraireVerbe(c.libelle);
+      if(v && !vus.has(v.toLowerCase())){ vus.add(v.toLowerCase()); verbes.push({ verbe:v, origine:c.libelle }); }
+      if(verbes.length>=12) break;
+    }
+    etat.axe1.adaptatif = verbes.length>0;
+    etat.axe1.verbesDisponibles = verbes.length ? verbes : AXE1_GENERIQUES.map(v=>({verbe:v,origine:null}));
+    etat.axe1.matieresCible = extraireMatieresCible(comp);
+    etat.axe1.cibleChargee = cleCibleAspirations(etat.voeu);
+  }catch(e){ etat.axe1.adaptatif = false; etat.axe1.verbesDisponibles = AXE1_GENERIQUES.map(v=>({verbe:v,origine:null})); etat.axe1.matieresCible = []; etat.axe1.cibleChargee = null; }
+  sauver();
+}
+function renderVoeuMetierArt(){
+  if(!referentielMetiersArt) return `<div class="field"><label>Quel métier d'art aimeriez-vous exercer, si vous deviez choisir aujourd'hui ? (votre vœu, parmi les 281 activités officielles)</label><div class="empty">Chargement de la liste officielle…</div></div>`;
+  const filtre = normaliser(etat.voeuArtFiltre||'');
+  const domaines = referentielMetiersArt.domaines.map(d=>({
+    id:d.id, nom:d.nom,
+    metiersFiltres: filtre ? d.metiers.filter(m=>normaliser(m).includes(filtre)) : d.metiers,
+  })).filter(d=>d.metiersFiltres.length);
+  return `<div class="field">
+    <label>Quel métier d'art aimeriez-vous exercer, si vous deviez choisir aujourd'hui ? (votre vœu, parmi les 281 activités officielles)</label>
+    ${etat.voeu ? `<div class="card" style="padding:10px 16px;margin-bottom:10px;display:flex;align-items:center;gap:10px;justify-content:space-between"><span><b>${esc(etat.voeu.libelleMetier)}</b> <span style="color:var(--muted);font-size:12px">${etat.voeu.codeRome ? esc(etat.voeu.codeRome) : 'source : INMA (pas de fiche ROME)'}</span></span><button type="button" class="ghostBtn" data-effacer-voeu-art>Changer ✕</button></div>` : ''}
+    <input type="text" id="voeuArtFiltre" placeholder="Filtrer parmi les 281 métiers d'art…" value="${esc(etat.voeuArtFiltre)}" autocomplete="off">
+    ${etat.voeuArtErreur ? `<div style="color:var(--accent-ink);font-size:12.5px;margin-top:6px">${esc(etat.voeuArtErreur)}</div>` : ''}
+    <div style="margin-top:10px;max-height:360px;overflow-y:auto;border:1px solid var(--line);border-radius:12px;padding:6px 10px">
+      ${domaines.length ? domaines.map(d=>{
+        const ouvert = filtre ? true : !!etat.voeuArtOuvert[d.id];
+        return `<div class="accordeon" style="margin:6px 0">
+          <button type="button" class="accordeonHead" data-toggle-domaine="${d.id}"><span>${esc(d.nom)} (${d.metiersFiltres.length})</span><span>${ouvert?'▲':'▼'}</span></button>
+          ${ouvert ? `<div class="accordeonBody"><div class="chips">${d.metiersFiltres.map(m=>`<button type="button" class="chip ${etat.voeu && normaliser(etat.voeu.libelleMetier).includes(normaliser(m))?'on':''}" data-choisir-metier-art="${esc(m)}">${esc(m)}</button>`).join('')}</div></div>` : ''}
+        </div>`;
+      }).join('') : `<div class="empty" style="padding:10px">Aucun métier ne correspond à ce filtre.</div>`}
+    </div>
+  </div>`;
+}
+// Cherche la meilleure correspondance ROME réelle pour un nom de métier d'art. Ne renvoie
+// JAMAIS le premier résultat par défaut : sans mot significatif commun avec la requête, un
+// métier ROME sans rapport (ex. "Ouvrier des voieries urbaines" pour un métier de pavage)
+// serait sinon assigné silencieusement — bug réel signalé et corrigé ici.
+function meilleureCorrespondanceMetierArt(nom, res){
+  const cle = normaliser(nom);
+  const sansVariante = s => normaliser(String(s).replace(/\s*\/\s*\S+/, ''));
+  const exact = res.find(r => normaliser(r.libelle)===cle || normaliser(r.libelleMetier)===cle || sansVariante(r.libelleMetier)===cle);
+  if(exact) return exact;
+  const motsCle = cle.split(/\s+/).filter(m=>m.length>=4);
+  if(!motsCle.length) return null;
+  let meilleur = null, meilleurScore = 0;
+  for(const r of res){
+    const motsR = normaliser(r.libelleMetier).split(/\s+/).filter(m=>m.length>=4);
+    const communs = motsCle.filter(m=>motsR.includes(m)).length;
+    if(communs > meilleurScore){ meilleurScore = communs; meilleur = r; }
+  }
+  return meilleurScore>0 ? meilleur : null;
+}
+// Quand aucune fiche ROME ne correspond à un métier d'art (écart de vocabulaire entre les
+// deux nomenclatures officielles, ex. "Rocailleur" chez l'INMA / "Maçon bâtisseur de pierres
+// sèches" chez France Travail), on ne bloque plus la personne : on poursuit avec la définition
+// du métier telle qu'écrite dans le livret INMA lui-même — jamais une fiche inventée.
+async function choisirVoeuMetierArt(nom){
+  etat.voeuArtErreur = '';
+  render();
+  await chargerFichesDetaillees();
+  const descriptionInma = referentielMetiersArt && referentielMetiersArt.descriptions ? referentielMetiersArt.descriptions[nom] : null;
+  const ficheArt = trouverFicheArt(nom);
+  try{
+    // La table de correspondance ROME/RNCP a été recherchée individuellement, métier par métier
+    // (pas un mot-clé automatique) : on la préfère à toute recherche approximative quand elle
+    // conclut positivement ("Direct" ou "Partiel" avec un vrai code).
+    const codeCure = ficheArt && (ficheArt.niveauCorrespondanceRome==='Direct' || ficheArt.niveauCorrespondanceRome==='Partiel') ? premierCodeRome(ficheArt) : null;
+    if(codeCure){
+      etat.voeuRequeteOriginale = nom;
+      etat.voeu = { libelleMetier: nom, libelle: nom, codeRome: codeCure, ficheArt };
+      etat.axe1.verbesChoisis = []; etat.axe1.verbesDisponibles = null; etat.axe1.adaptatif = false;
+      sauver(); render();
+      await chargerVerbesCible(); render();
+      return;
+    }
+    const res = await rechercherMetiers(nom);
+    const trouve = res.length ? meilleureCorrespondanceMetierArt(nom, res) : null;
+    if(!trouve){
+      if(!descriptionInma && !ficheArt){ etat.voeuArtErreur = `« ${nom} » : aucune fiche ROME ni description disponible pour ce métier — réessayez ou choisissez un autre métier de la liste.`; render(); return; }
+      etat.voeuRequeteOriginale = nom;
+      etat.voeu = { libelleMetier: nom, libelle: nom, codeRome: null, descriptionInma, ficheArt };
+    } else {
+      etat.voeuRequeteOriginale = nom;
+      etat.voeu = { ...trouve, ficheArt };
+    }
+    etat.axe1.verbesChoisis = []; etat.axe1.verbesDisponibles = null; etat.axe1.adaptatif = false;
+    sauver(); render();
+    await chargerVerbesCible(); render();
+  }catch(e){ etat.voeuArtErreur = 'Recherche indisponible (réseau ou limite temporaire) — réessayez dans un instant.'; render(); }
+}
+function renderEtapeAspirations(){
+  const liste1 = etat.axe1.verbesDisponibles && etat.axe1.verbesDisponibles.length ? etat.axe1.verbesDisponibles : AXE1_GENERIQUES.map(v=>({verbe:v,origine:null}));
+  return `
+  ${etat.metierArtMode ? renderVoeuMetierArt() : `
+  <div class="field">
+    <label>Quel métier aimeriez-vous exercer, si vous deviez choisir aujourd'hui ? (votre vœu)</label>
+    <input type="text" id="voeuRecherche" placeholder="ex : Tailleur de pierre, Graphiste, Boulanger…" value="${esc(etat.voeu ? etat.voeu.libelleMetier : etat.voeuRecherche)}" autocomplete="off">
+    ${etat.voeuSuggestions.length ? `<div class="results">${etat.voeuSuggestions.map((s,i)=>`<button type="button" data-voeu-i="${i}">${esc(s.libelle)} <span class="rc">${esc(s.libelleMetier)} · ${s.codeRome}</span></button>`).join('')}</div>` : ''}
+  </div>`}
+
+  <div class="axeCard"><div class="q">« Qu'est-ce que vous voulez faire, concrètement, au jour le jour ? »</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:10px">${etat.axe1.adaptatif ? `À partir des activités réelles de « ${esc(etat.voeu.libelleMetier)} »` : 'Repères généraux — pour orienter la recherche, pas pour la conclure. Choisissez d\'abord un vœu ci-dessus pour des repères tirés de ce métier.'}</div>
+    <div class="chips">${liste1.map(x=>chip(x.verbe, etat.axe1.verbesChoisis.includes(x.verbe), `data-toggle-verbe="${esc(x.verbe)}"`)).join('')}</div>
+
+    <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)">${etat.voeu ? `Ce métier vous plairait peut-être aussi pour...` : 'Ce qui pourrait vous plaire dans un métier, en général :'}</div>
+    ${etat.axe1.matieresCible.length ? `<div style="font-size:12px;color:var(--muted);margin-top:8px">Présent dans la fiche officielle de « ${esc(etat.voeu.libelleMetier)} » :</div>
+    <div class="chips" style="margin-top:6px">${etat.axe1.matieresCible.map(m=>{ const lbl=m.charAt(0).toUpperCase()+m.slice(1); return chip(lbl, etat.axe1.sensoriel.includes(lbl), `data-toggle-sensoriel="${esc(lbl)}"`); }).join('')}</div>` : ''}
+    <div class="chips" style="margin-top:8px">${SENSORIEL_GENERIQUE.map(o=>chip(o, etat.axe1.sensoriel.includes(o), `data-toggle-sensoriel="${esc(o)}"`)).join('')}</div>
+
+    <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)">Comment aimez-vous apprendre un nouveau geste ?</div>
+    <div class="chips" style="margin-top:8px">${MODES_APPRENTISSAGE.map(o=>chip(o, etat.axe1.modesApprentissage.includes(o), `data-toggle-mode-apprentissage="${esc(o)}"`)).join('')}</div>
+  </div>
+
+  <div class="axeCard"><div class="q">« Qu'est-ce qui fait que ce travail compte pour vous ? »</div>
+    <div class="chips">${AXE2A_MOTIF.map(o=>chip(o, etat.axe2.motif.includes(o), `data-toggle-axe="axe2.motif|${esc(o)}"`)).join('')}</div>
+    <div style="margin-top:16px;font-size:13px;color:var(--muted)">Pour qui ou pour quoi voulez-vous que ce travail compte ?</div>
+    <div class="chips" style="margin-top:8px">${AXE2B_DESTINATAIRE.map(o=>chip(o, etat.axe2.destinataire.includes(o), `data-toggle-axe="axe2.destinataire|${esc(o)}"`)).join('')}</div>
+    <div style="margin-top:16px;font-size:13px;color:var(--muted)">À quel rythme voulez-vous que ce travail se présente ?</div>
+    <div class="chips" style="margin-top:8px">${AXE2C_RYTHME.map(o=>chip(o, etat.axe2.rythme.includes(o), `data-toggle-axe="axe2.rythme|${esc(o)}"`)).join('')}</div></div>
+
+  <div class="axeCard"><div class="q">« Dans quelles conditions concrètes avez-vous envie de faire votre travail ? »</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:10px">Trois curseurs indépendants — chacun compte à part, ils n'ont pas besoin de faire 100 % ensemble.</div>
+    <div class="sliderRow"><div class="lbl2"><span>Temps souhaité seul</span><span>${etat.axe3.seul}%</span></div><input type="range" min="0" max="100" value="${etat.axe3.seul}" data-slider="seul"></div>
+    <div class="sliderRow"><div class="lbl2"><span>Temps souhaité en équipe</span><span>${etat.axe3.equipe}%</span></div><input type="range" min="0" max="100" value="${etat.axe3.equipe}" data-slider="equipe"></div>
+    <div class="sliderRow"><div class="lbl2"><span>Temps souhaité avec des clients</span><span>${etat.axe3.clients}%</span></div><input type="range" min="0" max="100" value="${etat.axe3.clients}" data-slider="clients"></div>
+    <div class="chips" style="margin:10px 0">${AXE3_STYLES.map(o=>chip(o, etat.axe3.style===o, `data-style="${esc(o)}"`)).join('')}</div>
+    <div class="chips">${AXE3_CONDITIONS.map(o=>chip(o, etat.axe3.conditions.includes(o), `data-toggle-cond="${esc(o)}"`)).join('')}</div>
+    <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--line);font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)">Qualité de vie au travail</div>
+    ${QVCT_DIMENSIONS.map(d=>`<div style="margin-top:12px"><div style="font-size:13px;color:var(--muted)">${esc(d.q)}</div><div class="chips" style="margin-top:6px">${d.options.map(o=>chip(o, etat.axe3.qvct[d.cle]===o, `data-qvct="${d.cle}|${esc(o)}"`)).join('')}</div></div>`).join('')}
+    <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--line);font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)">Impact environnemental et sociétal perçu</div>
+    <div class="chips" style="margin-top:8px">${RSE_OPTIONS.map(o=>chip(o, etat.axe3.rse.includes(o), `data-toggle-rse="${esc(o)}"`)).join('')}</div>
+  </div>
+
+  <div class="axeCard"><div class="q">« Quels moments avec les autres voulez-vous vivre dans votre travail, et à quelle fréquence ? »</div>
+    ${AXE4_CADENCES.map(g=>`<div style="margin-bottom:14px"><div style="font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:6px">${esc(g.titre)}</div><div class="chips">${g.options.map(o=>chip(o, etat.axe4[g.cle].includes(o), `data-toggle-axe="axe4.${g.cle}|${esc(o)}"`)).join('')}</div></div>`).join('')}
+    <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)">
+      <div style="font-size:13px;color:var(--muted);margin-bottom:6px">Taille de collectif souhaitée</div>
+      <div class="chips">${AXE4_TAILLE.map(o=>chip(o, etat.axe4.tailleCollectif===o, `data-taille-collectif="${esc(o)}"`)).join('')}</div>
+      <div style="font-size:13px;color:var(--muted);margin:12px 0 6px 0">Intensité de la relation client</div>
+      <div class="chips">${AXE4_CLIENT.map(o=>chip(o, etat.axe4.intensiteClient===o, `data-intensite-client="${esc(o)}"`)).join('')}</div>
+      <div class="chips" style="margin-top:12px">${chip("Être consulté·e sur des choix qui concernent mon expertise", etat.axe4.consulte, `data-toggle-consulte`)}</div>
+    </div>
+  </div>
+
+  <div class="disclaimerBox">12MARS ne vous dit pas quel métier vous êtes fait·e pour exercer. Il vous aide à mettre des mots sur ce que vous avez vécu, ce que vous cherchez aujourd'hui et les conditions dans lesquelles vous pourriez avoir envie d'apprendre, de contribuer et de progresser. Vos réponses décrivent des repères et des aspirations du moment ; elles ne mesurent ni votre valeur, ni votre intelligence, ni votre capacité définitive à réussir. Elles évoluent et se vérifient dans l'expérience.</div>
+  <div class="toolbar"><button class="btn" id="btnPrecedent2">← Précédent</button><button class="btn btnPrimary" id="btnSuivant2" ${etat.voeu?'':'disabled'}>Voir mes 3 pistes →</button></div>
+  `;
+}
+
+/* ============================ ÉCRAN DE PRÉPARATION (7 sources) ============================ */
+const SOURCES_PREPARATION = ["ROME (France Travail)","ESCO","O*NET","Ergonomie de l'activité (Clot)","Dreyfus","Maître d'art / Entreprise du Patrimoine Vivant","Skolantreuz"];
+function renderEtapePreparation(){
+  return `<div class="prepWrap">
+    <h3>Nous préparons vos pistes.</h3>
+    <p>Nous mettons en regard ce que vous avez réellement pratiqué, ce que vous souhaitez vivre demain et ce que décrivent différents métiers.</p>
+    <div class="prepList" id="prepList">${SOURCES_PREPARATION.map(s=>`<div class="prepItem"><span class="dot"></span><span>${esc(s)}</span></div>`).join('')}</div>
+    <div class="disclaimerBox" style="max-width:420px;margin:26px auto 0 auto;text-align:left">Ces résultats proposent des pistes. Ils ne décident pas à votre place et doivent être confirmés par la pratique, une rencontre ou une immersion.</div>
+    <a href="https://benevolent-marigold-64a0a1.netlify.app/12mars-donnees-methode" target="_blank" rel="noopener" style="display:inline-block;margin-top:16px;font-size:12.5px;color:var(--muted);text-decoration:underline">Comment cette lecture est-elle construite ?</a>
+  </div>`;
+}
+async function lancerPreparation(){
+  etat.etape = 'preparation'; sauver(); render();
+  const items = [...document.querySelectorAll('#prepList .prepItem')];
+  const calculPromise = calculerPistes();
+  for(let i=0;i<items.length;i++){ items[i].classList.add('on'); await attendre(1300); }
+  await calculPromise;
+  etat.etape = 'pistes'; sauver(); render();
+}
+
+/* ============================ ÉTAPE 3 — 3 PISTES ============================ */
+function motsSignificatifs(libelles){
+  const compte = {};
+  for(const l of libelles){
+    for(const m of normaliser(l).split(/[^a-z0-9]+/)){
+      if(m.length<5 || MOTS_VIDES.has(m)) continue;
+      compte[m] = (compte[m]||0)+1;
+    }
+  }
+  return Object.entries(compte).sort((a,b)=>b[1]-a[1]).map(([m])=>m);
+}
+function attendre(ms){ return new Promise(r=>setTimeout(r,ms)); }
+function choisirCandidat(res, exclu, referentiel){
+  const dispo = res.filter(r=>!exclu.has(r.codeRome));
+  if(!dispo.length) return null;
+  if(etat.metierArtMode && referentiel){
+    const art = dispo.find(r=>calculerStatutMetierArt(r.libelleMetier, referentiel).statut==='repertorie');
+    if(art) return { candidat:art, metierArtTrouve:true };
+  }
+  return { candidat:dispo[0], metierArtTrouve:false };
+}
+async function calculerPistes(){
+  const referentiel = etat.metierArtMode ? await chargerReferentiel() : null;
+  const declares = etat.experiences.flatMap(e=>[...e.comp.savoir,...e.comp['savoir-faire'],...e.comp['savoir-etre']].filter(x=>x.coche).map(x=>x.libelle));
+  const codesExistants = new Set(etat.experiences.map(e=>e.choix.codeRome));
+  let procheExistant = null;
+  let erreurRecherche = false;
+  const motsExp = motsSignificatifs(declares.length?declares:etat.experiences.map(e=>e.choix.libelleMetier));
+  for(const mot of motsExp.slice(0,3)){
+    try{
+      const res = await rechercherMetiers(mot);
+      const choix = choisirCandidat(res, new Set([...codesExistants, etat.voeu.codeRome]), referentiel);
+      if(choix){ procheExistant = { ...choix.candidat, motCle:mot, metierArtTrouve:choix.metierArtTrouve }; break; }
+    }catch(e){ erreurRecherche = true; }
+    await attendre(350);
+  }
+  let procheVoeu = null;
+  await attendre(350);
+  try{
+    const res = await rechercherMetiers(etat.voeuRequeteOriginale || etat.voeu.libelleMetier);
+    const exclu = new Set([etat.voeu.codeRome, ...(procheExistant?[procheExistant.codeRome]:[])]);
+    const choix = choisirCandidat(res, exclu, referentiel);
+    if(choix) procheVoeu = { ...choix.candidat, metierArtTrouve:choix.metierArtTrouve };
+  }catch(e){ erreurRecherche = true; }
+  etat.pistes = { voeu: etat.voeu, procheExistant, procheVoeu, erreurRecherche };
+  sauver();
+}
+function renderEtapePistes(){
+  if(!etat.pistes) return '<div class="empty">Calcul de vos pistes…</div>';
+  const p = etat.pistes;
+  return `
+  <p style="color:var(--muted);font-size:13.5px;margin-top:0">Trois façons différentes d'aborder la suite — aucune n'est meilleure que les autres, choisissez celle que vous voulez explorer en premier.</p>
+  <button type="button" class="pisteCard" data-piste="1"><div class="tag">1 — Votre vœu</div><h3>${esc(p.voeu.libelleMetier)}</h3><p>Le métier que vous avez dit vouloir exercer.</p></button>
+  ${p.procheExistant ? `<button type="button" class="pisteCard" data-piste="2"><div class="tag">2 — Proche de votre expérience</div><h3>${esc(p.procheExistant.libelleMetier)} ${p.procheExistant.metierArtTrouve?'<span class="badge b-repertorie" style="vertical-align:middle">Métiers d\'art</span>':''}</h3><p>Trouvé à partir du mot « ${esc(p.procheExistant.motCle)} », présent dans ce que vous avez coché.</p></button>` : `<div class="pisteCard" style="opacity:.5"><div class="tag">2 — Proche de votre expérience</div><h3>${p.erreurRecherche?'Recherche indisponible':'Non trouvé'}</h3><p>${p.erreurRecherche?'La recherche officielle a échoué (réseau ou limite temporaire) — réessayez dans un instant.':'Aucune piste distincte trouvée automatiquement — cochez davantage d\'éléments dans vos expériences.'}</p></div>`}
+  ${p.procheVoeu ? `<button type="button" class="pisteCard" data-piste="3"><div class="tag">3 — Proche de votre vœu</div><h3>${esc(p.procheVoeu.libelleMetier)} ${p.procheVoeu.metierArtTrouve?'<span class="badge b-repertorie" style="vertical-align:middle">Métiers d\'art</span>':''}</h3><p>Une autre appellation proche de votre souhait, selon la recherche officielle France Travail.</p></button>` : `<div class="pisteCard" style="opacity:.5"><div class="tag">3 — Proche de votre vœu</div><h3>${p.erreurRecherche?'Recherche indisponible':'Non trouvé'}</h3><p>${p.erreurRecherche?'La recherche officielle a échoué (réseau ou limite temporaire) — réessayez dans un instant.':'Aucune autre appellation distincte trouvée pour ce métier.'}</p></div>`}
+  ${p.erreurRecherche && (!p.procheExistant || !p.procheVoeu) ? `<div class="toolbar" style="justify-content:flex-start;gap:10px"><button class="btn" id="btnReessayerPistes">↻ Réessayer le calcul des pistes</button></div>` : ''}
+  <div class="toolbar"><button class="btn" id="btnPrecedent3">← Précédent</button><span></span></div>
+  `;
+}
+
+/* ============================ ÉTAPE 4 — MON PASSAGE ============================ */
+function motsSignificatifsDe(texte){
+  return normaliser(texte).split(/[^a-z0-9]+/).filter(m=>m.length>=5 && !MOTS_VIDES.has(m));
+}
+// Une correspondance exacte (même code, ou libellé rigoureusement identique) reste le cas
+// normal quand les deux côtés viennent de ROME. Mais dès qu'une des deux sources est le
+// référentiel métiers d'art (vocabulaire différent de ROME), une correspondance exacte est
+// presque toujours impossible même pour des métiers très proches (ex. Couvreur → Chaumier,
+// tous deux couverture) — sans repli, "Éléments communs" et la roue tombent à zéro alors que
+// le rapprochement existe bel et bien. On ajoute donc un rapprochement par mots significatifs
+// partagés (seuil : 2 mots d'au moins 5 lettres), explicitement marqué "à vérifier" et non
+// "documenté", pour ne jamais faire passer une hypothèse pour une certitude.
+function comparer(declares, comp){
+  const savoirFaireCible = comp.filter(c=>c.type==='savoir-faire');
+  const cibleTouchee = new Set();
+  const communs = [];
+  const dejaVu = new Set();
+  for(const d of declares){
+    const normD = normaliser(d.libelle);
+    if(dejaVu.has(normD)) continue;
+    let idxExact = comp.findIndex(c => (d.code && c.code_competence && d.code===c.code_competence) || normaliser(c.libelle)===normD);
+    if(idxExact>=0){
+      communs.push({ libelle:d.libelle, exact:true }); dejaVu.add(normD);
+      const idxSf = savoirFaireCible.indexOf(comp[idxExact]); if(idxSf>=0) cibleTouchee.add(idxSf);
+      continue;
+    }
+    const motsD = motsSignificatifsDe(d.libelle);
+    if(!motsD.length) continue;
+    let meilleurIdx = -1, meilleurScore = 0;
+    comp.forEach((c,i)=>{
+      const score = motsSignificatifsDe(c.libelle).filter(m=>motsD.includes(m)).length;
+      if(score > meilleurScore){ meilleurScore = score; meilleurIdx = i; }
+    });
+    if(meilleurScore>=2){
+      communs.push({ libelle:d.libelle, exact:false }); dejaVu.add(normD);
+      const idxSf = savoirFaireCible.indexOf(comp[meilleurIdx]); if(idxSf>=0) cibleTouchee.add(idxSf);
+    }
+  }
+  const aApprendreTous = savoirFaireCible.filter((c,i)=>!cibleTouchee.has(i)).map(c=>c.libelle);
+  const physiques = ['Effort physique','Bruit / poussière','Hauteur','Port de charges'];
+  const aVerifierConditions = etat.axe3.conditions.filter(c=>physiques.includes(c));
+  // Compteurs "X sur Y" volontairement locaux à chaque rubrique (jamais un score ou un
+  // pourcentage global de correspondance au métier — voir cadrage) : juste rendre visible
+  // combien d'éléments sur le total déclaré/décrit sont concernés.
+  return { communs, aApprendre: aApprendreTous.slice(0,6), aApprendreTotal: aApprendreTous.length, savoirFaireCibleTotal: savoirFaireCible.length, aVerifierConditions };
+}
+/* ============================ ÉTAPE 4 — MON OBJECTIF ============================ */
+async function renderEtapeObjectif(){
+  const cible = etat.pisteChoisie===1?etat.pistes.voeu:etat.pisteChoisie===2?etat.pistes.procheExistant:etat.pistes.procheVoeu;
+  if(!cible) return '<div class="empty">Choisissez d\'abord une piste à l\'étape précédente.</div>';
+  const referentiel = await chargerReferentiel();
+  const statutArt = referentiel ? calculerStatutMetierArt(cible.libelleMetier, referentiel) : null;
+  return `
+  <div style="font-size:13px;text-transform:uppercase;letter-spacing:.1em;color:var(--accent-ink);margin-bottom:8px">Votre objectif : ${esc(cible.libelleMetier)}</div>
+  ${statutArt ? `<span class="badge b-${statutArt.statut}">${STATUT_LABELS[statutArt.statut]}</span>` : ''}
+  ${renderParcoursVertical(statutArt)}
+  <div class="toolbar"><button class="btn" id="btnPrecedentObjectif">← Choisir une autre piste</button><button class="btn btnPrimary" id="btnVoirPassage">Voir le détail de cette piste →</button></div>
+  `;
+}
+
+/* ============================ ÉTAPE 5 — MON PASSAGE ============================ */
+// À défaut de fiche ROME, la fiche métier d'art détaillée (activités, savoir-faire, savoirs)
+// fournit une bien meilleure base de comparaison qu'un simple découpage de phrases.
+function comparerDepuisFicheArt(fiche){
+  const champs = [
+    ['actAnalyser','savoir-faire'],['actConcevoir','savoir-faire'],['actPreparer','savoir-faire'],
+    ['actRealiser','savoir-faire'],['actAssembler','savoir-faire'],['actRestaurer','savoir-faire'],
+    ['actGerer','savoir-faire'],['actPresenter','savoir-faire'],
+    ['sfVerbes','savoir-faire'],['sfPrecision','savoir-faire'],['sfTacite','savoir-faire'],
+    ['saMatieres','savoir'],['saHistoire','savoir'],['saDessin','savoir'],['saProcedes','savoir'],['saConservation','savoir'],
+  ];
+  const items = [];
+  for(const [cle,type] of champs){ const v = fiche[cle]; if(v) items.push({ type, libelle:v, code_competence:null }); }
+  return items;
+}
+async function renderEtapePassage(){
+  const cible = etat.pisteChoisie===1?etat.pistes.voeu:etat.pisteChoisie===2?etat.pistes.procheExistant:etat.pistes.procheVoeu;
+  if(!cible) return '<div class="empty">Choisissez d\'abord une piste à l\'étape précédente.</div>';
+  const code = cible.codeRome, nom = cible.libelleMetier;
+  const ficheArt = cible.ficheArt || null;
+  const [compRome, referentiel] = await Promise.all([ code ? fetchCompetences(code) : Promise.resolve([]), chargerReferentiel() ]);
+  // Sans fiche ROME, on utilise en priorité la fiche métier d'art détaillée (activités,
+  // savoir-faire, savoirs réellement distingués) ; à défaut seulement, un découpage de phrases
+  // de la définition du livret INMA — jamais une vraie liste de compétences ROME. Le sourçage
+  // réel reste visible dans "Sources et limites".
+  const comp = code ? compRome : (ficheArt ? comparerDepuisFicheArt(ficheArt) : (cible.descriptionInma ? cible.descriptionInma.split(/(?<=[.!?])\s+/).map(s=>s.trim()).filter(s=>s.length>8).map(libelle=>({ type:'savoir-faire', libelle, code_competence:null })) : []));
+  const statutArt = referentiel ? calculerStatutMetierArt(nom, referentiel) : null;
+  const declaresExperience = etat.experiences.flatMap(e=>[...e.comp.savoir,...e.comp['savoir-faire'],...e.comp['savoir-etre']].filter(x=>x.coche));
+  const declaresDiplomes = etat.diplomes.filter(d=>d.coche).map(d=>({ libelle:d.libelle, code:null }));
+  const declaresVerbes = etat.axe1.verbesChoisis.map(v=>{
+    const origine = (etat.axe1.verbesDisponibles||[]).find(x=>x.verbe===v);
+    return { libelle: origine && origine.origine ? origine.origine : v, code:null };
+  });
+  // Le sensoriel (axe1) n'entre pas dans la comparaison : c'est un signal de "pourquoi ça vous
+  // attire", pas une déclaration de "ce que vous savez faire" — la comparaison directionnelle
+  // reste réservée à l'expérience réelle, aux diplômes et aux verbes d'activité choisis.
+  const declares = [...declaresExperience, ...declaresVerbes, ...declaresDiplomes];
+  const cmp = comparer(declares, comp);
+  const statutPiste = cmp.communs.length>=2 ? 'Piste proche à vérifier' : (cmp.communs.length===1 ? 'Piste à construire' : 'Piste de découverte');
+  const phrase = cmp.communs.length
+    ? `Vous pourriez explorer <b>${esc(nom)}</b> : vous avez déjà déclaré « ${esc(cmp.communs[0].libelle)} », un point commun ${cmp.communs[0].exact?'':'probable '}avec ce métier.`
+    : `Vous pourriez explorer <b>${esc(nom)}</b> — aucune correspondance automatique évidente avec ce que vous avez coché, ce qui n'exclut rien : à vérifier avec un professionnel.`;
+  const goulots = GOULOTS[code] || (ficheArt && ficheArt.sfTacite ? [`${ficheArt.sfTacite} — hypothèse sourcée du référentiel métiers d'art, à valider par un professionnel.`] : ["Aucune compétence-goulot rédigée pour ce métier à ce jour — à vérifier avec un professionnel avant de s'engager."]);
+  const rythme = RYTHME[code] || null;
+  const envTravail = ficheArt ? [ficheArt.ctxStructure, ficheArt.ctxCollectif, ficheArt.ctxCadences, ficheArt.ctxRisques, ficheArt.ctxCommande].filter(Boolean) : [];
+  const depart = etat.experiences.length===1 ? etat.experiences[0].choix.libelleMetier : 'Votre expérience';
+  const ctx = { code, nom, comp, cmp, statutArt, statutPiste, phrase, goulots, rythme, declares, ficheArt };
+
+  return `
+  <div style="font-size:13px;text-transform:uppercase;letter-spacing:.1em;color:var(--accent-ink);margin-bottom:8px">Votre passage vers ${esc(nom)}</div>
+  ${statutArt ? `<span class="badge b-${statutArt.statut}">${STATUT_LABELS[statutArt.statut]}</span>` : ''}<span class="stPiste">${statutPiste}</span>
+
+  <div class="passageGrid">
+    <div class="passageCol">
+      <div class="orbitWrap">
+        <div class="orbitStage">
+          <svg class="orbitPath" viewBox="0 0 1000 220" preserveAspectRatio="none"><path d="M80,120 C300,30 700,30 920,120" stroke="var(--line)" stroke-width="2" fill="none"/></svg>
+          <div class="orbCenter dep" style="left:0">${esc(depart)}<span class="sub">Départ</span></div>
+          <button class="orbStep" style="left:28%;top:108px;background:#fff">Déjà là<br><span style="font-weight:400">${cmp.communs.length||0}</span></button>
+          <button class="orbStep" style="left:50%;top:58px;background:#fff">À apprendre<br><span style="font-weight:400">${cmp.aApprendre.length||0}</span></button>
+          <button class="orbStep" style="left:72%;top:108px;background:#fff">À vérifier<br><span style="font-weight:400">${cmp.aVerifierConditions.length||0}</span></button>
+          <div class="orbCenter cib" style="left:100%">${esc(nom)}<span class="sub">Cible</span></div>
+        </div>
+      </div>
+      <div class="phraseCentrale">${phrase}</div>
+    </div>
+    <div class="passageCol">${renderCalques(ctx)}</div>
+  </div>
+
+  <div class="passageGrid">
+    <div class="passageCol">
+      <div class="zRow"><div class="k"><span class="kIcon kIcon-ok">✓</span>Éléments communs<span class="kCount">${cmp.communs.length} sur ${declares.length} déclarés</span></div><div>${cmp.communs.length?`<ul>${cmp.communs.map(c=>`<li>${esc(c.libelle)} ${c.exact?`<span class="st st-doc">déclaré + documenté ${code?'ROME':(ficheArt?'référentiel métiers d\'art':'INMA')}</span>`:`<span class="st st-verif">rapprochement probable, à vérifier</span>`}</li>`).join('')}</ul>`:'Aucun élément commun trouvé automatiquement.'}</div></div>
+      <div class="zRow"><div class="k"><span class="kIcon kIcon-dev">↗</span>Apprentissages à développer<span class="kCount">${cmp.aApprendreTotal} sur ${cmp.savoirFaireCibleTotal} savoir-faire</span></div><div><ul>${cmp.aApprendre.map(c=>`<li>${esc(c)} <span class="st st-verif">à vérifier</span></li>`).join('')||'<li>Non disponible</li>'}</ul>${cmp.aApprendreTotal>cmp.aApprendre.length?`<div class="fixedNote">${cmp.aApprendreTotal-cmp.aApprendre.length} autre(s) non affiché(s) ici.</div>`:''}</div></div>
+      <div class="zRow"><div class="k"><span class="kIcon kIcon-warn">⚠</span>Compétences-goulots</div><div><ul>${goulots.map(g=>`<li>${esc(g)}</li>`).join('')}</ul></div></div>
+      ${ficheArt ? `<div class="zRow"><div class="k">Environnement de travail</div><div>${envTravail.length?`<ul>${envTravail.map(e=>`<li>${esc(e)} <span class="st st-hyp">référentiel métiers d'art</span></li>`).join('')}</ul>`:'Non renseigné pour ce métier.'}</div></div>` : ''}
+      <div class="zRow"><div class="k">Diplômes</div><div>${declaresDiplomes.length?declaresDiplomes.map(d=>`${esc(d.libelle)} <span class="st st-doc">déclaré</span>`).join(', '):'Aucun diplôme déclaré coché à l\'étape Mon expérience.'}</div></div>
+      <div class="zRow"><div class="k">Conditions à vérifier</div><div>${cmp.aVerifierConditions.length?cmp.aVerifierConditions.map(esc).join(', '):'Aucune contrainte physique particulière déclarée.'} <span class="st st-doc">déclaré</span></div></div>
+      <div class="zRow"><div class="k">Sources et limites</div><div>${code ? `France Travail ROME 4.0 (${code}), ${comp.length} éléments en cache.` : (ficheArt ? `Pas de fiche ROME pour ce métier — ${comp.length} éléments issus de la fiche détaillée du référentiel métiers d'art (activités, savoir-faire, savoirs), pas une vraie liste de compétences ROME.` : `Pas de fiche ROME pour ce métier — ${comp.length} phrases extraites de la définition officielle de l'Institut des Métiers d'Art (INMA), pas une vraie liste de compétences ROME.`)} ${statutArt?'Référentiel métiers d\'art V2 (livret INMA officiel).':'Référentiel métiers d\'art non chargé.'}${ficheArt?` Correspondance ROME/RNCP et fiche détaillée : recherche individuelle par métier — ${esc(ficheArt.statut)}.`:''} Comparaison par rapprochement de codes/mots-clés, jamais un score global. <a href="https://benevolent-marigold-64a0a1.netlify.app/12mars-donnees-methode" target="_blank" rel="noopener">Comment cette lecture est-elle construite ?</a></div></div>
+    </div>
+    <div class="passageCol">${renderRoue(nom, (!code && ficheArt) ? classerRoueDepuisFiche(ficheArt) : classerRoue(comp), declares, code, ficheArt)}</div>
+  </div>
+
+  <div class="zRow" style="margin-top:26px;padding-top:22px;border-top:1px solid var(--line)"><div class="k">Repère de parcours</div><div class="repere">${rythme || "Nous pouvons décrire les apprentissages à prévoir, mais nous ne disposons pas encore de données assez solides pour proposer un ordre de grandeur utile."}<div class="fixedNote">Cette estimation est un repère de parcours, pas une promesse. Elle doit être confirmée par une mise en situation et un positionnement avec un professionnel.</div></div></div>
+
+  <div class="toolbar"><button class="btn" id="btnPrecedent4">← Revoir mon objectif</button><button class="btn" id="btnRecommencer">Recommencer</button></div>
+  `;
+}
+
+/* ============================ MOTEUR DE RENDU + ÉVÉNEMENTS ============================ */
+let etapePrecedenteRendue = null;
+async function render(){
+  renderSteps();
+  const app = document.getElementById('app');
+  // Préserve le focus et la position du curseur : sans ça, retaper vite dans un champ de
+  // recherche pendant qu'un render() (debounce) reconstruit le DOM fait perdre le focus et
+  // "avale" les lettres tapées après coup — bug réel signalé, reproduit et corrigé ici.
+  const actif = document.activeElement;
+  const gardeFocus = actif && (actif.id==='expRecherche' || actif.id==='voeuRecherche' || actif.id==='voeuArtFiltre');
+  const idFocus = gardeFocus ? actif.id : null;
+  const selStart = gardeFocus ? actif.selectionStart : null;
+  const selEnd = gardeFocus ? actif.selectionEnd : null;
+
+  // Un changement d'étape doit remonter en haut de page (sinon l'écran "Nous préparons vos
+  // pistes" ou une nouvelle étape apparaît hors champ si on avait scrollé plus bas). Un simple
+  // clic à l'intérieur d'une même étape (calques, roue, accordéons...) reconstruit tout le DOM
+  // de #app et ne doit PAS faire sauter la page — on restaure alors la position exacte.
+  const changementEtape = etapePrecedenteRendue !== etat.etape;
+  etapePrecedenteRendue = etat.etape;
+  const scrollAvant = window.scrollY;
+  document.querySelector('.wrap').classList.toggle('wrapWide', etat.etape==='passage');
+
+  if(etat.etape==='accueil') app.innerHTML = renderEtapeAccueil();
+  else if(etat.etape==='experience') app.innerHTML = renderEtapeExperience();
+  else if(etat.etape==='aspirations'){
+    app.innerHTML = renderEtapeAspirations();
+    if(etat.voeu && etat.axe1.cibleChargee!==cleCibleAspirations(etat.voeu)) chargerVerbesCible().then(render);
+    if(etat.metierArtMode && !referentielMetiersArt) chargerReferentiel().then(render);
+    if(etat.metierArtMode && !fichesMetiersArt) chargerFichesDetaillees().then(render);
+  }
+  else if(etat.etape==='preparation') app.innerHTML = renderEtapePreparation();
+  else if(etat.etape==='pistes') app.innerHTML = renderEtapePistes();
+  else if(etat.etape==='objectif'){ app.innerHTML = '<div class="empty">Préparation de votre objectif…</div>'; app.innerHTML = await renderEtapeObjectif(); }
+  else if(etat.etape==='passage'){ app.innerHTML = '<div class="empty">Préparation de votre passage…</div>'; app.innerHTML = await renderEtapePassage(); }
+  wireEvents();
+
+  if(idFocus){
+    const el = document.getElementById(idFocus);
+    if(el){ el.focus(); try{ el.setSelectionRange(selStart, selEnd); }catch(e){} }
+  }
+  if(changementEtape) window.scrollTo(0,0); else window.scrollTo(0, scrollAvant);
+}
+function wireEvents(){
+  const app = document.getElementById('app');
+  app.querySelectorAll('[data-porte]').forEach(b=>b.addEventListener('click', ()=>{ etat.metierArtMode = b.dataset.porte==='art'; etat.etape='experience'; sauver(); render(); }));
+  const expInput = document.getElementById('expRecherche');
+  if(expInput) expInput.addEventListener('input', ()=>{
+    etat.expRecherche = expInput.value; clearTimeout(expTimer);
+    if(expInput.value.trim().length<2){ etat.expSuggestions=[]; render(); return; }
+    expTimer = setTimeout(async ()=>{ try{ etat.expSuggestions = (await rechercherMetiers(expInput.value)).slice(0,8); }catch(e){ etat.expSuggestions=[]; } render(); }, 300);
+  });
+  const voeuInput = document.getElementById('voeuRecherche');
+  if(voeuInput) voeuInput.addEventListener('input', ()=>{
+    etat.voeu = null; etat.voeuRecherche = voeuInput.value; clearTimeout(expTimer);
+    if(voeuInput.value.trim().length<2){ etat.voeuSuggestions=[]; render(); return; }
+    expTimer = setTimeout(async ()=>{ try{ etat.voeuSuggestions = (await rechercherMetiers(voeuInput.value)).slice(0,8); }catch(e){ etat.voeuSuggestions=[]; } render(); }, 300);
+  });
+  const voeuArtInput = document.getElementById('voeuArtFiltre');
+  if(voeuArtInput) voeuArtInput.addEventListener('input', ()=>{ etat.voeuArtFiltre = voeuArtInput.value; render(); });
+  app.querySelectorAll('[data-toggle-domaine]').forEach(b=>b.addEventListener('click', ()=>{ const id=b.dataset.toggleDomaine; etat.voeuArtOuvert[id]=!etat.voeuArtOuvert[id]; render(); }));
+  app.querySelectorAll('[data-choisir-metier-art]').forEach(b=>b.addEventListener('click', ()=>choisirVoeuMetierArt(b.dataset.choisirMetierArt)));
+  app.querySelectorAll('[data-effacer-voeu-art]').forEach(b=>b.addEventListener('click', ()=>{ etat.voeu=null; etat.axe1.verbesChoisis=[]; etat.axe1.verbesDisponibles=null; etat.axe1.adaptatif=false; sauver(); render(); }));
+  app.querySelectorAll('[data-i]').forEach(b=>b.addEventListener('click', ()=>ajouterExperience(etat.expSuggestions[+b.dataset.i])));
+  app.querySelectorAll('[data-voeu-i]').forEach(b=>b.addEventListener('click', ()=>{
+    etat.voeuRequeteOriginale = etat.voeuRecherche; etat.voeu = etat.voeuSuggestions[+b.dataset.voeuI]; etat.voeuSuggestions=[];
+    etat.axe1.verbesChoisis = []; etat.axe1.verbesDisponibles = null; etat.axe1.adaptatif = false;
+    sauver(); render();
+    chargerVerbesCible().then(render);
+  }));
+  app.querySelectorAll('[data-toggle-verbe]').forEach(b=>b.addEventListener('click', ()=>{ const v=b.dataset.toggleVerbe; const i=etat.axe1.verbesChoisis.indexOf(v); if(i>=0) etat.axe1.verbesChoisis.splice(i,1); else etat.axe1.verbesChoisis.push(v); sauver(); render(); }));
+  app.querySelectorAll('[data-toggle-sensoriel]').forEach(b=>b.addEventListener('click', ()=>{ const v=b.dataset.toggleSensoriel; const i=etat.axe1.sensoriel.indexOf(v); if(i>=0) etat.axe1.sensoriel.splice(i,1); else etat.axe1.sensoriel.push(v); sauver(); render(); }));
+  app.querySelectorAll('[data-toggle-mode-apprentissage]').forEach(b=>b.addEventListener('click', ()=>{ const v=b.dataset.toggleModeApprentissage; const i=etat.axe1.modesApprentissage.indexOf(v); if(i>=0) etat.axe1.modesApprentissage.splice(i,1); else etat.axe1.modesApprentissage.push(v); sauver(); render(); }));
+  app.querySelectorAll('[data-qvct]').forEach(b=>b.addEventListener('click', ()=>{ const [cle,val]=b.dataset.qvct.split('|'); etat.axe3.qvct[cle] = etat.axe3.qvct[cle]===val ? '' : val; sauver(); render(); }));
+  app.querySelectorAll('[data-toggle-rse]').forEach(b=>b.addEventListener('click', ()=>{ const v=b.dataset.toggleRse; const i=etat.axe3.rse.indexOf(v); if(i>=0) etat.axe3.rse.splice(i,1); else etat.axe3.rse.push(v); sauver(); render(); }));
+  app.querySelectorAll('[data-taille-collectif]').forEach(b=>b.addEventListener('click', ()=>{ etat.axe4.tailleCollectif = etat.axe4.tailleCollectif===b.dataset.tailleCollectif ? '' : b.dataset.tailleCollectif; sauver(); render(); }));
+  app.querySelectorAll('[data-intensite-client]').forEach(b=>b.addEventListener('click', ()=>{ etat.axe4.intensiteClient = etat.axe4.intensiteClient===b.dataset.intensiteClient ? '' : b.dataset.intensiteClient; sauver(); render(); }));
+  app.querySelectorAll('[data-toggle-consulte]').forEach(b=>b.addEventListener('click', ()=>{ etat.axe4.consulte = !etat.axe4.consulte; sauver(); render(); }));
+  app.querySelectorAll('[data-retirer]').forEach(b=>b.addEventListener('click', ()=>{ etat.experiences.splice(+b.dataset.retirer,1); sauver(); render(); }));
+  app.querySelectorAll('[data-toggle]').forEach(b=>b.addEventListener('click', ()=>{ const [ei,cle]=b.dataset.toggle.split('|'); etat.experiences[+ei].ouvert[cle]=!etat.experiences[+ei].ouvert[cle]; render(); }));
+  app.querySelectorAll('[data-check]').forEach(b=>b.addEventListener('change', ()=>{ const [ei,cle,i]=b.dataset.check.split('|'); etat.experiences[+ei].comp[cle][+i].coche = b.checked; sauver(); }));
+  app.querySelectorAll('[data-tout-cocher]').forEach(b=>b.addEventListener('change', ()=>{ const [ei,cle]=b.dataset.toutCocher.split('|'); etat.experiences[+ei].comp[cle].forEach(it=>it.coche=b.checked); sauver(); render(); }));
+  app.querySelectorAll('[data-anciennete]').forEach(sel=>sel.addEventListener('change', ()=>{ etat.experiences[+sel.dataset.anciennete].anciennete = sel.value; sauver(); }));
+  app.querySelectorAll('[data-check-diplome]').forEach(b=>b.addEventListener('change', ()=>{ etat.diplomes[+b.dataset.checkDiplome].coche = b.checked; sauver(); }));
+  const tcd = document.querySelector('[data-tout-cocher-diplome]'); if(tcd) tcd.addEventListener('change', ()=>{ etat.diplomes.forEach(d=>d.coche=tcd.checked); sauver(); render(); });
+  const bad = document.getElementById('btnAjouterDiplomeAutre');
+  if(bad) bad.addEventListener('click', ()=>{
+    const inp = document.getElementById('diplomeAutreInput');
+    const val = inp.value.trim();
+    if(!val) return;
+    if(!etat.diplomes.some(d=>normaliser(d.libelle)===normaliser(val))) etat.diplomes.push({ libelle:val, coche:true, sources:['ajout manuel'] });
+    sauver(); render();
+  });
+  const s1 = document.getElementById('btnSuivant1'); if(s1) s1.addEventListener('click', ()=>{ etat.etape='aspirations'; sauver(); render(); });
+  app.querySelectorAll('[data-toggle-axe]').forEach(b=>b.addEventListener('click', ()=>{
+    const [chemin,val] = b.dataset.toggleAxe.split('|');
+    const [axe,sousCle] = chemin.split('.');
+    const list = sousCle ? etat[axe][sousCle] : etat[axe];
+    const i = list.indexOf(val); if(i>=0) list.splice(i,1); else list.push(val);
+    sauver(); render();
+  }));
+  app.querySelectorAll('[data-toggle-cond]').forEach(b=>b.addEventListener('click', ()=>{ const v=b.dataset.toggleCond; const i=etat.axe3.conditions.indexOf(v); if(i>=0) etat.axe3.conditions.splice(i,1); else etat.axe3.conditions.push(v); sauver(); render(); }));
+  app.querySelectorAll('[data-style]').forEach(b=>b.addEventListener('click', ()=>{ etat.axe3.style=b.dataset.style; sauver(); render(); }));
+  app.querySelectorAll('[data-slider]').forEach(el=>el.addEventListener('input', ()=>{ etat.axe3[el.dataset.slider]=+el.value; sauver(); el.previousElementSibling.lastElementChild.textContent=el.value+'%'; }));
+  const p2 = document.getElementById('btnPrecedent2'); if(p2) p2.addEventListener('click', ()=>{ etat.etape='experience'; sauver(); render(); });
+  const s2 = document.getElementById('btnSuivant2'); if(s2) s2.addEventListener('click', ()=>{ etat.pistes=null; lancerPreparation(); });
+  app.querySelectorAll('[data-piste]').forEach(b=>b.addEventListener('click', ()=>{ etat.pisteChoisie = +b.dataset.piste; etat.etape='objectif'; sauver(); render(); }));
+  const p3 = document.getElementById('btnPrecedent3'); if(p3) p3.addEventListener('click', ()=>{ etat.etape='aspirations'; sauver(); render(); });
+  const rp = document.getElementById('btnReessayerPistes'); if(rp) rp.addEventListener('click', async ()=>{ etat.pistes=null; render(); await calculerPistes(); render(); });
+  const po = document.getElementById('btnPrecedentObjectif'); if(po) po.addEventListener('click', ()=>{ etat.etape='pistes'; sauver(); render(); });
+  const vp = document.getElementById('btnVoirPassage'); if(vp) vp.addEventListener('click', ()=>{ etat.etape='passage'; sauver(); render(); });
+  const p4 = document.getElementById('btnPrecedent4'); if(p4) p4.addEventListener('click', ()=>{ etat.etape='objectif'; sauver(); render(); });
+  const br = document.getElementById('btnRecommencer'); if(br) br.addEventListener('click', ()=>{ if(confirm('Recommencer depuis le début ? Vos réponses actuelles seront effacées.')){ localStorage.removeItem(CLE_LOCAL); location.reload(); } });
+  app.querySelectorAll('[data-niveau-vertical]').forEach(b=>b.addEventListener('click', ()=>{ etat.niveauChoisi=+b.dataset.niveauVertical; sauver(); render(); }));
+  app.querySelectorAll('[data-calque]').forEach(b=>b.addEventListener('click', ()=>{ etat.calqueActif=b.dataset.calque; sauver(); render(); }));
+  app.querySelectorAll('[data-quart]').forEach(b=>b.addEventListener('click', ()=>{ etat.quartActif=b.dataset.quart; sauver(); render(); }));
+}
+render();
+</script>
+</body>
+</html>
