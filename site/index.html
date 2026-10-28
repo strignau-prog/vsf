@@ -184,18 +184,18 @@ footer strong { color: var(--fg); font-weight: 800; text-transform: uppercase; }
 
 <header class="nav">
   <div class="nav-in">
-    <a class="brand pop" href="#haut">VRAI-SAVOIRFAIRE</a>
+    <a class="brand pop" href="./">VRAI-SAVOIRFAIRE</a>
     <nav class="menu" id="menu" aria-label="Menu principal">
-      <a class="pop" href="#manifeste">Le manifeste</a>
-      <a class="pop" href="#puissance">La puissance</a>
-      <a class="pop" href="#collectifs">Collectifs</a>
-      <a class="pop" href="#travailleurs">Travailleurs</a>
-      <a class="pop m-only" href="#travailleurs" data-open="login">Connexion</a>
-      <a class="pop m-only" href="#travailleurs" data-open="signup">Créer mon compte</a>
+      <a class="pop" href="manifeste.html" data-p="manifeste">Le manifeste</a>
+      <a class="pop" href="puissance.html" data-p="puissance">La puissance</a>
+      <a class="pop" href="collectifs.html" data-p="collectifs">Collectifs</a>
+      <a class="pop" href="travailleurs.html" data-p="travailleurs">Travailleurs</a>
+      <a class="pop m-only" href="connexion.html?mode=connexion">Connexion</a>
+      <a class="pop m-only" href="connexion.html">Créer mon compte</a>
     </nav>
     <div class="nav-right">
-      <a class="pop login" href="#travailleurs" data-open="login">Connexion</a>
-      <a class="btn" href="#travailleurs" data-open="signup">Créer mon compte</a>
+      <a class="pop login" href="connexion.html?mode=connexion">Connexion</a>
+      <a class="btn" href="connexion.html">Créer mon compte</a>
       <button class="toggle" id="toggle" aria-expanded="false" aria-controls="menu">Menu</button>
     </div>
   </div>
@@ -225,18 +225,11 @@ footer strong { color: var(--fg); font-weight: 800; text-transform: uppercase; }
       <div class="in">
         <p class="label">Collectifs</p>
         <h2>Moins de tâches inutiles, plus de métier.</h2>
-        <p class="lead">Le <a class="tl pop" href="#puissance">diagnostic VRAI-SAVOIRFAIRE</a> cartographie vos indicateurs de performance et les compétences clés qui vont avec. Puis deux outils faits sur mesure : un <a class="tl pop" href="#puissance">ERP</a> qui avale vos tâches chronophages sans valeur, et un outil vivant qui fait progresser chacun dans votre équipe.</p>
+        <p class="lead">Le <a class="tl pop" href="puissance.html">diagnostic VRAI-SAVOIRFAIRE</a> cartographie vos indicateurs de performance et les compétences clés qui vont avec. Puis deux outils faits sur mesure : un <a class="tl pop" href="puissance.html">ERP</a> qui avale vos tâches chronophages sans valeur, et un outil vivant qui fait progresser chacun dans votre équipe.</p>
         <div class="actions">
-          <button class="btn btn-lg" id="btn-ent" aria-expanded="false" aria-controls="panel-ent">Découvrir en détail +</button>
-          <a class="link pop" href="#haut">Demander une démonstration →</a>
-        </div>
-        <div class="panel" id="panel-ent" hidden>
-          <ul class="list">
-            <li><h3>Un diagnostic de votre organisation</h3><p>Une cartographie de vos processus et soixante questions pour situer votre pratique de l’apprentissage en situation.</p></li>
-            <li><h3>Une cartographie tableau de bord, votre référentiel métier et formation</h3></li>
-            <li><h3>Un outil d’atelier au quotidien</h3><p>Devis, planning, stock et équipe, reliés au même référentiel de situations.</p></li>
-          </ul>
-        </div>
+          <a class="btn btn-lg" href="collectifs.html">Découvrir en détail →</a>
+          <a class="link pop" href="mailto:contact@vraisavoirfaire.fr?subject=Demande%20de%20d%C3%A9monstration">Demander une démonstration →</a>
+
       </div>
     </section>
 
@@ -246,42 +239,10 @@ footer strong { color: var(--fg); font-weight: 800; text-transform: uppercase; }
       <div class="in">
         <p class="label">Travailleurs</p>
         <h2>Trouvez un métier qui compte. Gardez-en la preuve.</h2>
-        <p class="lead">Explorez des métiers manuels, voyez ce qu’ils demandent vraiment, construisez votre parcours. Vos preuves vous suivent toute la vie, dans votre <a class="tl pop" href="#puissance">coffre-fort</a> personnel.</p>
+        <p class="lead">Explorez des métiers manuels, voyez ce qu’ils demandent vraiment, construisez votre parcours. Vos preuves vous suivent toute la vie, dans votre <a class="tl pop" href="puissance.html">coffre-fort</a> personnel.</p>
         <div class="actions">
-          <button class="btn btn-lg" id="btn-signup" aria-expanded="false" aria-controls="panel-signup">Créer mon compte →</button>
-          <button class="btn btn-lg" id="btn-login" aria-expanded="false" aria-controls="panel-login" style="border-bottom-color:transparent;text-decoration:underline;text-decoration-thickness:3px;text-underline-offset:0.3rem">Connexion</button>
-          <button class="link" id="btn-trav" aria-expanded="false" aria-controls="panel-trav" style="background:none;border:0;padding:0;cursor:pointer;color:var(--fg)">Découvrir en détail +</button>
-        </div>
-
-        <div class="panel" id="panel-trav" hidden>
-          <ul class="list">
-            <li><h3>La constellation des métiers proches</h3><p>Pour chaque métier, ceux qui lui ressemblent par le savoir-faire, même pour une transition improbable.</p></li>
-            <li><h3>L’outil de reconversion</h3><p>Votre point de départ, votre métier visé, trois pistes et un plan réaliste.</p></li>
-            <li><h3>Des parcours personnalisés</h3><p>Des modules à suivre en autonomie, situation par situation, à votre rythme.</p></li>
-            <li><h3>Le traçage des preuves, toute la vie</h3><p>Photos, documents et retours rangés dans votre coffre-fort, validés par des personnes en situation réelle. Jamais vendus, consultables et effaçables à tout moment.</p></li>
-          </ul>
-        </div>
-
-        <div class="panel" id="panel-signup" hidden>
-          <form id="form-signup" novalidate>
-            <p class="label" style="margin-bottom:0.5rem">Étape 1 — Inscription</p>
-            <div class="field"><input id="s-prenom" type="text" placeholder="Prénom" autocomplete="given-name" aria-label="Prénom"></div>
-            <div class="field"><input id="s-nom" type="text" placeholder="Nom" autocomplete="family-name" aria-label="Nom"></div>
-            <div class="field"><input id="s-contact" type="text" placeholder="Téléphone ou e-mail" autocomplete="email" aria-label="Téléphone ou e-mail"></div>
-            <p class="help">Aucune autre information n’est demandée à ce stade. Pas d’employeur à indiquer, pas de métier à préciser.</p>
-            <div class="actions" style="margin-top:1.75rem"><button class="btn btn-lg" type="submit">Recevoir mon code →</button></div>
-            <p class="done" id="done-signup" hidden><b>Maquette</b>Ici, un code à transmettre à votre atelier s’afficherait.</p>
-          </form>
-        </div>
-
-        <div class="panel" id="panel-login" hidden>
-          <form id="form-login" novalidate>
-            <p class="label" style="margin-bottom:0.5rem">Connexion</p>
-            <div class="field"><input id="l-contact" type="text" placeholder="Téléphone ou e-mail" autocomplete="username" aria-label="Téléphone ou e-mail"></div>
-            <div class="field"><input id="l-code" type="text" placeholder="Votre code" autocomplete="one-time-code" aria-label="Votre code"></div>
-            <div class="actions" style="margin-top:1.75rem"><button class="btn btn-lg" type="submit">Me connecter →</button></div>
-            <p class="done" id="done-login" hidden><b>Maquette</b>Ici, vous arriveriez sur votre passeport compétences.</p>
-          </form>
+          <a class="btn btn-lg" href="connexion.html">Créer mon compte →</a>
+          <a class="link pop" href="travailleurs.html">Découvrir en détail →</a>
         </div>
       </div>
     </section>
@@ -625,7 +586,7 @@ footer strong { color: var(--fg); font-weight: 800; text-transform: uppercase; }
 <text x="368" y="316" text-anchor="start" fill="#444" stroke="none" font-weight="400" font-size="14" style="font-family:inherit">d’apprendre.</text>
 </svg></div>
     
-    <p class="lead" style="margin-top:2rem">Deux outils portent cette philosophie au quotidien : <a class="tl pop" href="#puissance">Maurice</a>, l’ERP d’atelier, et <a class="tl pop" href="#puissance">Thérèse</a>, qui accompagne l’apprentissage avant et après chaque chantier.</p>
+    <p class="lead" style="margin-top:2rem">Deux outils portent cette philosophie au quotidien : <a class="tl pop" href="puissance.html">Maurice</a>, l’ERP d’atelier, et <a class="tl pop" href="puissance.html">Thérèse</a>, qui accompagne l’apprentissage avant et après chaque chantier.</p>
 
 
     <p class="sub-label">La mécanique du Beau</p>
@@ -647,23 +608,6 @@ footer strong { color: var(--fg); font-weight: 800; text-transform: uppercase; }
     </div>
 
     <p class="sign">VRAI-SAVOIRFAIRE.<span>L’excellence. La base.</span></p>
-  </section>
-
-  <section class="sec" id="puissance">
-    <p class="label">La puissance</p>
-    <h2>Tout ce qu’il y a derrière.</h2>
-    <ul class="list" style="margin-top:2.5rem">
-      <li><h3>Le métier vu de l’intérieur</h3><p>La base emploi de France Travail, enrichie de six autres sources, devient une vision du métier : ce qu’il exige, ce qu’il fait vivre, ce qui le rend rare.</p></li>
-      <li><h3>La constellation des métiers par proximité</h3><p>Pour chaque métier, les métiers proches par le savoir-faire, même pour une transition improbable.</p></li>
-      <li><h3>L’outil de reconversion</h3><p>De votre métier actuel à votre métier visé : un état des lieux, trois pistes, un plan.</p></li>
-      <li><h3>La cartographie métier sous l’angle de la performance du savoir-faire</h3><p>Vos processus, vos indicateurs de qualité, de délai et d’efficience, et les compétences clés associées.</p></li>
-      <li><h3>L’intégration des 281 métiers d’art</h3><p>Le socle de départ : les métiers d’art, décrits un à un et intégrés progressivement.</p></li>
-      <li><h3>L’ERP Maurice pour TPE et PME</h3><p>Devis, planning, stock et équipe, adaptés à votre activité.</p></li>
-      <li><h3>Le référentiel métier et formation animé par Thérèse</h3><p>Des situations de travail réelles, avec Thérèse qui vous pose quelques questions avant et après chaque chantier.</p></li>
-      <li><h3>L’apprentissage à partir de la situation de travail</h3><p>Une intention avant, un échange après, des preuves tout au long. Les niveaux sont validés par des personnes, jamais par un score.</p></li>
-      <li><h3>Les comptes coffre-fort des travailleurs</h3><p>Votre passeport compétences vous appartient. Il garde vos preuves et vous suit d’un employeur à l’autre.</p></li>
-      <li><h3>Plusieurs entreprises, un même cadre<span class="tag">Prévu</span></h3><p>Pour une franchise, un établissement ou une fédération qui regroupe des entreprises.</p></li>
-    </ul>
   </section>
 
   <footer>
@@ -727,31 +671,6 @@ footer strong { color: var(--fg); font-weight: 800; text-transform: uppercase; }
   });
   go(0); restart();
 
-  /* Panneaux dépliables */
-  var panels = {
-    ent: ['#btn-ent', '#panel-ent'],
-    trav: ['#btn-trav', '#panel-trav'],
-    signup: ['#btn-signup', '#panel-signup'],
-    login: ['#btn-login', '#panel-login']
-  };
-  function setPanel(key, open) {
-    var b = $(panels[key][0]), p = $(panels[key][1]);
-    p.hidden = !open; b.setAttribute('aria-expanded', String(open));
-    if (key === 'ent' || key === 'trav') b.textContent = open ? 'Réduire −' : 'Découvrir en détail +';
-  }
-  var travGroup = ['trav', 'signup', 'login'];
-  function openOnly(key) { travGroup.forEach(function (k) { setPanel(k, k === key); }); }
-  $('#btn-ent').addEventListener('click', function () { setPanel('ent', $('#panel-ent').hidden); });
-  travGroup.forEach(function (k) {
-    $(panels[k][0]).addEventListener('click', function () {
-      if (!$(panels[k][1]).hidden) { setPanel(k, false); } else { openOnly(k); }
-    });
-  });
-  $$('[data-open]').forEach(function (a) { a.addEventListener('click', function () { openOnly(a.getAttribute('data-open')); }); });
-
-  /* Formulaires (maquette) */
-  $('#form-signup').addEventListener('submit', function (e) { e.preventDefault(); $('#done-signup').hidden = false; });
-  $('#form-login').addEventListener('submit', function (e) { e.preventDefault(); $('#done-login').hidden = false; });
 })();
 
 (function () {
@@ -797,20 +716,6 @@ footer strong { color: var(--fg); font-weight: 800; text-transform: uppercase; }
   });
   document.addEventListener('click', function () { locked = null; hover = null; refresh(); });
   window.addEventListener('resize', refresh);
-})();
-</script>
-
-<script>
-/* Branchement sur la vraie connexion : les boutons Créer mon compte / Connexion ouvrent connexion.html (la maquette d original affichait seulement un message). */
-(function () {
-  var cible = { signup: "connexion.html", login: "connexion.html?mode=connexion" };
-  document.addEventListener("click", function (e) {
-    var el = e.target.closest ? e.target.closest("[data-open],#btn-signup,#btn-login") : null;
-    if (!el) return;
-    var k = el.getAttribute("data-open") || (el.id === "btn-signup" ? "signup" : "login");
-    if (!cible[k]) return;
-    e.preventDefault(); e.stopImmediatePropagation(); location.href = cible[k];
-  }, true);
 })();
 </script>
 </body></html>

@@ -5,50 +5,267 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="light">
 <title>Manifeste — VRAI-SAVOIRFAIRE</title>
-<meta name="description" content="Le travail est l'endroit où l'on grandit. Le manifeste de VRAI-SAVOIRFAIRE.">
+<meta name="description" content="On change tout. Le travail est l'endroit où l'on grandit.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;800;900&display=swap">
-<link rel="stylesheet" href="vsf.css">
-<link rel="stylesheet" href="vsf-largeur.css"></head>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&display=swap">
+<style>
+/* Concept : menu fin, diaporama pleine largeur de gestes au ralenti, deux moitiés (Collectifs | Travailleurs) reliées par un pont gravé, puis manifeste et puissance. Typographie seule, noir sur blanc, touches de couleur au survol. */
+:root {
+  --bg: #ffffff;
+  --fg: #111111;
+  --muted: #767676;
+  --line: #e6e6e6;
+  --rule: #111111;
+  --tint: #fafafa;
+  --media: #111111;
+  --on-media: #ffffff;
+  --font: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 4.5rem; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font); -webkit-font-smoothing: antialiased; }
+a { color: inherit; }
+a:focus-visible, button:focus-visible, input:focus-visible { outline: 3px solid var(--fg); outline-offset: 3px; }
+
+/* Touches de couleur au survol et au clic */
+.pop { transition: color 0.18s ease, background-color 0.5s ease; border-radius: 2px; }
+.tl { font-weight: 800; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 0.2em; color: var(--fg); }
+
+/* ---------- Menu ---------- */
+.nav { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--bg); border-bottom: 1px solid var(--line); }
+.nav-in { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; max-width: 80rem; margin-inline: auto; padding: 1rem 1.5rem; }
+.brand { font-weight: 900; font-size: 1.0625rem; letter-spacing: -0.03em; text-decoration: none; text-transform: uppercase; }
+.menu { display: flex; align-items: center; gap: 2rem; }
+.menu a { font-size: 0.8125rem; font-weight: 500; text-decoration: none; }
+.nav-right { display: flex; align-items: center; gap: 1.5rem; }
+.nav-right .login { font-size: 0.8125rem; font-weight: 500; text-decoration: none; }
+.toggle { display: none; background: none; border: 0; padding: 0; font: inherit; font-size: 0.8125rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; cursor: pointer; color: var(--fg); }
+
+.btn { display: inline-block; padding: 0 0 0.3rem; background: none; border: 0; border-bottom: 3px solid currentColor; color: inherit; font: inherit; font-size: 0.8125rem; font-weight: 800; letter-spacing: 0.02em; text-transform: uppercase; text-decoration: none; cursor: pointer; }
+.btn:hover { opacity: 0.6; }
+.btn-lg { font-size: 0.9375rem; }
+
+@media (max-width: 52rem) {
+  .menu { display: none; position: absolute; left: 0; right: 0; top: 100%; flex-direction: column; align-items: flex-start; gap: 0; background: var(--bg); border-bottom: 1px solid var(--line); padding: 0.5rem 1.5rem 1.5rem; }
+  .menu.open { display: flex; }
+  .menu a { padding-block: 0.9rem; font-size: 1.25rem; font-weight: 800; letter-spacing: -0.02em; width: 100%; border-bottom: 1px solid var(--line); }
+  .toggle { display: inline; }
+  .nav-right .login, .nav-right .btn { display: none; }
+}
+@media (min-width: 52.01rem) { .menu .m-only { display: none; } }
+
+/* ---------- Diaporama ---------- */
+.show { position: relative; width: 100%; height: clamp(28rem, 62vw, 40rem); background: var(--media); color: var(--on-media); overflow: hidden; }
+.slide { position: absolute; inset: 0; opacity: 0; transition: opacity 1.4s ease; }
+.slide.on { opacity: 1; }
+.slide:nth-child(even) { background: #1b1b1b; }
+.slide video, .slide img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.slide .cap { position: absolute; right: 1.5rem; bottom: 4.9rem; text-align: right; font-size: 0.6875rem; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; opacity: 0.7; }
+.slide .cap span { display: block; margin-top: 0.35rem; font-weight: 400; letter-spacing: 0.08em; text-transform: none; font-size: 0.75rem; }
+.hero { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end; max-width: 80rem; margin-inline: auto; padding: 2rem 1.5rem 4.5rem; pointer-events: none; }
+.hero > * { pointer-events: auto; }
+.label { margin: 0 0 1.25rem; font-size: 0.6875rem; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; }
+h1, h2 { margin: 0 0 1.5rem; font-weight: 900; line-height: 1.02; letter-spacing: -0.035em; text-wrap: balance; }
+h1 { font-size: clamp(2.4rem, 7.2vw, 4.75rem); max-width: 16ch; margin-bottom: 1rem; }
+h2 { font-size: clamp(2.1rem, 5.6vw, 3.4rem); }
+.hero .sub { margin: 0 0 1.5rem; max-width: 30rem; font-size: 1rem; line-height: 1.5; opacity: 0.85; }
+.hero .btn { align-self: flex-start; font-size: 0.9375rem; }
+.dots { position: absolute; left: 0; right: 0; bottom: 1.25rem; display: flex; gap: 0.5rem; max-width: 80rem; margin-inline: auto; padding-inline: 1.5rem; }
+.dots button { flex: 1 1 0; max-width: 6rem; height: 3px; border: 0; padding: 0; background: rgba(255,255,255,0.35); cursor: pointer; }
+.dots button.on { background: var(--on-media); }
+.dots button:focus-visible, .pausebtn:focus-visible { outline: 3px solid var(--on-media); outline-offset: 4px; }
+.pausebtn { position: absolute; right: 1.5rem; bottom: 0.75rem; background: none; border: 0; color: var(--on-media); font: inherit; font-size: 0.6875rem; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; cursor: pointer; opacity: 0.8; }
+
+/* ---------- Deux moitiés + pont ---------- */
+.halves { position: relative; display: grid; grid-template-columns: 1fr; border-bottom: 2px solid var(--rule); }
+.half { padding: 4.5rem 1.5rem; min-width: 0; }
+.bridge + .half { border-top: 2px solid var(--rule); }
+.bridge { position: relative; z-index: 5; height: 0; display: flex; justify-content: center; pointer-events: none; }
+.bridge .pair { display: flex; align-items: center; gap: 0.2rem; padding: 0.35rem 0.6rem; background: var(--bg); transform: translateY(-50%); }
+.bridge .hand { display: block; width: 8.5rem; height: auto; }
+.bridge .flip { transform: scaleX(-1); }
+@media (min-width: 52rem) {
+  .halves { grid-template-columns: 1fr 1fr; }
+  .bridge + .half { border-top: 0; border-left: 1px solid var(--line); }
+  .half { padding-inline: clamp(3.5rem, 6vw, 5rem); }
+  .halves .half { padding-top: 7rem; }
+  .bridge { position: absolute; left: 50%; top: 3.4rem; height: auto; transform: translate(-50%, -50%); }
+  .bridge .pair { transform: none; }
+}
+.half .in { max-width: 30rem; margin-inline: auto; }
+.lead { margin: 0; font-size: 1.0625rem; line-height: 1.65; color: var(--muted); }
+.lead .tl { color: var(--fg); }
+.actions { display: flex; flex-wrap: wrap; gap: 1.5rem 2rem; margin-top: 2.25rem; align-items: baseline; }
+.link { font-size: 0.9375rem; font-weight: 500; }
+.panel { margin-top: 2.5rem; }
+.panel[hidden] { display: none; }
+.list { margin: 0; padding: 0; list-style: none; }
+.list li { padding-block: 1.25rem; border-bottom: 1px solid var(--line); }
+.list li:first-child { border-top: 1px solid var(--line); }
+.list h3 { margin: 0 0 0.35rem; font-size: 1.25rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.2; }
+.list p { margin: 0; font-size: 0.9375rem; line-height: 1.6; color: var(--muted); }
+.tag { margin-left: 0.5rem; font-size: 0.6875rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+
+form { display: flex; flex-direction: column; }
+.field { border-bottom: 1px solid var(--rule); }
+.field input { width: 100%; border: 0; background: transparent; padding: 1.1rem 0; font: inherit; font-size: 1rem; color: var(--fg); border-radius: 0; }
+.field input::placeholder { color: #a0a0a0; }
+.help { margin: 1rem 0 0; font-size: 0.75rem; line-height: 1.5; color: var(--muted); }
+.done { margin: 1.5rem 0 0; font-size: 0.9375rem; line-height: 1.6; }
+.done b { display: block; margin-bottom: 0.25rem; font-size: 1.5rem; font-weight: 900; letter-spacing: -0.02em; }
+
+/* ---------- Manifeste et puissance ---------- */
+.sec { max-width: 52rem; margin-inline: auto; padding: 5rem 1.5rem; }
+.sec + .sec { border-top: 2px solid var(--rule); }
+.big { margin: 0 0 1.25rem; font-size: clamp(1.6rem, 4.6vw, 2.4rem); font-weight: 900; line-height: 1.1; letter-spacing: -0.03em; text-wrap: balance; }
+.sec .lead { max-width: 36rem; margin-bottom: 2rem; }
+.sub-label { margin: 3.5rem 0 1.25rem; font-size: 0.6875rem; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; }
+.vrai { margin: 0; padding: 0; list-style: none; }
+.vrai li { display: flex; align-items: baseline; gap: 1.25rem; padding-block: 1rem; border-bottom: 1px solid var(--line); }
+.vrai li:first-child { border-top: 1px solid var(--line); }
+.vrai .l { flex: none; min-width: 2.75rem; font-size: 3rem; font-weight: 900; line-height: 1; letter-spacing: -0.04em; }
+.vrai .t { min-width: 0; font-size: 1rem; line-height: 1.5; }
+.vrai .t b { font-weight: 800; }
+.axes { display: grid; grid-template-columns: 5.5rem 1fr 1fr; border-top: 1px solid var(--rule); }
+.axes > div { padding: 1rem 0.75rem 1rem 0; border-bottom: 1px solid var(--line); font-size: 0.875rem; line-height: 1.5; color: var(--muted); min-width: 0; }
+.axes .h { font-size: 0.6875rem; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: var(--fg); }
+.axes .r { font-size: 0.6875rem; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: var(--fg); }
+.axes .c b { display: block; margin-bottom: 0.25rem; font-size: 1.125rem; font-weight: 800; letter-spacing: -0.02em; color: var(--fg); }
+.compass-wrap { margin: 1rem 0 2rem; }
+.compass { display: block; width: 100%; max-width: 30rem; height: auto; margin-inline: auto; overflow: visible; }
+
+.sign { margin: 3.5rem 0 0; font-size: clamp(1.4rem, 4vw, 2rem); font-weight: 900; letter-spacing: -0.03em; line-height: 1.15; }
+.sign span { display: block; color: var(--muted); }
+
+footer { max-width: 52rem; margin-inline: auto; padding: 2rem 1.5rem 4rem; border-top: 2px solid var(--rule); font-size: 0.75rem; line-height: 1.6; color: var(--muted); }
+footer strong { color: var(--fg); font-weight: 800; text-transform: uppercase; }
+
+/* Planche : le neurone VRAI-SAVOIRFAIRE */
+.nr { margin: 0; }
+.nr-plate { background: #fff; border: 2px solid var(--fg); padding: 6px; }
+.nr-in { border: 1px solid var(--fg); padding: clamp(10px, 2.4vw, 24px) clamp(8px, 2.4vw, 24px) clamp(10px, 2vw, 18px); }
+.nr-top { display: flex; justify-content: space-between; gap: 12px; font-family: 'IM Fell English', 'Iowan Old Style', Georgia, serif; font-style: italic; color: var(--muted); font-size: clamp(0.78rem, 1.8vw, 0.95rem); }
+.nr-cap { display: block; text-align: center; font-family: 'IM Fell English', 'Iowan Old Style', Georgia, serif; font-weight: 700; letter-spacing: 0.3em; text-transform: uppercase; font-size: clamp(0.78rem, 2.2vw, 1.1rem); margin: 0; color: var(--fg); text-wrap: balance; }
+.nr-stage { position: relative; margin: clamp(2px, 1.5vw, 14px) 0; }
+#nr-art { display: block; width: 100%; height: auto; overflow: visible; touch-action: manipulation; }
+.nr-fig { margin: 0.5rem 0 0; text-align: center; font-family: 'IM Fell English', 'Iowan Old Style', Georgia, serif; font-style: italic; color: #333; font-size: clamp(0.9rem, 2vw, 1.05rem); text-wrap: balance; }
+.nr-fig b { font-style: normal; letter-spacing: 0.06em; }
+.nr-hint { margin: 0.6rem 0 0; text-align: center; color: var(--muted); font-size: 0.8125rem; }
+#nr-neuron { color: var(--fg); stroke: currentColor; }
+.nr-organ { cursor: pointer; outline: none; stroke: currentColor; transform-box: fill-box; transform-origin: center; }
+.nr-organ .nr-hit { fill: transparent; stroke: none; pointer-events: all; }
+.nr-organ.nr-tl { pointer-events: none; }
+.nr-organ:focus-visible .nr-hit { stroke: var(--fg); stroke-width: 2; stroke-dasharray: 4 5; }
+.nr-organ, .nr-halo, .nr-shade, .nr-organ [fill="#ffffff"] { transition: fill 0.35s, color 0.35s, opacity 0.35s; }
+.nr-organ.nr-on { color: var(--c); }
+.nr-organ.nr-on [fill="#ffffff"] { fill: color-mix(in srgb, var(--c) 10%, #ffffff); }
+.nr-halo { opacity: 0; pointer-events: none; stroke: none; }
+.nr-halo.nr-on { opacity: 1; }
+.nr-lit .nr-shade { fill: var(--lc); opacity: 0.9; }
+.nr-organ.nr-on:not(.nr-tl) { animation: nr-pulse 2.4s ease-in-out infinite; }
+.nr-organ.nr-pop { animation: nr-pop 0.75s cubic-bezier(0.2, 0.9, 0.3, 1.3); }
+.nr-organ.nr-on .nr-tissue { animation: nr-wave 2.2s ease-in-out infinite alternate; }
+.nr-drift { animation: nr-drift var(--dur) ease-in-out var(--dl) infinite alternate; }
+#nr-float { animation: nr-float 11s ease-in-out infinite alternate; }
+.nr-sw { animation: nr-sway ease-in-out infinite alternate; }
+.nr-nb { animation: nr-bob ease-in-out infinite alternate; }
+@keyframes nr-float { from { transform: translate(-3px, 5px) rotate(-0.15deg); } to { transform: translate(5px, -7px) rotate(0.2deg); } }
+@keyframes nr-drift { from { transform: translate(-1.6px, 1.2px); } to { transform: translate(1.8px, -1.6px); } }
+@keyframes nr-sway { from { transform: rotate(calc(var(--a) * -1)); } to { transform: rotate(var(--a)); } }
+@keyframes nr-bob { from { transform: translate(-2px, 3px); } to { transform: translate(3px, -3px); } }
+@keyframes nr-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.045); } }
+@keyframes nr-pop { 0% { transform: scale(1) rotate(0); } 30% { transform: scale(1.14) rotate(-2.5deg); } 60% { transform: scale(0.97) rotate(1.5deg); } 100% { transform: scale(1) rotate(0); } }
+@keyframes nr-wave { from { transform: rotate(-2.2deg) translate(-1.5px, 1px); } to { transform: rotate(2.2deg) translate(1.5px, -1px); } }
+.nr-tip { position: absolute; left: 0; top: 0; transform: translate(-50%, -100%); pointer-events: none; background: #fff; border: 2px solid var(--c, var(--fg)); border-radius: 6px; padding: 0.5rem 0.8rem 0.55rem; opacity: 0; transition: opacity 0.2s; max-width: min(260px, 70vw); box-shadow: 3px 3px 0 var(--c, var(--fg)); z-index: 3; }
+.nr-tip.nr-show { opacity: 1; }
+.nr-tip b { display: block; font-weight: 800; letter-spacing: 0.14em; font-size: 0.84rem; color: var(--c, var(--fg)); }
+.nr-tip span { display: block; font-size: 0.88rem; color: #333; margin-top: 0.1rem; text-wrap: balance; }
+@media (max-width: 700px) { .nr-view { overflow: hidden; } #nr-art { width: 140%; margin-left: -20%; } .nr-tip { position: static; transform: none; margin: 10px auto 0; width: max-content; max-width: 100%; display: block; } .nr-tip:not(.nr-show) { visibility: hidden; } }
+@media (prefers-reduced-motion: reduce) { #nr-float, .nr-drift, .nr-sw, .nr-nb, .nr-organ.nr-on, .nr-organ.nr-pop, .nr-organ.nr-on .nr-tissue { animation: none !important; } }
+</style>
+<style>
+/* Pages du site public : même style que l'accueil, contenu sur toute la largeur de l'écran. */
+.menu a[aria-current="page"]{font-weight:900;text-decoration:underline;text-decoration-thickness:3px;text-underline-offset:.35em}
+.page{padding:4.5rem clamp(1.5rem,5vw,5rem) 3rem}
+.page h1{font-size:clamp(2.4rem,6vw,4.4rem);font-weight:900;line-height:1.02;letter-spacing:-.035em;margin:0 0 1.5rem;max-width:none;text-wrap:balance}
+.page .lead{max-width:48rem}
+.page .actions{display:flex;flex-wrap:wrap;align-items:center;gap:1.75rem;margin:1.75rem 0 0}
+.page .list{margin-top:2.5rem}
+@media (min-width:62rem){
+  .page .list{display:grid;grid-template-columns:1fr 1fr;column-gap:clamp(2.5rem,6vw,6rem)}
+  .page .list li:nth-child(2){border-top:1px solid var(--line)}
+  .page .texte{column-count:2;column-gap:clamp(2.5rem,6vw,6rem)}
+  .page .texte p,.page .texte h2{break-inside:avoid}
+}
+.page .texte p{font-size:1.125rem;line-height:1.65;margin:0 0 1.25rem}
+.page .texte .fort{font-weight:800}
+.page .texte .refrain{font-size:clamp(1.6rem,3vw,2.2rem);font-weight:900;line-height:1.15;letter-spacing:-.02em;margin:2rem 0}
+.page .texte hr{border:0;border-top:1px solid var(--line);margin:2rem 0;column-span:all}
+footer{max-width:none !important;padding-inline:clamp(1.5rem,5vw,5rem) !important}
+</style>
+</head>
 <body>
-<header class="haut">
-  <a class="marque" href="./">VRAI-SAVOIRFAIRE</a>
-  <a class="bouton discret" href="connexion.html">Se connecter</a>
+<header class="nav">
+  <div class="nav-in">
+    <a class="brand pop" href="./">VRAI-SAVOIRFAIRE</a>
+    <nav class="menu" id="menu" aria-label="Menu principal">
+      <a class="pop" href="manifeste.html" aria-current="page">Le manifeste</a>
+      <a class="pop" href="puissance.html" data-p="puissance">La puissance</a>
+      <a class="pop" href="collectifs.html" data-p="collectifs">Collectifs</a>
+      <a class="pop" href="travailleurs.html" data-p="travailleurs">Travailleurs</a>
+      <a class="pop m-only" href="connexion.html?mode=connexion">Connexion</a>
+      <a class="pop m-only" href="connexion.html">Créer mon compte</a>
+    </nav>
+    <div class="nav-right">
+      <a class="pop login" href="connexion.html?mode=connexion">Connexion</a>
+      <a class="btn" href="connexion.html">Créer mon compte</a>
+      <button class="toggle" id="toggle" aria-expanded="false" aria-controls="menu">Menu</button>
+    </div>
+  </div>
 </header>
-
-<main class="wrap lecture">
-  <h1>Manifeste</h1>
-
-  <p>On nous a appris que le travail, c'est un poste, une fiche et une note en fin d'année. Qu'on apprend assis, loin de l'atelier. Que celui qui sait, c'est celui qui a le diplôme.</p>
-  <p class="refrain">On change tout.</p>
-
-  <p>Le travail est l'endroit où l'on grandit. Chaque geste réussi, chaque problème résolu, chaque conseil compris dit ce qu'on vaut. Les machines prennent les tâches ? Tant mieux. Il nous reste l'essentiel : la main, le regard, le jugement, la relation.</p>
-
-  <p>Une équipe qui va bien tient sur quatre choses : ce qu'elle fait, le plaisir qu'elle a à le faire, dans quel but elle le fait, et comment elle grandit avec le collectif. C'est cette boussole qui guide la stratégie. Et c'est sur elle qu'on mesure la réussite : le chiffre du mois, oui, mais surtout ce que l'équipe sait faire de plus, et ce qu'elle a su transmettre avec joie.</p>
-
-  <p>Ce qui fait grandir une personne fait grandir son entreprise. Nos outils servent les deux.</p>
-
-  <hr class="filet">
-
-  <p><span class="fort">VRAI-SAVOIRFAIRE, pour trouver sa voie et y avancer.</span> Pour la personne : le métier qui l'attire, expliqué situation par situation. Elle voit ce qu'elle sait déjà faire et ce qu'il lui reste à apprendre. Elle reçoit un plan à sa mesure et apprend auprès d'un maître du métier. Ses preuves sont à elle, dans un coffre-fort qui la suit partout. Pour l'entreprise : un diagnostic sur ces quatre repères, la carte des savoir-faire de son équipe et un référentiel métier prêt à l'emploi. Elle sait enfin qui sait faire quoi, qui peut apprendre quoi, et comment s'organiser pour que chacun progresse en travaillant.</p>
-
-  <p><span class="fort">Maurice, pour que l'atelier tourne tout seul.</span> Devis, planning des chantiers, stock, équipe : tout est au même endroit. Moins de paperasse, plus de métier. Chaque chantier devient une leçon, et on pilote autant la marge que les savoir-faire gagnés et transmis.</p>
-
-  <p><span class="fort">Thérèse, pour prendre du recul.</span> On lui pose ses questions de métier quand on veut. Elle aide à faire le point sur ce qu'on a vécu. Elle ne juge pas, ne relance pas, et ne parle que si on l'appelle.</p>
-
-  <hr class="filet">
-
-  <p>Ici, pas de note, pas de classement. On avance par paliers, à son rythme. Ce qu'on a prouvé nous appartient, pour la vie.</p>
-
-  <p>Des gens qui grandissent restent. Des gens qui restent transmettent. Une équipe qui transmet construit un savoir-faire qui lui survit.</p>
-
-  <p class="refrain">Le travail redevient ce qu'il aurait toujours dû être : l'endroit où l'on devient soi-même, en faisant bien les choses, ensemble.</p>
-
-  <hr class="filet">
-
-  <a class="bouton" href="connexion.html">Créer mon compte</a><br>
-  <a class="bouton discret" href="connexion.html?mode=connexion">J'ai déjà un compte</a>
+<main id="haut">
+  <section class="page">
+    <p class="label">Le manifeste</p>
+    <h1>Manifeste</h1>
+    <div class="texte">
+      <p>On nous a appris que le travail, c'est un poste, une fiche et une note en fin d'année. Qu'on apprend assis, loin de l'atelier. Que celui qui sait, c'est celui qui a le diplôme.</p>
+      <p class="refrain">On change tout.</p>
+      <p>Le travail est l'endroit où l'on grandit. Chaque geste réussi, chaque problème résolu, chaque conseil compris dit ce qu'on vaut. Les machines prennent les tâches ? Tant mieux. Il nous reste l'essentiel : la main, le regard, le jugement, la relation.</p>
+      <p>Une équipe qui va bien tient sur quatre choses : ce qu'elle fait, le plaisir qu'elle a à le faire, dans quel but elle le fait, et comment elle grandit avec le collectif. C'est cette boussole qui guide la stratégie. Et c'est sur elle qu'on mesure la réussite : le chiffre du mois, oui, mais surtout ce que l'équipe sait faire de plus, et ce qu'elle a su transmettre avec joie.</p>
+      <p>Ce qui fait grandir une personne fait grandir son entreprise. Nos outils servent les deux.</p>
+      <hr>
+      <p><span class="fort">VRAI-SAVOIRFAIRE, pour trouver sa voie et y avancer.</span> Pour la personne : le métier qui l'attire, expliqué situation par situation. Elle voit ce qu'elle sait déjà faire et ce qu'il lui reste à apprendre. Elle reçoit un plan à sa mesure et apprend auprès d'un maître du métier. Ses preuves sont à elle, dans un coffre-fort qui la suit partout. Pour l'entreprise : un diagnostic sur ces quatre repères, la carte des savoir-faire de son équipe et un référentiel métier prêt à l'emploi. Elle sait enfin qui sait faire quoi, qui peut apprendre quoi, et comment s'organiser pour que chacun progresse en travaillant.</p>
+      <p><span class="fort">Maurice, pour que l'atelier tourne tout seul.</span> Devis, planning des chantiers, stock, équipe : tout est au même endroit. Moins de paperasse, plus de métier. Chaque chantier devient une leçon, et on pilote autant la marge que les savoir-faire gagnés et transmis.</p>
+      <p><span class="fort">Thérèse, pour prendre du recul.</span> On lui pose ses questions de métier quand on veut. Elle aide à faire le point sur ce qu'on a vécu. Elle ne juge pas, ne relance pas, et ne parle que si on l'appelle.</p>
+      <hr>
+      <p>Ici, pas de note, pas de classement. On avance par paliers, à son rythme. Ce qu'on a prouvé nous appartient, pour la vie.</p>
+      <p>Des gens qui grandissent restent. Des gens qui restent transmettent. Une équipe qui transmet construit un savoir-faire qui lui survit.</p>
+      <p class="refrain">Le travail redevient ce qu'il aurait toujours dû être : l'endroit où l'on devient soi-même, en faisant bien les choses, ensemble.</p>
+    </div>
+    <div class="actions"><a class="btn btn-lg" href="connexion.html">Créer mon compte →</a><a class="link pop" href="./">Retour à l’accueil</a></div>
+  </section>
+  <footer>
+    <strong>VRAI-SAVOIRFAIRE</strong><br>
+    Pour bien faire du beau. Produire au service du savoir-faire, jamais plus l’inverse.
+    <br><a href="mailto:contact@vraisavoirfaire.fr" style="color:inherit">contact@vraisavoirfaire.fr</a>
+  </footer>
 </main>
-<footer class="wrap"><p class="legende">Une question : <a href="mailto:contact@vraisavoirfaire.fr">contact@vraisavoirfaire.fr</a></p></footer>
-<script src="vsf-pop.js"></script></body>
+<script>
+(function () {
+  var menu = document.getElementById('menu'), toggle = document.getElementById('toggle');
+  function fermer() { menu.classList.remove('open'); toggle.setAttribute('aria-expanded', 'false'); toggle.textContent = 'Menu'; }
+  toggle.addEventListener('click', function () {
+    var ouvert = menu.classList.toggle('open');
+    toggle.setAttribute('aria-expanded', String(ouvert));
+    toggle.textContent = ouvert ? 'Fermer' : 'Menu';
+  });
+  Array.prototype.forEach.call(menu.querySelectorAll('a'), function (a) { a.addEventListener('click', fermer); });
+})();
+</script>
+<script src="vsf-pop.js"></script>
+</body>
 </html>
