@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="color-scheme" content="light">
+<title>Entités — VRAI-SAVOIRFAIRE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;800;900&display=swap">
+<link rel="stylesheet" href="vsf.css">
+<link rel="stylesheet" href="vsf-largeur.css">
+<style>
+  .onglets{display:flex;flex-wrap:wrap;gap:0 22px;border-bottom:1px solid var(--line);margin:18px 0 6px}
+  .onglets button{min-height:44px;background:none;border:0;border-bottom:3px solid transparent;padding:8px 0;font:inherit;font-size:12px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;color:var(--cap);cursor:pointer}
+  .onglets button[aria-selected="true"]{color:#111;font-weight:900;border-bottom-color:#111}
+  .onglets button:focus-visible{outline:2px solid #111;outline-offset:3px}
+  .collectif{margin-top:30px;border-top:1.5px solid #111;padding-top:8px}
+  .collectif h2{margin:14px 0 2px}
+  .chiffres{display:flex;flex-wrap:wrap;gap:6px 26px;margin:12px 0 4px}
+  .chiffres b{display:block;font-size:30px;font-weight:900;line-height:1.05;letter-spacing:-.02em}
+  .chiffres span{font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--cap)}
+  .metier{padding:16px 0;border-top:1px solid var(--line)}
+  .metier h3{font-size:20px;font-weight:900;margin:0 0 4px}
+  .metier .etat{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;border:1.5px solid #111;padding:2px 7px;margin-right:8px}
+  .metier .niveaux{font-size:14px;color:var(--cap)}
+  .actions-ligne{display:flex;flex-wrap:wrap;gap:4px 24px;margin-top:6px}
+  .socle{margin-top:34px;padding:18px;background:var(--panel)}
+  .socle p{margin:8px 0}
+  .bientot{padding:24px 0;color:var(--cap)}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="vsf-auth.js"></script>
+</head>
+<body>
+<header class="haut">
+  <a class="marque" href="./">VRAI-SAVOIRFAIRE</a>
+  <a class="bouton discret" href="admin.html">Tableau de bord</a>
+</header>
+<main class="wrap" id="app"><p class="legende">Chargement…</p></main>
+<script>
+var $ = function (id) { return document.getElementById(id); };
+var E = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; }); };
+var sb = VSF.sb;
+var GUIDE = 'https://fastidious-kringle-8ac4c1.netlify.app/guide-production-mindmap.html';
+var jour = function (d) { try { return new Date(d).toLocaleDateString('fr-FR'); } catch (e) { return ''; } };
+var STATUTS = { public_referential: 'Référentiel public', federated_domain: 'Domaine fédéré', validated_by_practitioners: 'Validé par des praticiens', pilot: 'Pilote', documented: 'Documenté', candidate: 'Candidat', archived: 'Archivé' };
+var S = { plateforme: false, referentiels: false, onglet: 'collectifs' };
+
+async function compter(table, filtre) {
+  var q = sb.from(table).select('*', { count: 'exact', head: true });
+  Object.keys(filtre).forEach(function (k) { q = filtre[k] && filtre[k].like ? q.like(k, filtre[k].like) : q.eq(k, filtre[k]); });
+  var r = await q;
+  return r.error ? null : (r.count || 0);
+}
+
+function ongletsHtml() {
+  var liste = [['collectifs', 'Collectifs'], ['entreprises', 'Entreprises'], ['ambassadeurs', 'Ambassadeurs métier'], ['personnes', 'Personnes'], ['equipe', 'Équipe']];
+  return '<div class="onglets" role="tablist">' + liste.map(function (o) {
+    return '<button type="button" role="tab" data-o="' + o[0] + '" aria-selected="' + (S.onglet === o[0]) + '">' + o[1] + '</button>';
+  }).join('') + '</div>';
+}
+
+async function vueCollectifs() {
+  var f = await sb.from('federations').select('id,name,created_at').order('created_at');
+  if (f.error) return '<p class="message">Impossible de lire les collectifs pour le moment.</p>';
+  var html = '';
+  for (var i = 0; i < (f.data || []).length; i++) {
+    var c = f.data[i];
+    var m = await sb.from('metiers').select('id,nom,statut,libelles_niveaux,proprietaire_id').eq('federation_id', c.id).is('proprietaire_id', null).order('ordre');
+    var metiers = '';
+    for (var j = 0; j < (m.data || []).length; j++) {
+      var x = m.data[j];
+      var pr = await sb.from('referentiel_processus').select('nom').eq('metier_id', x.id);
+      var noms = (pr.data || []).map(function (p) { return p.nom; });
+      var sous = noms.length ? await sb.from('referentiel_sous_processus').select('*', { count: 'exact', head: true }).in('processus_nom', noms) : { count: 0 };
+      var nMod = await compter('modules_apprentissage', { metier_id: x.id });
+      var niv = Array.isArray(x.libelles_niveaux) ? x.libelles_niveaux.join(' · ') : '';
+      metiers += '<div class="metier"><h3>' + E(x.nom) + '</h3><p><span class="etat">' + E(STATUTS[x.statut] || x.statut) + '</span><span class="niveaux">' + E(niv) + '</span></p>' +
+        '<div class="chiffres"><div><b>' + noms.length + '</b><span>Processus</span></div><div><b>' + (sous.count == null ? '—' : sous.count) + '</b><span>Sous-processus</span></div>' +
+        '<div><b>' + (nMod == null ? '—' : nMod) + '</b><span>Modules</span></div></div>' +
+        (S.referentiels ? '<div class="actions-ligne"><a class="bouton" href="' + E(GUIDE) + '?guide=travailler" target="_blank" rel="noopener">Éditer « comment on travaille »</a>' +
+          '<a class="bouton" href="' + E(GUIDE) + '?guide=peindre" target="_blank" rel="noopener">Éditer « comment on peint »</a></div>' : '') + '</div>';
+    }
+    var nSit = await compter('referentiel_situations', { federation_id: c.id, niveau: { like: 'Niveau 1%' } });
+    html += '<section class="collectif"><p class="etiquette" style="margin:10px 0 0">Collectif</p><h2>' + E(c.name) + '</h2>' +
+      '<p class="legende">Créé le ' + E(jour(c.created_at)) + '. Son référentiel métier collectif (le métier global, et non un poste de travail) :</p>' +
+      '<div class="chiffres"><div><b>' + (nSit == null ? '—' : nSit) + '</b><span>Situations du collectif</span></div></div>' +
+      '<p class="legende">Les situations appartiennent au collectif ; leur rattachement à un métier précis est à compléter.</p>' +
+      (metiers || '<p class="legende">Aucun référentiel métier collectif pour le moment.</p>') + '</section>';
+  }
+  html += '<section class="socle"><p class="etiquette" style="margin-top:0">Le socle Skolantreuz « comment on travaille »</p>' +
+    '<p>Un seul exemplaire de référence, partagé par tous les collectifs et toutes les entreprises, mis à jour automatiquement. Il est rangé selon les 4 repères du manifeste : <b>ce qu’on fait</b>, <b>le plaisir à le faire</b>, <b>le but</b>, <b>grandir avec le collectif</b>.</p>' +
+    '<p class="legende">En préparation. Le « Guide 1 » actuel (Pilotage, Production, Support) doit d’abord être rangé selon ces 4 repères avant d’être migré en socle.</p></section>';
+  return html || '<p class="legende">Aucun collectif.</p>';
+}
+
+function vueBientot(nom, texte) { return '<div class="bientot"><p class="etiquette" style="margin-top:0">' + E(nom) + '</p><p>' + E(texte) + '</p></div>'; }
+
+async function dessiner() {
+  var corps;
+  if (S.onglet === 'collectifs') corps = await vueCollectifs();
+  else if (S.onglet === 'entreprises') corps = vueBientot('Entreprises', 'Chiffres et informations de gestion uniquement (nom, collectifs, statut, nombre de membres). Jamais le contenu des parcours, des preuves, des devis ni des clients. En préparation.');
+  else if (S.onglet === 'ambassadeurs') corps = vueBientot('Ambassadeurs métier', 'Ils se gèrent aujourd’hui dans le tableau de bord (validation, offres, reversements). Leur fiche complète arrive ici.');
+  else if (S.onglet === 'personnes') corps = vueBientot('Personnes', 'Chiffres seulement : nombre de comptes, vérifiés, suspendus. La liste se trouve dans le tableau de bord de la plateforme. Aucun accès aux parcours.');
+  else corps = vueBientot('Équipe Skolantreuz', 'Super administrateur · administrateur de la plateforme · administrateur de référentiels. En préparation.');
+  $('app').innerHTML =
+    '<p class="etiquette">' + (S.plateforme ? 'Administrateur de la plateforme' : 'Administrateur de référentiels') + '</p>' +
+    '<h1>Entités</h1>' +
+    '<p class="legende">Les collectifs, les entreprises et les personnes que Skolantreuz gère. Vous voyez le référentiel et la gestion, jamais les données personnelles des entités.</p>' +
+    ongletsHtml() + '<div>' + corps + '</div>';
+  document.querySelectorAll('.onglets button').forEach(function (b) {
+    b.addEventListener('click', function () { S.onglet = b.getAttribute('data-o'); dessiner(); });
+  });
+}
+
+async function demarrer() {
+  var s = await sb.auth.getSession();
+  if (!s.data.session) { location.replace('connexion.html?suite=' + encodeURIComponent(location.href)); return; }
+  var r = await Promise.all([sb.rpc('vsf_est_admin'), sb.rpc('vsf_est_admin_referentiels')]);
+  S.plateforme = r[0].data === true; S.referentiels = r[1].data === true;
+  if (!S.plateforme && !S.referentiels) {
+    return $('app').innerHTML = '<p class="etiquette">Entités</p><h1>Accès réservé.</h1><p class="message">Cette page est réservée à l’équipe de VRAI-SAVOIRFAIRE.</p><a class="bouton" href="./">Retour à l’accueil</a>';
+  }
+  dessiner();
+}
+demarrer();
+</script>
+<script src="vsf-pop.js"></script>
+</body>
+</html>

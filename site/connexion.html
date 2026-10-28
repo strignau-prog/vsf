@@ -127,7 +127,7 @@ async function finaliser() {
   }
   // Un administrateur qui n'a pas demandé une page précise arrive directement sur son tableau de bord.
   if (!P.get('suite')) {
-    try { var a = await VSF.sb.rpc('vsf_est_admin'); if (a.data === true) { location.replace('admin.html'); return; } } catch (e) { /* on reste sur l'accueil */ }
+    try { var a = await VSF.sb.rpc('vsf_est_admin'); if (a.data === true) { location.replace('admin.html'); return; } var rf = await VSF.sb.rpc('vsf_est_admin_referentiels'); if (rf.data === true) { location.replace('entites.html'); return; } } catch (e) { /* on reste sur l'accueil */ }
   }
   var prenom = p.prenom ? ', ' + E(p.prenom) : '';
   ecran('<p class="etiquette">Compte vérifié</p>' +
