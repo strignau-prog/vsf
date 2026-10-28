@@ -82,9 +82,7 @@ function dessiner() {
     '<h2>Mon objectif pour « ' + E(NOM) + ' »</h2>' +
     '<p class="legende">Quatre niveaux possibles. Choisissez celui que vous visez : les niveaux d’avant font partie du chemin.</p>' +
     '<div class="groupe" role="group" aria-label="Mon objectif">' + niveaux + '</div>' + detail +
-    '<div style="margin-top:30px;border-top:1px solid var(--line);padding-top:6px">' +
-    (c.piste && c.niveau ? '<a class="bouton" href="mon-plan.html">Voir mon plan</a>' : '<p class="legende">Choisissez une piste et un niveau pour voir votre plan.</p>') +
-    '<br><a class="bouton discret" href="mon-ecart.html">Revoir mon écart</a></div>';
+    (c.piste && c.niveau ? '' : '<p class="legende" style="margin-top:28px">Choisissez une piste et un niveau pour voir votre plan.</p>');
   document.querySelectorAll('[data-piste]').forEach(function (b) { b.addEventListener('click', function () { S.choix.piste = b.getAttribute('data-piste'); enregistrer(); dessiner(); }); });
   document.querySelectorAll('[data-niveau]').forEach(function (b) { b.addEventListener('click', function () { S.choix.niveau = +b.getAttribute('data-niveau'); enregistrer(); dessiner(); }); });
 }
@@ -107,6 +105,6 @@ async function demarrer() {
 }
 demarrer();
 </script>
-<script src="vsf-pop.js"></script>
+<script src="vsf-suite.js"></script><script src="vsf-pop.js"></script>
 </body>
 </html>

@@ -145,9 +145,7 @@ function dessiner() {
     '<details class="detail"><summary>Ce que veulent dire les quatre paliers</summary><div class="legende-paliers">' +
     PALIERS.map(function (q) { return '<p><b>' + q[1] + '.</b> ' + q[2] + '</p>'; }).join('') + '</div></details>' +
     lignes.join('') +
-    '<div class="situation"><p class="etiquette">Et maintenant</p><p>Vous savez où vous en êtes. La suite : choisir votre piste et votre objectif, puis recevoir votre plan.</p>' +
-    '<p class="legende">Votre écart est gardé : vous pouvez le modifier à tout moment.</p><a class="bouton" href="mon-objectif.html">Choisir ma piste et mon objectif</a><br>' +
-    '<a class="bouton discret" href="mon-passage.html">Revoir ma carte de départ</a></div>';
+    '<p class="legende" style="margin-top:28px">Votre écart est gardé : vous pouvez le modifier à tout moment.</p>';
   document.querySelectorAll('.choix button').forEach(function (b) {
     b.addEventListener('click', function () { ETAT.choix[b.getAttribute('data-s')] = b.getAttribute('data-p'); ecrire(CLE_ECART, ETAT.choix); VSF.parcours.ecrire('ecart', ETAT.choix); dessiner(); });
   });
@@ -179,5 +177,5 @@ async function demarrer() {
 }
 demarrer();
 </script>
-<script src="vsf-pop.js"></script></body>
+<script src="vsf-suite.js"></script><script src="vsf-pop.js"></script></body>
 </html>
