@@ -195,6 +195,7 @@
     .repere{background:var(--soft);border-radius:0;padding:14px 16px;font-size:15px}
     .fixedNote{font-size:13px;color:var(--muted);margin-top:8px}
     .empty{color:var(--muted);font-size:15px}
+    select.champ{width:100%;min-height:44px;border:0;border-bottom:1.5px solid #111;border-radius:0;background:transparent;font-size:17px;padding:10px 0}
   </style>
 <link rel="stylesheet" href="vsf-nav.css"></head>
 <body>
@@ -459,7 +460,7 @@ let etat = fusionner({
   axe2:{ motif:[], destinataire:[], rythme:[] },
   axe3:{ seul:50, equipe:50, clients:50, style:'', conditions:[], qvct:{}, rse:[] },
   axe4:{ quotidien:[], hebdomadaire:[], mensuel:[], annuel:[], tailleCollectif:'', intensiteClient:'', consulte:false },
-  diplomes:[], voeuArtFiltre:'', voeuArtOuvert:{}, voeuArtErreur:'',
+  diplomes:[], autres:[], autresBrouillon:{ nom:'', annees:'', preuve:'' }, voeuArtFiltre:'', voeuArtOuvert:{}, voeuArtErreur:'',
   pisteChoisie:null, pistes:null, niveauChoisi:1, calqueActif:'rome', quartActif:'realiser',
 }, charger());
 
@@ -509,11 +510,13 @@ function renderEtapeExperience(){
   return `
   ${etat.experiences.map((exp,ei)=>renderExpCard(exp,ei)).join('')}
   ${renderDiplomesGlobal()}
+  ${renderAutresCompetences()}
   <div class="field">
     <label>${etat.experiences.length ? 'Ajouter une autre expérience passée' : 'Un métier que vous avez exercé (actuel ou passé)'}</label>
     <input type="text" id="expRecherche" placeholder="ex : Comptable, Vendeur, Aide-soignant…" value="${esc(etat.expRecherche)}" autocomplete="off">
     ${etat.expSuggestions.length ? `<div class="results">${etat.expSuggestions.map((s,i)=>`<button type="button" data-i="${i}">${esc(s.libelle)} <span class="rc">${esc(s.libelleMetier)} · ${s.codeRome}</span></button>`).join('')}</div>` : ''}
   </div>
+  ${renderCarteDepart()}
   <div class="toolbar"><button class="btn" id="btnRecommencer">Recommencer</button><button class="btn btnPrimary" id="btnSuivant1" ${etat.experiences.length?'':'disabled'}>Suivant →</button></div>
   `;
 }
@@ -562,6 +565,49 @@ function renderDiplomesGlobal(){
         <button type="button" class="btn" id="btnAjouterDiplomeAutre">Ajouter</button>
       </div>
     </div>
+  </div>`;
+}
+/* ---- Étape 1 de la maquette : autres compétences (avec preuve) et livrable « Ma carte de départ » ---- */
+const PREUVES = ['Certificat / diplôme','Réalisation documentée (photo, dossier)','Attestation employeur'];
+function renderAutresCompetences(){
+  if(!etat.experiences.length) return '';
+  const b = etat.autresBrouillon;
+  return `<div class="expCard">
+    <div class="head"><b>Autres compétences, seulement avec une preuve</b></div>
+    <div class="fixedNote" style="margin:4px 0 10px 0">Une compétence libre ne s'ajoute que si elle peut être appuyée par une preuve : certificat, réalisation documentée ou attestation. Les années et la preuve sont obligatoires.</div>
+    ${etat.autres.length ? etat.autres.map((a,i)=>`<div class="checkRow" style="justify-content:space-between;align-items:center"><span><b>${esc(a.nom)}</b> · ${a.annees} an${a.annees>1?'s':''} · ${esc(a.preuve)}</span><button class="ghostBtn" data-retirer-autre="${i}">Retirer ✕</button></div>`).join('') : '<div class="empty">Aucune ajoutée pour l’instant.</div>'}
+    <div class="field" style="margin-top:14px">
+      <label for="autreNom">Compétence</label>
+      <input type="text" id="autreNom" value="${esc(b.nom)}" placeholder="ex : Dorure à la feuille" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="autreAnnees">Depuis combien d'années</label>
+      <input type="text" id="autreAnnees" inputmode="numeric" value="${esc(b.annees)}" placeholder="ex : 3" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="autrePreuve">Preuve</label>
+      <select id="autrePreuve" class="champ"><option value="">— type de preuve —</option>${PREUVES.map(p=>`<option value="${esc(p)}" ${b.preuve===p?'selected':''}>${esc(p)}</option>`).join('')}</select>
+    </div>
+    <p id="autreMsg" role="alert" style="margin:8px 0;font-weight:800"></p>
+    <button type="button" class="btn" id="btnAjouterAutre">Ajouter</button>
+  </div>`;
+}
+function renderCarteDepart(){
+  if(!etat.experiences.length) return '';
+  const metiers = etat.experiences.map(exp=>{
+    const blocs = CATEGORIES.map(([cle,titre])=>{
+      const faits = (exp.comp[cle]||[]).filter(x=>x.coche).map(x=>x.libelle);
+      return faits.length ? `<div class="zRow"><div class="k">${titre}<span class="kCount">${faits.length}</span></div><ul>${faits.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>` : '';
+    }).join('');
+    return `<div class="zRow"><div class="k">${esc(exp.choix.libelleMetier)} · ${esc(exp.choix.codeRome)}${exp.anciennete ? ' · depuis '+esc(exp.anciennete) : ''}</div>${blocs || '<div class="empty">Rien de coché pour l’instant.</div>'}</div>`;
+  }).join('');
+  const dip = etat.diplomes.filter(d=>d.coche);
+  return `<div class="parcoursSection">
+    <h3>Ma carte de départ</h3>
+    <div class="sub">Ce que vous savez déjà faire, tel que vous l'avez déclaré. Elle est à vous : rien n'est noté ni comparé, et vous pouvez la changer à tout moment.</div>
+    ${metiers}
+    ${dip.length ? `<div class="zRow"><div class="k">Diplômes et certifications<span class="kCount">${dip.length}</span></div><ul>${dip.map(d=>`<li>${esc(d.libelle)}</li>`).join('')}</ul></div>` : ''}
+    ${etat.autres.length ? `<div class="zRow"><div class="k">Autres compétences, avec preuve<span class="kCount">${etat.autres.length}</span></div><ul>${etat.autres.map(a=>`<li>${esc(a.nom)} · ${a.annees} an${a.annees>1?'s':''} · ${esc(a.preuve)}</li>`).join('')}</ul></div>` : ''}
   </div>`;
 }
 async function ajouterExperience(s){
@@ -1132,6 +1178,17 @@ function wireEvents(){
   app.querySelectorAll('[data-anciennete]').forEach(sel=>sel.addEventListener('change', ()=>{ etat.experiences[+sel.dataset.anciennete].anciennete = sel.value; sauver(); }));
   app.querySelectorAll('[data-check-diplome]').forEach(b=>b.addEventListener('change', ()=>{ etat.diplomes[+b.dataset.checkDiplome].coche = b.checked; sauver(); }));
   const tcd = document.querySelector('[data-tout-cocher-diplome]'); if(tcd) tcd.addEventListener('change', ()=>{ etat.diplomes.forEach(d=>d.coche=tcd.checked); sauver(); render(); });
+  ['autreNom','autreAnnees'].forEach(id=>{ const el=document.getElementById(id); if(el) el.addEventListener('input', ()=>{ etat.autresBrouillon[id==='autreNom'?'nom':'annees']=el.value; }); });
+  const autrePreuve = document.getElementById('autrePreuve'); if(autrePreuve) autrePreuve.addEventListener('change', ()=>{ etat.autresBrouillon.preuve = autrePreuve.value; });
+  const btnAutre = document.getElementById('btnAjouterAutre');
+  if(btnAutre) btnAutre.addEventListener('click', ()=>{
+    const b = etat.autresBrouillon, msg = document.getElementById('autreMsg'), nom = (b.nom||'').trim(), an = parseInt(b.annees,10);
+    if(!nom){ msg.textContent = 'Indiquez la compétence.'; return; }
+    if(!(an>=1 && an<=60)){ msg.textContent = 'Indiquez depuis combien d’années, avec un nombre.'; return; }
+    if(!b.preuve){ msg.textContent = 'Choisissez le type de preuve : sans preuve, la compétence ne peut pas être ajoutée.'; return; }
+    etat.autres.push({ nom, annees:an, preuve:b.preuve }); etat.autresBrouillon = { nom:'', annees:'', preuve:'' }; sauver(); render();
+  });
+  app.querySelectorAll('[data-retirer-autre]').forEach(b=>b.addEventListener('click', ()=>{ etat.autres.splice(+b.dataset.retirerAutre,1); sauver(); render(); }));
   const bad = document.getElementById('btnAjouterDiplomeAutre');
   if(bad) bad.addEventListener('click', ()=>{
     const inp = document.getElementById('diplomeAutreInput');
