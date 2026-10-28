@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <script src="boite-message.js"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Positionnement — Maurice</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600;700&display=swap">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <style>
+    /* V0 — même système typo/couleurs que tout le projet, voir atelier-compte.html. */
+    :root{
+      --bg:#fff; --ink:#1c1a17; --muted:#55504a; --line:#e4e0d9; --soft:#f7f5f2;
+      --accent:#a8461f;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif}
+    body{font-size:16px;line-height:1.35;font-variant-numeric:tabular-nums}
+    h1,h2{font-family:Fraunces,Georgia,serif;font-weight:600}
+    button,input,select,textarea{font:inherit;color:inherit}
+    button{cursor:pointer}
+    .bar{background:#1c1a17;color:#fff;padding:14px 20px;display:flex;align-items:center;gap:14px}
+    .bar .brand{font-family:Fraunces,Georgia,serif;font-weight:600;font-size:17px}
+    .bar .prog{margin-left:auto;font-size:13px;color:#a39c90}
+    .progTrack{height:4px;background:#3a352d}
+    .progFill{height:100%;background:#fff;transition:width .2s ease}
+    .wrap{max-width:640px;margin:0 auto;padding:28px 20px 80px 20px}
+    .lead{color:var(--muted);font-size:15px;line-height:1.5;margin:0 0 24px 0}
+    .axeTitle{font-weight:700;font-size:15px;margin:22px 0 8px 0;padding-bottom:6px;border-bottom:1px solid var(--line)}
+    .situRow{padding:10px 0;border-bottom:1px solid var(--line)}
+    .situRow .nom{font-size:14.5px;margin-bottom:8px}
+    .situRow .sousProc{color:var(--muted);font-size:12.5px}
+    .posRow{display:flex;gap:6px;flex-wrap:wrap}
+    .posBtn{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:7px 13px;font-size:13px}
+    .posBtn.actif{background:var(--ink);color:#fff;border-color:var(--ink)}
+    .waitBox{text-align:center;padding:60px 20px}
+    .waitBox h1{font-size:22px;margin:0 0 10px 0}
+    .waitBox p{color:var(--muted);font-size:15px;line-height:1.5}
+    .card{border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:12px}
+    .card .nom{font-weight:600;font-size:14.5px}
+    .card .rep{margin-top:6px;font-size:13.5px;color:var(--muted)}
+    .card .herite{font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:4px}
+    .actionBtn{background:var(--ink);color:#fff;border:none;border-radius:999px;padding:12px 22px;font-size:15px;font-weight:700}
+    .ghostBtn{border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 14px;font-size:13.5px;color:var(--muted)}
+    .corrigerBtn{border:none;background:none;color:var(--ink);font-size:12.5px;text-decoration:underline;padding:0}
+    .corrigerBox{margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)}
+    .corrigerBox textarea{width:100%;border:1px solid var(--line);border-radius:8px;padding:7px 9px;font-size:13px;margin-top:6px}
+    .errBox{padding:24px;color:var(--ink);font-weight:600;font-family:monospace;white-space:pre-wrap}
+  </style>
+  <link rel="stylesheet" href="charte-vsf.css">
+</head>
+<body>
+<div class="app"></div>
+<script>
+const SUPABASE_URL = 'https://uuuigousvpijskbdhcal.supabase.co';
+const SUPABASE_KEY = 'sb_publishable__YuNj5XCo5YF8lwhwTu5OQ_RDM1Eesp';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+
+const POS_LABEL = { deja_pratique:'Déjà pratiqué', connu_pas_pratique:'Connu mais pas pratiqué', jamais_fait:'Jamais fait' };
+const POS_ORDRE = ['jamais_fait','connu_pas_pratique','deja_pratique'];
+
+let currentUser = null;
+const state = {
+  estId: '', modeValidation: false, cibleMemberId: null,
+  moiMembre: null, cible: null, positionnement: null, reponses: [],
+  situations: [], // [{situation_uid,situation,processus,sous_processus}]
+  chargement: true, erreur: '', corrigerOuvert: null,
+};
+
+function escapeHtml(s){ return String(s??'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])) }
+
+async function chargerSituationsTexte(uids){
+  if(!uids.length) return [];
+  const { data, error } = await sb.from('referentiel_situations')
+    .select('situation_uid,processus,sous_processus,situation').eq('niveau','Niveau 1 débutant').in('situation_uid', uids);
+  if(error) throw error;
+  return data || [];
+}
+
+async function initApp(){
+  const params = new URLSearchParams(location.search);
+  state.estId = params.get('est') || '';
+  state.cibleMemberId = params.get('valider') || null;
+  try{
+    const { data: { session } } = await sb.auth.getSession();
+    if(!session){ location.replace('connexion.html?suite=' + encodeURIComponent(location.href)); return; }
+    currentUser = session.user;
+    const { data: moi, error: eM } = await sb.from('members').select('id,user_id,role,establishment_id').eq('user_id', currentUser.id).eq('establishment_id', state.estId).maybeSingle();
+    if(eM) throw eM;
+    if(!moi){ location.replace('https://fastidious-kringle-8ac4c1.netlify.app/federation-accueil.html'); return; }
+    state.moiMembre = moi;
+
+    if(state.cibleMemberId){
+      await chargerPourValidation();
+    } else {
+      await chargerPourSoi();
+    }
+  }catch(err){
+    state.erreur = err.message || String(err);
+  }
+  state.chargement = false;
+  render();
+}
+
+async function chargerPourSoi(){
+  const { data: pos, error } = await sb.from('positionnements').select('*')
+    .eq('member_id', state.moiMembre.id).in('type', ['integration','changement_atelier']).neq('statut','valide')
+    .order('date_debut', { ascending:false }).limit(1).maybeSingle();
+  if(error) throw error;
+  if(!pos){ location.replace('https://fastidious-kringle-8ac4c1.netlify.app/atelier-compte.html?est=' + encodeURIComponent(state.estId)); return; }
+  state.positionnement = pos;
+  const { data: reps, error: eR } = await sb.from('positionnement_reponses').select('*').eq('positionnement_id', pos.id);
+  if(eR) throw eR;
+  state.reponses = reps || [];
+  state.situations = await chargerSituationsTexte((pos.situations||[]));
+}
+
+async function chargerPourValidation(){
+  if(!['gerant','admin'].includes(state.moiMembre.role)){ state.erreur = "Seul le gérant ou le régisseur peut valider un positionnement."; return; }
+  const { data: cible, error: eC } = await sb.from('members').select('id,user_id,role,establishment_id').eq('id', state.cibleMemberId).eq('establishment_id', state.estId).maybeSingle();
+  if(eC) throw eC;
+  if(!cible){ state.erreur = "Membre introuvable."; return; }
+  state.cible = cible;
+  const { data: pos, error } = await sb.from('positionnements').select('*')
+    .eq('member_id', cible.id).in('type', ['integration','changement_atelier']).neq('statut','valide')
+    .order('date_debut', { ascending:false }).limit(1).maybeSingle();
+  if(error) throw error;
+  if(!pos){ state.erreur = "Aucun positionnement en attente pour cette personne."; return; }
+  state.positionnement = pos;
+  const { data: reps, error: eR } = await sb.from('positionnement_reponses').select('*').eq('positionnement_id', pos.id);
+  if(eR) throw eR;
+  state.reponses = reps || [];
+
+  // Pour l'écran 3/8, on montre le profil complet actuel du membre (membre_situations),
+  // pas seulement les situations de cet épisode — point 8 : résumé du profil hérité.
+  const { data: complet, error: eMS } = await sb.from('membre_situations').select('situation_uid').eq('member_id', cible.id);
+  if(eMS) throw eMS;
+  const uidsComplet = (complet||[]).map(r=>r.situation_uid);
+  state.situations = await chargerSituationsTexte(uidsComplet.length ? uidsComplet : (pos.situations||[]));
+}
+
+function render(){
+  const root = document.querySelector('.app');
+  if(state.chargement){ root.innerHTML = `<div style="padding:40px;text-align:center;color:var(--muted)">Chargement…</div>`; return; }
+  if(state.erreur){ root.innerHTML = `<div class="errBox">${escapeHtml(state.erreur)}</div>`; return; }
+  if(state.cibleMemberId) return renderEcran3(root);
+  if(state.positionnement.statut === 'en_validation') return renderAttente(root);
+  return renderEcran2(root);
+}
+
+/* ---------- Écran 2 : positionnement par le membre lui-même ---------- */
+function renderEcran2(root){
+  const reponsesParUid = {}; for(const r of state.reponses) reponsesParUid[r.situation_uid] = r;
+  // Seules les situations sans réponse (ou marquées à corriger par le régisseur) restent à faire.
+  const aFaire = state.situations.filter(s => { const r = reponsesParUid[s.situation_uid]; return !r || !r.reponded_at; });
+  const total = state.situations.length;
+  const fait = total - aFaire.length;
+  const parCategorie = {};
+  for(const s of aFaire){ (parCategorie[s.processus] ||= []).push(s); }
+  root.innerHTML = `
+  <div class="bar">
+    <a class="brand" href="https://fastidious-kringle-8ac4c1.netlify.app/federation-accueil.html" style="color:#fff;text-decoration:none">Maurice</a>
+    <span class="prog">${fait} / ${total} situations positionnées</span>
+  </div>
+  <div class="progTrack"><div class="progFill" style="width:${total?Math.round(fait/total*100):0}%"></div></div>
+  <div class="wrap">
+    <h1 style="font-size:22px;margin:22px 0 8px 0">Ton positionnement</h1>
+    <p class="lead">Pour chaque situation, indique honnêtement où tu en es aujourd'hui — ce n'est pas un examen, juste une photo de départ. Chaque réponse s'enregistre tout de suite : tu peux fermer et reprendre plus tard exactement où tu t'es arrêté.</p>
+    ${Object.keys(parCategorie).map(proc => `
+      <div class="axeTitle">${escapeHtml(proc)}</div>
+      ${parCategorie[proc].map(s => `
+        <div class="situRow">
+          <div class="nom">${escapeHtml(s.situation)}<span class="sousProc"> — ${escapeHtml(s.sous_processus||'')}</span></div>
+          <div class="posRow">
+            ${POS_ORDRE.map(v => `<button class="posBtn" onclick="repondrePositionnement('${s.situation_uid}','${v}')">${POS_LABEL[v]}</button>`).join('')}
+          </div>
+        </div>`).join('')}
+    `).join('') || '<p class="lead">Rien à positionner pour l\'instant.</p>'}
+  </div>`;
+}
+async function repondrePositionnement(situationUid, statut){
+  try{
+    const { error } = await sb.from('positionnement_reponses').upsert({
+      positionnement_id: state.positionnement.id, situation_uid: situationUid, statut, reponded_at: new Date().toISOString(), a_corriger:false,
+    }, { onConflict:'positionnement_id,situation_uid' });
+    if(error) throw error;
+    const existant = state.reponses.find(r=>r.situation_uid===situationUid);
+    if(existant){ existant.statut=statut; existant.reponded_at=new Date().toISOString(); existant.a_corriger=false; }
+    else state.reponses.push({ situation_uid:situationUid, statut, reponded_at:new Date().toISOString(), a_corriger:false, valide:false });
+
+    const toutesRepondues = state.situations.every(s => { const r = state.reponses.find(x=>x.situation_uid===s.situation_uid); return r && r.reponded_at; });
+    if(toutesRepondues){
+      const patch = { statut:'en_validation' };
+      if(!state.positionnement.date_fin_autopositionnement) patch.date_fin_autopositionnement = new Date().toISOString();
+      const { error: eU } = await sb.from('positionnements').update(patch).eq('id', state.positionnement.id);
+      if(eU) throw eU;
+      state.positionnement.statut = 'en_validation';
+    }
+  }catch(err){ alert('Erreur : '+(err.message||err)); }
+  render();
+}
+
+/* ---------- Écran d'attente (membre a fini, attend la validation) ---------- */
+function renderAttente(root){
+  root.innerHTML = `
+  <div class="bar"><a class="brand" href="https://fastidious-kringle-8ac4c1.netlify.app/federation-accueil.html" style="color:#fff;text-decoration:none">Maurice</a></div>
+  <div class="waitBox">
+    <h1>C'est enregistré, merci.</h1>
+    <p>Ton positionnement est terminé. Il doit maintenant être validé par le gérant ou le régisseur de l'atelier avant que tu puisses accéder au reste de Maurice — ça ne devrait pas prendre longtemps.</p>
+  </div>`;
+}
+
+/* ---------- Écran 3 (et variante écran 8, changement d'atelier) : validation ---------- */
+function renderEcran3(root){
+  const p = state.positionnement;
+  const estChangementAtelier = p.type === 'changement_atelier';
+  const situationsEpisode = new Set(p.situations||[]);
+  const reponsesParUid = {}; for(const r of state.reponses) reponsesParUid[r.situation_uid] = r;
+  const parCategorie = {};
+  for(const s of state.situations){ (parCategorie[s.processus] ||= []).push(s); }
+  const nbACorriger = state.reponses.filter(r=>r.a_corriger).length;
+  root.innerHTML = `
+  <div class="bar"><a class="brand" href="https://fastidious-kringle-8ac4c1.netlify.app/federation-accueil.html" style="color:#fff;text-decoration:none">Maurice</a></div>
+  <div class="wrap">
+    <h1 style="font-size:22px;margin:22px 0 8px 0">${estChangementAtelier ? "Arrivée d'un membre déjà positionné ailleurs" : 'Validation du positionnement'}</h1>
+    <p class="lead">${estChangementAtelier
+      ? `Ce membre arrive avec ${state.situations.length} situation${state.situations.length>1?'s':''} déjà couvertes${situationsEpisode.size?`, dont ${situationsEpisode.size} nouvelle${situationsEpisode.size>1?'s':''} qu'il/elle vient de positionner`:''}. Vérifie ce profil hérité avant d'accepter.`
+      : `Relis les réponses ci-dessous. Si tout te semble juste, valide tout en un clic. Sinon, marque "à corriger" seulement les lignes concernées — la personne ne reprendra que celles-là.`}</p>
+    ${Object.keys(parCategorie).map(proc => `
+      <div class="axeTitle">${escapeHtml(proc)}</div>
+      ${parCategorie[proc].map(s => {
+        const r = reponsesParUid[s.situation_uid];
+        const herite = !situationsEpisode.has(s.situation_uid);
+        return `
+        <div class="card">
+          ${estChangementAtelier ? `<div class="herite">${herite?'Déjà connu, pas re-demandé':'Nouveau, vient de répondre'}</div>` : ''}
+          <div class="nom">${escapeHtml(s.situation)}</div>
+          ${r && r.statut ? `<div class="rep">Réponse : <b>${POS_LABEL[r.statut]||r.statut}</b></div>` : `<div class="rep">Pas de réponse propre à cet épisode (situation déjà connue).</div>`}
+          <div style="margin-top:8px">
+            <button class="corrigerBtn" onclick="toggleCorriger('${s.situation_uid}')">${state.corrigerOuvert===s.situation_uid?'Annuler':(r&&r.a_corriger?'Modifier la remarque':'À corriger')}</button>
+          </div>
+          ${state.corrigerOuvert===s.situation_uid ? `
+          <div class="corrigerBox">
+            <textarea rows="2" placeholder="Remarque courte (optionnel)" id="note_${s.situation_uid}">${escapeHtml((r&&r.note_correction)||'')}</textarea>
+            <div style="margin-top:6px"><button class="ghostBtn" onclick="marquerACorriger('${s.situation_uid}')">Marquer à corriger</button></div>
+          </div>` : (r&&r.a_corriger ? `<div class="rep" style="font-style:italic">À corriger${r.note_correction?' — '+escapeHtml(r.note_correction):''}</div>` : '')}
+        </div>`;
+      }).join('')}
+    `).join('')}
+    <div style="margin-top:20px;display:flex;gap:10px;align-items:center">
+      <button class="actionBtn" onclick="validerPositionnement()">${nbACorriger ? `Valider (${nbACorriger} ligne${nbACorriger>1?'s':''} renvoyée${nbACorriger>1?'s':''})` : (estChangementAtelier ? "Je prends connaissance et j'accepte ce profil" : 'Tout valider')}</button>
+    </div>
+  </div>`;
+}
+function toggleCorriger(situationUid){ state.corrigerOuvert = state.corrigerOuvert===situationUid ? null : situationUid; render(); }
+async function marquerACorriger(situationUid){
+  const note = (document.getElementById('note_'+situationUid)||{}).value || null;
+  try{
+    const existant = state.reponses.find(r=>r.situation_uid===situationUid);
+    if(existant){
+      const { error } = await sb.from('positionnement_reponses').update({ a_corriger:true, note_correction:note }).eq('id', existant.id);
+      if(error) throw error;
+      existant.a_corriger = true; existant.note_correction = note;
+    } else {
+      const { data, error } = await sb.from('positionnement_reponses').insert({ positionnement_id: state.positionnement.id, situation_uid: situationUid, a_corriger:true, note_correction:note }).select().single();
+      if(error) throw error;
+      state.reponses.push(data);
+    }
+    state.corrigerOuvert = null;
+  }catch(err){ alert('Erreur : '+(err.message||err)); }
+  render();
+}
+async function validerPositionnement(){
+  try{
+    const aCorrigerRows = state.reponses.filter(r=>r.a_corriger);
+    if(aCorrigerRows.length){
+      // Renvoie uniquement les lignes marquées au membre — elles perdent leur réponse/date
+      // pour redevenir "à faire" côté écran 2, le reste du positionnement n'est pas rouvert.
+      for(const r of aCorrigerRows){
+        const { error } = await sb.from('positionnement_reponses').update({ statut:null, reponded_at:null }).eq('id', r.id);
+        if(error) throw error;
+        r.statut = null; r.reponded_at = null;
+      }
+      const { error: eU } = await sb.from('positionnements').update({ statut:'en_cours' }).eq('id', state.positionnement.id);
+      if(eU) throw eU;
+      await alerteAttendre(`${aCorrigerRows.length} situation(s) renvoyée(s) à la personne pour être reprises.`);
+      location.replace('https://fastidious-kringle-8ac4c1.netlify.app/atelier-compte.html?est=' + encodeURIComponent(state.estId) + '&tab=equipe');
+      return;
+    }
+    const { error } = await sb.from('positionnements').update({ statut:'valide', date_validation:new Date().toISOString(), valide_par:currentUser.id }).eq('id', state.positionnement.id);
+    if(error) throw error;
+    // Instantané portable (point 7) : union avec ce que la personne couvrait déjà ailleurs.
+    const { data: mrow } = await sb.from('members').select('user_id').eq('id', state.cible.id).single();
+    const { data: instantane } = await sb.from('positionnement_instantanes').select('situations').eq('user_id', mrow.user_id).maybeSingle();
+    const connues = new Set((instantane && instantane.situations) || []);
+    for(const uid of state.situations.map(s=>s.situation_uid)) connues.add(uid);
+    await sb.from('positionnement_instantanes').upsert({ user_id: mrow.user_id, situations:[...connues], updated_at:new Date().toISOString() }, { onConflict:'user_id' });
+    await alerteAttendre('Positionnement validé — la personne a maintenant accès à Maurice.');
+    location.replace('https://fastidious-kringle-8ac4c1.netlify.app/atelier-compte.html?est=' + encodeURIComponent(state.estId) + '&tab=equipe');
+  }catch(err){ alert('Erreur : '+(err.message||err)); }
+}
+
+initApp();
+</script>
+</body>
+</html>

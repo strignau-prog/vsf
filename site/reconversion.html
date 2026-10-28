@@ -1,0 +1,977 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <script src="boite-message.js"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Reconversion — Fédération de peintres en lettres</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="federation-nav.js"></script>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600;700&display=swap">
+  <style>
+    /* V0 — même système typo/couleurs que tout le projet, voir atelier-compte.html. */
+    :root{
+      --bg:#fff; --ink:#1c1a17; --muted:#55504a; --line:#e4e0d9; --soft:#f7f5f2;
+      --accent:#a8461f;
+      --red:var(--ink); --amber:var(--ink); --green:var(--ink);
+      --redBg:var(--soft); --amberBg:var(--soft); --greenBg:var(--soft);
+      --blue:var(--ink); --blueBg:var(--soft);
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif}
+    body{font-size:16px;line-height:1.4;font-variant-numeric:tabular-nums}
+    button,input,select{font:inherit;color:inherit}
+    button{cursor:pointer}
+    h1,h2,.treeTitle,nav.topnav a.brand{font-family:Fraunces,Georgia,serif;font-weight:600}
+
+    /* ---- Nav horizontale, jamais latérale — hover révèle le sous-menu ---- */
+    nav.topnav{background:#1c1a17;color:#fff;display:flex;align-items:center;gap:4px;padding:0 20px;height:52px;font-size:14px}
+    nav.topnav a.brand{color:#fff;text-decoration:none;font-weight:600;margin-right:24px;font-size:15px}
+    nav.topnav .menuItem{position:relative;height:100%;display:flex;align-items:center}
+    nav.topnav .menuItem>span{padding:0 14px;cursor:default;color:#d7dbe4}
+    nav.topnav .menuItem:hover>span{color:#fff}
+    nav.topnav .dropdown{display:none;position:absolute;top:100%;left:0;background:#fff;color:var(--ink);min-width:220px;box-shadow:0 8px 24px rgba(0,0,0,.18);border-radius:0 0 10px 10px;overflow:hidden;z-index:50}
+    nav.topnav .menuItem:hover .dropdown{display:block}
+    nav.topnav .dropdown a{display:block;padding:10px 16px;color:var(--ink);text-decoration:none;font-size:13.5px;border-bottom:1px solid var(--line)}
+    nav.topnav .dropdown a:last-child{border-bottom:none}
+    nav.topnav .dropdown a:hover{background:var(--soft)}
+    .navToggle{display:none;background:none;border:none;color:#fff;font-size:22px;cursor:pointer;padding:4px 10px;margin-left:auto}
+    @media (max-width:720px){
+      nav.topnav{flex-wrap:wrap;height:auto;padding:10px 16px}
+      .navToggle{display:block}
+      nav.topnav .menuItem{display:none;width:100%;height:auto;flex-direction:column;align-items:stretch}
+      nav.topnav.navOpen .menuItem{display:flex}
+      nav.topnav .menuItem>span{padding:12px 0 4px;cursor:pointer}
+      nav.topnav .dropdown{position:static;box-shadow:none;border-radius:0;background:transparent;min-width:0}
+      nav.topnav .menuItem.open .dropdown{display:block}
+      nav.topnav .dropdown a{color:#fff;padding:10px 0 10px 14px;border-bottom:1px solid rgba(255,255,255,.12)}
+      nav.topnav .dropdown a:hover{background:rgba(255,255,255,.06)}
+    }
+
+    .wrap{max-width:900px;margin:0 auto;padding:32px 20px 80px 20px}
+    .hero h1{font-size:28px;margin:0 0 8px 0}
+    .hero p{color:var(--muted);font-size:15.5px;line-height:1.5;margin:0 0 20px 0}
+    .note{font-size:12.5px;color:var(--muted);background:var(--soft);border:1px dashed var(--line);border-radius:10px;padding:10px 12px;margin:16px 0}
+    .field label{display:block;font-size:13px;color:var(--muted);margin-bottom:5px}
+    .input,.select{width:100%;border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:16px;background:#fff}
+    .actionBtn{border:1px solid #111;background:#111;color:#fff;border-radius:999px;padding:12px 20px;font-size:15.5px;font-weight:700;margin-top:12px}
+    .actionBtn:disabled{opacity:.5;cursor:default}
+    .ghostBtn{border:1px solid var(--line);background:#fff;border-radius:999px;padding:9px 16px;font-size:14px;color:var(--muted)}
+    .toolbar{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+    .section{margin-top:32px}
+    .section h2{font-size:14px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:0 0 12px 0}
+    .statusGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px}
+    .statusCard{border:1px solid var(--line);border-radius:14px;padding:14px 16px;cursor:pointer}
+    .statusCard:hover{background:var(--soft)}
+    .detailCompareGrid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:-10px 0 24px 0}
+    .detailCompareCol h4{font-size:13px;text-transform:uppercase;letter-spacing:.04em;margin:0 0 8px 0}
+    @media (max-width:640px){.detailCompareGrid{grid-template-columns:1fr}}
+    .statusCard .num{font-size:26px;font-weight:700}
+    .statusCard .lbl{font-size:13px;color:var(--muted);margin-top:2px}
+    .chip{display:inline-flex;align-items:center;padding:3px 9px;font-size:12.5px;border:1px solid var(--line);background:#fff;border-radius:999px;white-space:nowrap;margin:2px}
+    .chip.green,.chip.red,.chip.blue{border-color:var(--line);background:var(--soft);color:var(--ink);font-weight:700}
+    .chip.grey{border-color:var(--line);background:var(--soft);color:var(--muted)}
+    .expCard{border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:12px}
+    .expCard .head{display:flex;justify-content:space-between;align-items:center}
+    .expCard .head b{font-size:15.5px}
+    .accordeon{border:1px solid var(--line);border-radius:10px;margin-top:8px;overflow:hidden}
+    .accordeonHead{display:flex;justify-content:space-between;align-items:center;padding:9px 12px;background:var(--soft);font-size:14px;font-weight:700}
+    .accordeonBody{padding:8px 14px 12px 14px}
+    .checkRow{display:flex;align-items:flex-start;gap:8px;padding:5px 0;font-size:14.5px}
+    .themeBlock{border:1px solid var(--line);border-radius:14px;margin-bottom:12px;overflow:hidden}
+    .themeHead{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:var(--soft);cursor:pointer}
+    .themeHead b{font-size:15.5px}
+    .themeBody{padding:6px 16px 16px 16px}
+    .situCard{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px;background:#fff}
+    .situCard .t{font-weight:700;font-size:15px}
+    .situCard .s{font-size:13px;color:var(--muted);margin-top:2px}
+    .moduleBox{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
+    .moduleCard{background:var(--soft);border-radius:10px;padding:8px 12px;margin-bottom:6px}
+    .moduleCard .t{font-weight:700;font-size:13.5px}
+    .sessionLine{font-size:12.5px;color:var(--muted);margin-top:3px}
+    .tiny{font-size:13px;color:var(--muted)}
+    .errBox{padding:16px;color:var(--red);font-family:monospace;white-space:pre-wrap;font-size:13px}
+    .friseWrap{overflow-x:auto;padding-bottom:4px}
+    .frise{display:flex;gap:3px;min-width:100%}
+    .friseBloc{background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;min-width:104px;flex:1 1 0;transition:background .15s}
+    .friseBloc:hover{background:var(--line)}
+    .friseBloc .t{font-size:12px;font-weight:700;color:var(--red);line-height:1.25;min-height:30px}
+    .friseBloc .n{font-size:21px;font-weight:700;margin-top:6px}
+    .friseBloc .h{font-size:11.5px;color:var(--red);opacity:.75}
+    .friseEstim{font-size:12.5px;color:var(--muted);margin-top:10px;font-style:italic}
+    .modalOverlay{position:fixed;inset:0;background:rgba(20,15,10,.45);display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto;z-index:100}
+    .modalBox{background:#fff;border-radius:16px;max-width:640px;width:100%;padding:20px 22px 24px 22px;box-shadow:0 10px 40px rgba(0,0,0,.25)}
+    .modalBox .modalHead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:4px}
+    .modalBox h3{margin:0;font-size:19px}
+    .diplomeToggle{font-size:12.5px;color:var(--muted);margin-top:16px;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+    .subTheme{margin-bottom:14px}
+    .subTheme .subTitre{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-bottom:6px}
+    @media (max-width:640px){.statusGrid{grid-template-columns:1fr}}
+  </style>
+  <link rel="stylesheet" href="charte-vsf.css">
+</head>
+<body>
+<nav class="topnav" id="navReconversion">
+  <a class="brand" href="https://fastidious-kringle-8ac4c1.netlify.app/federation-accueil.html">Maurice</a>
+  <button class="navToggle" onclick="toggleNav()" aria-label="Menu">☰</button>
+  <div class="menuItem"><span onclick="toggleMenuItem(this)">Mon Atelier</span>
+    <div class="dropdown">
+      <a href="https://fastidious-kringle-8ac4c1.netlify.app/atelier-compte.html">Accueil atelier</a>
+      <a href="https://fastidious-kringle-8ac4c1.netlify.app/devis-interne.html">Devis</a>
+      <a href="https://fastidious-kringle-8ac4c1.netlify.app/stock-atelier.html">Stock</a>
+      <a href="https://fastidious-kringle-8ac4c1.netlify.app/client-projet.html">Client / Projet</a>
+    </div>
+  </div>
+  <div class="menuItem"><span onclick="toggleMenuItem(this)">Ma Fédération</span>
+    <div class="dropdown">
+      <a href="https://fastidious-kringle-8ac4c1.netlify.app/federation-accueil.html">Accueil Fédération</a>
+      <a href="https://fastidious-kringle-8ac4c1.netlify.app/federation-accueil.html?tab=peintres">Nos peintres</a>
+      <a href="https://fastidious-kringle-8ac4c1.netlify.app/guide-production-mindmap.html">Guide comment on travaille</a>
+      <a href="https://fastidious-kringle-8ac4c1.netlify.app/guide-production-mindmap.html?guide=peindre">Guide comment on peint</a>
+      <a href="https://fastidious-kringle-8ac4c1.netlify.app/federation-accueil.html?tab=devenir">Nous rejoindre (Constellation &amp; Reconversion)</a>
+      <a href="https://fastidious-kringle-8ac4c1.netlify.app/therese.html" id="lienTherese" style="display:none">Thérèse</a>
+      <a href="https://fastidious-kringle-8ac4c1.netlify.app/federation-editos.html" id="lienEditos" style="display:none">Éditos du site public</a>
+      <a href="https://fastidious-kringle-8ac4c1.netlify.app/admin-metiers.html" id="lienAdminMetiers" style="display:none">Admin métiers</a>
+      <a href="https://fastidious-kringle-8ac4c1.netlify.app/deploiement-referentiel-formation.html" id="lienDeploiementFormation" style="display:none">Déploiement référentiel-formation</a>
+    </div>
+  </div>
+</nav>
+<script>if(window.top!==window.self){ document.getElementById('navReconversion').style.display='none'; }</script>
+<div class="wrap" id="app"></div>
+<script>
+const SUPABASE_URL = 'https://uuuigousvpijskbdhcal.supabase.co';
+const SUPABASE_KEY = 'sb_publishable__YuNj5XCo5YF8lwhwTu5OQ_RDM1Eesp';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+function escapeHtml(s){ return String(s??'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])) }
+function toggleNav(){ document.querySelector('nav.topnav').classList.toggle('navOpen'); }
+function toggleMenuItem(el){ el.parentElement.classList.toggle('open'); }
+
+// Chargé dynamiquement depuis role_codes_rome (pilotée par roles_metier, donc
+// par metier_id) — plus aucun code ROME ni libellé de rôle codé en dur ici,
+// pour rester utilisable par n'importe quel métier de la Fédération.
+let CIBLES = {};
+let LABELS_CIBLE = {};
+async function chargerCiblesRome(){
+  const { data: metiers } = await sb.from('metiers').select('id').order('ordre').limit(1);
+  const metierId = metiers && metiers[0] && metiers[0].id;
+  if(!metierId) return;
+  const { data: roles, error } = await sb.from('roles_metier').select('id,code,label').eq('metier_id', metierId).order('ordre');
+  if(error || !roles) return;
+  const { data: liens, error: e2 } = await sb.from('role_codes_rome').select('role_metier_id,code_rome').in('role_metier_id', roles.map(r=>r.id));
+  if(e2) return;
+  const codesParRole = {};
+  for(const l of liens) (codesParRole[l.role_metier_id] = codesParRole[l.role_metier_id] || []).push(l.code_rome);
+  CIBLES = {}; LABELS_CIBLE = {};
+  for(const r of roles){
+    if(codesParRole[r.id] && codesParRole[r.id].length){
+      CIBLES[r.code] = codesParRole[r.id];
+      LABELS_CIBLE[r.code] = r.label;
+    }
+  }
+  render();
+}
+// Vocabulaire ROME -> vocabulaire Fédération. "savoir-faire" ROME s'affiche "Situations de travail"
+// pour rester cohérent avec le référentiel — la correspondance technique reste 'savoir-faire' en base.
+const CATEGORIES = [
+  { cle:'savoir', titre:'Connaissances' },
+  { cle:'savoir-faire', titre:'Situations de travail' },
+  { cle:'savoir-etre', titre:'Savoir-être' }
+];
+
+// ROME range les diplômes/titres (CAP, BP, Bac pro, BMA, Titre professionnel, CQP...) ET les
+// certifications/habilitations délivrées par un organisme accrédité (CACES, R486, R408, R457...)
+// dans les "connaissances" — mais la Fédération ne délivre ni ne gère aucun des deux. On les sort
+// du décompte principal et de la liste à cocher, affichés à part, discrètement.
+function estHorsPerimetreFederation(libelle){
+  const l = String(libelle||'').trim();
+  return /^(CAP|BEP|BP|BPJEPS|Bac\s*pro|BTS|BUT|BMA|DMA|DUT|DEUG|Licence|Master|Doctorat|MBA|EMBA|Titre professionnel|CQPI?|Mention complémentaire|MC)\b/i.test(l)
+      || /\bDiplôme\b/i.test(l)
+      || /\((BM|CAP|BP|BEP|BTS|BMA|DMA)\)\s*$/i.test(l)
+      || /Certificat d.aptitude|CACES|habilitation électrique/i.test(l)
+      || /\bR486\b|\bR408\b|\bR457\b/.test(l);
+}
+
+// Sous-regroupement thématique des compétences ROME pas encore reliées à une situation du
+// référentiel — pour rendre "En cours d'intégration" lisible plutôt qu'une liste plate.
+// Heuristique approximative par mots-clés, assumée comme telle (pas une vérité scientifique).
+const THEMES_CONNAISSANCE = [
+  { titre:'Sécurité et habilitations', regex:/sécurité|habilitation|risque|\bEPI\b|hygiène|prévention|échafaudage|hauteur|certificat d.aptitude|conduite en sécurité|R486|R408|R457/i },
+  { titre:'Matériaux et produits', regex:/caractéristiques|propriétés|peinture|résine|enduit|solvant|feuille|pigment|vernis|colle\b|support|matériau|émail|laque|céramique|cuir|verre|métal|métau|plâtre|carrelage|revêtement|stuc|teinture|teinte|couleur|chimie/i },
+  { titre:"Techniques d'application et de mise en œuvre", regex:/techniqu|application|appliqu|pose\b|poser|geste|dorure|\bdor|lettrage|tracé|calligraphie|dessin|gravure|impression|sérigraphie|typographie|patine|badigeon|décapage|ragréage|talochage|moulage|sculpture|entoilage|argenture|assembl|démont|montage|nettoy|entreten|répar|condition|décor|ornement|façonnage|cirage|motif|reproduire|traitement|conservation|outil|pistolet|projection|tampon|isolation/i },
+  { titre:'Gestion et organisation', regex:/gestion|planning|budget|devis|administrat|comptab|organisation|chiffrage|processus|pilotage|financ/i },
+  { titre:'Outils numériques', regex:/logiciel|numérique|informatique|\bERP\b|digital|\bCAO\b|\bDAO\b|\bPAO\b|autocad|artcam/i },
+  { titre:'Communication et relation client', regex:/communication|client|relationnel|commercial|négociation|prescripteur|encaissement/i },
+];
+function categoriserConnaissance(item){
+  if(item.categorie === 'Savoir-être') return 'Savoir-être';
+  for(const t of THEMES_CONNAISSANCE) if(t.regex.test(item.libelle)) return t.titre;
+  return 'Autres connaissances';
+}
+const HEURES_PAR_SITUATION = 3; // estimation simulée, pas de vraie donnée de durée pour l'instant
+
+// "Situations de travail" = savoir-faire ROME. Chaque fois qu'une correspondance existe déjà avec
+// le référentiel (correspondances_rome, statut='rattaché ROME'), on affiche STRICTEMENT le libellé
+// du référentiel à la place du libellé ROME brut — jamais un mélange, jamais une reformulation à
+// nous. Ce qui n'a pas encore de correspondance (ou reste "sans équivalent — Fédération") reste en
+// ROME brut (backlog de construction, pas caché).
+//
+// correspondances_rome.code_rome stocke le code compétence ROME (ex. "119936"), pas l'id interne de
+// rome_competences_cache : on doit donc faire correspondre par code_competence, pas par id. Et
+// situation_id y vaut situation_uid (partagé par les 4 lignes niveau d'une situation), pas l'id
+// d'une ligne referentiel_situations précise — d'où la jointure en deux temps ci-dessous (aucune
+// vraie clé étrangère entre ces deux tables, cf. convention du référentiel).
+async function enrichirAvecReferentiel(items){
+  const savoirFaire = items.filter(c=>c.type==='savoir-faire' && c.code_competence);
+  if(!savoirFaire.length) return items;
+  const codes = [...new Set(savoirFaire.map(c=>c.code_competence))];
+  const { data: corresp, error } = await sb.from('correspondances_rome')
+    .select('situation_id, code_rome').eq('statut', 'rattaché ROME').in('code_rome', codes);
+  if(error) throw error;
+  const situationUids = [...new Set((corresp||[]).map(c=>c.situation_id))];
+  let situationParUid = {};
+  if(situationUids.length){
+    const { data: situations, error: e2 } = await sb.from('referentiel_situations')
+      .select('situation_uid, situation').in('situation_uid', situationUids);
+    if(e2) throw e2;
+    for(const s of (situations||[])) situationParUid[s.situation_uid] = s.situation;
+  }
+  const situationsParCode = {};
+  for(const c of (corresp||[])){
+    const situ = situationParUid[c.situation_id];
+    if(!situ) continue;
+    (situationsParCode[c.code_rome] = situationsParCode[c.code_rome] || new Set()).add(situ);
+  }
+  return items.map(c=>{
+    const situs = c.code_competence ? situationsParCode[c.code_competence] : null;
+    if(c.type==='savoir-faire' && situs && situs.size) return { ...c, libelle: [...situs].sort().join(' / ') };
+    return c;
+  });
+}
+
+let etat = {
+  etape:'recherche', chargement:false, erreur:'',
+  recherche:'', suggestions:[], recherchant:false,
+  experiences:[], // [{ choix:{libelle,codeRome,libelleMetier}, autoEval:{savoir:[...],'savoir-faire':[...],'savoir-etre':[...]}, ouvert:{savoir:false,...} }]
+  resultat:null,
+  blocOuvert:null, diplomesOuverts:false, sousThemeOuvert:{}, sousThemeOuvertConnaissances:{},
+  detailComparaisonOuvert:false, rechercheBlocs:'', reglagesPoidsOuverts:false
+};
+let rechercheTimer = null;
+let session = null;
+let poidsCategorieEdition = null; // [{categorie,poids}] chargé à la demande pour le panneau comité
+
+function render(){
+  const actif = document.activeElement;
+  const gardeFocus = (actif && actif.id === 'recherche');
+  const selStart = gardeFocus ? actif.selectionStart : null;
+  const selEnd = gardeFocus ? actif.selectionEnd : null;
+
+  document.getElementById('app').innerHTML = `
+  <div class="hero">
+    <h1>Prototype — Comparaison de compétences (reconversion)</h1>
+    <p>Ajoute une ou plusieurs expériences passées, coche ce que tu maîtrises déjà dans chacune, puis compare l'ensemble à un métier de la Fédération.</p>
+  </div>
+  <div class="note">Prototype de test — pas encore d'estimation de durée. Le rôle Régisseur n'est pas encore dans le référentiel, donc pas comparable pour l'instant.</div>
+  ${etat.erreur ? `<div class="errBox">${escapeHtml(etat.erreur)}</div>` : ''}
+  ${etat.etape==='recherche' ? renderEtapeRecherche() : renderEtapeResultat()}
+  `;
+
+  if(gardeFocus){
+    const el = document.getElementById('recherche');
+    if(el){ el.focus(); try{ el.setSelectionRange(selStart, selEnd); }catch(e){} }
+  }
+}
+
+/* =========================================================================
+   ÉTAPE 1 — cumul d'expériences passées, chacune avec ses compétences
+   à cocher (3 catégories repliables)
+   ========================================================================= */
+function renderEtapeRecherche(){
+  return `
+  ${etat.experiences.map((exp,ei)=>renderExperience(exp, ei)).join('')}
+
+  <div class="toolbar">
+    <div class="field" style="flex:1;min-width:220px;position:relative">
+      <label>${etat.experiences.length ? 'Ajouter une autre expérience passée' : 'Ton métier actuel (ou passé)'}</label>
+      <input class="input" id="recherche" placeholder="Tape un intitulé de métier (ex : développeur, comptable, vendeur...)" value="${escapeHtml(etat.recherche)}" oninput="handleSaisieRecherche(this.value)" autocomplete="off">
+      ${etat.suggestions.length ? `
+      <div style="position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid var(--line);border-radius:10px;margin-top:4px;max-height:260px;overflow-y:auto;z-index:10;box-shadow:0 4px 14px rgba(0,0,0,.08)">
+        ${etat.suggestions.map((s,i)=>`
+          <div onclick="choisirSuggestion(${i})" style="padding:9px 12px;cursor:pointer;border-bottom:1px solid var(--line);font-size:14.5px" onmouseover="this.style.background='var(--soft)'" onmouseout="this.style.background='#fff'">
+            ${escapeHtml(s.libelle)} <span class="tiny">— ${escapeHtml(s.libelleMetier)} (${escapeHtml(s.codeRome)})</span>
+          </div>`).join('')}
+      </div>` : ''}
+      ${etat.recherchant ? '<div class="tiny" style="margin-top:4px">Recherche…</div>' : ''}
+      ${etat.chargement ? '<div class="tiny" style="margin-top:4px">Chargement de tes compétences…</div>' : ''}
+    </div>
+  </div>
+
+  ${etat.experiences.length ? `
+  <div class="toolbar" style="margin-top:18px">
+    <div class="field" style="min-width:220px">
+      <label>Métier visé (Fédération)</label>
+      <select class="select" id="cible">
+        ${Object.keys(LABELS_CIBLE).map(code=>`<option value="${escapeHtml(code)}">${escapeHtml(LABELS_CIBLE[code])}</option>`).join('')}
+      </select>
+    </div>
+    <button class="actionBtn" onclick="handleComparer()" ${etat.chargement?'disabled':''}>${etat.chargement?'Comparaison…':'Comparer'}</button>
+  </div>` : ''}
+  `;
+}
+
+function renderExperience(exp, ei){
+  return `
+  <div class="expCard">
+    <div class="head">
+      <b>${escapeHtml(exp.choix.libelleMetier)} <span class="tiny">(${escapeHtml(exp.choix.codeRome)})</span></b>
+      <button class="ghostBtn" style="padding:3px 10px;font-size:12px" onclick="retirerExperience(${ei})">Retirer ✕</button>
+    </div>
+    ${CATEGORIES.map(cat=>{
+      const items = exp.autoEval[cat.cle];
+      const nbCoche = items.filter(x=>x.coche).length;
+      const ouvert = exp.ouvert[cat.cle];
+      return `
+      <div class="accordeon">
+        <button class="accordeonHead" style="width:100%;border:none;text-align:left" onclick="toggleAccordeon(${ei}, '${cat.cle}')">
+          <span>${escapeHtml(cat.titre)} (${items.length}${nbCoche?' · '+nbCoche+' coché'+(nbCoche>1?'s':''):''})</span>
+          <span>${ouvert?'▲':'▼'}</span>
+        </button>
+        ${ouvert ? `<div class="accordeonBody">
+          ${items.length ? `
+          <label class="checkRow" style="border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:4px">
+            <input type="checkbox" ${items.every(x=>x.coche)?'checked':''} onchange="toggleTout(${ei}, '${cat.cle}', this.checked)">
+            <span class="tiny" style="font-weight:700">Tout cocher / tout décocher</span>
+          </label>
+          ${items.map((item,i)=>`
+            <label class="checkRow">
+              <input type="checkbox" ${item.coche?'checked':''} onchange="toggleAutoEval(${ei}, '${cat.cle}', ${i}, this.checked)">
+              <span>${escapeHtml(item.libelle)}</span>
+            </label>`).join('')}` : '<div class="tiny">Aucune donnée dans cette catégorie pour ce métier.</div>'}
+        </div>` : ''}
+      </div>`;
+    }).join('')}
+    ${exp.diplomes && exp.diplomes.length ? `
+    <div class="diplomeToggle" onclick="toggleDiplomesExp(${ei})">D'autres diplômes et certifications existent aussi pour ce métier, hors parcours Fédération (${exp.diplomes.length}) ${exp.diplomesOuverts?'▲':'▼'}</div>
+    ${exp.diplomesOuverts ? `<div style="margin-top:6px">${exp.diplomes.map(d=>`<span class="chip grey">${escapeHtml(d.libelle)}</span>`).join('')}</div>` : ''}
+    ` : ''}
+  </div>`;
+}
+function toggleDiplomesExp(ei){
+  etat.experiences[ei].diplomesOuverts = !etat.experiences[ei].diplomesOuverts;
+  render();
+}
+
+function handleSaisieRecherche(valeur){
+  etat.recherche = valeur;
+  clearTimeout(rechercheTimer);
+  if(valeur.trim().length < 2){ etat.suggestions = []; render(); return; }
+  rechercheTimer = setTimeout(async ()=>{
+    etat.recherchant = true; render();
+    try{
+      const { data, error } = await sb.functions.invoke('rome-sync', { body: { recherche: valeur.trim() } });
+      if(error) throw error;
+      etat.suggestions = (data.resultats||[]).slice(0, 12);
+    }catch(err){
+      etat.suggestions = [];
+    }
+    etat.recherchant = false;
+    render();
+  }, 400);
+}
+async function choisirSuggestion(i){
+  const s = etat.suggestions[i];
+  etat.recherche = '';
+  etat.suggestions = [];
+  await chargerExperienceDepuisRome(s);
+}
+async function chargerExperienceDepuisRome(s){
+  etat.erreur = '';
+  etat.chargement = true;
+  render();
+  try{
+    const codeSource = s.codeRome;
+    const { data: dejaEnCache } = await sb.from('rome_competences_cache').select('id').eq('code_rome', codeSource).limit(1);
+    if(!dejaEnCache || !dejaEnCache.length){
+      const { data: syncData, error: syncErr } = await sb.functions.invoke('rome-sync', { body: { codes: [codeSource] } });
+      if(syncErr) throw syncErr;
+      if(syncData && syncData[codeSource] && syncData[codeSource].erreur) throw new Error('Erreur API pour "'+codeSource+'" : '+syncData[codeSource].erreur);
+    }
+    const { data: compBrut, error } = await sb.from('rome_competences_cache').select('id,type,libelle,code_competence').eq('code_rome', codeSource);
+    if(error) throw error;
+    const comp = await enrichirAvecReferentiel(compBrut);
+    // Même filtre diplômes/titres/certifications que côté cible : ROME les classe en
+    // "connaissances", la Fédération ne les gère pas — on les sort de la liste à cocher.
+    // On garde le code_competence de chaque item (pas seulement son libellé) : c'est lui qui sert à
+    // détecter le tier 2 "déjà connu" — un savoir coché dont le code figure dans les
+    // codes_connaissances_rome d'une situation manquante, indépendamment du texte exact.
+    const autoEval = { savoir:[], 'savoir-faire':[], 'savoir-etre':[] };
+    const diplomesVus = new Set();
+    const diplomes = [];
+    for(const c of comp){
+      if(c.type === 'savoir' && estHorsPerimetreFederation(c.libelle)){
+        const k = c.libelle.trim().toLowerCase();
+        if(!diplomesVus.has(k)){ diplomesVus.add(k); diplomes.push({ libelle:c.libelle }); }
+        continue;
+      }
+      if(autoEval[c.type]) autoEval[c.type].push({ id:c.id, libelle:c.libelle, code:c.code_competence||null, coche:false });
+    }
+    // Deux compétences ROME distinctes peuvent se ramener au même libellé référentiel une fois
+    // enrichies — on fusionne pour ne pas afficher deux fois la même situation à cocher.
+    const vusSF = new Set();
+    autoEval['savoir-faire'] = autoEval['savoir-faire'].filter(item=>{
+      const k = item.libelle.trim().toLowerCase();
+      if(vusSF.has(k)) return false;
+      vusSF.add(k); return true;
+    });
+    diplomes.sort((a,b)=>a.libelle.localeCompare(b.libelle));
+    for(const cat of CATEGORIES) autoEval[cat.cle].sort((a,b)=>a.libelle.localeCompare(b.libelle));
+    etat.experiences.push({ choix:s, autoEval, diplomes, diplomesOuverts:false, ouvert:{savoir:false,'savoir-faire':false,'savoir-etre':false} });
+  }catch(err){
+    etat.erreur = err.message || String(err);
+  }
+  etat.chargement = false;
+  render();
+}
+function retirerExperience(ei){
+  etat.experiences.splice(ei,1);
+  render();
+}
+function toggleAccordeon(ei, cle){
+  const exp = etat.experiences[ei];
+  exp.ouvert[cle] = !exp.ouvert[cle];
+  render();
+}
+function toggleAutoEval(ei, cle, i, checked){
+  etat.experiences[ei].autoEval[cle][i].coche = checked;
+  // pas de render() complet : seul le compteur dans l'en-tête de l'accordéon serait à jour,
+  // acceptable de ne le voir qu'au prochain pli/dépli plutôt que de perdre le défilement ici.
+}
+function toggleTout(ei, cle, checked){
+  etat.experiences[ei].autoEval[cle].forEach(item=>item.coche = checked);
+  render();
+}
+
+/* =========================================================================
+   ÉTAPE 2 — comparaison du pool cumulé, résultats groupés par thématique
+   (processus du référentiel — même source que "Parcours proposé")
+   ========================================================================= */
+let dernierCibleKey = null;
+async function handleComparer(){
+  const selCible = document.getElementById('cible');
+  const cibleKey = selCible ? selCible.value : dernierCibleKey;
+  if(!cibleKey) return;
+  dernierCibleKey = cibleKey;
+  etat.chargement = true; etat.erreur = '';
+  render();
+  try{
+    const codesCible = CIBLES[cibleKey];
+    const { data: registreProcessus, error: eReg } = await sb.from('referentiel_processus').select('nom,categorie');
+    if(eReg) throw eReg;
+    const categorieParProcessus = {};
+    for(const p of (registreProcessus||[])) categorieParProcessus[p.nom] = p.categorie;
+    const { data: cibleBruteRome, error: e2 } = await sb.from('rome_competences_cache').select('id,type,libelle,code_competence').in('code_rome', codesCible);
+    if(e2) throw e2;
+    const cibleBrute = await enrichirAvecReferentiel(cibleBruteRome);
+
+    // Diplômes/titres/certifications externes : ROME les classe en "connaissances", mais la
+    // Fédération ne les délivre ni ne les gère — on les sort du décompte principal, affichés à part.
+    const diplomesVus = new Set();
+    const diplomes = [];
+    const cible = [];
+    for(const c of cibleBrute){
+      if(c.type === 'savoir' && estHorsPerimetreFederation(c.libelle)){
+        const k = c.libelle.trim().toLowerCase();
+        if(!diplomesVus.has(k)){ diplomesVus.add(k); diplomes.push({ libelle:c.libelle }); }
+        continue;
+      }
+      cible.push(c);
+    }
+    diplomes.sort((a,b)=>a.libelle.localeCompare(b.libelle));
+    // Note : deux compétences ROME distinctes (ex. F1606 et B1302) peuvent se ramener au même
+    // libellé référentiel une fois enrichies — le dédoublonnage par (type, libellé) juste
+    // en dessous (le Set "vus") absorbe déjà ce cas, pas besoin d'un second passage ici.
+
+    // Le tier 1 ("déjà pratiqué") se détecte par code ROME, pas par texte : plus fiable qu'un
+    // rapprochement de libellé. Les savoirs cochés (codesAcquisSavoir) servent ensuite au tier 2.
+    const libAcquis = new Set();
+    const codesAcquisSF = new Set();
+    const codesAcquisSavoir = new Set();
+    for(const exp of etat.experiences) for(const cat of CATEGORIES) for(const item of exp.autoEval[cat.cle]) if(item.coche){
+      libAcquis.add(item.libelle.trim().toLowerCase());
+      if(cat.cle==='savoir-faire' && item.code) codesAcquisSF.add(item.code);
+      if(cat.cle==='savoir' && item.code) codesAcquisSavoir.add(item.code);
+    }
+
+    const parCategorie = {};
+    for(const cat of CATEGORIES) parCategorie[cat.cle] = { acquises:[], manquantes:[], idsManquants:[] };
+    const vus = new Set();
+    for(const c of cible){
+      if(!parCategorie[c.type]) continue;
+      const key = c.type+'|'+c.libelle.trim().toLowerCase();
+      if(vus.has(key)) continue; vus.add(key);
+      const dejaPratique = c.type==='savoir-faire' ? (c.code_competence && codesAcquisSF.has(c.code_competence)) : libAcquis.has(c.libelle.trim().toLowerCase());
+      if(dejaPratique) parCategorie[c.type].acquises.push(c.libelle);
+      else { parCategorie[c.type].manquantes.push(c.libelle); parCategorie[c.type].idsManquants.push(c.type==='savoir-faire' ? c.code_competence : c.id); }
+    }
+
+    // Structure fixée : on ne compare que les savoir-faire ROME (= nos situations de travail).
+    // code_competence -> {libelle, categorie} pour pouvoir ré-étiqueter chaque situation manquante
+    // une fois groupée par thème (code_competence, pas id : voir enrichirAvecReferentiel ci-dessus).
+    const infoParId = {};
+    for(let i=0;i<parCategorie['savoir-faire'].idsManquants.length;i++){
+      infoParId[parCategorie['savoir-faire'].idsManquants[i]] = { libelle: parCategorie['savoir-faire'].manquantes[i], categorie: 'Situations de travail' };
+    }
+    const tousIdsManquants = Object.keys(infoParId);
+
+    const themes = {}; // processus -> { competences: Map(libelle->categorie), situations: Map(situation-> {..., modules}) }
+    const idsAvecCorrespondance = new Set();
+
+    if(tousIdsManquants.length){
+      const { data: correspRaw, error: e3 } = await sb.from('correspondances_rome')
+        .select('situation_id, code_rome, codes_connaissances_rome').eq('statut', 'rattaché ROME').in('code_rome', tousIdsManquants);
+      if(e3) throw e3;
+      const uidsCorresp = [...new Set((correspRaw||[]).map(c=>c.situation_id))];
+      let situationsDetail = [];
+      if(uidsCorresp.length){
+        const { data: sdet, error: e3b } = await sb.from('referentiel_situations')
+          .select('situation_uid, situation, processus, sous_processus, niveau4, niveau').in('situation_uid', uidsCorresp);
+        if(e3b) throw e3b;
+        situationsDetail = sdet || [];
+      }
+      const situationsParUidDetail = {};
+      for(const s of situationsDetail) (situationsParUidDetail[s.situation_uid] = situationsParUidDetail[s.situation_uid] || []).push(s);
+
+      // Tier 2 "déjà connu, à mettre en pratique" : la situation n'est pas encore pratiquée (elle
+      // est ici, dans les manquantes), mais au moins un de ses codes_connaissances_rome correspond à
+      // un savoir déjà coché par le candidat — uniquement testé pour les situations non "pratiqué"
+      // (cf. tousIdsManquants, déjà filtré des acquis plus haut).
+      for(const c of (correspRaw||[])){
+        const rows = situationsParUidDetail[c.situation_id]; if(!rows || !rows.length) continue;
+        idsAvecCorrespondance.add(c.code_rome);
+        const info = infoParId[c.code_rome];
+        const tier = (c.codes_connaissances_rome||[]).some(code=>codesAcquisSavoir.has(code)) ? 'connu' : 'decouvrir';
+        for(const rs of rows){
+          // Bloc = sous-sous-processus (niveau4) quand il existe, sinon sous-processus — jamais le
+          // processus générique (Pilotage/Production/Support), trop large pour être un vrai bloc.
+          const blocNom = rs.niveau4 || rs.sous_processus || 'Autre';
+          if(!themes[blocNom]) themes[blocNom] = { competences:{}, situations:{}, processus: rs.processus, sousProcessus: rs.sous_processus };
+          if(info) themes[blocNom].competences[info.libelle] = info.categorie;
+          if(!themes[blocNom].situations[rs.situation]) themes[blocNom].situations[rs.situation] = { situation:rs.situation, sous_processus:rs.sous_processus, situation_uid:rs.situation_uid, tier, niveaux:[] };
+          themes[blocNom].situations[rs.situation].niveaux.push(rs.niveau);
+        }
+      }
+
+      // Modules de formation (contenu Fédération, lecture seule) — rattachés situation par situation
+      // via module_situations (situation_id = situation_uid), pas par sous-processus entier comme
+      // l'ancien modèle : plus précis. Le nouveau modèle n'a pas de "session programmée" (dates/
+      // lieu/places) — seule la modalité (tuto/AFEST/...) est affichée.
+      const situationUidsThemes = [...new Set(Object.values(themes).flatMap(t=>Object.values(t.situations).map(s=>s.situation_uid).filter(Boolean)))];
+      if(situationUidsThemes.length){
+        const { data: modalites, error: eMod } = await sb.from('modalites_formation').select('id,label');
+        if(eMod) throw eMod;
+        const modaliteParId = {}; for(const m of (modalites||[])) modaliteParId[m.id] = m.label;
+        const { data: liaisons, error: e4 } = await sb.from('module_situations')
+          .select('module_id, situation_id').in('situation_id', situationUidsThemes);
+        if(e4) throw e4;
+        const moduleIds = [...new Set((liaisons||[]).map(l=>l.module_id))];
+        let modulesParId = {};
+        if(moduleIds.length){
+          const { data: modules, error: e5 } = await sb.from('modules_apprentissage').select('id,nom,description,modalite_id,lien_ressource').in('id', moduleIds);
+          if(e5) throw e5;
+          for(const m of (modules||[])) modulesParId[m.id] = { ...m, modaliteLabel: modaliteParId[m.modalite_id]||'' };
+        }
+        const modulesParSituationUid = {};
+        for(const l of (liaisons||[])){
+          const mod = modulesParId[l.module_id]; if(!mod) continue;
+          (modulesParSituationUid[l.situation_id] = modulesParSituationUid[l.situation_id] || []).push(mod);
+        }
+        for(const blocNom in themes){
+          for(const situKey in themes[blocNom].situations){
+            const s = themes[blocNom].situations[situKey];
+            s.modules = s.situation_uid ? (modulesParSituationUid[s.situation_uid] || []) : [];
+          }
+        }
+      }
+    }
+
+    const sansCorrespondance = tousIdsManquants.filter(id=>!idsAvecCorrespondance.has(id)).map(id=>infoParId[id]);
+
+    // Sous-regroupement thématique du "reste" (backlog de construction du référentiel, pas un défaut)
+    const sansCorrespondanceParTheme = {};
+    for(const item of sansCorrespondance){
+      const th = categoriserConnaissance(item);
+      (sansCorrespondanceParTheme[th] = sansCorrespondanceParTheme[th] || []).push(item);
+    }
+    const sansCorrespondanceTries = Object.entries(sansCorrespondanceParTheme)
+      .map(([titre, items])=>({ titre, items }))
+      .sort((a,b)=>b.items.length-a.items.length);
+
+    // Connaissances (savoirs) et savoir-être manquants : ROME les classe hors savoir-faire, la
+    // Fédération les inclut (Certifications/Diplômes déjà exclus par estHorsPerimetreFederation)
+    // mais jamais dans le décompte "situations de travail" — à part, classés en rubriques, comme
+    // un complément à développer en parallèle du geste plutôt qu'un vrai manque bloquant.
+    const connaissancesManquantes = [
+      ...parCategorie['savoir'].manquantes.map(libelle=>({ libelle, categorie:'Connaissances' })),
+      ...parCategorie['savoir-etre'].manquantes.map(libelle=>({ libelle, categorie:'Savoir-être' })),
+    ];
+    const connaissancesParTheme = {};
+    for(const item of connaissancesManquantes){
+      const th = categoriserConnaissance(item);
+      (connaissancesParTheme[th] = connaissancesParTheme[th] || []).push(item);
+    }
+    const connaissancesTriees = Object.entries(connaissancesParTheme)
+      .map(([titre, items])=>({ titre, items }))
+      .sort((a,b)=>b.items.length-a.items.length);
+
+    // Pondération de centralité par catégorie — réglable par le comité (reconversion_poids_categorie),
+    // jamais figée en dur : un bloc du Guide "comment on peint" (categorie 'Lettrage peint') pèse
+    // plus par défaut qu'un bloc Support, mais le comité peut changer ces poids à tout moment.
+    const { data: poidsRows, error: ePoids } = await sb.from('reconversion_poids_categorie').select('categorie, poids');
+    if(ePoids) throw ePoids;
+    const poidsParCategorie = {}; for(const p of (poidsRows||[])) poidsParCategorie[p.categorie] = Number(p.poids);
+
+    // Une situation tier "connu" saute la découverte théorique (elle a déjà le savoir associé) —
+    // simulation simplifiée, pas une vraie donnée de durée : elle compte donc pour moins de temps
+    // et moins d'urgence (poids d'écart) qu'une situation tier "decouvrir".
+    const HEURES_TIER = { connu: 2, decouvrir: HEURES_PAR_SITUATION };
+    const POIDS_ECART_TIER = { connu: 0.4, decouvrir: 1 };
+
+    // Estimation graduée par fiabilité (charte point 21) : si une situation a une durée calibrée
+    // par le comité (parcours_calibrations), on l'utilise à la place de la simulation ROME brute —
+    // et on le dit, plutôt que d'afficher un chiffre plus précis qu'il ne l'est vraiment.
+    const RANG_FIABILITE = { estimation_rome:0, estimation_enrichie:1, parcours_calibre:2, duree_observee:3 };
+    const situationUidsPourCalibration = [...new Set(Object.values(themes).flatMap(t=>Object.values(t.situations).map(s=>s.situation_uid).filter(Boolean)))];
+    let calibrationParUid = {};
+    if(situationUidsPourCalibration.length){
+      const { data: calibs, error: eCalib } = await sb.from('parcours_calibrations')
+        .select('situation_uid,duree_heures,niveau_fiabilite,taille_echantillon').in('situation_uid', situationUidsPourCalibration);
+      if(eCalib) throw eCalib;
+      for(const c of (calibs||[])) calibrationParUid[c.situation_uid] = c;
+    }
+
+    // Regroupement par sous-processus/sous-sous-processus réel (jamais un label générique) — l'ordre
+    // d'affichage valorise d'abord ce qui est proche d'être acquis : dans chaque bloc, les situations
+    // "déjà connues" (tier 2) sont listées avant celles "à découvrir" (tier 3).
+    const themesTries = Object.entries(themes).map(([blocNom, t])=>{
+      const situations = Object.values(t.situations)
+        .map(s=>{
+          const calib = s.situation_uid ? calibrationParUid[s.situation_uid] : null;
+          return {
+            situation:s.situation, sous_processus:s.sous_processus, niveauMin:s.niveaux.sort()[0], tier:s.tier, modules:s.modules||[],
+            dureeHeures: calib ? Number(calib.duree_heures) : (HEURES_TIER[s.tier]||HEURES_PAR_SITUATION),
+            niveauFiabilite: calib ? calib.niveau_fiabilite : 'estimation_rome',
+            tailleEchantillon: calib ? calib.taille_echantillon : null,
+          };
+        })
+        .sort((a,b)=> (a.tier==='connu'?0:1) - (b.tier==='connu'?0:1) || a.situation.localeCompare(b.situation));
+      const categorie = categorieParProcessus[t.processus] || 'Support';
+      const ampleurEcart = situations.reduce((n,s)=>n+(POIDS_ECART_TIER[s.tier]||1), 0);
+      const score = ampleurEcart * (poidsParCategorie[categorie] ?? 1);
+      const dureeHeures = situations.reduce((n,s)=>n+s.dureeHeures, 0);
+      const niveauFiabilite = situations.length
+        ? situations.reduce((pire,s)=> RANG_FIABILITE[s.niveauFiabilite] < RANG_FIABILITE[pire] ? s.niveauFiabilite : pire, 'duree_observee')
+        : 'estimation_rome';
+      return {
+        bloc: blocNom, processus: t.processus, sousProcessus: t.sousProcessus, categorie,
+        nbCompetences: Object.keys(t.competences).length,
+        competences: Object.entries(t.competences).map(([libelle,categorie])=>({libelle,categorie})),
+        situations, dureeHeures, score, niveauFiabilite,
+        nbConnu: situations.filter(s=>s.tier==='connu').length,
+        nbDecouvrir: situations.filter(s=>s.tier==='decouvrir').length,
+      };
+    });
+    // Niveau de priorité lisible (3 paliers) plutôt qu'un score brut — relatif au score max du
+    // résultat courant, pas un seuil absolu (sinon tout pourrait finir "Secondaire" ou l'inverse).
+    const scoreMax = themesTries.reduce((m,t)=>Math.max(m,t.score), 0) || 1;
+    for(const t of themesTries){
+      const ratio = t.score / scoreMax;
+      t.priorite = ratio >= 0.66 ? 'Prioritaire' : ratio >= 0.33 ? 'Important' : 'Secondaire';
+    }
+    themesTries.sort((a,b)=> b.score - a.score);
+
+    const nbSituationsTotal = themesTries.reduce((n,t)=>n+t.situations.length, 0);
+    const dureeEstimeeHeures = themesTries.reduce((n,t)=>n+t.dureeHeures, 0);
+    const nbConnuTotal = themesTries.reduce((n,t)=>n+t.nbConnu, 0);
+    const nbDecouvrirTotal = themesTries.reduce((n,t)=>n+t.nbDecouvrir, 0);
+    const niveauFiabiliteGlobal = themesTries.length
+      ? themesTries.reduce((pire,t)=> RANG_FIABILITE[t.niveauFiabilite] < RANG_FIABILITE[pire] ? t.niveauFiabilite : pire, 'duree_observee')
+      : 'estimation_rome';
+
+    etat.resultat = {
+      metierSource: etat.experiences.map(e=>e.choix.libelleMetier).join(' + '),
+      libelleCible: LABELS_CIBLE[cibleKey] || cibleKey,
+      parCategorie, themes: themesTries, sansCorrespondance: sansCorrespondanceTries,
+      connaissances: connaissancesTriees, niveauFiabiliteGlobal,
+      totalAcquisSF: parCategorie['savoir-faire'].acquises.length,
+      totalManquantSF: parCategorie['savoir-faire'].manquantes.length,
+      totalConnuSF: nbConnuTotal, totalDecouvrirSF: nbDecouvrirTotal,
+      diplomes, nbSituationsTotal, dureeEstimeeHeures
+    };
+    etat.etape = 'resultat';
+  }catch(err){
+    etat.erreur = err.message || String(err);
+  }
+  etat.chargement = false;
+  render();
+}
+
+function ouvrirBloc(bloc){ etat.blocOuvert = bloc; render(); }
+function fermerBloc(ev){ if(ev && ev.target !== ev.currentTarget) return; etat.blocOuvert = null; render(); }
+function toggleDiplomes(){ etat.diplomesOuverts = !etat.diplomesOuverts; render(); }
+function toggleSousTheme(titre){ etat.sousThemeOuvert[titre] = !etat.sousThemeOuvert[titre]; render(); }
+function toggleSousThemeConnaissances(titre){ etat.sousThemeOuvertConnaissances[titre] = !etat.sousThemeOuvertConnaissances[titre]; render(); }
+function toggleDetailComparaison(){ etat.detailComparaisonOuvert = !etat.detailComparaisonOuvert; render(); }
+function onRechercheBlocs(v){ etat.rechercheBlocs = v; render(); }
+function blocsFiltres(themes){
+  const q = etat.rechercheBlocs.trim().toLowerCase();
+  if(!q) return themes;
+  return themes.filter(t=>
+    t.bloc.toLowerCase().includes(q) ||
+    t.situations.some(s=>s.situation.toLowerCase().includes(q) || (s.modules||[]).some(m=>m.nom.toLowerCase().includes(q)))
+  );
+}
+
+/* =========================================================================
+   RÉGLAGES DE PRIORITÉ (comité) — pondération de centralité par catégorie,
+   utilisée pour calculer le niveau de priorité des blocs. Jamais figée en
+   dur : modifiable ici, prend effet à la prochaine comparaison.
+   ========================================================================= */
+async function ouvrirReglagesPoids(){
+  if(!poidsCategorieEdition){
+    const { data, error } = await sb.from('reconversion_poids_categorie').select('categorie, poids').order('categorie');
+    if(error){ alert('Erreur : '+error.message); return; }
+    poidsCategorieEdition = (data||[]).map(p=>({ categorie:p.categorie, poids:p.poids }));
+  }
+  etat.reglagesPoidsOuverts = true;
+  render();
+}
+function onChampPoids(categorie, valeur){
+  const row = poidsCategorieEdition.find(p=>p.categorie===categorie);
+  if(row) row.poids = valeur;
+}
+async function enregistrerPoids(){
+  try{
+    for(const row of poidsCategorieEdition){
+      const poids = Number(row.poids);
+      if(!isFinite(poids) || poids < 0) throw new Error(`Poids invalide pour "${row.categorie}".`);
+      const { error } = await sb.from('reconversion_poids_categorie').update({ poids, updated_at:new Date().toISOString() }).eq('categorie', row.categorie);
+      if(error) throw error;
+    }
+    etat.reglagesPoidsOuverts = false;
+    poidsCategorieEdition = null;
+    render();
+    if(etat.resultat) await handleComparer();
+  }catch(err){ alert('Erreur : '+(err.message||err)); }
+}
+function fermerReglagesPoids(){ etat.reglagesPoidsOuverts = false; render(); }
+
+const PRIORITE_STYLE = {
+  Prioritaire: { border:'var(--ink)', bg:'var(--soft)', color:'var(--ink)' },
+  Important: { border:'var(--line)', bg:'var(--soft)', color:'var(--ink)' },
+  Secondaire: { border:'var(--line)', bg:'var(--soft)', color:'var(--muted)' },
+};
+const TIER_STYLE = {
+  connu: { label:'À contextualiser', border:'var(--line)', bg:'var(--soft)', color:'var(--ink)' },
+  decouvrir: { label:'À découvrir totalement', border:'var(--line)', bg:'var(--soft)', color:'var(--muted)' },
+};
+// Estimation de durée graduée par fiabilité (charte point 21) — du moins au plus fiable.
+const FIABILITE_STYLE = {
+  estimation_rome: { label:'Estimation ROME', detail:"basée sur les écarts ROME seuls, pas encore calibrée sur de vrais parcours." },
+  estimation_enrichie: { label:'Estimation enrichie', detail:'affinée avec le contexte et les macro-capacités de la personne.' },
+  parcours_calibre: { label:'Parcours calibré', detail:'durée fixée par le comité pour cette situation.' },
+  duree_observee: { label:'Durée observée', detail:'moyenne de vrais parcours terminés.' },
+};
+
+function renderEtapeResultat(){
+  const r = etat.resultat;
+  const blocOuvert = etat.blocOuvert ? r.themes.find(t=>t.bloc===etat.blocOuvert) : null;
+  const themesAffiches = blocsFiltres(r.themes);
+  const authed = session && session.user.email===COMITE_EMAIL_FEDERATION;
+  return `
+  <div class="tiny" style="margin-bottom:10px"><button class="ghostBtn" onclick="recommencer()">← Recommencer</button></div>
+  <h1 style="font-size:22px;margin:0 0 18px 0">${escapeHtml(r.metierSource)} <span style="color:var(--muted);font-weight:400">vers</span> ${escapeHtml(r.libelleCible)}</h1>
+  <div class="statusGrid" style="grid-template-columns:repeat(3,1fr)">
+    <div class="statusCard" onclick="toggleDetailComparaison()"><div class="num" style="color:var(--green)">${r.totalAcquisSF}</div><div class="lbl">Déjà pratiquées (${escapeHtml(r.metierSource)}, cochées)</div></div>
+    <div class="statusCard" onclick="toggleDetailComparaison()"><div class="num" style="color:var(--blue)">${r.totalConnuSF}</div><div class="lbl">À contextualiser — la connaissance est là, reste à la mettre en situation</div></div>
+    <div class="statusCard" onclick="toggleDetailComparaison()"><div class="num" style="color:var(--muted)">${r.totalDecouvrirSF}</div><div class="lbl">À découvrir totalement pour ${escapeHtml(r.libelleCible)}</div></div>
+  </div>
+  <div class="tiny" style="margin:-16px 0 20px 0">Seules les situations de travail comptent ici — connaissances et savoir-être ci-dessous, à part.</div>
+
+  ${etat.detailComparaisonOuvert ? `
+  <div class="detailCompareGrid">
+    <div class="detailCompareCol">
+      <h4 style="color:var(--green)">Déjà pratiquées (${r.parCategorie['savoir-faire'].acquises.length})</h4>
+      ${r.parCategorie['savoir-faire'].acquises.length
+        ? [...r.parCategorie['savoir-faire'].acquises].sort((a,b)=>a.localeCompare(b)).map(l=>`<div class="tiny" style="margin-bottom:4px">${escapeHtml(l)}</div>`).join('')
+        : `<div class="tiny">Aucune pour l'instant.</div>`}
+    </div>
+    <div class="detailCompareCol">
+      <h4 style="color:var(--muted)">À acquérir (${r.parCategorie['savoir-faire'].manquantes.length})</h4>
+      <div class="tiny">Détaillé plus bas : ${r.totalConnuSF} à contextualiser et ${r.totalDecouvrirSF} à découvrir totalement dans "Parcours proposé" (regroupées par bloc), ${r.sansCorrespondance.reduce((n,g)=>n+g.items.length,0)} encore hors référentiel dans "Situations de travail pas encore intégrées" (regroupées par thématique).</div>
+    </div>
+  </div>
+  ` : ''}
+
+  <div class="section">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+      <h2 style="margin:0">Parcours proposé (${themesAffiches.length}${themesAffiches.length!==r.themes.length?' / '+r.themes.length:''} bloc${r.themes.length>1?'s':''})</h2>
+      ${authed ? `<button class="ghostBtn" style="font-size:12.5px;padding:5px 12px" onclick="ouvrirReglagesPoids()">Réglages de priorité</button>` : ''}
+    </div>
+    <div class="tiny" style="margin:6px 0 10px 0">Un bloc par sous-processus (ou sous-sous-processus) réel du référentiel, jamais la nomenclature ROME. Niveau de priorité = ampleur de l'écart (pondérée par tier) × centralité du bloc pour ${escapeHtml(r.libelleCible)}. Largeur proportionnelle à la durée estimée. Clique un bloc pour le détail.</div>
+    <div class="field" style="margin-bottom:14px">
+      <input class="input" placeholder="Filtrer les blocs (titre, situation, module...)" value="${escapeHtml(etat.rechercheBlocs)}" oninput="onRechercheBlocs(this.value)">
+    </div>
+    ${themesAffiches.length ? `
+    <div class="friseWrap">
+      <div class="frise">
+        ${themesAffiches.map(t=>{
+          const ps = PRIORITE_STYLE[t.priorite];
+          return `
+          <div class="friseBloc" style="flex-grow:${Math.max(t.dureeHeures,1)};background:${ps.bg};border-color:${ps.border}" onclick="ouvrirBloc('${t.bloc.replace(/'/g,"\\'")}')">
+            <div class="h" style="opacity:.75;margin-bottom:2px;color:${ps.color};font-weight:700">${escapeHtml(t.priorite)}</div>
+            <div class="t" style="color:${ps.color}">${escapeHtml(t.bloc)}</div>
+            <div class="n" style="color:${ps.color}">${t.nbCompetences}</div>
+            <div class="h" style="color:${ps.color}">~${t.dureeHeures}h · ${t.situations.length} situation${t.situations.length>1?'s':''}${t.nbConnu?' · '+t.nbConnu+' à contextualiser':''}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+    <div class="friseEstim">${escapeHtml(FIABILITE_STYLE[r.niveauFiabiliteGlobal].label)} — ${escapeHtml(FIABILITE_STYLE[r.niveauFiabiliteGlobal].detail)} Une situation "à contextualiser" compte pour moins de temps (elle saute la découverte théorique). Total du parcours : ~${r.dureeEstimeeHeures}h (${r.nbSituationsTotal} situation${r.nbSituationsTotal>1?'s':''}).</div>
+    ` : `<div class="tiny">${r.themes.length ? 'Aucun bloc ne correspond à ce filtre.' : "Rien à combler sur les thématiques déjà reliées au référentiel — tout est soit acquis, soit dans \"en cours d'intégration\" ci-dessous."}</div>`}
+  </div>
+
+  ${r.diplomes.length ? `
+  <div class="diplomeToggle" onclick="toggleDiplomes()">D'autres diplômes et certifications existent aussi pour ce métier, hors parcours Fédération (${r.diplomes.length}) ${etat.diplomesOuverts?'▲':'▼'}</div>
+  ${etat.diplomesOuverts ? `<div style="margin-top:6px">${r.diplomes.map(d=>`<span class="chip grey">${escapeHtml(d.libelle)}</span>`).join('')}</div>` : ''}
+  ` : ''}
+
+  ${r.sansCorrespondance.length ? `
+  <div class="section">
+    <h2>Situations de travail pas encore intégrées au référentiel (${r.sansCorrespondance.reduce((n,g)=>n+g.items.length,0)})</h2>
+    <div class="tiny" style="margin-bottom:10px">De vrais savoir-faire ROME manquants pour ${escapeHtml(r.libelleCible)}, pas encore transformés en situation Thérèse — le backlog de construction du référentiel, pas un défaut. Regroupement par thématique, replié par défaut.</div>
+    ${r.sansCorrespondance.map(g=>`
+      <div class="accordeon">
+        <button class="accordeonHead" style="width:100%;border:none;text-align:left" onclick="toggleSousTheme('${g.titre.replace(/'/g,"\\'")}')">
+          <span>${escapeHtml(g.titre)} (${g.items.length})</span>
+          <span>${etat.sousThemeOuvert[g.titre]?'▲':'▼'}</span>
+        </button>
+        ${etat.sousThemeOuvert[g.titre] ? `<div class="accordeonBody">
+          ${g.items.map(c=>`<span class="chip grey">${escapeHtml(c.libelle)}</span>`).join('')}
+        </div>` : ''}
+      </div>`).join('')}
+  </div>` : ''}
+
+  ${r.connaissances.length ? `
+  <div class="section">
+    <h2>Connaissances et savoir-être à développer (${r.connaissances.reduce((n,g)=>n+g.items.length,0)})</h2>
+    <div class="tiny" style="margin-bottom:10px">Tout ce que ROME rattache à ${escapeHtml(r.libelleCible)} hors savoir-faire (diplômes/certifications déjà exclus) — un complément utile en parallèle du geste, jamais compté dans les situations de travail ci-dessus. Regroupement par rubrique, replié par défaut.</div>
+    ${r.connaissances.map(g=>`
+      <div class="accordeon">
+        <button class="accordeonHead" style="width:100%;border:none;text-align:left" onclick="toggleSousThemeConnaissances('${g.titre.replace(/'/g,"\\'")}')">
+          <span>${escapeHtml(g.titre)} (${g.items.length})</span>
+          <span>${etat.sousThemeOuvertConnaissances[g.titre]?'▲':'▼'}</span>
+        </button>
+        ${etat.sousThemeOuvertConnaissances[g.titre] ? `<div class="accordeonBody">
+          ${g.items.map(c=>`<span class="chip grey">${escapeHtml(c.libelle)} <span class="tiny">(${escapeHtml(c.categorie)})</span></span>`).join('')}
+        </div>` : ''}
+      </div>`).join('')}
+  </div>` : ''}
+
+  ${blocOuvert ? `
+  <div class="modalOverlay" onclick="fermerBloc(event)">
+    <div class="modalBox">
+      <div class="modalHead">
+        <h3>${escapeHtml(blocOuvert.bloc)}</h3>
+        <button class="ghostBtn" style="padding:3px 10px;font-size:12px" onclick="fermerBloc()">Fermer ✕</button>
+      </div>
+      <div class="tiny" style="margin-bottom:4px">${escapeHtml(blocOuvert.processus)}${blocOuvert.sousProcessus && blocOuvert.sousProcessus!==blocOuvert.bloc ? ' → '+escapeHtml(blocOuvert.sousProcessus) : ''} · <span style="color:${PRIORITE_STYLE[blocOuvert.priorite].color};font-weight:700">${escapeHtml(blocOuvert.priorite)}</span></div>
+      <div class="tiny" style="margin-bottom:12px">${blocOuvert.nbCompetences} situation${blocOuvert.nbCompetences>1?'s':''} de travail · ~${blocOuvert.dureeHeures}h · ${escapeHtml(FIABILITE_STYLE[blocOuvert.niveauFiabilite].label)}</div>
+      <div style="margin-bottom:12px">${blocOuvert.competences.map(c=>`<span class="chip grey">${escapeHtml(c.libelle)}</span>`).join('')}</div>
+      ${blocOuvert.situations.map(s=>{
+        const ts = TIER_STYLE[s.tier] || TIER_STYLE.decouvrir;
+        return `
+        <div class="situCard">
+          <div class="t">${escapeHtml(s.situation)}</div>
+          <div class="s">${escapeHtml(s.sous_processus)} · niveau de départ proposé : ${escapeHtml(s.niveauMin)}</div>
+          <span class="chip" style="border-color:${ts.border};background:${ts.bg};color:${ts.color};margin-top:6px">${escapeHtml(ts.label)}</span>
+          <div class="moduleBox">
+            ${s.modules && s.modules.length ? s.modules.map(m=>`
+              <div class="moduleCard">
+                <div class="t">${m.lien_ressource?`<a href="${escapeHtml(m.lien_ressource)}" target="_blank" rel="noopener" style="color:inherit">▶ ${escapeHtml(m.nom)}</a>`:escapeHtml(m.nom)} ${m.modaliteLabel?`<span class="chip blue" style="margin-left:4px">${escapeHtml(m.modaliteLabel)}</span>`:''}</div>
+                ${m.description?`<div class="tiny">${escapeHtml(m.description)}</div>`:''}
+              </div>`).join('') : '<div class="tiny">Aucun module de formation renseigné pour cette situation pour le moment.</div>'}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>` : ''}
+
+  ${etat.reglagesPoidsOuverts && poidsCategorieEdition ? `
+  <div class="modalOverlay" onclick="if(event.target===event.currentTarget) fermerReglagesPoids()">
+    <div class="modalBox" style="max-width:440px">
+      <div class="modalHead">
+        <h3>Réglages de priorité</h3>
+        <button class="ghostBtn" style="padding:3px 10px;font-size:12px" onclick="fermerReglagesPoids()">Fermer ✕</button>
+      </div>
+      <div class="tiny" style="margin-bottom:14px">Poids de centralité par catégorie de processus — plus il est élevé, plus les blocs de cette catégorie remontent en priorité. S'applique à la prochaine comparaison.</div>
+      ${poidsCategorieEdition.map(row=>`
+        <div class="field" style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <label style="flex:1;margin:0">${escapeHtml(row.categorie)}</label>
+          <input class="input" type="number" step="0.1" min="0" style="width:90px" value="${escapeHtml(String(row.poids))}" oninput="onChampPoids('${row.categorie.replace(/'/g,"\\'")}', this.value)">
+        </div>`).join('')}
+      <button class="actionBtn" onclick="enregistrerPoids()">Enregistrer</button>
+    </div>
+  </div>` : ''}
+  `;
+}
+
+function recommencer(){
+  etat = { etape:'recherche', chargement:false, erreur:'', recherche:'', suggestions:[], recherchant:false, experiences:[], resultat:null, blocOuvert:null, diplomesOuverts:false, sousThemeOuvert:{}, sousThemeOuvertConnaissances:{}, detailComparaisonOuvert:false, rechercheBlocs:'', reglagesPoidsOuverts:false };
+  render();
+}
+
+// Pré-remplissage depuis la Constellation des gestes (ou tout autre lien externe) :
+// ?metier=<intitulé libre>&cible=<libellé du métier visé, best-effort>. Si absent,
+// Reconversion se comporte exactement comme d'habitude — recherche libre.
+async function appliquerPrefillDepuisUrl(){
+  const params = new URLSearchParams(window.location.search);
+  const metier = params.get('metier');
+  const cible = params.get('cible');
+  if(metier){
+    try{
+      const { data, error } = await sb.functions.invoke('rome-sync', { body: { recherche: metier.trim() } });
+      if(!error && data && data.resultats && data.resultats.length){
+        await chargerExperienceDepuisRome(data.resultats[0]);
+      }
+    }catch(e){ console.error('Pré-remplissage métier de départ impossible :', e); }
+  }
+  if(cible){
+    const cibleLc = cible.trim().toLowerCase();
+    const codeTrouve = Object.keys(LABELS_CIBLE).find(code => LABELS_CIBLE[code].toLowerCase().includes(cibleLc) || cibleLc.includes(LABELS_CIBLE[code].toLowerCase()));
+    if(codeTrouve){
+      const sel = document.getElementById('cible');
+      if(sel){ sel.value = codeTrouve; await handleComparer(); }
+    }
+  }
+}
+
+render();
+chargerCiblesRome().then(appliquerPrefillDepuisUrl);
+sb.auth.getSession().then(async ({data})=>{
+  session = data.session || null;
+  if(!session){
+    const brand = document.querySelector('nav.topnav a.brand');
+    if(brand) brand.textContent = 'Fédération de peintres en lettres';
+    return;
+  }
+  appliquerLiensComite(session, ['lienEditos','lienAdminMetiers','lienDeploiementFormation']);
+  const { data: fm } = await sb.from('federation_members').select('therese_actif').eq('user_id', session.user.id).maybeSingle();
+  if(fm && fm.therese_actif){
+    const lienT = document.getElementById('lienTherese');
+    if(lienT) lienT.style.display = '';
+  }
+});
+</script>
+<script src="therese-widget.js"></script>
+</body>
+</html>
