@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="color-scheme" content="light">
+<title>La fiche du métier — VraiSavoirFaire</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;800;900&display=swap">
+<link rel="stylesheet" href="vsf.css">
+<link rel="stylesheet" href="vsf-nav.css">
+<style>
+  .wrap.large{max-width:760px}
+  .sommaire{margin:18px 0 6px}
+  .sommaire a{display:block;padding:11px 0;min-height:44px;border-top:1px solid var(--line);color:#111;text-decoration:none;font-weight:500}
+  .sommaire a:last-child{border-bottom:1px solid var(--line)}
+  .sommaire a:hover{font-weight:800}
+  .rubrique{padding-top:8px;scroll-margin-top:12px}
+  .rubrique h2{margin-top:44px}
+  .rubrique h3{font-size:18px;font-weight:800;margin:28px 0 6px}
+  .rubrique p{margin:12px 0}
+  .rubrique ul{margin:12px 0;padding-left:20px}
+  .rubrique li{margin:6px 0}
+  .tableau{overflow-x:auto;margin:16px 0;-webkit-overflow-scrolling:touch}
+  .tableau table{border-collapse:collapse;min-width:520px;width:100%;font-size:15px}
+  .tableau th{font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--cap);text-align:left;padding:8px 12px 8px 0;border-bottom:1.5px solid #111;vertical-align:bottom}
+  .tableau td{padding:10px 12px 10px 0;border-bottom:1px solid var(--line);vertical-align:top}
+  .lecture-seule{background:var(--panel);padding:14px 16px;margin:18px 0;border-left:3px solid #111;font-size:15px}
+  .suite{margin-top:48px;padding-top:8px;border-top:1px solid var(--line)}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="vsf-auth.js"></script>
+</head>
+<body>
+<main class="wrap large" id="app"><p class="legende">Chargement…</p></main>
+<footer class="wrap"><p class="legende">Une question : <a href="mailto:contact@vraisavoirfaire.fr">contact@vraisavoirfaire.fr</a></p></footer>
+<script src="vsf-nav.js"></script>
+<script>
+var $ = function (id) { return document.getElementById(id); };
+var E = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; }); };
+var NOM = new URLSearchParams(location.search).get('metier') || 'Peintre en lettres';
+
+/* Mise en forme du texte des rubriques (markdown simple : titres ###, listes, tableaux, gras, italique). */
+function enligne(t) { return E(t).replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>').replace(/\*([^*]+)\*/g, '<i>$1</i>'); }
+function md(texte) {
+  var lignes = String(texte || '').split('\n'), html = '', i = 0, liste = false;
+  function fermerListe() { if (liste) { html += '</ul>'; liste = false; } }
+  while (i < lignes.length) {
+    var l = lignes[i].trim();
+    if (l === '') { fermerListe(); i++; continue; }
+    if (l.charAt(0) === '|') {
+      fermerListe();
+      var bloc = [];
+      while (i < lignes.length && lignes[i].trim().charAt(0) === '|') { bloc.push(lignes[i].trim()); i++; }
+      var cellules = function (x) { return x.replace(/^\|/, '').replace(/\|$/, '').split('|').map(function (c) { return c.trim(); }); };
+      var entete = cellules(bloc[0]), corps = bloc.slice(2);
+      html += '<div class="tableau" tabindex="0"><table><thead><tr>' + entete.map(function (c) { return '<th>' + enligne(c) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+        corps.map(function (r) { return '<tr>' + cellules(r).map(function (c) { return '<td>' + enligne(c) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div>';
+      continue;
+    }
+    if (/^#{3,4} /.test(l)) { fermerListe(); html += '<h3>' + enligne(l.replace(/^#+ /, '')) + '</h3>'; i++; continue; }
+    if (/^[-•] /.test(l)) { if (!liste) { html += '<ul>'; liste = true; } html += '<li>' + enligne(l.replace(/^[-•] /, '')) + '</li>'; i++; continue; }
+    fermerListe(); html += '<p>' + enligne(l) + '</p>'; i++;
+  }
+  fermerListe();
+  return html;
+}
+
+async function demarrer() {
+  var p = await VSF.exigerPersonneVerifiee();
+  if (!p) return;
+  var f = await VSF.sb.from('postes_apprenance').select('id,nom,ref_vsf').eq('nom', NOM).is('proprietaire_id', null).maybeSingle();
+  if (f.error || !f.data) {
+    return $('app').innerHTML = '<p class="etiquette">La fiche du métier</p><h1>Pas encore de fiche.</h1>' +
+      '<p class="message">La fiche « ' + E(NOM) + ' » n’est pas encore publiée. Vous pouvez la demander à l’équipe.</p>' +
+      '<a class="bouton" href="constellation-des-gestes.html">Choisir un autre métier</a>';
+  }
+  var r = await VSF.sb.from('fiche_vsf_rubriques').select('code,titre,contenu_md,ordre').eq('poste_id', f.data.id).order('ordre');
+  var rub = (r.data || []);
+  if (!rub.length) {
+    return $('app').innerHTML = '<p class="etiquette">La fiche du métier</p><h1>' + E(f.data.nom) + '</h1><p class="message">La fiche est en cours d’écriture.</p>';
+  }
+  var lecture = rub.filter(function (x) { return x.code === 'lecture'; })[0];
+  var reste = rub.filter(function (x) { return x.code !== 'lecture'; });
+  $('app').innerHTML =
+    '<p class="etiquette">La fiche du métier</p>' +
+    '<h1>' + E(f.data.nom) + '</h1>' +
+    '<p class="legende">' + E(f.data.ref_vsf || '') + '</p>' +
+    (lecture ? '<div class="lecture-seule">' + md(lecture.contenu_md) + '</div>' : '') +
+    '<nav class="sommaire" aria-label="Sommaire">' + reste.map(function (x) { return '<a href="#r-' + E(x.code) + '">' + E(x.titre) + '</a>'; }).join('') + '</nav>' +
+    reste.map(function (x) { return '<section class="rubrique" id="r-' + E(x.code) + '"><h2>' + E(x.titre) + '</h2>' + md(x.contenu_md) + '</section>'; }).join('') +
+    '<div class="suite"><p class="etiquette">Et maintenant</p><p>Vous avez lu le métier situation par situation. La suite : voir où vous en êtes, sans note ni classement.</p>' +
+    '<a class="bouton" href="reconversion.html">Mesurer mon écart</a></div>';
+  if (location.hash) { var el = document.getElementById(location.hash.slice(1)); if (el) el.scrollIntoView(); }
+}
+demarrer();
+</script>
+</body>
+</html>

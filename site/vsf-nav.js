@@ -4,6 +4,7 @@
   var ETAPES = [
     ['mon-passage.html', 'Mon point de départ'],
     ['constellation-des-gestes.html', 'Choisir mon métier'],
+    ['fiche-metier.html', 'La fiche du métier'],
     ['reconversion.html', 'Mon écart']
   ];
   function monter() {
