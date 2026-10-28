@@ -31,7 +31,7 @@
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="vsf-auth.js"></script>
-</head>
+<link rel="stylesheet" href="vsf-largeur.css"></head>
 <body>
 <main class="wrap large" id="app"><p class="legende">Chargement…</p></main>
 <footer class="wrap"><p class="legende">Une question : <a href="mailto:contact@vraisavoirfaire.fr">contact@vraisavoirfaire.fr</a></p></footer>
@@ -91,6 +91,7 @@ async function demarrer() {
     '<nav class="sommaire" aria-label="Sommaire">' + reste.map(function (x) { return '<a href="#r-' + E(x.code) + '">' + E(x.titre) + '</a>'; }).join('') + '</nav>' +
     reste.map(function (x) { return '<section class="rubrique" id="r-' + E(x.code) + '"><h2>' + E(x.titre) + '</h2>' + md(x.contenu_md) + '</section>'; }).join('') +
     '';
+  $('app').classList.add('fiche-deux');
   if (location.hash) { var el = document.getElementById(location.hash.slice(1)); if (el) el.scrollIntoView(); }
 }
 demarrer();

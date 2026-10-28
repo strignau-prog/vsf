@@ -1,0 +1,26 @@
+/* VRAI-SAVOIRFAIRE — le contenu occupe toute la largeur de l'écran (décision de Stéphane, 2026-10-28).
+   Une gouttière souple (de 20 px sur téléphone à 80 px sur grand écran) remplace les anciennes colonnes étroites.
+   Les champs de saisie gardent une largeur lisible ; les longs textes passent sur deux colonnes sur grand écran. */
+:root{--g:clamp(20px,5vw,80px)}
+.wrap,.wrap.large,.wrap.wrapWide,.haut,.vsf-suite{max-width:none !important}
+.wrap,.wrap.large,.wrap.wrapWide{padding-left:var(--g) !important;padding-right:var(--g) !important}
+.haut{padding-left:var(--g) !important;padding-right:var(--g) !important}
+.vsf-haut{padding-left:var(--g) !important;padding-right:var(--g) !important}
+.vsf-suite{margin-left:0 !important;margin-right:0 !important;padding-left:var(--g) !important;padding-right:var(--g) !important}
+footer.wrap{padding-top:10px}
+#app input[type=text],#app input[type=email],#app select.champ{max-width:640px}
+
+/* Lecture longue (manifeste) : deux colonnes quand l'écran est large */
+@media (min-width:1000px){
+  .lecture{column-count:2;column-gap:calc(var(--g) * 1.2);column-fill:balance}
+  .lecture h1,.lecture .filet{column-span:all}
+  .lecture .refrain,.lecture p{break-inside:avoid}
+  .lecture p{font-size:20px}
+}
+/* Fiche du métier : le sommaire à gauche, le texte à droite */
+@media (min-width:1000px){
+  .fiche-deux{display:grid;grid-template-columns:minmax(220px,300px) 1fr;gap:0 calc(var(--g) * .8);align-items:start}
+  .fiche-deux > .etiquette,.fiche-deux > h1,.fiche-deux > .legende{grid-column:1 / -1}
+  .fiche-deux .sommaire{position:sticky;top:14px;grid-column:1;grid-row:span 14}
+  .fiche-deux .rubrique,.fiche-deux .lecture-seule{grid-column:2}
+}
