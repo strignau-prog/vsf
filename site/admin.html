@@ -47,7 +47,7 @@ var jour = function (d) { try { return new Date(d).toLocaleDateString('fr-FR'); 
 function dire(id, texte) { var m = $(id); if (m) { m.textContent = texte || ''; if (texte && m.scrollIntoView) m.scrollIntoView({ block: "center" }); } }
 function messageErreur(e) {
   var m = String((e && e.message) || e || '');
-  if (e && e.code === 'VSF01' || /VSF01|vendeur est valid/i.test(m)) return 'Cette offre ne peut pas sortir du brouillon : son vendeur n’est pas validé.';
+  if (e && e.code === 'VSF01' || /VSF01|vendeur est valid/i.test(m)) return 'Cette offre ne peut pas sortir du brouillon : son formateur n’est pas validé.';
   if (/permission|row-level|policy/i.test(m)) return 'Action refusée : ce compte n’a pas ce droit.';
   return 'Impossible d’enregistrer pour le moment. Réessayez dans un instant.';
 }
@@ -66,7 +66,7 @@ async function demarrer() {
   var su = await sb.rpc('vsf_est_super');
   moi.super = su.data === true;
   dessiner();
-  await Promise.all([chargerComptes(), chargerVendeurs()]);
+  await Promise.all([chargerComptes(), chargerVendeurs(), chargerReversements()]);
 }
 async function sortir() { await sb.auth.signOut(); location.replace('./'); }
 
@@ -81,18 +81,20 @@ function dessiner() {
     '<p class="legende">Les comptes entreprise et collectif arriveront avec leur parcours.</p>' +
     '<p class="message" id="msgComptes" role="alert"></p><div id="listeComptes"></div>' +
 
-    '<h2>Vendeurs et offres à valider</h2>' +
-    '<p class="legende">Aucune offre ne s’ouvre à la vente tant que son vendeur n’est pas validé.</p>' +
+    '<h2>Formateurs et offres à valider</h2>' +
+    '<p class="legende">Aucune offre ne s’ouvre à la vente tant que son formateur n’est pas validé.</p>' +
     '<p class="message" id="msgVendeurs" role="alert"></p>' +
-    '<p class="etiquette">Vendeurs</p><div id="listeVendeurs"></div>' +
+    '<p class="etiquette">Formateurs</p><div id="listeVendeurs"></div>' +
     '<p class="etiquette">Offres</p><div id="listeOffres"></div>' +
+    '<h2>À reverser aux formateurs</h2>' +
+    '<p class="legende">Skolantreuz encaisse la totalité. Voici ce qui revient à chaque formateur. Ce n’est pas une facture : c’est l’état qui sert à faire le virement et à préparer la facturation avec votre comptable.</p>' +
+    '<p class="message" id="msgReverse" role="alert"></p><div id="listeReverse"></div>' +
 
-    '<h2>Fiches métier</h2>' +
-    '<p class="legende">La page d’administration des métiers existe déjà.</p>' +
-    '<a class="bouton" href="' + E(ADMIN_METIERS) + '">Ouvrir l’administration des métiers</a>' +
+    '<h2>Entités</h2>' +
+    '<p class="legende">Un accès par entité (collectifs, entreprises, formateurs) avec, pour chacune, son référentiel métier collectif. La liste des types d’entités et de leurs droits est en cours de validation : elle remplacera ce paragraphe.</p>' +
 
     '<h2>CGV et refacturations</h2>' +
-    '<p class="legende">Les versions des CGV et le suivi des 30 % arriveront avec l’achat. Rien à faire pour le moment.</p>';
+    '<p class="legende">La version des CGV en vigueur est provisoire, en attente de relecture par Stéphane et votre comptable. Le suivi des 30 % est dans « À reverser aux formateurs »</p>';
 }
 
 /* ───── comptes ───── */
@@ -141,7 +143,7 @@ async function chargerVendeurs() {
       '<div class="actions"><span class="etat' + (x.statut === 'valide' ? ' fort' : '') + '">' +
       ({ valide: 'Validé', en_attente: 'En attente', suspendu: 'Suspendu' })[x.statut] + '</span>' + actions + '</div></div>';
   });
-  $('listeVendeurs').innerHTML = lv.length ? lv.join('') : '<p class="legende">Aucun vendeur pour le moment.</p>';
+  $('listeVendeurs').innerHTML = lv.length ? lv.join('') : '<p class="legende">Aucun formateur pour le moment.</p>';
 
   var o = await sb.from('vsf_offres').select('id,intitule,statut,vendeur:vsf_vendeurs(nom)').order('cree_le', { ascending: false });
   if (o.error) { dire('msgVendeurs', messageErreur(o.error)); return; }
@@ -152,7 +154,7 @@ async function chargerVendeurs() {
     var act = '';
     if (i < ORDRE.length - 1) act += '<button class="bouton petit" onclick="confirmer(this,\'Passer en ' + NOMS[ORDRE[i + 1]].toLowerCase() + ' ?\',function(){changerOffre(\'' + x.id + '\',\'' + ORDRE[i + 1] + '\')})">Passer en ' + NOMS[ORDRE[i + 1]].toLowerCase() + '</button>';
     if (i > 0) act += '<button class="bouton petit discret" onclick="changerOffre(\'' + x.id + '\',\'brouillon\')">Remettre en brouillon</button>';
-    return '<div class="ligne"><div class="qui"><b>' + E(x.intitule) + '</b><span>' + E((x.vendeur && x.vendeur.nom) || 'sans vendeur') + '</span></div>' +
+    return '<div class="ligne"><div class="qui"><b>' + E(x.intitule) + '</b><span>' + E((x.vendeur && x.vendeur.nom) || 'sans formateur') + '</span></div>' +
       '<div class="actions"><span class="etat' + (x.statut !== 'brouillon' ? ' fort' : '') + '">' + NOMS[x.statut] + '</span>' + act + '</div></div>';
   });
   $('listeOffres').innerHTML = lo.length ? lo.join('') : '<p class="legende">Aucune offre pour le moment.</p>';
@@ -173,6 +175,51 @@ async function changerOffre(id, statut) {
 }
 
 /* Confirmation en deux temps, sans fenêtre : le bouton change de texte, un second clic confirme. */
+/* ───── à reverser aux formateurs (état de gestion, pas une facture) ───── */
+var euros = function (n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '\u202f') + '\u00a0€'; };
+var REV = { mensuel: [] };
+async function chargerReversements() {
+  var a = await sb.from('vsf_a_reverser').select('*').order('nom');
+  var m = await sb.from('vsf_a_reverser_mensuel').select('*').order('mois', { ascending: false });
+  if (a.error || m.error) { dire('msgReverse', 'L’état de reversement n’est pas encore installé (mise à jour de la base à faire).'); return; }
+  REV.mensuel = m.data || [];
+  var l = (a.data || []).map(function (x) {
+    return '<div class="ligne"><div class="qui"><b>' + E(x.nom) + '</b><span>Encaissé ' + euros(x.encaisse_eur) + ' · part de Skolantreuz ' + euros(x.part_plateforme_eur) +
+      ' · dû ' + euros(x.du_eur) + ' · déjà viré ' + euros(x.deja_reverse_eur) + '</span></div>' +
+      '<div class="actions"><span class="etat' + (x.reste_eur > 0 ? ' fort' : '') + '">Reste ' + euros(x.reste_eur) + '</span>' +
+      (x.reste_eur > 0 ? '<button class="bouton petit" onclick="formVirement(this,\'' + x.vendeur_id + '\',' + x.reste_eur + ')">J’ai fait le virement</button>' : '') + '</div></div>';
+  });
+  $('listeReverse').innerHTML = (l.length ? l.join('') : '<p class="legende">Aucune vente pour le moment.</p>') +
+    (REV.mensuel.length ? '<p><button class="bouton petit discret" onclick="exporterCsv()">Exporter le détail mois par mois (CSV)</button></p>' : '');
+}
+function formVirement(bouton, id, reste) {
+  var zone = bouton.parentNode, memoire = zone.innerHTML;
+  zone.innerHTML = '<input type="text" inputmode="numeric" id="vMontant" value="' + reste + '" aria-label="Montant viré, en euros" style="width:90px"> ' +
+    '<input type="text" id="vRef" placeholder="Référence du virement" aria-label="Référence du virement" style="width:180px">';
+  var ok = document.createElement('button'); ok.type = 'button'; ok.className = 'bouton petit'; ok.textContent = 'Enregistrer';
+  var non = document.createElement('button'); non.type = 'button'; non.className = 'bouton petit discret'; non.textContent = 'Annuler';
+  ok.onclick = function () {
+    var mt = parseInt($('vMontant').value, 10);
+    if (!(mt > 0) || mt > reste) { dire('msgReverse', 'Indiquez un montant entre 1 € et ' + euros(reste) + '.'); return; }
+    enregistrerVirement(id, mt, $('vRef').value.trim());
+  };
+  non.onclick = function () { zone.innerHTML = memoire; };
+  zone.appendChild(ok); zone.appendChild(non); $('vMontant').focus();
+}
+async function enregistrerVirement(id, montant, ref) {
+  dire('msgReverse', '');
+  var r = await sb.from('vsf_reversements').insert({ vendeur_id: id, montant_eur: montant, reference: ref || null, cree_par: moi.id });
+  if (r.error) { console.error(r.error); return dire('msgReverse', messageErreur(r.error)); }
+  chargerReversements();
+}
+function exporterCsv() {
+  var lignes = [['Formateur', 'Mois', 'Ventes', 'Encaissé (€)', 'Part de Skolantreuz (€)', 'À reverser (€)']];
+  REV.mensuel.forEach(function (x) { lignes.push([x.nom, x.mois, x.ventes, x.encaisse_eur, x.part_plateforme_eur, x.du_eur]); });
+  var csv = '\ufeff' + lignes.map(function (l) { return l.map(function (c) { return '"' + String(c).replace(/"/g, '""') + '"'; }).join(';'); }).join('\r\n');
+  var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  a.download = 'etat-de-reversement.csv'; document.body.appendChild(a); a.click(); a.remove();
+}
+
 /* Confirmation visible, sans fenêtre : la ligne propose « Oui » ou « Non ». Rien ne part tant que l'on n'a pas répondu. */
 function confirmer(bouton, texte, action) {
   var zone = bouton.parentNode, memoire = zone.innerHTML;
