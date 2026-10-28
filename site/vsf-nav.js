@@ -7,7 +7,8 @@
     ['fiche-metier.html', 'La fiche'],
     ['mon-ecart.html', 'Mon écart'],
     ['mon-objectif.html', 'Mon objectif'],
-    ['mon-plan.html', 'Mon plan']
+    ['mon-plan.html', 'Mon plan'],
+    ['mes-modules.html', 'Mes modules']
   ];
   function monter() {
     var anciens = document.querySelectorAll('nav.topnav, .topbar, header.haut, header.vsf-haut');

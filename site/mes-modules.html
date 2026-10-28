@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="color-scheme" content="light">
+<title>Mes modules — VRAI-SAVOIRFAIRE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;800;900&display=swap">
+<link rel="stylesheet" href="vsf.css">
+<link rel="stylesheet" href="vsf-nav.css">
+<style>
+  .wrap.large{max-width:760px}
+  .niveau{margin-top:34px;border-top:1.5px solid #111;padding-top:6px}
+  .niveau h2{margin:14px 0 2px}
+  .total-niveau{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin:6px 0 4px}
+  .total-niveau .montant{font-size:30px;font-weight:900;letter-spacing:-.02em}
+  .total-niveau .note{font-size:14px;color:var(--cap)}
+  .module{display:flex;gap:14px;align-items:flex-start;padding:14px 0;border-top:1px solid var(--line);min-height:44px;cursor:pointer}
+  .module.fixe{cursor:default}
+  .module input[type=checkbox]{width:22px;height:22px;accent-color:#111;flex:none;margin-top:3px}
+  .module .corps{flex:1;min-width:0}
+  .module b{display:block;font-size:17px;font-weight:800;overflow-wrap:anywhere}
+  .module .meta{font-size:14px;color:var(--cap)}
+  .module .prix{font-weight:800;white-space:nowrap}
+  .mot{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;border:1.5px solid #111;padding:2px 7px;margin-bottom:5px}
+  .mot.doux{border-color:var(--line);color:var(--cap)}
+  .general{margin-top:40px;padding:18px;background:var(--panel)}
+  .general .montant{font-size:38px;font-weight:900;letter-spacing:-.02em}
+  .provisoire{font-size:13px;color:var(--cap);margin-top:6px}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="vsf-auth.js"></script>
+<script src="vsf-ecart.js"></script>
+<script src="vsf-fiche.js"></script>
+</head>
+<body>
+<main class="wrap large" id="app"><p class="legende">Chargement…</p></main>
+<footer class="wrap"><p class="legende">Une question : <a href="mailto:contact@vraisavoirfaire.fr">contact@vraisavoirfaire.fr</a></p></footer>
+<script src="vsf-nav.js"></script>
+<script>
+var $ = function (id) { return document.getElementById(id); };
+var E = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; }); };
+var NOM = new URLSearchParams(location.search).get('metier') || 'Peintre en lettres';
+var CLE_SEL = 'vsf_selection_v1';
+function lire(cle) { try { return JSON.parse(localStorage.getItem(cle) || 'null'); } catch (e) { return null; } }
+function ecrire(cle, v) { try { localStorage.setItem(cle, JSON.stringify(v)); } catch (e) { /* sans mémoire locale */ } }
+var euros = function (n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' €'; };
+var heures = function (min) { var h = Math.floor(min / 60), m = min % 60; return h + ' h' + (m ? ' ' + (m < 10 ? '0' : '') + m : ''); };
+
+/* L'écart → le statut d'un module :
+   un module est lié à des situations ; son statut suit la situation la plus à apprendre. Le quiz de niveau et l'épreuve pratique
+   (socle) sont toujours inclus. Déjà pratiqué = acquis (décoché, mais proposable) ; Transférable ou Connu = à vérifier ; À découvrir = à développer. */
+var STATUT = { d: ['À développer', 3], t: ['À vérifier', 2], k: ['À vérifier', 2], p: ['Acquis', 1] };
+
+var S = { mods: [], niveaux: {}, objectif: 4, paliers: {}, coches: {}, fournis: false };
+
+function statutModule(m) {
+  if (m.socle) return { cle: 'socle', texte: 'Inclus', coche: true, fixe: true };
+  var pire = null;
+  (m.situations || []).forEach(function (nom) { var p = S.paliers[nom]; if (p && (!pire || STATUT[p][1] > STATUT[pire][1])) pire = p; });
+  if (!pire) return { cle: 'inconnu', texte: 'À vérifier', coche: true, fixe: false };
+  return { cle: pire, texte: STATUT[pire][0], coche: pire !== 'p', fixe: false };
+}
+function prixNiveau(n) {
+  var somme = 0;
+  S.mods.forEach(function (m) { if (m.niveau === n && S.coches[m.id]) somme += m.prix; });
+  var pass = S.niveaux[n] ? S.niveaux[n].prix_pass_eur : somme;
+  return { somme: somme, pass: pass, paye: Math.min(somme, pass) };
+}
+function enregistrer() {
+  var sel = { metier: NOM, coches: S.coches, _maj: Date.now() };
+  ecrire(CLE_SEL, sel); VSF.parcours.ecrire('selection', sel);
+}
+
+function dessiner() {
+  var total = 0, blocs = '', prov = S.mods.some(function (m) { return m.provisoire; });
+  for (var n = 1; n <= S.objectif; n++) {
+    var mods = S.mods.filter(function (m) { return m.niveau === n; });
+    if (!mods.length) continue;
+    var p = prixNiveau(n); total += p.paye;
+    var plafonne = p.somme > p.pass;
+    blocs += '<section class="niveau"><p class="etiquette" style="margin:10px 0 0">Niveau ' + n + '</p><h2>N' + n + '</h2>' +
+      '<div class="total-niveau"><span class="montant">' + euros(p.paye) + '</span><span class="note">' +
+      (plafonne ? 'Vos modules cochés coûteraient ' + euros(p.somme) + ' : vous payez le prix du niveau complet, ' + euros(p.pass) + '.' : 'Pass du niveau complet : ' + euros(p.pass) + '.') + '</span></div>' +
+      mods.map(function (m) {
+        var st = statutModule(m), on = !!S.coches[m.id];
+        return '<label class="module' + (st.fixe ? ' fixe' : '') + '"><input type="checkbox" data-m="' + E(m.id) + '"' + (on ? ' checked' : '') + (st.fixe ? ' disabled' : '') + '>' +
+          '<span class="corps"><span class="mot' + (st.cle === 'p' ? ' doux' : '') + '">' + st.texte + '</span><b>' + E(m.titre.replace(/^\[PROVISOIRE\]\s*/, '')) + '</b>' +
+          '<span class="meta">' + heures(m.duree_min) + (m.situations.length ? ' · ' + E(m.situations.join(' ; ')) : '') + (m.provisoire ? ' · module d’essai' : '') + '</span></span>' +
+          '<span class="prix">' + (st.fixe ? 'inclus' : euros(m.prix)) + '</span></label>';
+      }).join('') + '</section>';
+  }
+  $('app').innerHTML =
+    '<p class="etiquette">Mes modules</p>' +
+    '<h1>Je ne paie que ce que j’ai à apprendre.</h1>' +
+    '<p class="legende">Les modules sont cochés d’après votre écart : ce qui est à développer ou à vérifier est coché, ce que vous avez déjà pratiqué est décoché, mais vous pouvez le reprendre si vous voulez. Le quiz de niveau et l’épreuve pratique sont toujours inclus.</p>' +
+    (prov ? '<p class="provisoire">Les modules affichés sont des modules d’essai : le catalogue définitif du maître artisan arrive. Les prix, eux, suivent déjà la règle réelle.</p>' : '') +
+    blocs +
+    '<div class="general"><p class="etiquette" style="margin-top:0">Total de ma sélection</p><p class="montant" style="margin:0">' + euros(total) + '</p>' +
+    '<p class="legende" style="margin:6px 0 0">Prix net : l’offre n’est pas soumise à la TVA, le montant affiché est le montant payé. Ce total est indicatif : il est recalculé à la commande.</p></div>' +
+    '<p class="legende" style="margin-top:22px">Votre sélection est gardée. La suite (options, récapitulatif et paiement) arrive bientôt.</p>';
+  document.querySelectorAll('input[data-m]').forEach(function (c) {
+    c.addEventListener('change', function () { S.coches[c.getAttribute('data-m')] = c.checked; enregistrer(); dessiner(); });
+  });
+}
+
+async function demarrer() {
+  var pers = await VSF.exigerPersonneVerifiee();
+  if (!pers) return;
+  var res = await Promise.all([
+    VSF.parcours.lire(), VSFF.charger(NOM),
+    VSF.sb.from('vsf_catalogue').select('offre_id,niveau,ordre,code,titre,duree_min,socle,provisoire,prix_module_eur').eq('offre', NOM).order('niveau').order('ordre'),
+    VSF.sb.from('vsf_niveaux_offre').select('niveau,prix_pass_eur,duree_niveau_min,offre:vsf_offres!inner(intitule)').eq('offre.intitule', NOM),
+    VSF.sb.from('vsf_modules').select('id,niveau,code,offre:vsf_offres!inner(intitule),liens:vsf_module_situations(sit:vsf_offre_situations(libelle))').eq('offre.intitule', NOM)
+  ]);
+  var base = res[0] || {}, fiche = res[1], cat = res[2], niv = res[3], mm = res[4];
+  var lp = lire('vsf_plan_v1'), pl = (base.plan && base.plan.confirme_le) ? base.plan : (lp && lp.confirme_le ? lp : null);
+  if (!pl || pl.metier !== NOM) {
+    return $('app').innerHTML = '<p class="etiquette">Mes modules</p><h1>D’abord, mon plan.</h1>' +
+      '<p class="message">Les modules se choisissent à partir de votre plan confirmé.</p><a class="bouton" href="mon-plan.html">Voir mon plan</a>';
+  }
+  if (cat.error || !cat.data || !cat.data.length) {
+    return $('app').innerHTML = '<p class="etiquette">Mes modules</p><h1>Pas encore de formation.</h1>' +
+      '<p class="message">La formation « ' + E(NOM) + ' » n’est pas encore ouverte. Vous pouvez demander à être prévenu à son ouverture.</p>';
+  }
+  (niv.data || []).forEach(function (x) { S.niveaux[x.niveau] = x; });
+  var liens = {};
+  (mm.data || []).forEach(function (x) { liens[x.niveau + '|' + x.code] = (x.liens || []).map(function (l) { return l.sit && l.sit.libelle; }).filter(Boolean); });
+  var ids = {}; (mm.data || []).forEach(function (x) { ids[x.niveau + '|' + x.code] = x.id; });
+  S.mods = cat.data.map(function (m) {
+    return { id: ids[m.niveau + '|' + m.code] || (m.niveau + '|' + m.code), niveau: m.niveau, code: m.code, titre: m.titre, duree_min: m.duree_min, socle: m.socle, provisoire: m.provisoire,
+             prix: m.prix_module_eur, situations: liens[m.niveau + '|' + m.code] || [] };
+  });
+  S.objectif = (base.piste && base.piste.niveau) || (lire('vsf_piste_v1') && lire('vsf_piste_v1').niveau) || pl.niveau || 4;
+  // les paliers : ceux que la personne a confirmés, sinon ceux suggérés d'après sa carte de départ
+  S.paliers = Object.assign({}, lire(CLE_ECART) || {}, base.ecart || {});
+  var carteBrute = (base.carte && base.carte.experiences && base.carte.experiences.length) ? base.carte : lire(CLE_CARTE);
+  var carte = lireCarte(carteBrute), q = fiche && fiche.rub.quotidien ? VSFF.parserQuotidien(fiche.rub.quotidien.contenu_md) : [];
+  if (carte && q.length) { preparerSituations(q); q.forEach(function (s) { if (!S.paliers[s.nom]) S.paliers[s.nom] = suggerer(s, carte).palier; }); }
+  // la sélection : celle que la personne a déjà faite, sinon celle que suggère son écart
+  var sauvee = (base.selection && base.selection.coches && Object.keys(base.selection.coches).length) ? base.selection : lire(CLE_SEL);
+  if (sauvee && sauvee.metier === NOM && sauvee.coches) S.coches = sauvee.coches;
+  S.mods.forEach(function (m) { if (!(m.id in S.coches)) S.coches[m.id] = statutModule(m).coche; });
+  S.mods.forEach(function (m) { if (m.socle) S.coches[m.id] = true; });
+  dessiner();
+}
+demarrer();
+</script>
+<script src="vsf-suite.js"></script>
+<script src="vsf-pop.js"></script>
+</body>
+</html>
