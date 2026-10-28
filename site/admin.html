@@ -47,7 +47,7 @@ var jour = function (d) { try { return new Date(d).toLocaleDateString('fr-FR'); 
 function dire(id, texte) { var m = $(id); if (m) { m.textContent = texte || ''; if (texte && m.scrollIntoView) m.scrollIntoView({ block: "center" }); } }
 function messageErreur(e) {
   var m = String((e && e.message) || e || '');
-  if (e && e.code === 'VSF01' || /VSF01|vendeur est valid/i.test(m)) return 'Cette offre ne peut pas sortir du brouillon : son formateur n’est pas validé.';
+  if (e && e.code === 'VSF01' || /VSF01|vendeur est valid/i.test(m)) return 'Cette offre ne peut pas sortir du brouillon : son ambassadeur métier n’est pas validé.';
   if (/permission|row-level|policy/i.test(m)) return 'Action refusée : ce compte n’a pas ce droit.';
   return 'Impossible d’enregistrer pour le moment. Réessayez dans un instant.';
 }
@@ -81,20 +81,20 @@ function dessiner() {
     '<p class="legende">Les comptes entreprise et collectif arriveront avec leur parcours.</p>' +
     '<p class="message" id="msgComptes" role="alert"></p><div id="listeComptes"></div>' +
 
-    '<h2>Formateurs et offres à valider</h2>' +
-    '<p class="legende">Aucune offre ne s’ouvre à la vente tant que son formateur n’est pas validé.</p>' +
+    '<h2>Ambassadeurs métier et offres à valider</h2>' +
+    '<p class="legende">Aucune offre ne s’ouvre à la vente tant que son ambassadeur métier n’est pas validé.</p>' +
     '<p class="message" id="msgVendeurs" role="alert"></p>' +
-    '<p class="etiquette">Formateurs</p><div id="listeVendeurs"></div>' +
+    '<p class="etiquette">Ambassadeurs métier</p><div id="listeVendeurs"></div>' +
     '<p class="etiquette">Offres</p><div id="listeOffres"></div>' +
-    '<h2>À reverser aux formateurs</h2>' +
-    '<p class="legende">Skolantreuz encaisse la totalité. Voici ce qui revient à chaque formateur. Ce n’est pas une facture : c’est l’état qui sert à faire le virement et à préparer la facturation avec votre comptable.</p>' +
+    '<h2>À reverser aux ambassadeurs métier</h2>' +
+    '<p class="legende">Skolantreuz encaisse la totalité. Voici ce qui revient à chaque ambassadeur métier. Ce n’est pas une facture : c’est l’état qui sert à faire le virement et à préparer la facturation avec votre comptable.</p>' +
     '<p class="message" id="msgReverse" role="alert"></p><div id="listeReverse"></div>' +
 
     '<h2>Entités</h2>' +
-    '<p class="legende">Un accès par entité (collectifs, entreprises, formateurs) avec, pour chacune, son référentiel métier collectif. La liste des types d’entités et de leurs droits est en cours de validation : elle remplacera ce paragraphe.</p>' +
+    '<p class="legende">Un accès par entité (collectifs, entreprises, ambassadeurs métier) avec, pour chacune, son référentiel métier collectif. La liste des types d’entités et de leurs droits est en cours de validation : elle remplacera ce paragraphe.</p>' +
 
     '<h2>CGV et refacturations</h2>' +
-    '<p class="legende">La version des CGV en vigueur est provisoire, en attente de relecture par Stéphane et votre comptable. Le suivi des 30 % est dans « À reverser aux formateurs »</p>';
+    '<p class="legende">La version des CGV en vigueur est provisoire, en attente de relecture par Stéphane et votre comptable. Le suivi des 30 % est dans « À reverser aux ambassadeurs métier »</p>';
 }
 
 /* ───── comptes ───── */
@@ -143,7 +143,7 @@ async function chargerVendeurs() {
       '<div class="actions"><span class="etat' + (x.statut === 'valide' ? ' fort' : '') + '">' +
       ({ valide: 'Validé', en_attente: 'En attente', suspendu: 'Suspendu' })[x.statut] + '</span>' + actions + '</div></div>';
   });
-  $('listeVendeurs').innerHTML = lv.length ? lv.join('') : '<p class="legende">Aucun formateur pour le moment.</p>';
+  $('listeVendeurs').innerHTML = lv.length ? lv.join('') : '<p class="legende">Aucun ambassadeur métier pour le moment.</p>';
 
   var o = await sb.from('vsf_offres').select('id,intitule,statut,vendeur:vsf_vendeurs(nom)').order('cree_le', { ascending: false });
   if (o.error) { dire('msgVendeurs', messageErreur(o.error)); return; }
@@ -154,7 +154,7 @@ async function chargerVendeurs() {
     var act = '';
     if (i < ORDRE.length - 1) act += '<button class="bouton petit" onclick="confirmer(this,\'Passer en ' + NOMS[ORDRE[i + 1]].toLowerCase() + ' ?\',function(){changerOffre(\'' + x.id + '\',\'' + ORDRE[i + 1] + '\')})">Passer en ' + NOMS[ORDRE[i + 1]].toLowerCase() + '</button>';
     if (i > 0) act += '<button class="bouton petit discret" onclick="changerOffre(\'' + x.id + '\',\'brouillon\')">Remettre en brouillon</button>';
-    return '<div class="ligne"><div class="qui"><b>' + E(x.intitule) + '</b><span>' + E((x.vendeur && x.vendeur.nom) || 'sans formateur') + '</span></div>' +
+    return '<div class="ligne"><div class="qui"><b>' + E(x.intitule) + '</b><span>' + E((x.vendeur && x.vendeur.nom) || 'sans ambassadeur métier') + '</span></div>' +
       '<div class="actions"><span class="etat' + (x.statut !== 'brouillon' ? ' fort' : '') + '">' + NOMS[x.statut] + '</span>' + act + '</div></div>';
   });
   $('listeOffres').innerHTML = lo.length ? lo.join('') : '<p class="legende">Aucune offre pour le moment.</p>';
@@ -175,7 +175,7 @@ async function changerOffre(id, statut) {
 }
 
 /* Confirmation en deux temps, sans fenêtre : le bouton change de texte, un second clic confirme. */
-/* ───── à reverser aux formateurs (état de gestion, pas une facture) ───── */
+/* ───── à reverser aux ambassadeurs métier (état de gestion, pas une facture) ───── */
 var euros = function (n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '\u202f') + '\u00a0€'; };
 var REV = { mensuel: [] };
 async function chargerReversements() {
@@ -213,7 +213,7 @@ async function enregistrerVirement(id, montant, ref) {
   chargerReversements();
 }
 function exporterCsv() {
-  var lignes = [['Formateur', 'Mois', 'Ventes', 'Encaissé (€)', 'Part de Skolantreuz (€)', 'À reverser (€)']];
+  var lignes = [['Ambassadeur métier', 'Mois', 'Ventes', 'Encaissé (€)', 'Part de Skolantreuz (€)', 'À reverser (€)']];
   REV.mensuel.forEach(function (x) { lignes.push([x.nom, x.mois, x.ventes, x.encaisse_eur, x.part_plateforme_eur, x.du_eur]); });
   var csv = '\ufeff' + lignes.map(function (l) { return l.map(function (c) { return '"' + String(c).replace(/"/g, '""') + '"'; }).join(';'); }).join('\r\n');
   var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));

@@ -1,14 +1,14 @@
 -- =====================================================================================================
 -- VSF — migration 10 : l'état de reversement, et Skolantreuz comme vendeur dans les CGV (modèle B).
--- Décision de Stéphane (2026-10-29) : Skolantreuz vend et encaisse la totalité ; la part du maître artisan (« formateur »)
+-- Décision de Stéphane (2026-10-29) : Skolantreuz vend et encaisse la totalité ; la part du maître artisan (« ambassadeur métier »)
 -- lui est reversée par virement bancaire. Pas de Stripe Connect.
 -- À exécuter APRÈS vsf_9_prix_arrondi.sql. Additive et rejouable ; une seule transaction. Ne modifie aucune table de Maurice.
 --
--- • vsf_reversements : chaque virement fait au formateur (date, montant, référence). Lecture et écriture : administrateurs.
--- • vsf_a_reverser : par formateur, ce qui a été encaissé, la part de Skolantreuz, ce qui est dû, ce qui a déjà été viré, ce qui reste.
--- • vsf_a_reverser_mensuel : la même chose mois par mois (base du relevé à envoyer au formateur).
+-- • vsf_reversements : chaque virement fait à l'ambassadeur métier (date, montant, référence). Lecture et écriture : administrateurs.
+-- • vsf_a_reverser : par ambassadeur métier, ce qui a été encaissé, la part de Skolantreuz, ce qui est dû, ce qui a déjà été viré, ce qui reste.
+-- • vsf_a_reverser_mensuel : la même chose mois par mois (base du relevé à envoyer à l'ambassadeur métier).
 --   Un remboursement vient en déduction (montants négatifs). Ce n'est PAS une facture : c'est un état de gestion.
--- • CGV : nouvelle version provisoire où le vendeur est Skolantreuz SAS et où le maître artisan est « le Formateur ».
+-- • CGV : nouvelle version provisoire où le vendeur est Skolantreuz SAS et où le maître artisan est « l'Ambassadeur métier ».
 -- =====================================================================================================
 begin;
 
@@ -63,7 +63,7 @@ revoke all on vsf_a_reverser from anon;
 revoke all on vsf_a_reverser_mensuel from anon;
 grant select on vsf_a_reverser, vsf_a_reverser_mensuel to authenticated;
 
--- CGV : Skolantreuz vend, le maître artisan est « le Formateur ». L'ancienne version provisoire est archivée.
+-- CGV : Skolantreuz vend, le maître artisan est « l'Ambassadeur métier ». L'ancienne version provisoire est archivée.
 insert into vsf_cgv (version, statut, contenu_md)
 select '2026-10-29 (provisoire)', 'provisoire', $cgv$# Conditions générales de vente : formation à distance
 
@@ -73,7 +73,7 @@ select '2026-10-29 (provisoire)', 'provisoire', $cgv$# Conditions générales de
 
 ## 1. Qui vend, et pour qui
 
-La formation est vendue par Skolantreuz SAS, [adresse], SIRET [numéro], ci-après « le Vendeur » ou « la Plateforme », sur la plateforme VRAI-SAVOIRFAIRE. Elle est conçue et dispensée par [raison sociale du maître artisan], [adresse], SIRET [numéro], ci-après « le Formateur ». L'acheteur est ci-après « l'Acheteur ».
+La formation est vendue par Skolantreuz SAS, [adresse], SIRET [numéro], ci-après « le Vendeur » ou « la Plateforme », sur la plateforme VRAI-SAVOIRFAIRE. Elle est conçue et dispensée par [raison sociale du maître artisan], [adresse], SIRET [numéro], ci-après « l'Ambassadeur métier ». L'acheteur est ci-après « l'Acheteur ».
 
 ## 2. Objet
 
@@ -81,7 +81,7 @@ Les présentes conditions règlent l'achat d'un ou plusieurs niveaux de la forma
 
 ## 3. Prix et paiement
 
-Les prix sont ceux affichés au moment de la commande, par niveau, après personnalisation du parcours. Le prix d'un niveau ne dépasse jamais le prix du pass de ce niveau. La vente n'est pas soumise à la TVA : le montant affiché est le montant payé. Le paiement est encaissé par la Plateforme, qui rémunère ensuite le Formateur. Le paiement se fait par carte ou prélèvement SEPA via un prestataire de paiement sécurisé ; aucune donnée bancaire n'est conservée par la Plateforme ni par le Formateur. Un paiement en plusieurs fois est proposé pour les niveaux 2 à 4. Une facture est envoyée par e-mail.
+Les prix sont ceux affichés au moment de la commande, par niveau, après personnalisation du parcours. Le prix d'un niveau ne dépasse jamais le prix du pass de ce niveau. La vente n'est pas soumise à la TVA : le montant affiché est le montant payé. Le paiement est encaissé par la Plateforme, qui rémunère ensuite l'Ambassadeur métier. Le paiement se fait par carte ou prélèvement SEPA via un prestataire de paiement sécurisé ; aucune donnée bancaire n'est conservée par la Plateforme ni par l'Ambassadeur métier. Un paiement en plusieurs fois est proposé pour les niveaux 2 à 4. Une facture est envoyée par e-mail.
 
 ## 4. Accès et durée
 
@@ -101,7 +101,7 @@ Chaque niveau comporte un quiz et une épreuve pratique. Les résultats sont don
 
 ## 8. Matériel
 
-Le matériel nécessaire aux exercices n'est pas fourni. Une liste est donnée par niveau et par exercice, avec un lien facultatif vers la boutique du Formateur. Les achats de matériel sont régis par les conditions de cette boutique.
+Le matériel nécessaire aux exercices n'est pas fourni. Une liste est donnée par niveau et par exercice, avec un lien facultatif vers la boutique de l'Ambassadeur métier. Les achats de matériel sont régis par les conditions de cette boutique.
 
 ## 9. Thérèse, l'assistant de la formation
 
@@ -109,11 +109,11 @@ Thérèse est un assistant fondé sur l'intelligence artificielle. Il répond au
 
 ## 10. Données personnelles
 
-Les données sont traitées pour fournir la formation, suivre la progression et émettre les factures. Les films et photos déposés sont conservés 12 mois (exercices chronométrés : 24 mois) et supprimables à tout moment. Le Formateur ne voit que le niveau et les paliers de l'Acheteur ; ses preuves ne lui sont montrées qu'avec son accord explicite. Droits d'accès, de rectification, d'effacement et d'opposition : [adresse e-mail du responsable du traitement]. Politique complète : [lien].
+Les données sont traitées pour fournir la formation, suivre la progression et émettre les factures. Les films et photos déposés sont conservés 12 mois (exercices chronométrés : 24 mois) et supprimables à tout moment. L'Ambassadeur métier ne voit que le niveau et les paliers de l'Acheteur ; ses preuves ne lui sont montrées qu'avec son accord explicite. Droits d'accès, de rectification, d'effacement et d'opposition : [adresse e-mail du responsable du traitement]. Politique complète : [lien].
 
 ## 11. Pratique du métier et sécurité
 
-L'Acheteur pratique sous sa responsabilité, avec le matériel et dans le lieu qu'il choisit. Il respecte les consignes de sécurité données dans la formation. La responsabilité du Formateur et de la Plateforme ne couvre pas les dommages liés à un usage contraire à ces consignes, dans les limites permises par la loi.
+L'Acheteur pratique sous sa responsabilité, avec le matériel et dans le lieu qu'il choisit. Il respecte les consignes de sécurité données dans la formation. La responsabilité de l'Ambassadeur métier et de la Plateforme ne couvre pas les dommages liés à un usage contraire à ces consignes, dans les limites permises par la loi.
 
 ## 12. Réclamations et médiation
 
@@ -131,7 +131,7 @@ commit;
 
 -- Résultat : l'état réel après installation.
 select 'table des reversements' as "élément", case when to_regclass('public.vsf_reversements') is not null then 'oui' else 'ABSENTE' end as "état"
-union all select 'état à reverser (par formateur)', case when to_regclass('public.vsf_a_reverser') is not null then 'oui' else 'ABSENT' end
+union all select 'état à reverser (par ambassadeur métier)', case when to_regclass('public.vsf_a_reverser') is not null then 'oui' else 'ABSENT' end
 union all select 'état à reverser (par mois)', case when to_regclass('public.vsf_a_reverser_mensuel') is not null then 'oui' else 'ABSENT' end
 union all select 'CGV en vigueur à l''affichage', (select version || ' : ' || statut from vsf_cgv where statut <> 'archivee' order by cree_le desc limit 1)
 union all select 'le public non connecté ne voit rien', case when not has_table_privilege('anon', 'public.vsf_reversements', 'select')
