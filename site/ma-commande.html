@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="color-scheme" content="light">
+<title>Ma commande — VRAI-SAVOIRFAIRE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;800;900&display=swap">
+<link rel="stylesheet" href="vsf.css">
+<link rel="stylesheet" href="vsf-nav.css">
+<style>
+  .formules{display:flex;flex-direction:column;margin:10px 0 0}
+  .formule{display:flex;gap:14px;align-items:flex-start;padding:16px 0;border-top:1px solid var(--line);cursor:pointer;min-height:44px}
+  .formules .formule:last-child{border-bottom:1px solid var(--line)}
+  .formule input{width:22px;height:22px;accent-color:#111;flex:none;margin-top:3px}
+  .formule b{display:block;font-size:19px;font-weight:900;letter-spacing:-.01em}
+  .formule span.sous{display:block;font-size:14px;color:var(--cap)}
+  .niv{margin-top:26px;border-top:1.5px solid #111;padding-top:6px}
+  .niv .tete{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+  .niv h3{font-size:20px;font-weight:900;margin:12px 0 2px}
+  .niv .montant{font-size:26px;font-weight:900;letter-spacing:-.02em}
+  .niv .note{font-size:14px;color:var(--cap);margin:0 0 6px}
+  .niv ul{list-style:none;margin:6px 0 0;padding:0}
+  .niv li{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-top:1px solid var(--line);font-size:15px}
+  .niv li span.d{color:var(--cap);font-size:14px}
+  .total{margin-top:34px;padding:18px;background:var(--panel)}
+  .total .montant{font-size:42px;font-weight:900;letter-spacing:-.02em;margin:0}
+  .cgv{margin-top:34px}
+  .cgv-texte{max-height:320px;overflow:auto;padding:14px 16px;background:var(--panel);border-left:3px solid #111;font-size:15px}
+  .cgv-texte h1{font-size:20px;margin:0 0 8px}
+  .cgv-texte h2,.cgv-texte h3{font-size:16px;font-weight:800;margin:16px 0 4px}
+  .case{display:flex;gap:12px;align-items:flex-start;min-height:44px;margin-top:14px;cursor:pointer;font-size:16px}
+  .case input{width:22px;height:22px;accent-color:#111;flex:none;margin-top:2px}
+  .brouillon{font-size:13px;color:var(--cap);margin-top:4px}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="vsf-auth.js"></script>
+<script src="vsf-md.js"></script>
+<link rel="stylesheet" href="vsf-largeur.css"></head>
+<body>
+<main class="wrap large" id="app"><p class="legende">Chargement…</p></main>
+<footer class="wrap"><p class="legende">Une question : <a href="mailto:contact@vraisavoirfaire.fr">contact@vraisavoirfaire.fr</a></p></footer>
+<script src="vsf-nav.js"></script>
+<script>
+var $ = function (id) { return document.getElementById(id); };
+var E = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; }); };
+var NOM = new URLSearchParams(location.search).get('metier') || 'Peintre en lettres';
+function lire(cle) { try { return JSON.parse(localStorage.getItem(cle) || 'null'); } catch (e) { return null; } }
+var euros = function (n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' €'; };
+var heures = function (min) { var h = Math.floor(min / 60), m = min % 60; return h + ' h' + (m ? ' ' + (m < 10 ? '0' : '') + m : ''); };
+
+var S = { offre: null, cgv: null, mods: [], coches: [], formule: 'complet', prix: null, uid: null, accepte: false, renonce: false, enCours: false };
+
+function messageErreur(e) {
+  var m = String((e && e.message) || e || '');
+  if (/VSF02/.test(m + (e && e.code))) return 'Cette formation n’est pas ouverte à la vente pour le moment.';
+  if (/VSF05/.test(m + (e && e.code))) return 'Confirmez d’abord votre plan.';
+  if (/VSF06/.test(m + (e && e.code))) return 'Ces niveaux sont déjà ouverts : rien à acheter.';
+  if (/VSF04/.test(m + (e && e.code))) return m.replace(/^.*?:\s*/, '');
+  return 'Impossible de continuer pour le moment. Réessayez dans un instant.';
+}
+
+async function recalculer() {
+  var r = await VSF.sb.rpc('vsf_calculer_prix', { p_offre: S.offre, p_modules: S.coches, p_formule: S.formule, p_user: S.uid });
+  S.prix = r.error ? { erreur: r.error } : r.data;
+}
+
+function dessiner() {
+  var p = S.prix;
+  var niv = '', total = 0, erreur = '';
+  if (p && p.erreur) { erreur = messageErreur(p.erreur); }
+  else if (p) {
+    total = p.total;
+    niv = p.niveaux.map(function (n) {
+      return '<section class="niv"><div class="tete"><h3>Niveau ' + n.niveau + '</h3><span class="montant">' + euros(n.paye) + '</span></div>' +
+        '<p class="note">' + (n.somme > n.pass ? 'Vos modules coûteraient ' + euros(n.somme) + ' : vous payez le prix du niveau complet.' : (n.paye === n.pass ? 'Niveau complet.' : 'Pass du niveau complet : ' + euros(n.pass) + '.')) + '</p>' +
+        '<ul>' + n.modules.map(function (m) {
+          return '<li><span>' + E(m.titre.replace(/^\[PROVISOIRE\]\s*/, '')) + (m.socle ? ' <span class="d">(inclus)</span>' : '') + '<br><span class="d">' + heures(m.duree_min) + '</span></span><span>' + (m.socle ? '' : euros(m.prix)) + '</span></li>';
+        }).join('') + '</ul></section>';
+    }).join('');
+  }
+  var maxN = S.mods.reduce(function (a, m) { return S.coches.indexOf(m.id) >= 0 && !m.socle ? Math.max(a, m.niveau) : a; }, 1);
+  var peutPayer = p && !p.erreur && S.accepte && !S.enCours;
+  $('app').innerHTML =
+    '<p class="etiquette">Ma commande</p>' +
+    '<h1>Vérifier, puis payer.</h1>' +
+    '<p class="legende">Votre formation « ' + E(NOM) + ' », avec les modules que vous avez choisis. Rien n’est débité avant le paiement.</p>' +
+    '<h2>Ma formule</h2>' +
+    '<div class="formules" role="radiogroup" aria-label="Ma formule">' +
+    '<label class="formule"><input type="radio" name="f" value="complet"' + (S.formule === 'complet' ? ' checked' : '') + '><span><b>Parcours complet, jusqu’au niveau ' + maxN + '</b><span class="sous">Les niveaux s’ouvrent dans l’ordre, sans saut. Le prix de chaque niveau ne dépasse jamais son pass.</span></span></label>' +
+    '<label class="formule"><input type="radio" name="f" value="n1"' + (S.formule === 'n1' ? ' checked' : '') + '><span><b>Niveau 1 seul</b><span class="sous">Pour commencer, et acheter la suite plus tard.</span></span></label></div>' +
+    (erreur ? '<p class="message" role="alert">' + E(erreur) + '</p>' : '') +
+    niv +
+    '<div class="total"><p class="etiquette" style="margin-top:0">Total à payer</p><p class="montant">' + euros(total) + '</p>' +
+    '<p class="legende" style="margin:6px 0 0">Prix net : l’offre n’est pas soumise à la TVA, le montant affiché est le montant payé. Paiement en plusieurs fois proposé pour les niveaux 2 à 4 au moment du paiement.</p></div>' +
+    '<section class="cgv"><h2>Conditions générales de vente</h2>' +
+    '<p class="brouillon">Version ' + E(S.cgv.version) + (S.cgv.statut === 'provisoire' ? ' · texte provisoire, en cours de relecture' : '') + '</p>' +
+    '<div class="cgv-texte" tabindex="0">' + md(S.cgv.contenu_md) + '</div>' +
+    '<label class="case"><input type="checkbox" id="accepte"' + (S.accepte ? ' checked' : '') + '><span>J’ai lu et j’accepte les conditions générales de vente (version ' + E(S.cgv.version) + ').</span></label>' +
+    '<label class="case"><input type="checkbox" id="renonce"' + (S.renonce ? ' checked' : '') + '><span>Je demande l’accès immédiat aux contenus et je reconnais que je perds mon droit de rétractation dès le début de l’accès. <span class="brouillon">(Texte provisoire, à confirmer.)</span></span></label>' +
+    '<p class="message" id="msg" role="alert"></p>' +
+    '<button class="bouton" id="payer"' + (peutPayer ? '' : ' disabled') + '>' + (S.enCours ? 'Un instant…' : 'Payer ' + euros(total)) + '</button>' +
+    (S.accepte ? '' : '<p class="legende">Cochez les conditions pour pouvoir payer.</p>') + '</section>' +
+    '<p class="legende" style="margin-top:22px"><a href="mes-modules.html">← Revoir mes modules</a></p>';
+  document.querySelectorAll('input[name="f"]').forEach(function (r) {
+    r.addEventListener('change', async function () { S.formule = r.value; await recalculer(); dessiner(); });
+  });
+  $('accepte').addEventListener('change', function () { S.accepte = this.checked; dessiner(); });
+  $('renonce').addEventListener('change', function () { S.renonce = this.checked; });
+  $('payer').addEventListener('click', payer);
+}
+
+async function payer() {
+  if (!S.accepte || S.enCours) return;
+  S.enCours = true; dessiner();
+  var r = await VSF.sb.rpc('vsf_creer_commande', { p_offre: S.offre, p_modules: S.coches, p_formule: S.formule, p_cgv: S.cgv.id, p_cgv_acceptee: true, p_renonciation: S.renonce });
+  if (r.error) { S.enCours = false; dessiner(); $('msg').textContent = messageErreur(r.error); return; }
+  // La commande est enregistrée avec le prix calculé par le serveur. Le paiement lui-même est créé par le serveur (Stripe).
+  var sess = (await VSF.sb.auth.getSession()).data.session;
+  var rep = null;
+  try {
+    rep = await fetch(VSF.fonctions + '/creer-paiement', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + sess.access_token, apikey: VSF.cle }, body: JSON.stringify({ commande_id: r.data.commande_id }) });
+  } catch (e) { rep = null; }
+  if (rep && rep.ok) {
+    var d = await rep.json();
+    if (d.url) { location.href = d.url; return; }
+  }
+  S.enCours = false; dessiner();
+  $('msg').textContent = 'Votre commande de ' + euros(r.data.montant_eur) + ' est enregistrée, mais le paiement en ligne n’est pas encore ouvert (mode test en cours de branchement). Rien n’a été débité.';
+}
+
+async function demarrer() {
+  var pers = await VSF.exigerPersonneVerifiee();
+  if (!pers) return;
+  var s = await VSF.sb.auth.getSession(); S.uid = s.data.session.user.id;
+  var res = await Promise.all([
+    VSF.parcours.lire(),
+    VSF.sb.from('vsf_offres').select('id,statut').eq('intitule', NOM).in('statut', ['pilote', 'publiee']).order('cree_le').limit(1),
+    VSF.sb.from('vsf_cgv').select('id,version,statut,contenu_md').neq('statut', 'archivee').order('cree_le', { ascending: false }).limit(1),
+    VSF.sb.from('vsf_modules').select('id,niveau,socle,offre:vsf_offres!inner(intitule)').eq('offre.intitule', NOM)
+  ]);
+  var base = res[0] || {}, offre = (res[1].data || [])[0], cgv = (res[2].data || [])[0];
+  var lp = lire('vsf_plan_v1'), pl = (base.plan && base.plan.confirme_le) ? base.plan : (lp && lp.confirme_le ? lp : null);
+  if (!pl || pl.metier !== NOM) {
+    return $('app').innerHTML = '<p class="etiquette">Ma commande</p><h1>D’abord, mon plan.</h1><p class="message">La commande part de votre plan confirmé.</p><a class="bouton" href="mon-plan.html">Voir mon plan</a>';
+  }
+  if (!offre) {
+    return $('app').innerHTML = '<p class="etiquette">Ma commande</p><h1>Pas encore de formation.</h1><p class="message">La formation « ' + E(NOM) + ' » n’est pas encore ouverte à la vente.</p>';
+  }
+  var sel = (base.selection && base.selection.coches && Object.keys(base.selection.coches).length) ? base.selection : lire('vsf_selection_v1');
+  if (!sel || sel.metier !== NOM || !sel.coches) {
+    return $('app').innerHTML = '<p class="etiquette">Ma commande</p><h1>D’abord, mes modules.</h1><p class="message">Choisissez vos modules, puis revenez ici.</p><a class="bouton" href="mes-modules.html">Choisir mes modules</a>';
+  }
+  S.offre = offre.id; S.cgv = cgv; S.mods = res[3].data || [];
+  S.coches = Object.keys(sel.coches).filter(function (id) { return sel.coches[id] && S.mods.some(function (m) { return m.id === id; }); });
+  await recalculer();
+  dessiner();
+}
+demarrer();
+</script>
+<script src="vsf-suite.js"></script>
+<script src="vsf-pop.js"></script>
+</body>
+</html>

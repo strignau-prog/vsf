@@ -45,7 +45,7 @@ select '2026-10-28 (provisoire)', 'provisoire', $cgv$# Conditions générales de
 
 ## 1. Qui vend, et pour qui
 
-La formation est vendue par [raison sociale du maître artisan], [adresse], SIRET [numéro], ci-après « le Vendeur ». Elle est proposée sur la plateforme VraiSavoirFaire, exploitée par Skolantreuz SAS, [adresse], SIRET [numéro], ci-après « la Plateforme ». L'acheteur est ci-après « l'Apprenant ».
+La formation est vendue par [raison sociale du maître artisan], [adresse], SIRET [numéro], ci-après « le Vendeur ». Elle est proposée sur la plateforme VRAI-SAVOIRFAIRE, exploitée par Skolantreuz SAS, [adresse], SIRET [numéro], ci-après « la Plateforme ». L'acheteur est ci-après « l'Apprenant ».
 
 ## 2. Objet
 

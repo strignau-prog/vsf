@@ -8,7 +8,8 @@
     ['mon-ecart.html', 'Mon écart'],
     ['mon-objectif.html', 'Ma piste et mon objectif'],
     ['mon-plan.html', 'Mon plan'],
-    ['mes-modules.html', 'Mes modules']
+    ['mes-modules.html', 'Mes modules'],
+    ['ma-commande.html', 'Ma commande']
   ];
   function monter() {
     var page = location.pathname.split('/').pop() || '';
@@ -21,7 +22,7 @@
     n.setAttribute('aria-label', 'Étape suivante');
     n.innerHTML =
       '<p class="vsf-suite-num">Étape ' + (i + 1) + ' sur ' + ETAPES.length + '</p>' +
-      (suiv ? '<a class="vsf-suite-suiv" href="' + suiv[0] + '">' + suiv[1] + ' →</a>' : '<p class="vsf-suite-fin">Votre sélection est prête. La suite : les options, puis le paiement.</p>') +
+      (suiv ? '<a class="vsf-suite-suiv" href="' + suiv[0] + '">' + suiv[1] + ' →</a>' : '<p class="vsf-suite-fin">Votre commande est prête à être vérifiée et payée.</p>') +
       (prec ? '<a class="vsf-suite-prec" href="' + prec[0] + '">← ' + prec[1] + '</a>' : '');
     var pied = document.querySelector('footer');
     if (pied && pied.parentNode) pied.parentNode.insertBefore(n, pied); else document.body.appendChild(n);

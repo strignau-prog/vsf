@@ -8,7 +8,8 @@
     ['mon-ecart.html', 'Mon écart'],
     ['mon-objectif.html', 'Mon objectif'],
     ['mon-plan.html', 'Mon plan'],
-    ['mes-modules.html', 'Mes modules']
+    ['mes-modules.html', 'Mes modules'],
+    ['ma-commande.html', 'Ma commande']
   ];
   function monter() {
     var anciens = document.querySelectorAll('nav.topnav, .topbar, header.haut, header.vsf-haut');

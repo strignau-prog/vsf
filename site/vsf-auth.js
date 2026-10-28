@@ -62,7 +62,7 @@
   };
 
   window.VSF = {
-    sb: sb, parcours: parcours, ACCUEIL: ACCUEIL, suiteSure: suiteSure,
+    sb: sb, parcours: parcours, fonctions: SUPABASE_URL + "/functions/v1", cle: SUPABASE_KEY, ACCUEIL: ACCUEIL, suiteSure: suiteSure,
     enregistrerPersonne: enregistrerPersonne, exigerPersonneVerifiee: exigerPersonneVerifiee
   };
 })();

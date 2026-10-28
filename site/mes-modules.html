@@ -100,7 +100,7 @@ function dessiner() {
     blocs +
     '<div class="general"><p class="etiquette" style="margin-top:0">Total de ma sélection</p><p class="montant" style="margin:0">' + euros(total) + '</p>' +
     '<p class="legende" style="margin:6px 0 0">Prix net : l’offre n’est pas soumise à la TVA, le montant affiché est le montant payé. Ce total est indicatif : il est recalculé à la commande.</p></div>' +
-    '<p class="legende" style="margin-top:22px">Votre sélection est gardée. La suite (options, récapitulatif et paiement) arrive bientôt.</p>';
+    '<p class="legende" style="margin-top:22px">Votre sélection est gardée : vous pouvez la modifier à tout moment.</p>';
   document.querySelectorAll('input[data-m]').forEach(function (c) {
     c.addEventListener('change', function () { S.coches[c.getAttribute('data-m')] = c.checked; enregistrer(); dessiner(); });
   });
