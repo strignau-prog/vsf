@@ -1,0 +1,59 @@
+/* Charte VSF pour les pages reprises de Maurice (Constellation, Reconversion, Positionnement).
+   À charger APRÈS le style de la page. Fond blanc, texte #111, légendes #767676, filets #e6e6e6, encart #fafafa.
+   Aucune couleur d'accent, aucune ombre, aucun fond de couleur. Les états se disent par des mots et par la graisse. */
+:root{
+  --bg:#fff; --panel:#fff; --panel-2:#fafafa; --soft:#fafafa; --neutral:#f2f2f2;
+  --ink:#111; --ink-soft:#444; --ink-mute:#767676; --muted:#767676;
+  --line:#e6e6e6; --line-strong:#cfcfcf;
+  --brass:#111; --brass-fill:#111; --brass-soft:rgba(17,17,17,.08);
+  --sienna:#111; --sienna-soft:rgba(17,17,17,.08);
+  --sage:#111; --amber:#111; --accent:#111;
+  --red:#111; --green:#111; --blue:#111; --redBg:#fafafa; --amberBg:#fafafa; --greenBg:#fafafa; --blueBg:#fafafa;
+}
+html,body{font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif !important;background:#fff;color:#111}
+body::after{display:none !important}
+*{box-shadow:none}
+h1,h2,h3,h4,.treeTitle,.panel-title,.node-caption,.brand-name{font-family:inherit !important;letter-spacing:-.01em}
+h1{font-weight:900 !important;font-size:38px;line-height:1.05}
+h1 em{font-style:normal !important;color:#111 !important}
+h2,h3{font-weight:800}
+.panel-title,.stage-instruction,.zoom-hint,.count-hint{font-family:inherit !important}
+
+/* Boutons : mots en gras soulignés d'un trait de 3 px, jamais de rectangle coloré */
+.actionBtn,.ghostBtn,.corrigerBtn{min-height:44px;background:none !important;border:0 !important;border-radius:0 !important;padding:10px 0 !important;color:#111 !important;font-size:14px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;text-decoration:underline;text-decoration-thickness:3px;text-underline-offset:6px}
+.ghostBtn,.corrigerBtn{font-weight:500;color:#767676 !important;text-decoration-thickness:1px}
+.actionBtn:disabled{color:#767676 !important;text-decoration:none}
+
+/* Champs : titre en petites capitales, saisie soulignée */
+.field label{font-size:11px !important;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:#767676 !important}
+.input,.select,input[type=text],input[type=search],select,textarea{border:0 !important;border-bottom:1.5px solid #111 !important;border-radius:0 !important;background:transparent !important;min-height:44px}
+textarea{border:1.5px solid #111 !important}
+.input:focus,.select:focus,input:focus,select:focus{outline:none;box-shadow:0 2px 0 0 #111 !important}
+
+/* Cartes et panneaux : un filet, pas de boîte colorée */
+.panel,.card,.statusCard,.note,.waitBox,.constellation-frame{border-radius:0 !important;background:#fff}
+.panel,.constellation-frame{border:1px solid var(--line)}
+.note{background:var(--soft);border:0 !important;border-left:3px solid #111 !important}
+.statusCard:hover{background:var(--soft)}
+.chip,.posBtn{border:1.5px solid #111 !important;border-radius:0 !important;background:#fff !important;color:#111 !important;min-height:44px;font-size:13px}
+.chip.on,.posBtn.actif{background:#111 !important;color:#fff !important;font-weight:800}
+.select-fake{border-radius:0 !important;border:0 !important;border-bottom:1.5px solid #111 !important;background:transparent !important}
+
+/* Constellation : départ et cible se distinguent par la forme de l'anneau (simple / double), plus par la couleur */
+.node.selected-a .node-ring{border-color:#111 !important;border-width:3px !important}
+.node.selected-b .node-ring{border-color:#111 !important;border-width:3px !important;box-shadow:0 0 0 4px #fff,0 0 0 6px #111 !important}
+.node.selected-a .media-tint,.node.selected-b .media-tint{background:#111 !important;opacity:.88}
+.node.is-anchor .node-caption,.node.is-priority .node-caption{color:#111 !important;font-weight:800}
+.node.is-priority .node-media{box-shadow:0 0 0 2.4px #111 !important}
+.dist-line.tier-validee{stroke:#111 !important}
+.dist-line.tier-hypothese{stroke:#767676 !important}
+.corner-tl,.corner-br{display:none}
+.stage-instruction .reset-pill{color:#111 !important;border-color:#111 !important;border-radius:0 !important}
+.brand-mark{border-color:#111 !important;color:#111 !important}
+
+/* Positionnement : son propre bandeau (avec la barre de progression) passe en blanc */
+.bar{background:#fff !important;color:#111 !important;border-bottom:1px solid var(--line)}
+.bar .brand{font-family:inherit !important;font-weight:900;letter-spacing:.02em;color:#111 !important}
+.bar .prog{color:#767676 !important}
+.progTrack{background:var(--line) !important;height:3px !important}
+.progFill{background:#111 !important}

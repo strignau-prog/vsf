@@ -1,0 +1,11 @@
+/* Bandeau et menu horizontal (posés par vsf-nav.js) */
+.vsf-haut{display:flex;flex-wrap:wrap;align-items:center;gap:6px 22px;padding:6px 20px;min-height:56px;border-bottom:1px solid var(--line);background:#fff;position:relative;z-index:30}
+.vsf-marque{font-weight:900;letter-spacing:.02em;color:#111;text-decoration:none;margin-right:auto}
+.vsf-etapes{display:flex;flex-wrap:wrap;gap:0 22px}
+.vsf-etapes a,.vsf-compte{display:inline-flex;align-items:center;min-height:44px;font-size:12px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;color:#767676;text-decoration:none}
+.vsf-etapes a.ici{color:#111;font-weight:900;text-decoration:underline;text-decoration-thickness:3px;text-underline-offset:8px}
+.vsf-compte{color:#111;font-weight:800}
+.vsf-etapes a:hover,.vsf-compte:hover{color:#111}
+.vsf-haut a:focus-visible{outline:2px solid #111;outline-offset:3px}
+@media (max-width:640px){.vsf-haut{padding:6px 16px}.vsf-etapes{order:3;width:100%}}
+
