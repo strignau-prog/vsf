@@ -91,7 +91,7 @@ async function demarrer() {
     '<nav class="sommaire" aria-label="Sommaire">' + reste.map(function (x) { return '<a href="#r-' + E(x.code) + '">' + E(x.titre) + '</a>'; }).join('') + '</nav>' +
     reste.map(function (x) { return '<section class="rubrique" id="r-' + E(x.code) + '"><h2>' + E(x.titre) + '</h2>' + md(x.contenu_md) + '</section>'; }).join('') +
     '<div class="suite"><p class="etiquette">Et maintenant</p><p>Vous avez lu le métier situation par situation. La suite : voir où vous en êtes, sans note ni classement.</p>' +
-    '<a class="bouton" href="reconversion.html">Mesurer mon écart</a></div>';
+    '<a class="bouton" href="mon-ecart.html">Mesurer mon écart</a></div>';
   if (location.hash) { var el = document.getElementById(location.hash.slice(1)); if (el) el.scrollIntoView(); }
 }
 demarrer();

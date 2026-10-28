@@ -5,7 +5,7 @@
     ['mon-passage.html', 'Mon point de départ'],
     ['constellation-des-gestes.html', 'Choisir mon métier'],
     ['fiche-metier.html', 'La fiche du métier'],
-    ['reconversion.html', 'Mon écart']
+    ['mon-ecart.html', 'Mon écart']
   ];
   function monter() {
     var anciens = document.querySelectorAll('nav.topnav, .topbar, header.haut, header.vsf-haut');
