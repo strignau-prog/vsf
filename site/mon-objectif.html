@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="color-scheme" content="light">
+<title>Ma piste et mon objectif — VRAI-SAVOIRFAIRE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;800;900&display=swap">
+<link rel="stylesheet" href="vsf.css">
+<link rel="stylesheet" href="vsf-nav.css">
+<style>
+  .wrap.large{max-width:760px}
+  .groupe{display:flex;flex-direction:column;margin:10px 0 0}
+  .choix-ligne{display:flex;justify-content:space-between;align-items:center;gap:14px;width:100%;min-height:64px;padding:14px 0;border:0;border-top:1px solid var(--line);background:#fff;color:#111;font:inherit;text-align:left;cursor:pointer}
+  .groupe .choix-ligne:last-child{border-bottom:1px solid var(--line)}
+  .choix-ligne b{display:block;font-size:19px;font-weight:900;letter-spacing:-.01em}
+  .choix-ligne span.sous{display:block;font-size:14px;color:var(--cap);font-weight:400}
+  .choix-ligne .etat{font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;white-space:nowrap;color:var(--cap)}
+  .choix-ligne[aria-pressed="true"] .etat{color:#111;border:1.5px solid #111;padding:2px 7px}
+  .choix-ligne[aria-pressed="true"] b{text-decoration:underline;text-decoration-thickness:3px;text-underline-offset:6px}
+  .choix-ligne:focus-visible{outline:2px solid #111;outline-offset:3px}
+  .detail-niveau{background:var(--panel);padding:16px 18px;margin:18px 0}
+  .detail-niveau h3{font-size:19px;font-weight:900;margin:0 0 6px}
+  .detail-niveau ul{margin:10px 0 0;padding-left:0;list-style:none}
+  .detail-niveau li{padding:10px 0;border-top:1px solid var(--line);font-size:15px}
+  .detail-niveau li:first-child{border-top:0}
+  .detail-niveau li b{display:block}
+  .detail-niveau li span{display:block;color:var(--cap);font-size:14px}
+  .reperes{font-size:14px;color:var(--cap)}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="vsf-auth.js"></script>
+<script src="vsf-fiche.js"></script>
+</head>
+<body>
+<main class="wrap large" id="app"><p class="legende">Chargement…</p></main>
+<footer class="wrap"><p class="legende">Une question : <a href="mailto:contact@vraisavoirfaire.fr">contact@vraisavoirfaire.fr</a></p></footer>
+<script src="vsf-nav.js"></script>
+<script>
+var $ = function (id) { return document.getElementById(id); };
+var E = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; }); };
+var NOM = new URLSearchParams(location.search).get('metier') || 'Peintre en lettres';
+var CLE = 'vsf_piste_v1';
+function lire() { try { return JSON.parse(localStorage.getItem(CLE) || 'null'); } catch (e) { return null; } }
+function ecrire(v) { try { localStorage.setItem(CLE, JSON.stringify(v)); } catch (e) { /* sans mémoire locale */ } }
+
+var S = { fiche: null, chemin: [], pistes: [], niveaux: {}, choix: { metier: NOM, piste: '', niveau: 0 } };
+
+function enregistrer() { S.choix._maj = Date.now(); ecrire(S.choix); VSF.parcours.ecrire('piste', S.choix); }
+
+function dessiner() {
+  var c = S.choix;
+  var pistes = S.pistes.length ? S.pistes : [{ code: 'principale', libelle: NOM, optionnelle: false }];
+  var lignesPistes = pistes.map(function (p) {
+    return '<button type="button" class="choix-ligne" data-piste="' + E(p.code) + '" aria-pressed="' + (c.piste === p.code) + '">' +
+      '<div><b>' + E(p.libelle) + '</b><span class="sous">' + (p.optionnelle ? 'Option, en plus de la piste principale' : 'Piste principale') + '</span></div><span class="etat">' + (c.piste === p.code ? 'Ma piste' : 'Choisir') + '</span></button>';
+  }).join('');
+  var niveaux = [1, 2, 3, 4].map(function (n) {
+    var t = (S.chemin[0] && S.chemin[0].niveaux[n]) ? S.chemin[0].niveaux[n].titre : '';
+    var d = VSFF.dureeTexte(S.niveaux[n]);
+    return '<button type="button" class="choix-ligne" data-niveau="' + n + '" aria-pressed="' + (c.niveau === n) + '">' +
+      '<div><b>N' + n + ' — ' + E(t) + '</b><span class="sous">' + (d ? 'Repère de parcours : ' + E(d) : 'Repère de durée : bientôt') + '</span></div><span class="etat">' + (c.niveau === n ? 'Mon objectif' : 'Choisir') + '</span></button>';
+  }).join('');
+  var detail = '';
+  if (c.niveau) {
+    var n = c.niveau, tit = (S.chemin[0] && S.chemin[0].niveaux[n]) ? S.chemin[0].niveaux[n].titre : '';
+    detail = '<div class="detail-niveau"><h3>À ce niveau (N' + n + ' — ' + E(tit) + '), la personne :</h3><ul>' +
+      S.chemin.map(function (s) {
+        var x = s.niveaux[n]; if (!x) return '';
+        return '<li><b>' + E(s.nom) + '</b>' + E(x.fait) + '<span>Preuve observable : ' + E(x.preuve) + '</span></li>';
+      }).join('') + '</ul><p class="reperes" style="margin-top:12px">Un niveau est validé par un humain, en situation réelle. Les durées sont indicatives, à calibrer avec un tuteur : ce n’est pas une promesse.</p></div>';
+  }
+  $('app').innerHTML =
+    '<p class="etiquette">Ma piste et mon objectif</p>' +
+    '<h1>Choisir où aller, et jusqu’où.</h1>' +
+    '<p class="legende">Deux choix sur un seul écran. Rien n’est définitif : vous pouvez les changer à tout moment.</p>' +
+    '<h2>Ma piste</h2>' +
+    (S.pistes.length > 1 ? '' : '<p class="legende">Pour l’instant, une seule piste est ouverte pour ce métier. D’autres arriveront.</p>') +
+    '<div class="groupe" role="group" aria-label="Ma piste">' + lignesPistes + '</div>' +
+    '<h2>Mon objectif pour « ' + E(NOM) + ' »</h2>' +
+    '<p class="legende">Quatre niveaux possibles. Choisissez celui que vous visez : les niveaux d’avant font partie du chemin.</p>' +
+    '<div class="groupe" role="group" aria-label="Mon objectif">' + niveaux + '</div>' + detail +
+    '<div style="margin-top:30px;border-top:1px solid var(--line);padding-top:6px">' +
+    (c.piste && c.niveau ? '<a class="bouton" href="mon-plan.html">Voir mon plan</a>' : '<p class="legende">Choisissez une piste et un niveau pour voir votre plan.</p>') +
+    '<br><a class="bouton discret" href="mon-ecart.html">Revoir mon écart</a></div>';
+  document.querySelectorAll('[data-piste]').forEach(function (b) { b.addEventListener('click', function () { S.choix.piste = b.getAttribute('data-piste'); enregistrer(); dessiner(); }); });
+  document.querySelectorAll('[data-niveau]').forEach(function (b) { b.addEventListener('click', function () { S.choix.niveau = +b.getAttribute('data-niveau'); enregistrer(); dessiner(); }); });
+}
+
+async function demarrer() {
+  var pers = await VSF.exigerPersonneVerifiee();
+  if (!pers) return;
+  var res = await Promise.all([VSFF.charger(NOM), VSFF.niveauxOffre(NOM), VSFF.pistesOffre(NOM), VSF.parcours.lire()]);
+  var fiche = res[0]; S.niveaux = res[1]; S.pistes = res[2]; var base = res[3];
+  if (!fiche || !fiche.rub.chemin) {
+    return $('app').innerHTML = '<p class="etiquette">Ma piste et mon objectif</p><h1>Pas encore de fiche.</h1>' +
+      '<p class="message">La fiche « ' + E(NOM) + ' » n’est pas encore publiée.</p><a class="bouton" href="constellation-des-gestes.html">Choisir un autre métier</a>';
+  }
+  S.fiche = fiche; S.chemin = VSFF.parserChemin(fiche.rub.chemin.contenu_md);
+  var local = lire(), dist = base && base.piste && base.piste.niveau != null ? base.piste : null;
+  var ret = (dist && (!local || (dist._maj || 0) > (local._maj || 0))) ? dist : local;
+  if (ret && ret.metier === NOM) S.choix = ret;
+  if (!S.choix.piste) S.choix.piste = (S.pistes[0] && S.pistes[0].code) || 'principale';
+  dessiner();
+}
+demarrer();
+</script>
+<script src="vsf-pop.js"></script>
+</body>
+</html>

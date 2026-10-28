@@ -2,10 +2,12 @@
    Remplace l'ancien bandeau (Maurice, Fédération) par celui de VSF. La page courante se dit par la graisse et le soulignement. */
 (function () {
   var ETAPES = [
-    ['mon-passage.html', 'Mon point de départ'],
-    ['constellation-des-gestes.html', 'Choisir mon métier'],
-    ['fiche-metier.html', 'La fiche du métier'],
-    ['mon-ecart.html', 'Mon écart']
+    ['mon-passage.html', 'Départ'],
+    ['constellation-des-gestes.html', 'Mon métier'],
+    ['fiche-metier.html', 'La fiche'],
+    ['mon-ecart.html', 'Mon écart'],
+    ['mon-objectif.html', 'Mon objectif'],
+    ['mon-plan.html', 'Mon plan']
   ];
   function monter() {
     var anciens = document.querySelectorAll('nav.topnav, .topbar, header.haut, header.vsf-haut');

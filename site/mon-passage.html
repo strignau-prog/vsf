@@ -197,7 +197,7 @@
     .empty{color:var(--muted);font-size:15px}
     select.champ{width:100%;min-height:44px;border:0;border-bottom:1.5px solid #111;border-radius:0;background:transparent;font-size:17px;padding:10px 0}
   </style>
-<link rel="stylesheet" href="vsf-nav.css"></head>
+<link rel="stylesheet" href="vsf-nav.css"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script><script src="vsf-auth.js"></script></head>
 <body>
 <header class="haut"><a class="marque" href="./">VRAI-SAVOIRFAIRE</a><a class="ghostBtn" href="connexion.html?suite=mon-passage.html">Mon compte</a></header>
 <div class="wrap">
@@ -439,7 +439,8 @@ function premierCodeRome(fiche){
 
 const CLE_LOCAL = '12mars_mon_passage_v1';
 function charger(){ try{ return JSON.parse(localStorage.getItem(CLE_LOCAL)||'{}'); }catch(e){ return {}; } }
-function sauver(){ try{ localStorage.setItem(CLE_LOCAL, JSON.stringify(etat)); }catch(e){} }
+var _pousser = null;
+function sauver(){ try{ etat._maj = Date.now(); localStorage.setItem(CLE_LOCAL, JSON.stringify(etat)); }catch(e){} clearTimeout(_pousser); _pousser = setTimeout(function(){ if(window.VSF && VSF.parcours) VSF.parcours.ecrire("carte", etat); }, 900); }
 
 // Fusion volontairement profonde d'un niveau (pas Object.assign, qui écraserait entièrement
 // un sous-objet comme axe1 s'il existe déjà en localStorage sans les derniers champs ajoutés —
@@ -1222,6 +1223,22 @@ function wireEvents(){
   app.querySelectorAll('[data-quart]').forEach(b=>b.addEventListener('click', ()=>{ etat.quartActif=b.dataset.quart; sauver(); render(); }));
 }
 render();
+
+/* Mémoire de la personne : si elle est connectée, sa carte de départ est enregistrée à son nom et retrouvée sur tout appareil.
+   La version la plus récente gagne (date de dernière modification). */
+async function syncCarte(){
+  if(!window.VSF || !VSF.parcours) return;
+  const p = await VSF.parcours.lire(); if(!p) return;
+  const base = p.carte || {};
+  const localMaj = etat._maj || 0, baseMaj = base._maj || 0;
+  if(base.experiences && base.experiences.length && baseMaj > localMaj){
+    Object.assign(etat, base); try{ localStorage.setItem(CLE_LOCAL, JSON.stringify(etat)); }catch(e){}
+    render();
+  } else if(etat.experiences && etat.experiences.length && localMaj >= baseMaj){
+    VSF.parcours.ecrire('carte', etat);
+  }
+}
+syncCarte();
 </script>
-<script src="vsf-nav.js"></script></body>
+<script src="vsf-nav.js"></script><script src="vsf-pop.js"></script></body>
 </html>

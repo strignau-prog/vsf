@@ -77,8 +77,7 @@ function lireSituations(md) {
 }
 
 /* ───── la carte de départ : ce que la personne a déclaré ───── */
-function lireCarte() {
-  var e = lire(CLE_CARTE);
+function lireCarte(e) {
   if (!e || !e.experiences || !e.experiences.length) return null;
   var pratique = [], savoirs = [], diplomes = [];
   e.experiences.forEach(function (x) {
@@ -147,17 +146,21 @@ function dessiner() {
     PALIERS.map(function (q) { return '<p><b>' + q[1] + '.</b> ' + q[2] + '</p>'; }).join('') + '</div></details>' +
     lignes.join('') +
     '<div class="situation"><p class="etiquette">Et maintenant</p><p>Vous savez où vous en êtes. La suite : choisir votre piste et votre objectif, puis recevoir votre plan.</p>' +
-    '<p class="legende">Cette étape arrive bientôt. Votre écart est gardé sur cet appareil.</p>' +
+    '<p class="legende">Votre écart est gardé : vous pouvez le modifier à tout moment.</p><a class="bouton" href="mon-objectif.html">Choisir ma piste et mon objectif</a><br>' +
     '<a class="bouton discret" href="mon-passage.html">Revoir ma carte de départ</a></div>';
   document.querySelectorAll('.choix button').forEach(function (b) {
-    b.addEventListener('click', function () { ETAT.choix[b.getAttribute('data-s')] = b.getAttribute('data-p'); ecrire(CLE_ECART, ETAT.choix); dessiner(); });
+    b.addEventListener('click', function () { ETAT.choix[b.getAttribute('data-s')] = b.getAttribute('data-p'); ecrire(CLE_ECART, ETAT.choix); VSF.parcours.ecrire('ecart', ETAT.choix); dessiner(); });
   });
 }
 
 async function demarrer() {
   var pers = await VSF.exigerPersonneVerifiee();
   if (!pers) return;
-  var carte = lireCarte();
+  var base = await VSF.parcours.lire();
+  var local = lire(CLE_CARTE), e = local;
+  if (base && base.carte && base.carte.experiences && base.carte.experiences.length && (base.carte._maj || 0) > ((local && local._maj) || 0)) e = base.carte;
+  if (base && base.ecart) ETAT.choix = Object.assign({}, ETAT.choix, base.ecart);
+  var carte = lireCarte(e);
   if (!carte) {
     return $('app').innerHTML = '<p class="etiquette">Mon écart</p><h1>D’abord, votre point de départ.</h1>' +
       '<p class="message">Pour mesurer votre écart, il faut savoir d’où vous partez. Cela prend quelques minutes.</p>' +
@@ -176,5 +179,5 @@ async function demarrer() {
 }
 demarrer();
 </script>
-</body>
+<script src="vsf-pop.js"></script></body>
 </html>

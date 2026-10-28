@@ -41,8 +41,28 @@
     location.href = base.href;
   }
 
+
+  // La mémoire de la personne : son parcours est enregistré à son nom (table vsf_parcours) et retrouvé sur n'importe quel appareil.
+  // Sans connexion, ou si la table n'est pas encore installée, les pages continuent avec la mémoire de l'appareil.
+  var parcours = {
+    session: async function () { var s = await sb.auth.getSession(); return s.data.session || null; },
+    lire: async function () {
+      var s = await parcours.session(); if (!s) return null;
+      var r = await sb.from('vsf_parcours').select('carte,ecart,piste,plan,plan_confirme_le,maj_le').eq('user_id', s.user.id).maybeSingle();
+      return r.error ? null : (r.data || {});
+    },
+    ecrire: async function (partie, valeur, extra) {
+      var s = await parcours.session(); if (!s) return false;
+      var l = { user_id: s.user.id }; l[partie] = valeur;
+      if (extra) for (var k in extra) l[k] = extra[k];
+      var r = await sb.from('vsf_parcours').upsert(l, { onConflict: 'user_id' });
+      if (r.error) console.warn('Parcours non enregistré :', r.error.message);
+      return !r.error;
+    }
+  };
+
   window.VSF = {
-    sb: sb, ACCUEIL: ACCUEIL, suiteSure: suiteSure,
+    sb: sb, parcours: parcours, ACCUEIL: ACCUEIL, suiteSure: suiteSure,
     enregistrerPersonne: enregistrerPersonne, exigerPersonneVerifiee: exigerPersonneVerifiee
   };
 })();

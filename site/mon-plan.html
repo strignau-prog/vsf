@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="color-scheme" content="light">
+<title>Mon plan — VRAI-SAVOIRFAIRE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;800;900&display=swap">
+<link rel="stylesheet" href="vsf.css">
+<link rel="stylesheet" href="vsf-nav.css">
+<style>
+  .wrap.large{max-width:760px}
+  .passage{font-size:19px;font-weight:800;line-height:1.35;margin:14px 0 4px}
+  .niveau{padding-top:8px;margin-top:34px;border-top:1.5px solid #111}
+  .niveau h2{margin:14px 0 4px}
+  .niveau .quand{font-size:14px;color:var(--cap);margin:0 0 6px}
+  .ligne-sit{padding:14px 0;border-top:1px solid var(--line)}
+  .niveau .ligne-sit:first-of-type{border-top:0}
+  .ligne-sit b{display:block;font-size:17px;font-weight:800}
+  .ligne-sit p{margin:4px 0;font-size:15px}
+  .ligne-sit .preuve{color:var(--cap);font-size:14px}
+  .mot{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;border:1.5px solid #111;padding:2px 7px;margin-bottom:4px}
+  .mot.doux{border-color:var(--line);color:var(--cap)}
+  .confirmation{margin-top:40px;padding:18px 18px 8px;background:var(--panel)}
+  .confirmation label{display:flex;gap:12px;align-items:flex-start;min-height:44px;font-size:16px;cursor:pointer}
+  .confirmation input[type=checkbox]{width:22px;height:22px;accent-color:#111;flex:none;margin-top:2px}
+  @media print{
+    .vsf-haut,footer,.confirmation .bouton,.noprint{display:none !important}
+    body{font-size:12pt}
+    .wrap.large{max-width:none;padding:0}
+    .niveau{break-inside:avoid-page}
+  }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="vsf-auth.js"></script>
+<script src="vsf-fiche.js"></script>
+</head>
+<body>
+<main class="wrap large" id="app"><p class="legende">Chargement…</p></main>
+<footer class="wrap"><p class="legende">Une question : <a href="mailto:contact@vraisavoirfaire.fr">contact@vraisavoirfaire.fr</a></p></footer>
+<script src="vsf-nav.js"></script>
+<script>
+var $ = function (id) { return document.getElementById(id); };
+var E = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; }); };
+var NOM = new URLSearchParams(location.search).get('metier') || 'Peintre en lettres';
+function lire(cle) { try { return JSON.parse(localStorage.getItem(cle) || 'null'); } catch (e) { return null; } }
+function ecrire(cle, v) { try { localStorage.setItem(cle, JSON.stringify(v)); } catch (e) { /* sans mémoire locale */ } }
+var jour = function (d) { try { return new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }); } catch (e) { return ''; } };
+var PALIER = { p: ['À faire valider', false], t: ['À transposer', true], k: ['À mettre en pratique', true], d: ['À apprendre', true] };
+
+var S = { chemin: [], quotidien: [], choix: null, ecart: {}, origine: '', niveaux: {}, plan: {}, confirmeLe: null };
+
+function dessiner() {
+  var c = S.choix, L = c.niveau;
+  var tit = (S.chemin[0] && S.chemin[0].niveaux[L]) ? S.chemin[0].niveaux[L].titre : '';
+  var sansEcart = S.chemin.filter(function (s) { return !S.ecart[s.nom]; }).length;
+  var blocs = '';
+  for (var n = 1; n <= L; n++) {
+    var t = (S.chemin[0] && S.chemin[0].niveaux[n]) ? S.chemin[0].niveaux[n].titre : '';
+    var d = VSFF.dureeTexte(S.niveaux[n]);
+    blocs += '<section class="niveau"><p class="etiquette" style="margin:10px 0 0">Niveau ' + n + (n === L ? ' · mon objectif' : '') + '</p><h2>N' + n + ' — ' + E(t) + '</h2>' +
+      '<p class="quand">' + (d ? 'Repère de parcours : ' + E(d) : 'Repère de durée : bientôt') + '</p>' +
+      S.chemin.map(function (s) {
+        var x = s.niveaux[n]; if (!x) return '';
+        var p = S.ecart[s.nom], m = p ? PALIER[p] : null;
+        return '<div class="ligne-sit">' + (m ? '<span class="mot' + (m[1] ? '' : ' doux') + '">' + m[0] + '</span>' : '') +
+          '<b>' + E(s.nom) + '</b><p>' + E(x.fait) + '</p><p class="preuve">Preuve à réunir : ' + E(x.preuve) + '</p></div>';
+      }).join('') + '</section>';
+  }
+  var confirmation = S.confirmeLe
+    ? '<div class="confirmation"><p class="etiquette" style="margin-top:0">Plan confirmé</p><p><b>Vous avez confirmé ce plan le ' + E(jour(S.confirmeLe)) + '.</b> C’est le vôtre : vous pouvez le revoir et le changer à tout moment.</p>' +
+      '<button class="bouton noprint" onclick="window.print()">Enregistrer en PDF</button><br><button class="bouton discret noprint" onclick="rouvrir()">Modifier mon plan</button></div>'
+    : '<div class="confirmation noprint"><p class="etiquette" style="margin-top:0">Ma confirmation</p>' +
+      '<label><input type="checkbox" id="ok"><span>Je confirme ce plan : c’est mon point de départ, ma piste et mon objectif.</span></label>' +
+      '<p class="message" id="msg" role="alert"></p><button class="bouton" onclick="confirmer()">Confirmer mon plan</button></div>';
+  $('app').innerHTML =
+    '<p class="etiquette">Mon plan</p>' +
+    '<h1>Mon plan, niveau par niveau.</h1>' +
+    '<p class="passage">' + (S.origine ? E(S.origine) + ' → ' : '') + E(NOM) + '</p>' +
+    '<p class="legende">Objectif : N' + L + ' — ' + E(tit) + '. Pour chaque niveau : ce que vous faites, situation par situation, et la preuve à réunir. Aucune note, aucun classement : des paliers, à votre rythme.</p>' +
+    (sansEcart ? '<p class="message noprint">Vous n’avez pas encore confirmé votre palier pour ' + sansEcart + ' situation' + (sansEcart > 1 ? 's' : '') + '. <a href="mon-ecart.html">Le faire maintenant</a></p>' : '') +
+    blocs +
+    '<section class="niveau"><h2>Mes preuves</h2><p>Vos preuves iront dans votre coffre-fort : elles sont à vous, rien n’est visible sans votre accord. Les types de preuves attendues sont décrits dans <a href="fiche-metier.html#r-preuves">la fiche du métier</a>.</p></section>' +
+    confirmation +
+    '<p class="legende noprint" style="margin-top:28px">La suite : choisir ma formation. Cette étape arrive bientôt.</p>' +
+    '<p class="noprint"><a class="bouton discret" href="mon-objectif.html">Changer ma piste ou mon objectif</a></p>';
+}
+
+async function confirmer() {
+  if (!$('ok').checked) { $('msg').textContent = 'Cochez la case pour confirmer votre plan.'; return; }
+  var maintenant = new Date().toISOString();
+  S.confirmeLe = maintenant;
+  S.plan = { metier: NOM, piste: S.choix.piste, niveau: S.choix.niveau, confirme_le: maintenant };
+  ecrire('vsf_plan_v1', S.plan);
+  await VSF.parcours.ecrire('plan', S.plan, { plan_confirme_le: maintenant });
+  dessiner();
+}
+async function rouvrir() {
+  S.confirmeLe = null; S.plan = {}; ecrire('vsf_plan_v1', null);
+  await VSF.parcours.ecrire('plan', {}, { plan_confirme_le: null });
+  dessiner();
+}
+
+async function demarrer() {
+  var pers = await VSF.exigerPersonneVerifiee();
+  if (!pers) return;
+  var res = await Promise.all([VSFF.charger(NOM), VSFF.niveauxOffre(NOM), VSF.parcours.lire()]);
+  var fiche = res[0]; S.niveaux = res[1]; var base = res[2] || {};
+  var piste = base.piste && base.piste.niveau ? base.piste : lire('vsf_piste_v1');
+  var lp = lire('vsf_piste_v1'); if (lp && lp.metier === NOM && (!piste || (lp._maj || 0) > (piste._maj || 0))) piste = lp;
+  if (!piste || piste.metier !== NOM || !piste.niveau) {
+    return $('app').innerHTML = '<p class="etiquette">Mon plan</p><h1>D’abord, ma piste et mon objectif.</h1>' +
+      '<p class="message">Pour dessiner votre plan, il faut savoir jusqu’où vous voulez aller.</p><a class="bouton" href="mon-objectif.html">Choisir mon objectif</a>';
+  }
+  if (!fiche || !fiche.rub.chemin) {
+    return $('app').innerHTML = '<p class="etiquette">Mon plan</p><h1>Pas encore de fiche.</h1><p class="message">La fiche « ' + E(NOM) + ' » n’est pas encore publiée.</p>';
+  }
+  S.choix = piste;
+  S.chemin = VSFF.parserChemin(fiche.rub.chemin.contenu_md);
+  S.ecart = Object.assign({}, lire('vsf_ecart_v1') || {}, base.ecart || {});
+  var carte = (base.carte && base.carte.experiences && base.carte.experiences.length) ? base.carte : lire('12mars_mon_passage_v1');
+  S.origine = (carte && carte.experiences && carte.experiences[0] && carte.experiences[0].choix.libelleMetier) || '';
+  var pl = (base.plan && base.plan.confirme_le) ? base.plan : lire('vsf_plan_v1');
+  if (pl && pl.confirme_le && pl.metier === NOM && pl.niveau === piste.niveau) { S.plan = pl; S.confirmeLe = pl.confirme_le; }
+  dessiner();
+}
+demarrer();
+</script>
+<script src="vsf-pop.js"></script>
+</body>
+</html>
