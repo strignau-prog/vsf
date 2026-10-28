@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="color-scheme" content="light">
+<title>Bienvenue — VRAI-SAVOIRFAIRE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;800;900&display=swap">
+<link rel="stylesheet" href="vsf.css">
+<link rel="stylesheet" href="vsf-nav.css">
+<link rel="stylesheet" href="vsf-largeur.css">
+<style>
+  .niveaux-ouverts{list-style:none;margin:14px 0 0;padding:0}
+  .niveaux-ouverts li{display:flex;justify-content:space-between;gap:12px;padding:14px 0;border-top:1px solid var(--line);font-size:18px;font-weight:800}
+  .niveaux-ouverts li:last-child{border-bottom:1px solid var(--line)}
+  .niveaux-ouverts span.d{font-weight:400;font-size:14px;color:var(--cap)}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="vsf-auth.js"></script>
+</head>
+<body>
+<main class="wrap" id="app"><p class="legende">Chargement…</p></main>
+<footer class="wrap"><p class="legende">Une question : <a href="mailto:contact@vraisavoirfaire.fr">contact@vraisavoirfaire.fr</a></p></footer>
+<script src="vsf-nav.js"></script>
+<script>
+var $ = function (id) { return document.getElementById(id); };
+var E = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; }); };
+var euros = function (n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' €'; };
+var jour = function (d) { try { return new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }); } catch (e) { return ''; } };
+var ID = new URLSearchParams(location.search).get('commande');
+var essais = 0;
+
+// L'accès ne s'ouvre que lorsque Stripe a confirmé le paiement au serveur : on interroge la base jusqu'à ce qu'il soit là.
+async function verifier(pers) {
+  var c = await VSF.sb.from('vsf_commandes').select('id,statut,montant_eur,paye_le,niveau_max').eq('id', ID).maybeSingle();
+  if (c.error || !c.data) return $('app').innerHTML = '<p class="etiquette">Bienvenue</p><h1>Commande introuvable.</h1><p class="message">Cette commande n’existe pas, ou elle n’est pas à votre nom.</p><a class="bouton" href="ma-commande.html">Retour à ma commande</a>';
+  if (c.data.statut === 'payee') {
+    var a = await VSF.sb.from('vsf_acces').select('niveau,ouvert_le,expire_le').eq('commande_id', ID).order('niveau');
+    var lignes = (a.data || []).map(function (x) {
+      return '<li><span>Niveau ' + x.niveau + '</span><span class="d">' + (x.expire_le ? 'accès jusqu’au ' + E(jour(x.expire_le)) : 'accès ouvert') + '</span></li>';
+    }).join('');
+    return $('app').innerHTML = '<p class="etiquette">Paiement confirmé</p>' +
+      '<h1>Bienvenue' + (pers.prenom ? ', ' + E(pers.prenom) : '') + '.</h1>' +
+      '<p class="legende">Votre paiement de ' + euros(c.data.montant_eur) + ' est confirmé' + (c.data.paye_le ? ' (' + E(jour(c.data.paye_le)) + ')' : '') + '. Votre formation est ouverte :</p>' +
+      '<ul class="niveaux-ouverts">' + lignes + '</ul>' +
+      '<p class="legende" style="margin-top:22px">Votre facture vous sera envoyée par e-mail. L’espace de formation ouvre bientôt : vous serez prévenu.</p>';
+  }
+  if (c.data.statut === 'annulee' || c.data.statut === 'echec') {
+    return $('app').innerHTML = '<p class="etiquette">Paiement</p><h1>Le paiement n’a pas abouti.</h1><p class="message">Rien n’a été débité. Vous pouvez recommencer quand vous voulez.</p><a class="bouton" href="ma-commande.html">Retour à ma commande</a>';
+  }
+  essais++;
+  if (essais > 25) {
+    return $('app').innerHTML = '<p class="etiquette">Paiement</p><h1>Confirmation en attente.</h1><p class="message">Votre paiement n’est pas encore confirmé. Cela peut prendre quelques minutes : revenez sur cette page, ou écrivez-nous.</p><a class="bouton" href="bienvenue.html?commande=' + E(ID) + '">Vérifier à nouveau</a>';
+  }
+  $('app').innerHTML = '<p class="etiquette">Paiement</p><h1>Un instant…</h1><p class="legende">Nous attendons la confirmation de votre paiement. Cette page se met à jour toute seule.</p>';
+  setTimeout(function () { verifier(pers); }, 3000);
+}
+
+async function demarrer() {
+  var pers = await VSF.exigerPersonneVerifiee();
+  if (!pers) return;
+  if (!ID) return $('app').innerHTML = '<p class="etiquette">Bienvenue</p><h1>Commande introuvable.</h1><a class="bouton" href="ma-commande.html">Ma commande</a>';
+  verifier(pers);
+}
+demarrer();
+</script>
+<script src="vsf-pop.js"></script>
+</body>
+</html>
