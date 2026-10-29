@@ -42,6 +42,9 @@
   .fil{font-size:14px;color:var(--cap);margin:8px 0}
   .fil .lien-col{font-size:14px;font-weight:500;padding:4px 0;min-height:0}
   .resume{font-size:14px;color:var(--cap)}
+  .gerer{margin-top:6px}
+  .ligne-suivi.bloquee .qui b{text-decoration:line-through;text-decoration-thickness:2px}
+  .ligne-suivi.bloquee .qui b .etat-mini{text-decoration:none;display:inline-block}
   .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
   .chip-col{border:1.5px solid #111;padding:2px 8px;font-size:13px}
   .lien-mini{background:none;border:0;padding:0 2px;font:inherit;font-size:12px;font-weight:800;text-decoration:underline;cursor:pointer;color:var(--cap)}
@@ -269,7 +272,7 @@ async function vueSuivi() {
   if (!S.super) return '<div class="bientot"><p class="etiquette" style="margin-top:0">Suivi</p><p>Le suivi des comptes d’administration et le journal des actions sont réservés au super administrateur.</p></div>';
   var eq = await sb.rpc('vsf_equipe');
   var jr = await sb.from('vsf_journal').select('cree_le,auteur_email,action,cible,detail').order('cree_le', { ascending: false }).limit(30);
-  var QUI = { equipe_definir: 'a donné un rôle à', equipe_retirer: 'a retiré l’accès de', collectif_renommer: 'a renommé le collectif', collectif_creer: 'a créé le collectif', collectif_modifier: 'a modifié la fiche du collectif', adhesion_active: 'a rattaché une entreprise à un collectif :', adhesion_retiree: 'a retiré une entreprise d’un collectif :', adhesion_en_attente: 'a mis en attente l’adhésion de', adhesion_suspendue: 'a suspendu l’adhésion de' };
+  var QUI = { equipe_definir: 'a donné un rôle à', equipe_retirer: 'a retiré l’accès de', collectif_renommer: 'a renommé le collectif', collectif_creer: 'a créé le collectif', entreprise_bloquer: 'a bloqué l’entreprise', entreprise_debloquer: 'a débloqué l’entreprise', entreprise_supprimer: 'a supprimé l’entreprise vide', collectif_modifier: 'a modifié la fiche du collectif', adhesion_active: 'a rattaché une entreprise à un collectif :', adhesion_retiree: 'a retiré une entreprise d’un collectif :', adhesion_en_attente: 'a mis en attente l’adhésion de', adhesion_suspendue: 'a suspendu l’adhésion de' };
   var lignes = (eq.data || []).map(function (x) {
     return '<div class="ligne-suivi"><div class="qui"><b>' + E(x.email) + '</b><span>' + E(ROLES[x.role] || x.role) + ' · ' + E(AIDE_ROLES[x.role] || '') + '</span></div>' +
       '<div class="act">' + (x.user_id === S.moi ? '<span class="etat-mini">C’est vous</span>' : '<button class="bouton petit discret" data-retirer="' + E(x.user_id) + '">Retirer</button>') + '</div></div>';
@@ -323,18 +326,60 @@ async function vueEntreprises() {
   var corps = liste.map(function (o) {
     var dejaIds = o.collectifs.map(function (c) { return c.id; });
     var dispo = S.collectifs.filter(function (c) { return dejaIds.indexOf(c.id) < 0; });
-    return '<div class="ligne-suivi entreprise"><div class="qui"><b>' + E(o.nom) + '</b>' +
-      '<span>' + o.etablissements + ' établissement' + (o.etablissements > 1 ? 's' : '') + ' · ' + o.membres + ' membre' + (o.membres > 1 ? 's' : '') + ' · créée le ' + E(jour(o.cree_le)) + '</span>' +
+    var vide = o.etablissements === 0 && o.membres === 0;
+    var gerer = '<div class="gerer">' + (o.bloquee
+      ? '<button type="button" class="lien-mini" data-debloquer="' + E(o.id) + '">Débloquer</button>'
+      : '<button type="button" class="lien-mini" data-bloquer="' + E(o.id) + '">Bloquer</button>') +
+      (S.super ? (vide ? ' <button type="button" class="lien-mini" data-supprimer="' + E(o.id) + '" data-nom="' + E(o.nom) + '">Supprimer</button>' : ' <span class="resume">Suppression impossible : elle contient des données (la bloquer)</span>') : '') + '</div>';
+    return '<div class="ligne-suivi entreprise' + (o.bloquee ? ' bloquee' : '') + '"><div class="qui"><b>' + E(o.nom) + (o.bloquee ? ' <span class="etat-mini">Bloquée</span>' : '') + '</b>' +
+      '<span>' + o.etablissements + ' établissement' + (o.etablissements > 1 ? 's' : '') + ' · ' + o.membres + ' membre' + (o.membres > 1 ? 's' : '') + ' · créée le ' + E(jour(o.cree_le)) + (o.bloquee && o.motif ? ' · motif : ' + E(o.motif) : '') + '</span>' + gerer +
       '<div class="chips">' + o.collectifs.map(function (c) {
         return '<span class="chip-col">' + E(c.nom) + ' · ' + E(c.statut) + (c.id === o.origine ? ' · origine' : ' <button type="button" class="lien-mini" data-retirer-adh="' + E(o.id) + '|' + E(c.id) + '">Retirer</button>') + '</span>';
       }).join('') + '</div></div>' +
-      '<div class="act">' + (dispo.length ? '<select id="sel-' + E(o.id) + '" aria-label="Rattacher à un collectif">' + dispo.map(function (c) { return '<option value="' + E(c.id) + '">' + E(c.name) + '</option>'; }).join('') + '</select> <button type="button" class="bouton petit" data-ajouter-adh="' + E(o.id) + '">Rattacher</button>' : '') + '</div></div>';
+      '<div class="act">' + (dispo.length && !o.bloquee ? '<select id="sel-' + E(o.id) + '" aria-label="Rattacher à un collectif">' + dispo.map(function (c) { return '<option value="' + E(c.id) + '">' + E(c.name) + '</option>'; }).join('') + '</select> <button type="button" class="bouton petit" data-ajouter-adh="' + E(o.id) + '">Rattacher</button>' : '') + '</div></div>';
   }).join('');
   return '<section class="collectif"><p class="etiquette" style="margin:10px 0 0">Entreprises</p><h2>' + liste.length + ' entreprise' + (liste.length > 1 ? 's' : '') + '</h2>' +
     '<p class="legende">Pour chaque entreprise : son nom, ses collectifs, le nombre de ses établissements et de ses membres. Jamais le contenu de l’entreprise. Une entreprise peut adhérer à plusieurs collectifs.</p>' +
     '<p class="message" id="msgAdh" role="alert"></p>' + (corps || '<p class="legende">Aucune entreprise.</p>') + '</section>';
 }
 function brancherEntreprises() {
+  document.querySelectorAll('[data-bloquer]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var org = b.getAttribute('data-bloquer'), zone = b.parentNode, memoire = zone.innerHTML;
+      zone.innerHTML = '<label class="champ" for="motifBloc" style="margin:0">Motif du blocage</label><input id="motifBloc" type="text" maxlength="500" autocomplete="off" style="max-width:420px"> ';
+      var ok = document.createElement('button'); ok.type = 'button'; ok.className = 'bouton petit'; ok.textContent = 'Bloquer';
+      var non = document.createElement('button'); non.type = 'button'; non.className = 'bouton petit discret'; non.textContent = 'Annuler';
+      ok.onclick = async function () {
+        var r = await sb.rpc('vsf_entreprise_bloquer', { p_org: org, p_bloquer: true, p_motif: $('motifBloc').value });
+        if (r.error) return dire('msgAdh', messageErreurRpc(r.error));
+        dessiner();
+      };
+      non.onclick = function () { zone.innerHTML = memoire; brancherEntreprises(); };
+      zone.appendChild(ok); zone.appendChild(non); $('motifBloc').focus();
+    });
+  });
+  document.querySelectorAll('[data-debloquer]').forEach(function (b) {
+    b.addEventListener('click', async function () {
+      var r = await sb.rpc('vsf_entreprise_bloquer', { p_org: b.getAttribute('data-debloquer'), p_bloquer: false, p_motif: null });
+      if (r.error) return dire('msgAdh', messageErreurRpc(r.error));
+      dessiner();
+    });
+  });
+  document.querySelectorAll('[data-supprimer]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var org = b.getAttribute('data-supprimer'), zone = b.parentNode, memoire = zone.innerHTML;
+      zone.innerHTML = '<p class="resume" style="margin:0">Suppression définitive d’une entreprise vide. Retapez son nom pour confirmer :</p><input id="confSupp" type="text" autocomplete="off" aria-label="Nom de l’entreprise à supprimer" style="max-width:420px"> ';
+      var ok = document.createElement('button'); ok.type = 'button'; ok.className = 'bouton petit'; ok.textContent = 'Supprimer définitivement';
+      var non = document.createElement('button'); non.type = 'button'; non.className = 'bouton petit discret'; non.textContent = 'Annuler';
+      ok.onclick = async function () {
+        var r = await sb.rpc('vsf_entreprise_supprimer', { p_org: org, p_confirmation: $('confSupp').value });
+        if (r.error) return dire('msgAdh', messageErreurRpc(r.error));
+        dessiner();
+      };
+      non.onclick = function () { zone.innerHTML = memoire; brancherEntreprises(); };
+      zone.appendChild(ok); zone.appendChild(non); $('confSupp').focus();
+    });
+  });
   document.querySelectorAll('[data-ajouter-adh]').forEach(function (b) {
     b.addEventListener('click', async function () {
       var org = b.getAttribute('data-ajouter-adh'), col = $('sel-' + org).value;
