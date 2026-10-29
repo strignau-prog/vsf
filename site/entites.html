@@ -28,6 +28,13 @@
   .socle{margin-top:34px;padding:18px;background:var(--panel)}
   .socle p{margin:8px 0}
   .bientot{padding:24px 0;color:var(--cap)}
+  .ligne-suivi{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:12px 0;border-top:1px solid var(--line)}
+  .ligne-suivi .qui b{display:block;font-weight:800;overflow-wrap:anywhere}
+  .ligne-suivi .qui span{font-size:14px;color:var(--cap)}
+  .etat-mini{font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--cap);white-space:nowrap}
+  .ajout{margin-top:24px;padding:16px 18px;background:var(--panel)}
+  .ajout select.champ{width:100%;max-width:640px;min-height:44px;border:0;border-bottom:1.5px solid #111;background:transparent;font:inherit;font-size:17px;padding:10px 0}
+  .ajout input{max-width:640px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="vsf-auth.js"></script>
@@ -45,7 +52,7 @@ var sb = VSF.sb;
 var GUIDE = 'https://fastidious-kringle-8ac4c1.netlify.app/guide-production-mindmap.html';
 var jour = function (d) { try { return new Date(d).toLocaleDateString('fr-FR'); } catch (e) { return ''; } };
 var STATUTS = { public_referential: 'Référentiel public', federated_domain: 'Domaine fédéré', validated_by_practitioners: 'Validé par des praticiens', pilot: 'Pilote', documented: 'Documenté', candidate: 'Candidat', archived: 'Archivé' };
-var S = { plateforme: false, referentiels: false, onglet: 'collectifs' };
+var S = { plateforme: false, referentiels: false, super: false, moi: null, onglet: 'collectifs' };
 
 async function compter(table, filtre) {
   var q = sb.from(table).select('*', { count: 'exact', head: true });
@@ -55,7 +62,7 @@ async function compter(table, filtre) {
 }
 
 function ongletsHtml() {
-  var liste = [['collectifs', 'Collectifs'], ['entreprises', 'Entreprises'], ['ambassadeurs', 'Ambassadeurs métier'], ['personnes', 'Personnes'], ['equipe', 'Équipe']];
+  var liste = [['collectifs', 'Collectifs'], ['entreprises', 'Entreprises'], ['ambassadeurs', 'Ambassadeurs métier'], ['personnes', 'Personnes'], ['suivi', 'Suivi']];
   return '<div class="onglets" role="tablist">' + liste.map(function (o) {
     return '<button type="button" role="tab" data-o="' + o[0] + '" aria-selected="' + (S.onglet === o[0]) + '">' + o[1] + '</button>';
   }).join('') + '</div>';
@@ -83,7 +90,7 @@ async function vueCollectifs() {
           '<a class="bouton" href="' + E(GUIDE) + '?guide=peindre" target="_blank" rel="noopener">Éditer « comment on peint »</a></div>' : '') + '</div>';
     }
     var nSit = await compter('referentiel_situations', { federation_id: c.id, niveau: { like: 'Niveau 1%' } });
-    html += '<section class="collectif"><p class="etiquette" style="margin:10px 0 0">Collectif</p><h2>' + E(c.name) + '</h2>' +
+    html += '<section class="collectif"><p class="etiquette" style="margin:10px 0 0">Collectif</p><h2>' + E(c.name) + '</h2>' + (S.super ? '<p><button class="bouton petit discret" data-renommer="' + E(c.id) + '" data-nom="' + E(c.name) + '">Renommer ce collectif</button></p><p class="message" data-msg-renommer="' + E(c.id) + '" role="alert"></p>' : '') +
       '<p class="legende">Créé le ' + E(jour(c.created_at)) + '. Son référentiel métier collectif (le métier global, et non un poste de travail) :</p>' +
       '<div class="chiffres"><div><b>' + (nSit == null ? '—' : nSit) + '</b><span>Situations du collectif</span></div></div>' +
       '<p class="legende">Les situations appartiennent au collectif ; leur rattachement à un métier précis est à compléter.</p>' +
@@ -95,20 +102,96 @@ async function vueCollectifs() {
   return html || '<p class="legende">Aucun collectif.</p>';
 }
 
+/* ───── Suivi : l'équipe Skolantreuz (comptes d'administration) et le journal des actions ───── */
+var ROLES = { super: 'Super administrateur', admin: 'Administrateur de la plateforme', referentiels: 'Administrateur de référentiels' };
+var AIDE_ROLES = { super: 'tout : plateforme et référentiels', admin: 'comptes, offres, reversements, CGV (pas les référentiels)', referentiels: 'référentiels des collectifs (ni les comptes ni les commandes)' };
+function messageErreurRpc(e) {
+  var m = String((e && e.message) || e || '');
+  if (/VSF07/.test(m + (e && e.code))) return 'Cette action est réservée au super administrateur.';
+  if (/VSF08/.test(m + (e && e.code))) return m.replace(/^.*?:\s*/, '');
+  return 'Impossible d’enregistrer pour le moment. Réessayez dans un instant.';
+}
+function dire(id, texte) { var m = $(id); if (m) { m.textContent = texte || ''; if (texte && m.scrollIntoView) m.scrollIntoView({ block: 'center' }); } }
+
+async function vueSuivi() {
+  if (!S.super) return '<div class="bientot"><p class="etiquette" style="margin-top:0">Suivi</p><p>Le suivi des comptes d’administration et le journal des actions sont réservés au super administrateur.</p></div>';
+  var eq = await sb.rpc('vsf_equipe');
+  var jr = await sb.from('vsf_journal').select('cree_le,auteur_email,action,cible,detail').order('cree_le', { ascending: false }).limit(30);
+  var QUI = { equipe_definir: 'a donné un rôle à', equipe_retirer: 'a retiré l’accès de', collectif_renommer: 'a renommé le collectif' };
+  var lignes = (eq.data || []).map(function (x) {
+    return '<div class="ligne-suivi"><div class="qui"><b>' + E(x.email) + '</b><span>' + E(ROLES[x.role] || x.role) + ' · ' + E(AIDE_ROLES[x.role] || '') + '</span></div>' +
+      '<div class="act">' + (x.user_id === S.moi ? '<span class="etat-mini">C’est vous</span>' : '<button class="bouton petit discret" data-retirer="' + E(x.user_id) + '">Retirer</button>') + '</div></div>';
+  }).join('');
+  var journal = (jr.data || []).map(function (x) {
+    var d = x.detail || {};
+    var texte = (QUI[x.action] || x.action) + ' ' + E(x.cible || '') + (d.apres ? ' → ' + E(d.apres) : '') + (d.role ? ' (' + E(ROLES[d.role] || d.role) + ')' : '');
+    return '<div class="ligne-suivi"><div class="qui"><b>' + E(x.auteur_email || '—') + '</b><span>' + texte + '</span></div><div class="act"><span class="etat-mini">' + E(jour(x.cree_le)) + '</span></div></div>';
+  }).join('');
+  return '<section class="collectif"><p class="etiquette" style="margin:10px 0 0">Équipe Skolantreuz</p><h2>Qui a accès à l’administration</h2>' +
+    '<p class="legende">Chaque personne doit déjà avoir un compte (s’être connectée une fois sur le site). Les rôles sont séparés : un administrateur de référentiels ne voit ni les comptes ni les commandes.</p>' +
+    (eq.error ? '<p class="message">' + E(messageErreurRpc(eq.error)) + '</p>' : lignes) +
+    '<div class="ajout"><label class="champ" for="eEmail">Ajouter ou changer un rôle (adresse e-mail)</label><input id="eEmail" type="email" placeholder="prenom@exemple.fr" autocomplete="off">' +
+    '<label class="champ" for="eRole">Rôle</label><select id="eRole" class="champ"><option value="referentiels">Administrateur de référentiels</option><option value="admin">Administrateur de la plateforme</option><option value="super">Super administrateur</option></select>' +
+    '<p class="message" id="msgEquipe" role="alert"></p><button class="bouton" id="eAjouter">Enregistrer ce rôle</button></div></section>' +
+    '<section class="collectif"><p class="etiquette" style="margin:10px 0 0">Journal</p><h2>Qui a fait quoi</h2>' +
+    (journal || '<p class="legende">Aucune action enregistrée pour le moment.</p>') + '</section>';
+}
+function brancherSuivi() {
+  document.querySelectorAll('[data-renommer]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var id = b.getAttribute('data-renommer'), zone = b.parentNode, memoire = zone.innerHTML;
+      zone.innerHTML = '<input type="text" id="nomCollectif" value="' + E(b.getAttribute('data-nom')) + '" aria-label="Nouveau nom du collectif" style="max-width:640px"> ';
+      var ok = document.createElement('button'); ok.type = 'button'; ok.className = 'bouton petit'; ok.textContent = 'Enregistrer';
+      var non = document.createElement('button'); non.type = 'button'; non.className = 'bouton petit discret'; non.textContent = 'Annuler';
+      ok.onclick = async function () {
+        var r = await sb.rpc('vsf_collectif_renommer', { p_id: id, p_nom: $('nomCollectif').value });
+        if (r.error) { var m = document.querySelector('[data-msg-renommer="' + id + '"]'); if (m) m.textContent = messageErreurRpc(r.error); return; }
+        dessiner();
+      };
+      non.onclick = function () { zone.innerHTML = memoire; brancherSuivi(); };
+      zone.appendChild(ok); zone.appendChild(non); $('nomCollectif').focus();
+    });
+  });
+  var a = $('eAjouter');
+  if (a) a.addEventListener('click', async function () {
+    var r = await sb.rpc('vsf_equipe_definir', { p_email: $('eEmail').value, p_role: $('eRole').value });
+    if (r.error) return dire('msgEquipe', messageErreurRpc(r.error));
+    dessiner();
+  });
+  document.querySelectorAll('[data-retirer]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var zone = b.parentNode, memoire = zone.innerHTML;
+      zone.innerHTML = '<span class="etat-mini">Retirer ?</span> ';
+      var oui = document.createElement('button'); oui.type = 'button'; oui.className = 'bouton petit'; oui.textContent = 'Oui';
+      var non = document.createElement('button'); non.type = 'button'; non.className = 'bouton petit discret'; non.textContent = 'Non';
+      oui.onclick = async function () {
+        var r = await sb.rpc('vsf_equipe_retirer', { p_user: b.getAttribute('data-retirer') });
+        if (r.error) { zone.innerHTML = memoire; return dire('msgEquipe', messageErreurRpc(r.error)); }
+        dessiner();
+      };
+      non.onclick = function () { zone.innerHTML = memoire; brancherSuivi(); };
+      zone.appendChild(oui); zone.appendChild(non);
+    });
+  });
+}
+
 function vueBientot(nom, texte) { return '<div class="bientot"><p class="etiquette" style="margin-top:0">' + E(nom) + '</p><p>' + E(texte) + '</p></div>'; }
 
 async function dessiner() {
+  var jeton = S.jeton = (S.jeton || 0) + 1;   // un clic plus récent annule le dessin en cours
   var corps;
   if (S.onglet === 'collectifs') corps = await vueCollectifs();
   else if (S.onglet === 'entreprises') corps = vueBientot('Entreprises', 'Chiffres et informations de gestion uniquement (nom, collectifs, statut, nombre de membres). Jamais le contenu des parcours, des preuves, des devis ni des clients. En préparation.');
   else if (S.onglet === 'ambassadeurs') corps = vueBientot('Ambassadeurs métier', 'Ils se gèrent aujourd’hui dans le tableau de bord (validation, offres, reversements). Leur fiche complète arrive ici.');
   else if (S.onglet === 'personnes') corps = vueBientot('Personnes', 'Chiffres seulement : nombre de comptes, vérifiés, suspendus. La liste se trouve dans le tableau de bord de la plateforme. Aucun accès aux parcours.');
-  else corps = vueBientot('Équipe Skolantreuz', 'Super administrateur · administrateur de la plateforme · administrateur de référentiels. En préparation.');
+  else corps = await vueSuivi();
+  if (jeton !== S.jeton) return;
   $('app').innerHTML =
     '<p class="etiquette">' + (S.plateforme ? 'Administrateur de la plateforme' : 'Administrateur de référentiels') + '</p>' +
     '<h1>Entités</h1>' +
     '<p class="legende">Les collectifs, les entreprises et les personnes que Skolantreuz gère. Vous voyez le référentiel et la gestion, jamais les données personnelles des entités.</p>' +
     ongletsHtml() + '<div>' + corps + '</div>';
+  brancherSuivi();
   document.querySelectorAll('.onglets button').forEach(function (b) {
     b.addEventListener('click', function () { S.onglet = b.getAttribute('data-o'); dessiner(); });
   });
@@ -117,7 +200,8 @@ async function dessiner() {
 async function demarrer() {
   var s = await sb.auth.getSession();
   if (!s.data.session) { location.replace('connexion.html?suite=' + encodeURIComponent(location.href)); return; }
-  var r = await Promise.all([sb.rpc('vsf_est_admin'), sb.rpc('vsf_est_admin_referentiels')]);
+  var r = await Promise.all([sb.rpc('vsf_est_admin'), sb.rpc('vsf_est_admin_referentiels'), sb.rpc('vsf_est_super')]);
+  S.moi = s.data.session.user.id; S.super = r[2].data === true;
   S.plateforme = r[0].data === true; S.referentiels = r[1].data === true;
   if (!S.plateforme && !S.referentiels) {
     return $('app').innerHTML = '<p class="etiquette">Entités</p><h1>Accès réservé.</h1><p class="message">Cette page est réservée à l’équipe de VRAI-SAVOIRFAIRE.</p><a class="bouton" href="./">Retour à l’accueil</a>';
