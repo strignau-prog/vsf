@@ -31,6 +31,7 @@
   .ligne-suivi{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:12px 0;border-top:1px solid var(--line)}
   .ligne-suivi .qui b{display:block;font-weight:800;overflow-wrap:anywhere}
   .ligne-suivi .qui span{font-size:14px;color:var(--cap)}
+  .ligne-suivi .qui > span{display:block}
   .etat-mini{font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--cap);white-space:nowrap}
   .ajout{margin-top:24px;padding:16px 18px;background:var(--panel)}
   .ajout select.champ{width:100%;max-width:640px;min-height:44px;border:0;border-bottom:1.5px solid #111;background:transparent;font:inherit;font-size:17px;padding:10px 0}
@@ -405,15 +406,48 @@ function brancherEntreprises() {
   });
 }
 
-function vueBientot(nom, texte) { return '<div class="bientot"><p class="etiquette" style="margin-top:0">' + E(nom) + '</p><p>' + E(texte) + '</p></div>'; }
+function vueReservee(nom) { return '<div class="bientot"><p class="etiquette" style="margin-top:0">' + E(nom) + '</p><p>Cette partie est réservée à l’administrateur de la plateforme. Un administrateur de référentiels n’y a pas accès.</p></div>'; }
+var euros = function (n) { return Number(n || 0).toLocaleString('fr-FR') + ' €'; };
+
+/* ───── Ambassadeurs métier : la liste, en chiffres. Les actions restent dans le tableau de bord. ───── */
+var STATUTS_AMB = { en_attente: 'En attente de validation', valide: 'Validé', suspendu: 'Suspendu' };
+async function vueAmbassadeurs() {
+  if (!S.plateforme) return vueReservee('Ambassadeurs métier');
+  var r = await sb.rpc('vsf_ambassadeurs_liste');
+  if (r.error) return '<p class="message">Impossible de lire les ambassadeurs métier : la mise à jour de la base (migration 19) n’est peut-être pas faite.</p>';
+  var liste = r.data || [];
+  var lignes = liste.map(function (a) {
+    return '<div class="ligne-suivi"><div class="qui"><b>' + E(a.nom) + (a.atelier ? ' <span class="resume">· ' + E(a.atelier) + '</span>' : '') + '</b>' +
+      '<span>' + E(STATUTS_AMB[a.statut] || a.statut) + ' · ' + (a.compte_ouvert ? 'compte ouvert' : 'compte non ouvert') + ' · ' + (a.contrat_accepte ? 'contrat accepté' : 'contrat non accepté') + (a.collectif ? ' · collectif : ' + E(a.collectif) : '') + '</span>' +
+      '<span>' + pluriel(Number(a.offres), 'offre') + ' (' + a.offres_publiees + ' publiée' + (a.offres_publiees > 1 ? 's' : '') + ', ' + a.offres_pilote + ' en pilote) · ' + pluriel(Number(a.ventes), 'vente') + ' · reste à reverser : <b>' + E(euros(a.reste_a_reverser_eur)) + '</b></span></div></div>';
+  }).join('');
+  return '<section class="collectif"><p class="etiquette" style="margin:10px 0 0">Ambassadeurs métier</p><h2>' + pluriel(liste.length, 'ambassadeur') + ' métier</h2>' +
+    '<p class="legende">Les maîtres artisans qui vendent leur métier sur VRAI-SAVOIRFAIRE. Ici, les chiffres. Pour valider un ambassadeur, publier une offre ou enregistrer un virement :</p>' +
+    '<p><a class="bouton" href="admin.html">Ouvrir le tableau de bord</a></p>' + (lignes || '<p class="legende">Aucun ambassadeur métier pour le moment.</p>') + '</section>';
+}
+
+/* ───── Personnes : des nombres seulement ───── */
+async function vuePersonnes() {
+  if (!S.plateforme) return vueReservee('Personnes');
+  var r = await sb.rpc('vsf_personnes_chiffres');
+  if (r.error || !r.data) return '<p class="message">Impossible de lire les chiffres : la mise à jour de la base (migration 19) n’est peut-être pas faite.</p>';
+  var d = r.data;
+  var bloc = function (n, t) { return '<div><b>' + Number(n) + '</b><span>' + E(t) + '</span></div>'; };
+  return '<section class="collectif"><p class="etiquette" style="margin:10px 0 0">Personnes</p><h2>' + pluriel(Number(d.comptes), 'compte') + '</h2>' +
+    '<p class="legende">Des nombres seulement : jamais un nom, jamais un parcours. La liste des comptes (suspendre, rétablir) se trouve dans le tableau de bord.</p>' +
+    '<p class="etiquette">Comptes</p><div class="chiffres">' + bloc(d.verifies, 'Vérifiés') + bloc(d.en_attente, 'En attente') + bloc(d.suspendus, 'Suspendus') + bloc(d.nouveaux_30j, 'Nouveaux (30 jours)') + '</div>' +
+    '<p class="etiquette">Parcours</p><div class="chiffres">' + bloc(d.parcours_commences, 'Parcours commencés') + bloc(d.plans_confirmes, 'Plans confirmés') + '</div>' +
+    '<p class="etiquette">Commandes</p><div class="chiffres">' + bloc(d.commandes_payees, 'Payées') + bloc(d.commandes_en_attente, 'En attente de paiement') + bloc(d.commandes_remboursees, 'Remboursées') + '</div>' +
+    '<p><a class="bouton" href="admin.html">Ouvrir le tableau de bord</a></p></section>';
+}
 
 async function dessiner() {
   var jeton = S.jeton = (S.jeton || 0) + 1;   // un clic plus récent annule le dessin en cours
   var corps;
   if (S.onglet === 'collectifs') corps = await vueCollectifs();
   else if (S.onglet === 'entreprises') corps = await vueEntreprises();
-  else if (S.onglet === 'ambassadeurs') corps = vueBientot('Ambassadeurs métier', 'Ils se gèrent aujourd’hui dans le tableau de bord (validation, offres, reversements). Leur fiche complète arrive ici.');
-  else if (S.onglet === 'personnes') corps = vueBientot('Personnes', 'Chiffres seulement : nombre de comptes, vérifiés, suspendus. La liste se trouve dans le tableau de bord de la plateforme. Aucun accès aux parcours.');
+  else if (S.onglet === 'ambassadeurs') corps = await vueAmbassadeurs();
+  else if (S.onglet === 'personnes') corps = await vuePersonnes();
   else corps = await vueSuivi();
   if (jeton !== S.jeton) return;
   $('app').innerHTML =
