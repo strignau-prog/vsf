@@ -1,14 +1,11 @@
--- VSF — retour arrière de la migration 20 : retire la liste d'attente, le contrat et les fonctions de l'espace ambassadeur.
--- ATTENTION : les demandes de la liste d'attente et les acceptations de contrat sont perdues (colonne contrat_version, table des contrats).
--- Les lignes d'ambassadeurs créées par invitation restent dans vsf_vendeurs.
+-- VSF — retour arrière de la migration 20 : retire le contrat et les fonctions de l'espace ambassadeur.
+-- ATTENTION : les acceptations de contrat sont perdues (colonne contrat_version, table des contrats).
+-- Les lignes d'ambassadeurs créées restent dans vsf_vendeurs.
 begin;
 drop function if exists vsf_ambassadeur_accepter_contrat(text);
 drop function if exists vsf_ambassadeur_enregistrer(text, text, text, text, text, text);
 drop function if exists vsf_ambassadeur_moi();
-drop function if exists vsf_attente_traiter(uuid, text);
-drop function if exists vsf_attente_liste();
-drop function if exists vsf_attente_deposer(text, text, text, text, text, text);
-drop table if exists vsf_attente_ambassadeurs;
+drop function if exists vsf_ambassadeur_definir(uuid, text, text, text);
 drop table if exists vsf_contrats_ambassadeur;
 alter table vsf_vendeurs drop column if exists contrat_version;
 -- La liste des ambassadeurs revient à la version de la migration 19.

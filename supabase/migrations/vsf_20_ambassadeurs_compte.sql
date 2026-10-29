@@ -1,10 +1,10 @@
 -- =====================================================================================================
--- VSF — migration 20 : le compte de l'ambassadeur métier (liste d'attente, invitation, fiche, contrat) + deux nettoyages.
+-- VSF — migration 20 : le compte de l'ambassadeur métier (création par la plateforme, fiche, contrat) + deux nettoyages.
 -- À exécuter APRÈS vsf_19_ambassadeurs_personnes.sql. Rejouable ; une seule transaction.
 --
--- Parcours : un maître artisan s'inscrit sur la liste d'attente (page publique) → la plateforme l'invite (une ligne
--- « ambassadeur métier » est créée, en attente) → il se connecte avec la même adresse e-mail, complète sa fiche et accepte
--- le contrat → la plateforme le valide (déjà possible dans le tableau de bord) → il peut avoir des offres.
+-- Parcours : la plateforme crée la ligne « ambassadeur métier » (nom, adresse e-mail, atelier ; en attente) → la personne se
+-- connecte avec la même adresse e-mail, complète sa fiche et accepte le contrat → la plateforme la valide (déjà possible dans
+-- le tableau de bord) → elle peut avoir des offres. Il n'y a pas d'inscription publique : seule la plateforme crée ces comptes.
 -- Rien n'est écrit directement par le navigateur : tout passe par des fonctions qui vérifient qui appelle.
 --
 -- Nettoyages : (1) une entreprise bloquée ne peut plus être rattachée ni réactivée dans un collectif ;
@@ -110,73 +110,32 @@ Skolantreuz, qui exploite VRAI-SAVOIRFAIRE, vend en son nom des formations à di
 $contrat$)
 on conflict (version) do nothing;
 
--- ---- La liste d'attente --------------------------------------------------------------------------------------------
-create table if not exists vsf_attente_ambassadeurs (
-  id uuid primary key default gen_random_uuid(),
-  prenom text not null check (char_length(prenom) between 1 and 80),
-  nom text not null check (char_length(nom) between 1 and 80),
-  email text not null check (char_length(email) <= 200 and email ~* '^[^@\s]+@[^@\s]+\.[^@\s]+$'),
-  metier text not null check (char_length(metier) between 2 and 120),
-  message text check (message is null or char_length(message) <= 1500),
-  statut text not null default 'nouveau' check (statut in ('nouveau', 'contacte', 'invite', 'refuse')),
-  cree_le timestamptz not null default now()
-);
-alter table vsf_attente_ambassadeurs enable row level security;   -- aucune règle : illisible et inscriptible seulement par les fonctions
-revoke all on vsf_attente_ambassadeurs from anon;
-revoke all on vsf_attente_ambassadeurs from authenticated;
-
--- Dépôt public : une personne s'inscrit sur la liste. Garde-fous : champ piège, limite par heure, une demande par adresse et par mois.
-create or replace function vsf_attente_deposer(p_prenom text, p_nom text, p_email text, p_metier text, p_message text, p_piege text default '')
-returns text
+-- ---- Créer ou modifier un ambassadeur métier (par la plateforme) ---------------------------------------------------
+-- p_id vide = création (en attente de validation, comme avant) ; sinon modification du nom, de l'adresse e-mail et de l'atelier.
+-- L'adresse e-mail sert à rattacher la ligne au compte de la personne quand elle se connecte avec la même adresse.
+create or replace function vsf_ambassadeur_definir(p_id uuid, p_nom text, p_email text, p_atelier text)
+returns uuid
 language plpgsql volatile security definer set search_path = public as $$
-declare v_email text := lower(btrim(coalesce(p_email, '')));
+declare v_nom text := btrim(coalesce(p_nom, '')); v_email text := lower(btrim(coalesce(p_email, ''))); v_id uuid := p_id;
 begin
-  if coalesce(p_piege, '') <> '' then return 'ok'; end if;   -- un robot a rempli le champ caché : on fait comme si tout allait bien
-  if char_length(btrim(coalesce(p_prenom, ''))) not between 1 and 80 or char_length(btrim(coalesce(p_nom, ''))) not between 1 and 80 then
-    raise exception 'Indiquez votre prénom et votre nom.' using errcode = 'VSF08'; end if;
+  if not vsf_est_admin() then raise exception 'Réservé à l''administrateur de la plateforme.' using errcode = 'VSF07'; end if;
+  if char_length(v_nom) not between 2 and 120 then raise exception 'Indiquez le nom (2 à 120 caractères).' using errcode = 'VSF08'; end if;
   if v_email !~* '^[^@\s]+@[^@\s]+\.[^@\s]+$' or char_length(v_email) > 200 then raise exception 'Cette adresse e-mail ne semble pas valide.' using errcode = 'VSF08'; end if;
-  if char_length(btrim(coalesce(p_metier, ''))) not between 2 and 120 then raise exception 'Indiquez votre métier.' using errcode = 'VSF08'; end if;
-  if char_length(coalesce(p_message, '')) > 1500 then raise exception 'Le message est trop long (1 500 caractères au plus).' using errcode = 'VSF08'; end if;
-  if (select count(*) from vsf_attente_ambassadeurs where cree_le > now() - interval '1 hour') >= 30 then
-    raise exception 'Beaucoup de demandes en ce moment. Réessayez dans une heure.' using errcode = 'VSF08'; end if;
-  if exists (select 1 from vsf_attente_ambassadeurs where email = v_email and cree_le > now() - interval '30 days') then return 'ok'; end if;
-  insert into vsf_attente_ambassadeurs (prenom, nom, email, metier, message)
-  values (btrim(p_prenom), btrim(p_nom), v_email, btrim(p_metier), nullif(btrim(coalesce(p_message, '')), ''));
-  return 'ok';
-end $$;
-revoke all on function vsf_attente_deposer(text, text, text, text, text, text) from public;
-grant execute on function vsf_attente_deposer(text, text, text, text, text, text) to anon, authenticated;
-
-create or replace function vsf_attente_liste()
-returns jsonb
-language plpgsql stable security definer set search_path = public as $$
-begin
-  if not vsf_est_admin() then raise exception 'Réservé à l''administrateur de la plateforme.' using errcode = 'VSF07'; end if;
-  return (select coalesce(jsonb_agg(jsonb_build_object('id', a.id, 'prenom', a.prenom, 'nom', a.nom, 'email', a.email, 'metier', a.metier,
-            'message', a.message, 'statut', a.statut, 'cree_le', a.cree_le) order by a.cree_le desc), '[]'::jsonb) from vsf_attente_ambassadeurs a);
-end $$;
-revoke all on function vsf_attente_liste() from public, anon;
-grant execute on function vsf_attente_liste() to authenticated;
-
--- Traiter une demande : « contacté », « refusé », ou « invité » (crée la ligne d'ambassadeur métier, en attente de validation).
-create or replace function vsf_attente_traiter(p_id uuid, p_statut text)
-returns text
-language plpgsql volatile security definer set search_path = public as $$
-declare a vsf_attente_ambassadeurs%rowtype;
-begin
-  if not vsf_est_admin() then raise exception 'Réservé à l''administrateur de la plateforme.' using errcode = 'VSF07'; end if;
-  if p_statut not in ('contacte', 'invite', 'refuse') then raise exception 'Statut inconnu.' using errcode = 'VSF08'; end if;
-  select * into a from vsf_attente_ambassadeurs where id = p_id;
-  if a.id is null then raise exception 'Demande introuvable.' using errcode = 'VSF08'; end if;
-  if p_statut = 'invite' and not exists (select 1 from vsf_vendeurs where lower(email) = a.email) then
-    insert into vsf_vendeurs (nom, email, statut) values (a.prenom || ' ' || a.nom, a.email, 'en_attente');
+  if char_length(coalesce(p_atelier, '')) > 120 then raise exception 'Le nom de l''atelier est trop long.' using errcode = 'VSF08'; end if;
+  if exists (select 1 from vsf_vendeurs where lower(email) = v_email and id is distinct from p_id) then
+    raise exception 'Un ambassadeur métier utilise déjà cette adresse e-mail.' using errcode = 'VSF08'; end if;
+  if p_id is null then
+    insert into vsf_vendeurs (nom, email, atelier, statut) values (v_nom, v_email, nullif(btrim(coalesce(p_atelier, '')), ''), 'en_attente') returning id into v_id;
+    perform vsf_journaliser('ambassadeur_creer', v_nom, null);
+  else
+    update vsf_vendeurs set nom = v_nom, email = v_email, atelier = nullif(btrim(coalesce(p_atelier, '')), '') where id = p_id;
+    if not found then raise exception 'Ambassadeur métier introuvable.' using errcode = 'VSF08'; end if;
+    perform vsf_journaliser('ambassadeur_modifier', v_nom, null);
   end if;
-  update vsf_attente_ambassadeurs set statut = p_statut where id = p_id;
-  perform vsf_journaliser('attente_' || p_statut, a.prenom || ' ' || a.nom, jsonb_build_object('metier', a.metier));
-  return 'ok';
+  return v_id;
 end $$;
-revoke all on function vsf_attente_traiter(uuid, text) from public, anon;
-grant execute on function vsf_attente_traiter(uuid, text) to authenticated;
+revoke all on function vsf_ambassadeur_definir(uuid, text, text, text) from public, anon;
+grant execute on function vsf_ambassadeur_definir(uuid, text, text, text) to authenticated;
 
 -- ---- L'espace de l'ambassadeur métier connecté ----------------------------------------------------------------------
 -- Rattache la ligne « ambassadeur métier » créée à l'invitation au compte qui se connecte avec la même adresse e-mail confirmée.
@@ -251,7 +210,7 @@ begin
   if not vsf_est_admin() then raise exception 'Réservé à l''administrateur de la plateforme.' using errcode = 'VSF07'; end if;
   return (
     select coalesce(jsonb_agg(jsonb_build_object(
-      'id', v.id, 'nom', v.nom, 'atelier', v.atelier, 'statut', v.statut, 'cree_le', v.cree_le,
+      'id', v.id, 'nom', v.nom, 'email', v.email, 'atelier', v.atelier, 'statut', v.statut, 'cree_le', v.cree_le,
       'contrat_accepte', (v.contrat_accepte_le is not null), 'contrat_version', v.contrat_version,
       'fiche_complete', (coalesce(v.atelier, '') <> '' and coalesce(v.adresse, '') <> '' and coalesce(v.siret, '') <> ''),
       'compte_ouvert', (v.user_id is not null),
@@ -271,10 +230,9 @@ commit;
 
 -- Résultat : l'état réel après installation.
 select 'contrat provisoire en base' as "élément", (select count(*)::text from vsf_contrats_ambassadeur) as "état"
-union all select 'demandes en liste d''attente', (select count(*)::text from vsf_attente_ambassadeurs)
-union all select 'fonctions', (select count(*)::text from pg_proc where proname in ('vsf_attente_deposer', 'vsf_attente_liste', 'vsf_attente_traiter', 'vsf_ambassadeur_moi', 'vsf_ambassadeur_enregistrer', 'vsf_ambassadeur_accepter_contrat') and pronamespace = 'public'::regnamespace) || ' sur 6'
+union all select 'ambassadeurs métier sans adresse e-mail', (select count(*)::text from vsf_vendeurs where coalesce(email, '') = '')
+union all select 'fonctions', (select count(*)::text from pg_proc where proname in ('vsf_ambassadeur_definir', 'vsf_ambassadeur_moi', 'vsf_ambassadeur_enregistrer', 'vsf_ambassadeur_accepter_contrat') and pronamespace = 'public'::regnamespace) || ' sur 4'
 union all select 'ancienne fonction retirée', case when to_regprocedure('public.vsf_entites_arbre()') is null then 'oui' else 'NON' end
-union all select 'le public ne peut que déposer une demande', case when has_function_privilege('anon', 'public.vsf_attente_deposer(text, text, text, text, text, text)', 'execute')
-  and not has_function_privilege('anon', 'public.vsf_attente_liste()', 'execute')
+union all select 'le public non connecté ne peut rien appeler', case when not has_function_privilege('anon', 'public.vsf_ambassadeur_definir(uuid, text, text, text)', 'execute')
   and not has_function_privilege('anon', 'public.vsf_ambassadeur_moi()', 'execute')
-  and not has_table_privilege('anon', 'public.vsf_attente_ambassadeurs', 'select') then 'oui' else 'NON' end;
+  and not has_table_privilege('anon', 'public.vsf_contrats_ambassadeur', 'select') then 'oui' else 'NON' end;

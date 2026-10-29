@@ -28,7 +28,6 @@
 <body>
 <header class="haut">
   <a class="marque" href="./">VRAI-SAVOIRFAIRE</a>
-  <a class="bouton discret" href="devenir-ambassadeur.html">Devenir ambassadeur métier</a>
 </header>
 <main class="wrap" id="app"><p class="legende">Chargement…</p></main>
 <footer class="wrap"><p class="legende">Une question : <a href="mailto:contact@vraisavoirfaire.fr">contact@vraisavoirfaire.fr</a></p></footer>
@@ -98,8 +97,8 @@ async function charger() {
   if (r.error) return $('app').innerHTML = '<p class="etiquette">Ambassadeur métier</p><h1>Impossible d’ouvrir votre espace.</h1><p class="message">Réessayez dans un instant.</p>';
   if (!r.data || !r.data.trouve) {
     return $('app').innerHTML = '<p class="etiquette">Ambassadeur métier</p><h1>Aucune invitation pour cette adresse.</h1>' +
-      '<p class="legende">L’espace ambassadeur métier s’ouvre sur invitation, à l’adresse e-mail que vous nous avez donnée. Vous n’êtes pas encore sur la liste ?</p>' +
-      '<p><a class="bouton" href="devenir-ambassadeur.html">Rejoindre la liste d’attente</a></p>';
+      '<p class="legende">L’espace ambassadeur métier est créé par Skolantreuz, pour l’adresse e-mail que vous lui avez donnée. Vérifiez que vous êtes connecté avec cette adresse, ou écrivez-nous.</p>' +
+      '<p><a class="bouton" href="mailto:contact@vraisavoirfaire.fr">Écrire à Skolantreuz</a></p>';
   }
   dessiner(r.data);
 }
