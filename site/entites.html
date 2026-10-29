@@ -35,6 +35,16 @@
   .ajout{margin-top:24px;padding:16px 18px;background:var(--panel)}
   .ajout select.champ{width:100%;max-width:640px;min-height:44px;border:0;border-bottom:1.5px solid #111;background:transparent;font:inherit;font-size:17px;padding:10px 0}
   .ajout input{max-width:640px}
+  .arbre{margin:18px 0}
+  details.ent{border-top:1px solid var(--line);padding:6px 0}
+  details.ent summary{cursor:pointer;min-height:44px;display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px}
+  details.ent ul{margin:4px 0 10px 18px;padding:0}
+  .resume{font-size:14px;color:var(--cap)}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+  .chip-col{border:1.5px solid #111;padding:2px 8px;font-size:13px}
+  .lien-mini{background:none;border:0;padding:0 2px;font:inherit;font-size:12px;font-weight:800;text-decoration:underline;cursor:pointer;color:var(--cap)}
+  .entreprise select{min-height:44px;border:0;border-bottom:1.5px solid #111;background:transparent;font:inherit;font-size:15px;max-width:220px}
+  @media (max-width:640px){.ligne-suivi.entreprise{flex-direction:column;align-items:flex-start}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="vsf-auth.js"></script>
@@ -69,7 +79,8 @@ function ongletsHtml() {
 }
 
 async function vueCollectifs() {
-  var f = await sb.from('federations').select('id,name,created_at').order('created_at');
+  await chargerArbre();
+  var f =await sb.from('federations').select('id,name,created_at').order('created_at');
   if (f.error) return '<p class="message">Impossible de lire les collectifs pour le moment.</p>';
   var html = '';
   for (var i = 0; i < (f.data || []).length; i++) {
@@ -94,6 +105,7 @@ async function vueCollectifs() {
       '<p class="legende">Créé le ' + E(jour(c.created_at)) + '. Son référentiel métier collectif (le métier global, et non un poste de travail) :</p>' +
       '<div class="chiffres"><div><b>' + (nSit == null ? '—' : nSit) + '</b><span>Situations du collectif</span></div></div>' +
       '<p class="legende">Les situations appartiennent au collectif ; leur rattachement à un métier précis est à compléter.</p>' +
+      (S.plateforme ? arbreHtml(c.id) : '') +
       (metiers || '<p class="legende">Aucun référentiel métier collectif pour le moment.</p>') + '</section>';
   }
   html += '<section class="socle"><p class="etiquette" style="margin-top:0">Le socle Skolantreuz « comment on travaille »</p>' +
@@ -175,13 +187,77 @@ function brancherSuivi() {
   });
 }
 
+/* ───── Entreprises : les poupées russes (collectif → entreprises → établissements → nombre de membres) ───── */
+S.arbre = null; S.collectifs = [];
+async function chargerArbre() {
+  if (!S.plateforme) return;
+  if (!S.arbre) { var a = await sb.rpc('vsf_entites_arbre'); S.arbre = a.error ? [] : (a.data || []); }
+}
+function arbreHtml(idCollectif) {
+  var c = (S.arbre || []).filter(function (x) { return x.id === idCollectif; })[0];
+  if (!c) return '';
+  if (!c.entreprises.length) return '<p class="legende">Aucune entreprise adhérente pour le moment.</p>';
+  return '<div class="arbre"><p class="etiquette">Entreprises adhérentes (' + c.entreprises.length + ')</p>' + c.entreprises.map(function (o) {
+    var nm = o.etablissements.reduce(function (a, e) { return a + e.membres; }, 0);
+    return '<details class="ent"><summary><b>' + E(o.nom) + '</b> <span class="etat-mini">' + (o.origine ? 'collectif d’origine' : 'adhésion ' + E(o.adhesion)) + '</span>' +
+      '<span class="resume">' + o.etablissements.length + ' établissement' + (o.etablissements.length > 1 ? 's' : '') + ' · ' + nm + ' membre' + (nm > 1 ? 's' : '') + '</span></summary>' +
+      (o.etablissements.length ? '<ul>' + o.etablissements.map(function (e) { return '<li>' + E(e.nom) + ' <span class="resume">' + e.membres + ' membre' + (e.membres > 1 ? 's' : '') + '</span></li>'; }).join('') + '</ul>' : '<p class="legende">Aucun établissement.</p>') +
+      '</details>';
+  }).join('') + '</div>';
+}
+async function vueEntreprises() {
+  if (!S.plateforme) return '<div class="bientot"><p class="etiquette" style="margin-top:0">Entreprises</p><p>La liste des entreprises est réservée à l’administrateur de la plateforme. Un administrateur de référentiels n’y a pas accès.</p></div>';
+  var r = await sb.rpc('vsf_entreprises_liste');
+  if (r.error) return '<p class="message">Impossible de lire les entreprises : la mise à jour de la base (migration 16) n’est peut-être pas faite.</p>';
+  var f = await sb.from('federations').select('id,name').order('created_at'); S.collectifs = f.data || [];
+  var liste = r.data || [];
+  var corps = liste.map(function (o) {
+    var dejaIds = o.collectifs.map(function (c) { return c.id; });
+    var dispo = S.collectifs.filter(function (c) { return dejaIds.indexOf(c.id) < 0; });
+    return '<div class="ligne-suivi entreprise"><div class="qui"><b>' + E(o.nom) + '</b>' +
+      '<span>' + o.etablissements + ' établissement' + (o.etablissements > 1 ? 's' : '') + ' · ' + o.membres + ' membre' + (o.membres > 1 ? 's' : '') + ' · créée le ' + E(jour(o.cree_le)) + '</span>' +
+      '<div class="chips">' + o.collectifs.map(function (c) {
+        return '<span class="chip-col">' + E(c.nom) + ' · ' + E(c.statut) + (c.id === o.origine ? ' · origine' : ' <button type="button" class="lien-mini" data-retirer-adh="' + E(o.id) + '|' + E(c.id) + '">Retirer</button>') + '</span>';
+      }).join('') + '</div></div>' +
+      '<div class="act">' + (dispo.length ? '<select id="sel-' + E(o.id) + '" aria-label="Rattacher à un collectif">' + dispo.map(function (c) { return '<option value="' + E(c.id) + '">' + E(c.name) + '</option>'; }).join('') + '</select> <button type="button" class="bouton petit" data-ajouter-adh="' + E(o.id) + '">Rattacher</button>' : '') + '</div></div>';
+  }).join('');
+  return '<section class="collectif"><p class="etiquette" style="margin:10px 0 0">Entreprises</p><h2>' + liste.length + ' entreprise' + (liste.length > 1 ? 's' : '') + '</h2>' +
+    '<p class="legende">Pour chaque entreprise : son nom, ses collectifs, le nombre de ses établissements et de ses membres. Jamais le contenu de l’entreprise. Une entreprise peut adhérer à plusieurs collectifs.</p>' +
+    '<p class="message" id="msgAdh" role="alert"></p>' + (corps || '<p class="legende">Aucune entreprise.</p>') + '</section>';
+}
+function brancherEntreprises() {
+  document.querySelectorAll('[data-ajouter-adh]').forEach(function (b) {
+    b.addEventListener('click', async function () {
+      var org = b.getAttribute('data-ajouter-adh'), col = $('sel-' + org).value;
+      var r = await sb.rpc('vsf_adhesion_definir', { p_organisation: org, p_collectif: col, p_statut: 'active' });
+      if (r.error) return dire('msgAdh', messageErreurRpc(r.error));
+      S.arbre = null; dessiner();
+    });
+  });
+  document.querySelectorAll('[data-retirer-adh]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var zone = b.parentNode, memoire = zone.innerHTML, ids = b.getAttribute('data-retirer-adh').split('|');
+      zone.innerHTML = ' <span class="etat-mini">Retirer ?</span> ';
+      var oui = document.createElement('button'); oui.type = 'button'; oui.className = 'lien-mini'; oui.textContent = 'Oui';
+      var non = document.createElement('button'); non.type = 'button'; non.className = 'lien-mini'; non.textContent = 'Non';
+      oui.onclick = async function () {
+        var r = await sb.rpc('vsf_adhesion_definir', { p_organisation: ids[0], p_collectif: ids[1], p_statut: 'retiree' });
+        if (r.error) { zone.innerHTML = memoire; brancherEntreprises(); return dire('msgAdh', messageErreurRpc(r.error)); }
+        S.arbre = null; dessiner();
+      };
+      non.onclick = function () { zone.innerHTML = memoire; brancherEntreprises(); };
+      zone.appendChild(oui); zone.appendChild(non);
+    });
+  });
+}
+
 function vueBientot(nom, texte) { return '<div class="bientot"><p class="etiquette" style="margin-top:0">' + E(nom) + '</p><p>' + E(texte) + '</p></div>'; }
 
 async function dessiner() {
   var jeton = S.jeton = (S.jeton || 0) + 1;   // un clic plus récent annule le dessin en cours
   var corps;
   if (S.onglet === 'collectifs') corps = await vueCollectifs();
-  else if (S.onglet === 'entreprises') corps = vueBientot('Entreprises', 'Chiffres et informations de gestion uniquement (nom, collectifs, statut, nombre de membres). Jamais le contenu des parcours, des preuves, des devis ni des clients. En préparation.');
+  else if (S.onglet === 'entreprises') corps = await vueEntreprises();
   else if (S.onglet === 'ambassadeurs') corps = vueBientot('Ambassadeurs métier', 'Ils se gèrent aujourd’hui dans le tableau de bord (validation, offres, reversements). Leur fiche complète arrive ici.');
   else if (S.onglet === 'personnes') corps = vueBientot('Personnes', 'Chiffres seulement : nombre de comptes, vérifiés, suspendus. La liste se trouve dans le tableau de bord de la plateforme. Aucun accès aux parcours.');
   else corps = await vueSuivi();
@@ -192,6 +268,7 @@ async function dessiner() {
     '<p class="legende">Les collectifs, les entreprises et les personnes que Skolantreuz gère. Vous voyez le référentiel et la gestion, jamais les données personnelles des entités.</p>' +
     ongletsHtml() + '<div>' + corps + '</div>';
   brancherSuivi();
+  brancherEntreprises();
   document.querySelectorAll('.onglets button').forEach(function (b) {
     b.addEventListener('click', function () { S.onglet = b.getAttribute('data-o'); dessiner(); });
   });
