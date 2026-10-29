@@ -132,7 +132,7 @@ function formCollectifHtml(pf, c, parentId) {
       parents.map(function (x) { return '<option value="' + E(x.id) + '"' + (x.id === parentCourant ? ' selected' : '') + '>' + E(x.nom) + '</option>'; }).join('') + '</select>' +
     (c ? '<label class="champ" for="' + pf + 'Statut">Statut</label><select id="' + pf + 'Statut" class="champ">' + Object.keys(STATUTS_COL).map(function (k) { return '<option value="' + k + '"' + (c.statut === k ? ' selected' : '') + '>' + STATUTS_COL[k] + '</option>'; }).join('') + '</select>' : '') +
     '<label class="champ" for="' + pf + 'Zone">Zone (région, ville…)</label><input id="' + pf + 'Zone" type="text" maxlength="120" value="' + E(c ? c.zone : '') + '" autocomplete="off">' +
-    '<label class="champ" for="' + pf + 'Site">Site web</label><input id="' + pf + 'Site" type="url" maxlength="300" placeholder="https://" value="' + E(c ? c.site_web : '') + '" autocomplete="off">' +
+    '<label class="champ" for="' + pf + 'Site">Site web</label><input id="' + pf + 'Site" type="text" inputmode="url" maxlength="300" placeholder="https://" value="' + E(c ? c.site_web : '') + '" autocomplete="off">' +
     '<label class="champ" for="' + pf + 'Desc">Description</label><textarea id="' + pf + 'Desc" class="champ" rows="4" maxlength="2000" style="width:100%;max-width:640px;font:inherit;font-size:16px;border:1.5px solid #111;padding:8px">' + E(c ? c.description : '') + '</textarea>' +
     '<p class="message" id="' + pf + 'Msg" role="alert"></p>' +
     '<button type="button" class="bouton" id="' + pf + 'Ok">' + (c ? 'Enregistrer la fiche' : 'Créer ce collectif') + '</button> <button type="button" class="bouton discret" id="' + pf + 'Non">Annuler</button></div>';
@@ -273,7 +273,7 @@ async function vueSuivi() {
   if (!S.super) return '<div class="bientot"><p class="etiquette" style="margin-top:0">Suivi</p><p>Le suivi des comptes d’administration et le journal des actions sont réservés au super administrateur.</p></div>';
   var eq = await sb.rpc('vsf_equipe');
   var jr = await sb.from('vsf_journal').select('cree_le,auteur_email,action,cible,detail').order('cree_le', { ascending: false }).limit(30);
-  var QUI = { equipe_definir: 'a donné un rôle à', equipe_retirer: 'a retiré l’accès de', collectif_renommer: 'a renommé le collectif', collectif_creer: 'a créé le collectif', entreprise_bloquer: 'a bloqué l’entreprise', entreprise_debloquer: 'a débloqué l’entreprise', entreprise_supprimer: 'a supprimé l’entreprise vide', collectif_modifier: 'a modifié la fiche du collectif', adhesion_active: 'a rattaché une entreprise à un collectif :', adhesion_retiree: 'a retiré une entreprise d’un collectif :', adhesion_en_attente: 'a mis en attente l’adhésion de', adhesion_suspendue: 'a suspendu l’adhésion de' };
+  var QUI = { equipe_definir: 'a donné un rôle à', equipe_retirer: 'a retiré l’accès de', collectif_renommer: 'a renommé le collectif', collectif_creer: 'a créé le collectif', attente_invite: 'a invité à devenir ambassadeur métier', attente_contacte: 'a contacté (liste d’attente)', attente_refuse: 'a refusé (liste d’attente)', entreprise_bloquer: 'a bloqué l’entreprise', entreprise_debloquer: 'a débloqué l’entreprise', entreprise_supprimer: 'a supprimé l’entreprise vide', collectif_modifier: 'a modifié la fiche du collectif', adhesion_active: 'a rattaché une entreprise à un collectif :', adhesion_retiree: 'a retiré une entreprise d’un collectif :', adhesion_en_attente: 'a mis en attente l’adhésion de', adhesion_suspendue: 'a suspendu l’adhésion de' };
   var lignes = (eq.data || []).map(function (x) {
     return '<div class="ligne-suivi"><div class="qui"><b>' + E(x.email) + '</b><span>' + E(ROLES[x.role] || x.role) + ' · ' + E(AIDE_ROLES[x.role] || '') + '</span></div>' +
       '<div class="act">' + (x.user_id === S.moi ? '<span class="etat-mini">C’est vous</span>' : '<button class="bouton petit discret" data-retirer="' + E(x.user_id) + '">Retirer</button>') + '</div></div>';
@@ -418,12 +418,49 @@ async function vueAmbassadeurs() {
   var liste = r.data || [];
   var lignes = liste.map(function (a) {
     return '<div class="ligne-suivi"><div class="qui"><b>' + E(a.nom) + (a.atelier ? ' <span class="resume">· ' + E(a.atelier) + '</span>' : '') + '</b>' +
-      '<span>' + E(STATUTS_AMB[a.statut] || a.statut) + ' · ' + (a.compte_ouvert ? 'compte ouvert' : 'compte non ouvert') + ' · ' + (a.contrat_accepte ? 'contrat accepté' : 'contrat non accepté') + (a.collectif ? ' · collectif : ' + E(a.collectif) : '') + '</span>' +
+      '<span>' + E(STATUTS_AMB[a.statut] || a.statut) + ' · ' + (a.compte_ouvert ? 'compte ouvert' : 'compte non ouvert') + ' · ' + (a.fiche_complete ? 'fiche complète' : 'fiche à compléter') + ' · ' + (a.contrat_accepte ? 'contrat accepté' + (a.contrat_version ? ' (' + E(a.contrat_version) + ')' : '') : 'contrat non accepté') + (a.collectif ? ' · collectif : ' + E(a.collectif) : '') + '</span>' +
       '<span>' + pluriel(Number(a.offres), 'offre') + ' (' + a.offres_publiees + ' publiée' + (a.offres_publiees > 1 ? 's' : '') + ', ' + a.offres_pilote + ' en pilote) · ' + pluriel(Number(a.ventes), 'vente') + ' · reste à reverser : <b>' + E(euros(a.reste_a_reverser_eur)) + '</b></span></div></div>';
   }).join('');
   return '<section class="collectif"><p class="etiquette" style="margin:10px 0 0">Ambassadeurs métier</p><h2>' + pluriel(liste.length, 'ambassadeur') + ' métier</h2>' +
     '<p class="legende">Les maîtres artisans qui vendent leur métier sur VRAI-SAVOIRFAIRE. Ici, les chiffres. Pour valider un ambassadeur, publier une offre ou enregistrer un virement :</p>' +
-    '<p><a class="bouton" href="admin.html">Ouvrir le tableau de bord</a></p>' + (lignes || '<p class="legende">Aucun ambassadeur métier pour le moment.</p>') + '</section>';
+    '<p><a class="bouton" href="admin.html">Ouvrir le tableau de bord</a></p>' + (lignes || '<p class="legende">Aucun ambassadeur métier pour le moment.</p>') + '</section>' + await attenteHtml();
+}
+
+// La liste d'attente : les maîtres artisans qui se sont inscrits sur devenir-ambassadeur.html.
+var STATUTS_ATT = { nouveau: 'Nouveau', contacte: 'Contacté', invite: 'Invité', refuse: 'Refusé' };
+async function attenteHtml() {
+  var r = await sb.rpc('vsf_attente_liste');
+  if (r.error) return '<section class="collectif"><p class="etiquette" style="margin:10px 0 0">Liste d’attente</p><p class="message">Impossible de lire la liste d’attente : la mise à jour de la base (migration 20) n’est peut-être pas faite.</p></section>';
+  var liste = r.data || [];
+  var lien = location.origin + '/mon-compte-ambassadeur.html';
+  var lignes = liste.map(function (a) {
+    var sujet = 'Votre espace ambassadeur métier — VRAI-SAVOIRFAIRE';
+    var corps = 'Bonjour ' + a.prenom + ',\n\nMerci de votre inscription. Nous vous ouvrons un espace ambassadeur métier : connectez-vous avec cette adresse e-mail sur ' + lien + ', complétez votre fiche et lisez le contrat.\n\nÀ très vite,\nSkolantreuz';
+    return '<div class="ligne-suivi attente"><div class="qui"><b>' + E(a.prenom + ' ' + a.nom) + ' <span class="etat-mini">' + E(STATUTS_ATT[a.statut] || a.statut) + '</span></b>' +
+      '<span>' + E(a.metier) + ' · ' + E(a.email) + ' · inscrit le ' + E(jour(a.cree_le)) + '</span>' + (a.message ? '<span>« ' + E(a.message) + ' »</span>' : '') +
+      '<div class="gerer"><a class="lien-mini" href="mailto:' + E(a.email) + '?subject=' + encodeURIComponent(sujet) + '&body=' + encodeURIComponent(corps) + '">Écrire</a>' +
+      (a.statut === 'invite' || a.statut === 'refuse' ? '' : ' <button type="button" class="lien-mini" data-att="invite|' + E(a.id) + '">Inviter</button> <button type="button" class="lien-mini" data-att="contacte|' + E(a.id) + '">Marquer contacté</button> <button type="button" class="lien-mini" data-att="refuse|' + E(a.id) + '">Refuser</button>') + '</div></div></div>';
+  }).join('');
+  return '<section class="collectif"><p class="etiquette" style="margin:10px 0 0">Liste d’attente</p><h2>' + pluriel(liste.length, 'demande') + '</h2>' +
+    '<p class="legende">Les inscriptions de la page publique « Devenir ambassadeur métier ». « Inviter » crée la ligne d’ambassadeur métier (en attente de validation) : la personne retrouve alors son espace en se connectant avec la même adresse e-mail. « Écrire » prépare l’e-mail d’invitation.</p>' +
+    '<p class="message" id="msgAtt" role="alert"></p>' + (lignes || '<p class="legende">Aucune demande pour le moment.</p>') + '</section>';
+}
+function brancherAttente() {
+  document.querySelectorAll('[data-att]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var p = b.getAttribute('data-att').split('|'), zone = b.parentNode, memoire = zone.innerHTML;
+      zone.innerHTML = '<span class="etat-mini">' + (p[0] === 'invite' ? 'Inviter' : p[0] === 'refuse' ? 'Refuser' : 'Marquer contacté') + ' ?</span> ';
+      var oui = document.createElement('button'); oui.type = 'button'; oui.className = 'lien-mini'; oui.textContent = 'Oui';
+      var non = document.createElement('button'); non.type = 'button'; non.className = 'lien-mini'; non.textContent = 'Non';
+      oui.onclick = async function () {
+        var r = await sb.rpc('vsf_attente_traiter', { p_id: p[1], p_statut: p[0] });
+        if (r.error) { zone.innerHTML = memoire; brancherAttente(); return dire('msgAtt', messageErreurRpc(r.error)); }
+        dessiner();
+      };
+      non.onclick = function () { zone.innerHTML = memoire; brancherAttente(); };
+      zone.appendChild(oui); zone.appendChild(non);
+    });
+  });
 }
 
 /* ───── Personnes : des nombres seulement ───── */
@@ -458,6 +495,7 @@ async function dessiner() {
   brancherSuivi();
   brancherEntreprises();
   brancherCollectifs();
+  brancherAttente();
   document.querySelectorAll('.onglets button').forEach(function (b) {
     b.addEventListener('click', function () { S.onglet = b.getAttribute('data-o'); if (S.onglet === 'collectifs') S.collectifId = null; dessiner(); });
   });

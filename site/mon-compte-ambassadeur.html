@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="color-scheme" content="light">
+<title>Mon espace ambassadeur — VRAI-SAVOIRFAIRE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;800;900&display=swap">
+<link rel="stylesheet" href="vsf.css">
+<link rel="stylesheet" href="vsf-largeur.css">
+<style>
+  .bloc{margin-top:34px;border-top:1.5px solid var(--ink);padding-top:8px}
+  .etat{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;border:1.5px solid #111;padding:2px 7px}
+  textarea.champ{width:100%;max-width:640px;min-height:100px;font:inherit;font-size:17px;border:1.5px solid var(--ink);border-radius:0;padding:10px;background:transparent;color:var(--ink);box-sizing:border-box}
+  textarea.champ:focus{outline:none;box-shadow:0 2px 0 0 var(--ink)}
+  form input{max-width:640px}
+  .contrat{max-height:420px;overflow:auto;border:1px solid var(--line);padding:6px 18px;background:var(--panel);margin:14px 0}
+  .contrat h3{margin:18px 0 4px;font-size:17px;font-weight:900}
+  .contrat p,.contrat li{font-size:15px}
+  .tableau{overflow:auto}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="vsf-auth.js"></script>
+<script src="vsf-md.js"></script>
+</head>
+<body>
+<header class="haut">
+  <a class="marque" href="./">VRAI-SAVOIRFAIRE</a>
+  <a class="bouton discret" href="devenir-ambassadeur.html">Devenir ambassadeur métier</a>
+</header>
+<main class="wrap" id="app"><p class="legende">Chargement…</p></main>
+<footer class="wrap"><p class="legende">Une question : <a href="mailto:contact@vraisavoirfaire.fr">contact@vraisavoirfaire.fr</a></p></footer>
+<script>
+var $ = function (id) { return document.getElementById(id); };
+var STATUTS = { en_attente: 'En attente de validation', valide: 'Validé', suspendu: 'Suspendu' };
+var jour = function (d) { try { return new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }); } catch (e) { return ''; } };
+function erreur(e) {
+  var m = String((e && e.message) || '');
+  return (e && e.code === 'VSF08' && m) ? m : 'Cela n’a pas pu être enregistré. Réessayez dans un instant.';
+}
+function dire(texte) { var m = $('msg'); if (m) { m.textContent = texte || ''; if (texte && m.scrollIntoView) m.scrollIntoView({ block: 'center' }); } }
+
+function dessiner(d) {
+  var f = d.fiche, c = d.contrat, complet = !!(f.atelier && f.adresse && f.siret);
+  var h = '<p class="etiquette">Ambassadeur métier</p><h1>Mon espace' + (f.nom ? ', ' + E(f.nom) : '') + '.</h1>' +
+    '<p><span class="etat">' + E(STATUTS[f.statut] || f.statut) + '</span></p>' +
+    '<p class="legende">' + (f.statut === 'valide'
+      ? 'Votre compte est validé. Nous vous écrirons pour décrire votre métier ensemble : gestes, niveaux, modules.'
+      : f.statut === 'suspendu'
+        ? 'Votre compte est suspendu. Écrivez-nous pour comprendre pourquoi.'
+        : 'Complétez votre fiche et acceptez le contrat. Skolantreuz valide ensuite votre compte, et vous serez prévenu.') + '</p>';
+
+  h += '<section class="bloc"><p class="etiquette" style="margin-top:0">1 · Ma fiche</p>' +
+    '<form id="fiche" novalidate autocomplete="off">' +
+    '<label class="champ" for="nom">Nom</label><input id="nom" type="text" maxlength="120" value="' + E(f.nom) + '">' +
+    '<label class="champ" for="atelier">Atelier ou entreprise</label><input id="atelier" type="text" maxlength="120" value="' + E(f.atelier) + '">' +
+    '<label class="champ" for="adresse">Adresse</label><input id="adresse" type="text" maxlength="300" value="' + E(f.adresse) + '">' +
+    '<label class="champ" for="siret">SIRET (14 chiffres)</label><input id="siret" type="text" inputmode="numeric" maxlength="20" value="' + E(f.siret) + '">' +
+    '<label class="champ" for="lien">Lien de votre boutique ou de votre site (facultatif)</label><input id="lien" type="text" inputmode="url" maxlength="300" placeholder="https://" value="' + E(f.lien_boutique) + '">' +
+    '<label class="champ" for="mentions">Mentions légales de votre entreprise (facultatif)</label><textarea id="mentions" class="champ" maxlength="2000">' + E(f.mentions_legales) + '</textarea>' +
+    '<p class="message" id="msg" role="alert"></p><p><button class="bouton" id="enregistrer" type="submit">Enregistrer ma fiche</button></p></form></section>';
+
+  h += '<section class="bloc"><p class="etiquette" style="margin-top:0">2 · Le contrat</p>';
+  if (!c) {
+    h += '<p class="legende">Le contrat n’est pas encore publié. Nous vous écrirons.</p>';
+  } else if (d.contrat_a_jour) {
+    h += '<p class="message" style="display:block">Contrat accepté le ' + E(jour(f.contrat_accepte_le)) + ' (version ' + E(f.contrat_version) + ').</p>';
+  } else {
+    h += '<p class="legende">Lisez le contrat en entier. ' + (f.contrat_accepte_le ? 'Il a changé depuis votre dernière acceptation. ' : '') +
+      (complet ? '' : 'Complétez d’abord votre atelier, votre adresse et votre SIRET (étape 1). ') + '</p>' +
+      '<div class="contrat" tabindex="0">' + md(c.contenu_md) + '</div>' +
+      '<p class="legende">Version : ' + E(c.version) + (c.statut === 'provisoire' ? ' (texte de travail, à relire avant tout usage réel)' : '') + '</p>' +
+      '<p><button class="bouton" id="accepter" data-version="' + E(c.version) + '"' + (complet ? '' : ' disabled') + '>J’ai lu et j’accepte le contrat</button></p><p class="message" id="msg2" role="alert"></p>';
+  }
+  h += '</section>';
+  $('app').innerHTML = h;
+
+  $('fiche').addEventListener('submit', async function (ev) {
+    ev.preventDefault(); dire('');
+    var r = await VSF.sb.rpc('vsf_ambassadeur_enregistrer', { p_nom: $('nom').value, p_atelier: $('atelier').value, p_adresse: $('adresse').value, p_siret: $('siret').value, p_lien: $('lien').value, p_mentions: $('mentions').value });
+    if (r.error) return dire(erreur(r.error));
+    charger();
+  });
+  var a = $('accepter');
+  if (a) a.addEventListener('click', async function () {
+    var r = await VSF.sb.rpc('vsf_ambassadeur_accepter_contrat', { p_version: a.getAttribute('data-version') });
+    if (r.error) { $('msg2').textContent = erreur(r.error); return; }
+    charger();
+  });
+}
+
+async function charger() {
+  var s = await VSF.sb.auth.getSession();
+  if (!s.data.session) { location.replace('connexion.html?suite=' + encodeURIComponent(location.href)); return; }
+  var r = await VSF.sb.rpc('vsf_ambassadeur_moi');
+  if (r.error) return $('app').innerHTML = '<p class="etiquette">Ambassadeur métier</p><h1>Impossible d’ouvrir votre espace.</h1><p class="message">Réessayez dans un instant.</p>';
+  if (!r.data || !r.data.trouve) {
+    return $('app').innerHTML = '<p class="etiquette">Ambassadeur métier</p><h1>Aucune invitation pour cette adresse.</h1>' +
+      '<p class="legende">L’espace ambassadeur métier s’ouvre sur invitation, à l’adresse e-mail que vous nous avez donnée. Vous n’êtes pas encore sur la liste ?</p>' +
+      '<p><a class="bouton" href="devenir-ambassadeur.html">Rejoindre la liste d’attente</a></p>';
+  }
+  dessiner(r.data);
+}
+charger();
+</script>
+<script src="vsf-pop.js"></script>
+</body>
+</html>
