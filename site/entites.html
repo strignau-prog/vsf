@@ -35,10 +35,12 @@
   .ajout{margin-top:24px;padding:16px 18px;background:var(--panel)}
   .ajout select.champ{width:100%;max-width:640px;min-height:44px;border:0;border-bottom:1.5px solid #111;background:transparent;font:inherit;font-size:17px;padding:10px 0}
   .ajout input{max-width:640px}
-  .arbre{margin:18px 0}
-  details.ent{border-top:1px solid var(--line);padding:6px 0}
-  details.ent summary{cursor:pointer;min-height:44px;display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px}
-  details.ent ul{margin:4px 0 10px 18px;padding:0}
+  .arbre-col{list-style:none;margin:10px 0;padding:0}
+  .arbre-col ul{list-style:none;margin:0 0 0 22px;padding:0 0 0 14px;border-left:1.5px solid var(--line)}
+  .arbre-col li{padding:2px 0}
+  .lien-col{background:none;border:0;padding:10px 0;min-height:44px;font:inherit;font-weight:800;text-decoration:underline;text-decoration-thickness:3px;text-underline-offset:3px;cursor:pointer;color:#111;text-align:left}
+  .fil{font-size:14px;color:var(--cap);margin:8px 0}
+  .fil .lien-col{font-size:14px;font-weight:500;padding:4px 0;min-height:0}
   .resume{font-size:14px;color:var(--cap)}
   .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
   .chip-col{border:1.5px solid #111;padding:2px 8px;font-size:13px}
@@ -78,13 +80,158 @@ function ongletsHtml() {
   }).join('') + '</div>';
 }
 
+/* ───── Collectifs : l'arbre (fédération nationale → régionales → groupes), la fiche, la création et la modification ───── */
+var GENRES = { federation: 'Fédération', groupe: 'Groupe' };
+var STATUTS_COL = { actif: 'Actif', en_attente: 'En attente', suspendu: 'Suspendu', archive: 'Archivé' };
+S.collectifId = null; S.liste = null;
+
+function pluriel(n, mot) { return n + ' ' + mot + (n > 1 ? 's' : ''); }
+function descendants(id) {
+  var res = {}; res[id] = true;
+  var change = true;
+  while (change) {
+    change = false;
+    (S.liste || []).forEach(function (c) { if (c.parent_id && res[c.parent_id] && !res[c.id]) { res[c.id] = true; change = true; } });
+  }
+  return res;
+}
+function arbreCollectifsHtml(liste) {
+  var par = {}, ids = {};
+  liste.forEach(function (c) { ids[c.id] = true; });
+  liste.forEach(function (c) { if (c.parent_id && ids[c.parent_id]) (par[c.parent_id] = par[c.parent_id] || []).push(c); });
+  var racines = liste.filter(function (c) { return !c.parent_id || !ids[c.parent_id]; });
+  function noeud(c, niveau) {
+    var enfants = par[c.id] || [];
+    return '<li><button type="button" class="lien-col" data-ouvrir="' + E(c.id) + '">' + E(c.nom) + '</button> ' +
+      '<span class="etat-mini">' + E(GENRES[c.genre] || c.genre) + (c.statut !== 'actif' ? ' · ' + E(STATUTS_COL[c.statut] || c.statut) : '') + '</span>' +
+      (c.entreprises == null ? '' : ' <span class="resume">' + pluriel(Number(c.entreprises), 'entreprise') + '</span>') +
+      (enfants.length && niveau < 10 ? '<ul>' + enfants.map(function (e) { return noeud(e, niveau + 1); }).join('') + '</ul>' : '') + '</li>';
+  }
+  return '<ul class="arbre-col">' + racines.map(function (c) { return noeud(c, 0); }).join('') + '</ul>';
+}
+function socleHtml() {
+  return '<section class="socle"><p class="etiquette" style="margin-top:0">Le socle Skolantreuz « comment on travaille »</p>' +
+    '<p>Un seul exemplaire de référence, partagé par tous les collectifs et toutes les entreprises, mis à jour automatiquement. Il est rangé selon les 4 repères du manifeste : <b>ce qu’on fait</b>, <b>le plaisir à le faire</b>, <b>le but</b>, <b>grandir avec le collectif</b>.</p>' +
+    '<p class="legende">En préparation. Le « Guide 1 » actuel (Pilotage, Production, Support) doit d’abord être rangé selon ces 4 repères avant d’être migré en socle.</p></section>';
+}
+// Le formulaire de création et de modification d'un collectif (pf = préfixe des champs).
+function formCollectifHtml(pf, c, parentId) {
+  var exclus = c ? descendants(c.id) : {};
+  var parents = (S.liste || []).filter(function (x) { return !exclus[x.id]; });
+  var parentCourant = c ? c.parent_id : parentId;
+  var nomFige = c && !S.super;
+  return '<div class="ajout">' +
+    '<label class="champ" for="' + pf + 'Nom">Nom</label><input id="' + pf + 'Nom" type="text" maxlength="120" value="' + E(c ? c.nom : '') + '"' + (nomFige ? ' disabled' : '') + ' autocomplete="off">' +
+    (nomFige ? '<p class="legende">Seul le super administrateur peut changer le nom.</p>' : '') +
+    '<label class="champ" for="' + pf + 'Genre">Genre</label><select id="' + pf + 'Genre" class="champ"><option value="federation"' + (c && c.genre === 'groupe' ? '' : ' selected') + '>Fédération (nationale, régionale…)</option><option value="groupe"' + (c && c.genre === 'groupe' ? ' selected' : '') + '>Groupe (d’entreprises)</option></select>' +
+    '<label class="champ" for="' + pf + 'Parent">Rattaché à</label><select id="' + pf + 'Parent" class="champ"><option value="">— aucun (collectif de premier niveau) —</option>' +
+      parents.map(function (x) { return '<option value="' + E(x.id) + '"' + (x.id === parentCourant ? ' selected' : '') + '>' + E(x.nom) + '</option>'; }).join('') + '</select>' +
+    (c ? '<label class="champ" for="' + pf + 'Statut">Statut</label><select id="' + pf + 'Statut" class="champ">' + Object.keys(STATUTS_COL).map(function (k) { return '<option value="' + k + '"' + (c.statut === k ? ' selected' : '') + '>' + STATUTS_COL[k] + '</option>'; }).join('') + '</select>' : '') +
+    '<label class="champ" for="' + pf + 'Zone">Zone (région, ville…)</label><input id="' + pf + 'Zone" type="text" maxlength="120" value="' + E(c ? c.zone : '') + '" autocomplete="off">' +
+    '<label class="champ" for="' + pf + 'Site">Site web</label><input id="' + pf + 'Site" type="url" maxlength="300" placeholder="https://" value="' + E(c ? c.site_web : '') + '" autocomplete="off">' +
+    '<label class="champ" for="' + pf + 'Desc">Description</label><textarea id="' + pf + 'Desc" class="champ" rows="4" maxlength="2000" style="width:100%;max-width:640px;font:inherit;font-size:16px;border:1.5px solid #111;padding:8px">' + E(c ? c.description : '') + '</textarea>' +
+    '<p class="message" id="' + pf + 'Msg" role="alert"></p>' +
+    '<button type="button" class="bouton" id="' + pf + 'Ok">' + (c ? 'Enregistrer la fiche' : 'Créer ce collectif') + '</button> <button type="button" class="bouton discret" id="' + pf + 'Non">Annuler</button></div>';
+}
+function lireFormCollectif(pf) {
+  return { nom: $(pf + 'Nom').value, genre: $(pf + 'Genre').value, parent: $(pf + 'Parent').value || null, statut: $(pf + 'Statut') ? $(pf + 'Statut').value : null,
+    zone: $(pf + 'Zone').value, site: $(pf + 'Site').value, description: $(pf + 'Desc').value };
+}
+
+async function vueListeCollectifs() {
+  var r = await sb.rpc('vsf_collectifs_liste');
+  if (r.error) return '<p class="message">Impossible de lire les collectifs : la mise à jour de la base (migration 17) n’est peut-être pas faite.</p>';
+  S.liste = r.data || [];
+  return '<section class="collectif"><p class="etiquette" style="margin:10px 0 0">Collectifs</p><h2>' + pluriel(S.liste.length, 'collectif') + '</h2>' +
+    '<p class="legende">Un collectif peut en contenir d’autres (fédération nationale, fédérations régionales, groupes). Les entreprises se rattachent à n’importe quel niveau. Cliquez sur un nom pour ouvrir sa fiche.</p>' +
+    arbreCollectifsHtml(S.liste) +
+    (S.plateforme ? '<p><button type="button" class="bouton" id="nouveauCollectif">Créer un collectif</button></p><div id="zoneCreation"></div>' : '') + '</section>' + socleHtml();
+}
+
+async function vueFiche(id) {
+  var r = await sb.rpc('vsf_collectif_fiche', { p_id: id });
+  if (r.error || !r.data) { S.collectifId = null; return '<p class="message">Impossible d’ouvrir cette fiche.</p><p><button type="button" class="bouton" data-ouvrir="">Retour aux collectifs</button></p>'; }
+  var c = r.data;
+  var l = await sb.rpc('vsf_collectifs_liste'); S.liste = l.data || [];
+  var autres = [];
+  if (S.plateforme) {
+    var eo = await sb.rpc('vsf_entreprises_liste');
+    var dedans = {}; (c.adherentes || []).forEach(function (a) { dedans[a.id] = true; });
+    autres = (eo.data || []).filter(function (o) { return !dedans[o.id]; });
+  }
+  var chemin = '<p class="fil"><button type="button" class="lien-col" data-ouvrir="">Collectifs</button>' +
+    (c.chemin || []).map(function (a) { return ' › <button type="button" class="lien-col" data-ouvrir="' + E(a.id) + '">' + E(a.nom) + '</button>'; }).join('') + ' › <b>' + E(c.nom) + '</b></p>';
+  var site = c.site_web && /^https?:\/\//i.test(c.site_web) ? ' · <a href="' + E(c.site_web) + '" target="_blank" rel="noopener">' + E(c.site_web) + '</a>' : '';
+  var chiffres = S.plateforme ? '<div class="chiffres"><div><b>' + c.enfants.length + '</b><span>Sous-collectifs</span></div>' +
+    '<div><b>' + c.entreprises_directes + '</b><span>Entreprises rattachées ici</span></div><div><b>' + c.entreprises_ensemble + '</b><span>Entreprises dans l’ensemble</span></div>' +
+    '<div><b>' + c.etablissements_ensemble + '</b><span>Établissements</span></div><div><b>' + c.membres_ensemble + '</b><span>Membres</span></div></div>' +
+    '<p class="legende">« Dans l’ensemble » = ce collectif et tous ses sous-collectifs. Des nombres seulement, jamais les personnes.</p>' : '';
+  var enfants = '<p class="etiquette">Sous-collectifs</p>' + (c.enfants.length ? '<ul class="arbre-col">' + c.enfants.map(function (e) {
+    return '<li><button type="button" class="lien-col" data-ouvrir="' + E(e.id) + '">' + E(e.nom) + '</button> <span class="etat-mini">' + E(GENRES[e.genre] || e.genre) + (e.statut !== 'actif' ? ' · ' + E(STATUTS_COL[e.statut] || e.statut) : '') + '</span></li>';
+  }).join('') + '</ul>' : '<p class="legende">Aucun sous-collectif.</p>') +
+    (S.plateforme ? '<p><button type="button" class="bouton petit" id="creerSous" data-parent="' + E(c.id) + '">Créer un sous-collectif ici</button></p><div id="zoneCreation"></div>' : '');
+  var adherentes = '';
+  if (S.plateforme) {
+    adherentes = '<p class="etiquette">Entreprises rattachées directement à ce collectif</p><p class="message" id="msgAdh" role="alert"></p>' +
+      ((c.adherentes || []).map(function (o) {
+        return '<div class="ligne-suivi entreprise"><div class="qui"><b>' + E(o.nom) + '</b><span>' + pluriel(o.etablissements, 'établissement') + ' · ' + pluriel(o.membres, 'membre') + ' · adhésion ' + E(o.adhesion) + (o.origine ? ' · collectif d’origine' : '') + '</span></div>' +
+          '<div class="act">' + (o.origine ? '' : '<span class="chip-col"><button type="button" class="lien-mini" data-retirer-adh="' + E(o.id) + '|' + E(c.id) + '">Retirer</button></span>') + '</div></div>';
+      }).join('') || '<p class="legende">Aucune entreprise rattachée ici.</p>') +
+      (autres.length ? '<div class="ajout"><label class="champ" for="selIci">Rattacher une entreprise à ce collectif</label><select id="selIci" class="champ">' + autres.map(function (o) { return '<option value="' + E(o.id) + '">' + E(o.nom) + '</option>'; }).join('') + '</select><button type="button" class="bouton petit" id="rattacherIci" data-col="' + E(c.id) + '">Rattacher</button></div>' : '');
+  }
+  return '<section class="collectif">' + chemin + '<p class="etiquette" style="margin:10px 0 0">' + E(GENRES[c.genre] || c.genre) + ' · ' + E(STATUTS_COL[c.statut] || c.statut) + '</p><h2>' + E(c.nom) + '</h2>' +
+    '<p class="legende">Créé le ' + E(jour(c.cree_le)) + (c.zone ? ' · ' + E(c.zone) : '') + site + '</p>' +
+    (c.description ? '<p>' + E(c.description) + '</p>' : '') +
+    (S.plateforme ? '<p><button type="button" class="bouton petit discret" id="modifierCollectif">Modifier la fiche</button></p><div id="zoneEdition"></div>' : '') +
+    chiffres + enfants + adherentes +
+    '<p class="etiquette">Référentiel métier de ce collectif</p>' + await metiersCollectif({ id: c.id }) + '</section>';
+}
+
 async function vueCollectifs() {
-  await chargerArbre();
-  var f =await sb.from('federations').select('id,name,created_at').order('created_at');
-  if (f.error) return '<p class="message">Impossible de lire les collectifs pour le moment.</p>';
-  var html = '';
-  for (var i = 0; i < (f.data || []).length; i++) {
-    var c = f.data[i];
+  return S.collectifId ? await vueFiche(S.collectifId) : await vueListeCollectifs();
+}
+
+function brancherCollectifs() {
+  document.querySelectorAll('[data-ouvrir]').forEach(function (b) {
+    b.addEventListener('click', function () { S.collectifId = b.getAttribute('data-ouvrir') || null; dessiner(); });
+  });
+  var ouvrirCreation = function (parentId) {
+    var z = $('zoneCreation'); if (!z) return;
+    z.innerHTML = formCollectifHtml('cr', null, parentId);
+    $('crNon').onclick = function () { z.innerHTML = ''; };
+    $('crOk').onclick = async function () {
+      var v = lireFormCollectif('cr');
+      var r = await sb.rpc('vsf_collectif_creer', { p_nom: v.nom, p_genre: v.genre, p_parent: v.parent, p_description: v.description, p_zone: v.zone, p_site: v.site });
+      if (r.error) return dire('crMsg', messageErreurRpc(r.error));
+      S.collectifId = r.data; S.liste = null; dessiner();
+    };
+    $('crNom').focus();
+  };
+  if ($('nouveauCollectif')) $('nouveauCollectif').onclick = function () { ouvrirCreation(null); };
+  if ($('creerSous')) $('creerSous').onclick = function () { ouvrirCreation($('creerSous').getAttribute('data-parent')); };
+  if ($('modifierCollectif')) $('modifierCollectif').onclick = async function () {
+    var r = await sb.rpc('vsf_collectif_fiche', { p_id: S.collectifId });
+    if (r.error || !r.data) return;
+    var c = r.data, z = $('zoneEdition');
+    z.innerHTML = formCollectifHtml('ed', c, c.parent_id);
+    $('edNon').onclick = function () { z.innerHTML = ''; };
+    $('edOk').onclick = async function () {
+      var v = lireFormCollectif('ed');
+      var rr = await sb.rpc('vsf_collectif_modifier', { p_id: c.id, p_nom: v.nom, p_genre: v.genre, p_parent: v.parent, p_statut: v.statut, p_description: v.description, p_zone: v.zone, p_site: v.site });
+      if (rr.error) return dire('edMsg', messageErreurRpc(rr.error));
+      S.liste = null; dessiner();
+    };
+  };
+  if ($('rattacherIci')) $('rattacherIci').onclick = async function () {
+    var r = await sb.rpc('vsf_adhesion_definir', { p_organisation: $('selIci').value, p_collectif: $('rattacherIci').getAttribute('data-col'), p_statut: 'active' });
+    if (r.error) return dire('msgAdh', messageErreurRpc(r.error));
+    dessiner();
+  };
+}
+
+// Le référentiel métier d'un collectif : ses métiers (processus, sous-processus, modules) et le nombre de situations.
+async function metiersCollectif(c) {
+  {
     var m = await sb.from('metiers').select('id,nom,statut,libelles_niveaux,proprietaire_id').eq('federation_id', c.id).is('proprietaire_id', null).order('ordre');
     var metiers = '';
     for (var j = 0; j < (m.data || []).length; j++) {
@@ -101,17 +248,10 @@ async function vueCollectifs() {
           '<a class="bouton" href="' + E(GUIDE) + '?guide=peindre" target="_blank" rel="noopener">Éditer « comment on peint »</a></div>' : '') + '</div>';
     }
     var nSit = await compter('referentiel_situations', { federation_id: c.id, niveau: { like: 'Niveau 1%' } });
-    html += '<section class="collectif"><p class="etiquette" style="margin:10px 0 0">Collectif</p><h2>' + E(c.name) + '</h2>' + (S.super ? '<p><button class="bouton petit discret" data-renommer="' + E(c.id) + '" data-nom="' + E(c.name) + '">Renommer ce collectif</button></p><p class="message" data-msg-renommer="' + E(c.id) + '" role="alert"></p>' : '') +
-      '<p class="legende">Créé le ' + E(jour(c.created_at)) + '. Son référentiel métier collectif (le métier global, et non un poste de travail) :</p>' +
-      '<div class="chiffres"><div><b>' + (nSit == null ? '—' : nSit) + '</b><span>Situations du collectif</span></div></div>' +
-      '<p class="legende">Les situations appartiennent au collectif ; leur rattachement à un métier précis est à compléter.</p>' +
-      (S.plateforme ? arbreHtml(c.id) : '') +
-      (metiers || '<p class="legende">Aucun référentiel métier collectif pour le moment.</p>') + '</section>';
+    return '<div class="chiffres"><div><b>' + (nSit == null ? '—' : nSit) + '</b><span>Situations du collectif</span></div></div>' +
+      '<p class="legende">Le référentiel métier collectif est le métier global, et non un poste de travail. Les situations appartiennent au collectif ; leur rattachement à un métier précis est à compléter.</p>' +
+      (metiers || '<p class="legende">Aucun référentiel métier collectif pour le moment.</p>');
   }
-  html += '<section class="socle"><p class="etiquette" style="margin-top:0">Le socle Skolantreuz « comment on travaille »</p>' +
-    '<p>Un seul exemplaire de référence, partagé par tous les collectifs et toutes les entreprises, mis à jour automatiquement. Il est rangé selon les 4 repères du manifeste : <b>ce qu’on fait</b>, <b>le plaisir à le faire</b>, <b>le but</b>, <b>grandir avec le collectif</b>.</p>' +
-    '<p class="legende">En préparation. Le « Guide 1 » actuel (Pilotage, Production, Support) doit d’abord être rangé selon ces 4 repères avant d’être migré en socle.</p></section>';
-  return html || '<p class="legende">Aucun collectif.</p>';
 }
 
 /* ───── Suivi : l'équipe Skolantreuz (comptes d'administration) et le journal des actions ───── */
@@ -129,7 +269,7 @@ async function vueSuivi() {
   if (!S.super) return '<div class="bientot"><p class="etiquette" style="margin-top:0">Suivi</p><p>Le suivi des comptes d’administration et le journal des actions sont réservés au super administrateur.</p></div>';
   var eq = await sb.rpc('vsf_equipe');
   var jr = await sb.from('vsf_journal').select('cree_le,auteur_email,action,cible,detail').order('cree_le', { ascending: false }).limit(30);
-  var QUI = { equipe_definir: 'a donné un rôle à', equipe_retirer: 'a retiré l’accès de', collectif_renommer: 'a renommé le collectif' };
+  var QUI = { equipe_definir: 'a donné un rôle à', equipe_retirer: 'a retiré l’accès de', collectif_renommer: 'a renommé le collectif', collectif_creer: 'a créé le collectif', collectif_modifier: 'a modifié la fiche du collectif', adhesion_active: 'a rattaché une entreprise à un collectif :', adhesion_retiree: 'a retiré une entreprise d’un collectif :', adhesion_en_attente: 'a mis en attente l’adhésion de', adhesion_suspendue: 'a suspendu l’adhésion de' };
   var lignes = (eq.data || []).map(function (x) {
     return '<div class="ligne-suivi"><div class="qui"><b>' + E(x.email) + '</b><span>' + E(ROLES[x.role] || x.role) + ' · ' + E(AIDE_ROLES[x.role] || '') + '</span></div>' +
       '<div class="act">' + (x.user_id === S.moi ? '<span class="etat-mini">C’est vous</span>' : '<button class="bouton petit discret" data-retirer="' + E(x.user_id) + '">Retirer</button>') + '</div></div>';
@@ -149,21 +289,6 @@ async function vueSuivi() {
     (journal || '<p class="legende">Aucune action enregistrée pour le moment.</p>') + '</section>';
 }
 function brancherSuivi() {
-  document.querySelectorAll('[data-renommer]').forEach(function (b) {
-    b.addEventListener('click', function () {
-      var id = b.getAttribute('data-renommer'), zone = b.parentNode, memoire = zone.innerHTML;
-      zone.innerHTML = '<input type="text" id="nomCollectif" value="' + E(b.getAttribute('data-nom')) + '" aria-label="Nouveau nom du collectif" style="max-width:640px"> ';
-      var ok = document.createElement('button'); ok.type = 'button'; ok.className = 'bouton petit'; ok.textContent = 'Enregistrer';
-      var non = document.createElement('button'); non.type = 'button'; non.className = 'bouton petit discret'; non.textContent = 'Annuler';
-      ok.onclick = async function () {
-        var r = await sb.rpc('vsf_collectif_renommer', { p_id: id, p_nom: $('nomCollectif').value });
-        if (r.error) { var m = document.querySelector('[data-msg-renommer="' + id + '"]'); if (m) m.textContent = messageErreurRpc(r.error); return; }
-        dessiner();
-      };
-      non.onclick = function () { zone.innerHTML = memoire; brancherSuivi(); };
-      zone.appendChild(ok); zone.appendChild(non); $('nomCollectif').focus();
-    });
-  });
   var a = $('eAjouter');
   if (a) a.addEventListener('click', async function () {
     var r = await sb.rpc('vsf_equipe_definir', { p_email: $('eEmail').value, p_role: $('eRole').value });
@@ -188,23 +313,7 @@ function brancherSuivi() {
 }
 
 /* ───── Entreprises : les poupées russes (collectif → entreprises → établissements → nombre de membres) ───── */
-S.arbre = null; S.collectifs = [];
-async function chargerArbre() {
-  if (!S.plateforme) return;
-  if (!S.arbre) { var a = await sb.rpc('vsf_entites_arbre'); S.arbre = a.error ? [] : (a.data || []); }
-}
-function arbreHtml(idCollectif) {
-  var c = (S.arbre || []).filter(function (x) { return x.id === idCollectif; })[0];
-  if (!c) return '';
-  if (!c.entreprises.length) return '<p class="legende">Aucune entreprise adhérente pour le moment.</p>';
-  return '<div class="arbre"><p class="etiquette">Entreprises adhérentes (' + c.entreprises.length + ')</p>' + c.entreprises.map(function (o) {
-    var nm = o.etablissements.reduce(function (a, e) { return a + e.membres; }, 0);
-    return '<details class="ent"><summary><b>' + E(o.nom) + '</b> <span class="etat-mini">' + (o.origine ? 'collectif d’origine' : 'adhésion ' + E(o.adhesion)) + '</span>' +
-      '<span class="resume">' + o.etablissements.length + ' établissement' + (o.etablissements.length > 1 ? 's' : '') + ' · ' + nm + ' membre' + (nm > 1 ? 's' : '') + '</span></summary>' +
-      (o.etablissements.length ? '<ul>' + o.etablissements.map(function (e) { return '<li>' + E(e.nom) + ' <span class="resume">' + e.membres + ' membre' + (e.membres > 1 ? 's' : '') + '</span></li>'; }).join('') + '</ul>' : '<p class="legende">Aucun établissement.</p>') +
-      '</details>';
-  }).join('') + '</div>';
-}
+S.collectifs = [];
 async function vueEntreprises() {
   if (!S.plateforme) return '<div class="bientot"><p class="etiquette" style="margin-top:0">Entreprises</p><p>La liste des entreprises est réservée à l’administrateur de la plateforme. Un administrateur de référentiels n’y a pas accès.</p></div>';
   var r = await sb.rpc('vsf_entreprises_liste');
@@ -231,7 +340,7 @@ function brancherEntreprises() {
       var org = b.getAttribute('data-ajouter-adh'), col = $('sel-' + org).value;
       var r = await sb.rpc('vsf_adhesion_definir', { p_organisation: org, p_collectif: col, p_statut: 'active' });
       if (r.error) return dire('msgAdh', messageErreurRpc(r.error));
-      S.arbre = null; dessiner();
+      dessiner();
     });
   });
   document.querySelectorAll('[data-retirer-adh]').forEach(function (b) {
@@ -243,7 +352,7 @@ function brancherEntreprises() {
       oui.onclick = async function () {
         var r = await sb.rpc('vsf_adhesion_definir', { p_organisation: ids[0], p_collectif: ids[1], p_statut: 'retiree' });
         if (r.error) { zone.innerHTML = memoire; brancherEntreprises(); return dire('msgAdh', messageErreurRpc(r.error)); }
-        S.arbre = null; dessiner();
+        dessiner();
       };
       non.onclick = function () { zone.innerHTML = memoire; brancherEntreprises(); };
       zone.appendChild(oui); zone.appendChild(non);
@@ -269,8 +378,9 @@ async function dessiner() {
     ongletsHtml() + '<div>' + corps + '</div>';
   brancherSuivi();
   brancherEntreprises();
+  brancherCollectifs();
   document.querySelectorAll('.onglets button').forEach(function (b) {
-    b.addEventListener('click', function () { S.onglet = b.getAttribute('data-o'); dessiner(); });
+    b.addEventListener('click', function () { S.onglet = b.getAttribute('data-o'); if (S.onglet === 'collectifs') S.collectifId = null; dessiner(); });
   });
 }
 
