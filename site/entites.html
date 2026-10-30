@@ -236,7 +236,7 @@ function brancherCollectifs() {
 // Le référentiel métier d'un collectif : ses métiers (processus, sous-processus, modules) et le nombre de situations.
 async function metiersCollectif(c) {
   {
-    var m = await sb.from('metiers').select('id,nom,statut,libelles_niveaux,proprietaire_id').eq('federation_id', c.id).is('proprietaire_id', null).order('ordre');
+    var m = await sb.from('metiers').select('id,nom,statut,libelles_niveaux,proprietaire_id').eq('federation_id', c.id).or('proprietaire_id.is.null,proprietaire_id.eq.' + S.moi).order('ordre');   // les métiers du collectif, et vos propres référentiels personnels (jamais ceux des autres)
     var metiers = '';
     for (var j = 0; j < (m.data || []).length; j++) {
       var x = m.data[j];
@@ -248,7 +248,8 @@ async function metiersCollectif(c) {
       metiers += '<div class="metier"><h3>' + E(x.nom) + '</h3><p><span class="etat">' + E(STATUTS[x.statut] || x.statut) + '</span><span class="niveaux">' + E(niv) + '</span></p>' +
         '<div class="chiffres"><div><b>' + noms.length + '</b><span>Processus</span></div><div><b>' + (sous.count == null ? '—' : sous.count) + '</b><span>Sous-processus</span></div>' +
         '<div><b>' + (nMod == null ? '—' : nMod) + '</b><span>Modules</span></div></div>' +
-        (S.referentiels ? '<div class="actions-ligne"><a class="bouton" href="' + E(GUIDE) + '?guide=travailler" target="_blank" rel="noopener">Éditer « comment on travaille »</a>' +
+        (S.referentiels && x.proprietaire_id ? '<p class="legende">Référentiel personnel : il n’est pas mélangé à celui du collectif. Son propre guide d’édition viendra.</p>' : '') +
+        (S.referentiels && !x.proprietaire_id ? '<div class="actions-ligne"><a class="bouton" href="' + E(GUIDE) + '?guide=travailler" target="_blank" rel="noopener">Éditer « comment on travaille »</a>' +
           '<a class="bouton" href="' + E(GUIDE) + '?guide=peindre" target="_blank" rel="noopener">Éditer « comment on peint »</a></div>' : '') + '</div>';
     }
     var nSit = await compter('referentiel_situations', { federation_id: c.id, niveau: { like: 'Niveau 1%' } });
