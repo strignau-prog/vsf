@@ -11,46 +11,58 @@
 <link rel="stylesheet" href="vsf.css">
 <link rel="stylesheet" href="vsf-largeur.css">
 <style>
-  .onglets{display:flex;flex-wrap:wrap;gap:0 22px;border-bottom:1px solid var(--line);margin:18px 0 6px}
-  .onglets button{min-height:44px;background:none;border:0;border-bottom:3px solid transparent;padding:8px 0;font:inherit;font-size:12px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;color:var(--cap);cursor:pointer}
-  .onglets button[aria-selected="true"]{color:#111;font-weight:900;border-bottom-color:#111}
+  /* Lisibilité : deux encres seulement (#111 et #444), pas de filets sauf sous les onglets, de l'air entre les blocs. */
+  :root{--cap:#444}
+  #app{font-size:17px;line-height:1.6}
+  #app h1{margin:12px 0 10px}
+  #app h2{font-size:30px;line-height:1.2;margin:6px 0 10px}
+  #app .legende{font-size:16px;line-height:1.6;color:var(--cap);max-width:46em;margin:10px 0}
+  #app .etiquette{font-size:15px;font-weight:500;letter-spacing:0;text-transform:none;color:var(--cap);margin:6px 0 2px}
+  .bloc-titre{font-size:21px;line-height:1.3;font-weight:800;color:#111;margin:52px 0 10px}
+  .onglets{display:flex;flex-wrap:wrap;gap:0 30px;border-bottom:1px solid var(--line);margin:22px 0 8px}
+  .onglets button{min-height:48px;background:none;border:0;border-bottom:3px solid transparent;padding:8px 0;font:inherit;font-size:17px;font-weight:500;color:var(--cap);cursor:pointer}
+  .onglets button[aria-selected="true"]{color:#111;font-weight:800;border-bottom-color:#111}
   .onglets button:focus-visible{outline:2px solid #111;outline-offset:3px}
-  .collectif{margin-top:30px;border-top:1.5px solid #111;padding-top:8px}
-  .collectif h2{margin:14px 0 2px}
-  .chiffres{display:flex;flex-wrap:wrap;gap:6px 26px;margin:12px 0 4px}
-  .chiffres b{display:block;font-size:30px;font-weight:900;line-height:1.05;letter-spacing:-.02em}
-  .chiffres span{font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--cap)}
-  .metier{padding:16px 0;border-top:1px solid var(--line)}
-  .metier h3{font-size:20px;font-weight:900;margin:0 0 4px}
-  .metier .etat{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;border:1.5px solid #111;padding:2px 7px;margin-right:8px}
-  .metier .niveaux{font-size:14px;color:var(--cap)}
-  .actions-ligne{display:flex;flex-wrap:wrap;gap:4px 24px;margin-top:6px}
-  .socle{margin-top:34px;padding:18px;background:var(--panel)}
-  .socle p{margin:8px 0}
-  .bientot{padding:24px 0;color:var(--cap)}
-  .ligne-suivi{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:12px 0;border-top:1px solid var(--line)}
-  .ligne-suivi .qui b{display:block;font-weight:800;overflow-wrap:anywhere}
-  .ligne-suivi .qui span{font-size:14px;color:var(--cap)}
-  .ligne-suivi .qui > span{display:block}
-  .etat-mini{font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--cap);white-space:nowrap}
-  .ajout{margin-top:24px;padding:16px 18px;background:var(--panel)}
-  .ajout select.champ{width:100%;max-width:640px;min-height:44px;border:0;border-bottom:1.5px solid #111;background:transparent;font:inherit;font-size:17px;padding:10px 0}
+  .collectif{margin-top:40px}
+  .chiffres{display:flex;flex-wrap:wrap;gap:18px 44px;margin:22px 0 10px}
+  .chiffres b{display:block;font-size:40px;font-weight:900;line-height:1.05;letter-spacing:-.02em}
+  .chiffres span{display:block;font-size:15px;font-weight:400;letter-spacing:0;text-transform:none;color:var(--cap);margin-top:4px;max-width:12em}
+  .metier{padding:20px 0 6px}
+  .metier h3{font-size:22px;font-weight:800;margin:0 0 6px}
+  .metier .etat{display:inline-block;font-size:14px;font-weight:800;letter-spacing:0;text-transform:none;color:#111;margin-right:12px}
+  .metier .niveaux{font-size:16px;color:var(--cap)}
+  .actions-ligne{display:flex;flex-wrap:wrap;gap:4px 28px;margin-top:8px}
+  .socle{margin-top:56px;padding:24px 26px;background:var(--panel)}
+  .socle p{margin:10px 0;max-width:46em}
+  .socle .etiquette{font-size:20px;font-weight:800;color:#111;margin:0 0 6px}
+  .bientot{padding:24px 0;color:var(--cap);max-width:46em}
+  .ligne-suivi{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;padding:18px 0}
+  .ligne-suivi .qui{min-width:0}
+  .ligne-suivi .qui b{display:block;font-size:18px;font-weight:800;overflow-wrap:anywhere;margin-bottom:2px}
+  .ligne-suivi .qui span{font-size:16px;color:var(--cap)}
+  .ligne-suivi .qui > span{display:block;margin-top:2px}
+  .etat-mini{font-size:14px;font-weight:700;letter-spacing:0;text-transform:none;color:#111;white-space:nowrap;margin-left:6px}
+  .ajout{margin-top:26px;padding:22px 24px;background:var(--panel)}
+  .ajout select.champ{width:100%;max-width:640px;min-height:48px;border:0;border-bottom:1.5px solid #111;background:transparent;font:inherit;font-size:17px;padding:10px 0}
   .ajout input{max-width:640px}
-  .arbre-col{list-style:none;margin:10px 0;padding:0}
-  .arbre-col ul{list-style:none;margin:0 0 0 22px;padding:0 0 0 14px;border-left:1.5px solid var(--line)}
+  #app label.champ{font-size:15px;font-weight:700;letter-spacing:0;text-transform:none;color:#111;margin-top:20px}
+  #app .bouton{font-size:16px;font-weight:800;letter-spacing:0;text-transform:none;margin-right:22px}
+  #app .bouton.discret{font-weight:500;color:var(--cap)}
+  .arbre-col{list-style:none;margin:14px 0;padding:0}
+  .arbre-col ul{list-style:none;margin:0 0 0 14px;padding:0 0 0 22px}
   .arbre-col li{padding:2px 0}
-  .lien-col{background:none;border:0;padding:10px 0;min-height:44px;font:inherit;font-weight:800;text-decoration:underline;text-decoration-thickness:3px;text-underline-offset:3px;cursor:pointer;color:#111;text-align:left}
-  .fil{font-size:14px;color:var(--cap);margin:8px 0}
-  .fil .lien-col{font-size:14px;font-weight:500;padding:4px 0;min-height:0}
-  .resume{font-size:14px;color:var(--cap)}
-  .gerer{margin-top:6px}
+  .lien-col{background:none;border:0;padding:10px 0;min-height:44px;font:inherit;font-size:18px;font-weight:800;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:4px;cursor:pointer;color:#111;text-align:left}
+  .fil{font-size:15px;color:var(--cap);margin:8px 0 20px}
+  .fil .lien-col{font-size:15px;font-weight:500;padding:4px 0;min-height:0;text-decoration-thickness:1px}
+  .resume{font-size:15px;font-weight:400;color:var(--cap);margin-left:8px}
+  .gerer{margin-top:8px}
   .ligne-suivi.bloquee .qui b{text-decoration:line-through;text-decoration-thickness:2px}
   .ligne-suivi.bloquee .qui b .etat-mini{text-decoration:none;display:inline-block}
-  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
-  .chip-col{border:1.5px solid #111;padding:2px 8px;font-size:13px}
-  .lien-mini{background:none;border:0;padding:0 2px;font:inherit;font-size:12px;font-weight:800;text-decoration:underline;cursor:pointer;color:var(--cap)}
-  .entreprise select{min-height:44px;border:0;border-bottom:1.5px solid #111;background:transparent;font:inherit;font-size:15px;max-width:220px}
-  @media (max-width:640px){.ligne-suivi.entreprise{flex-direction:column;align-items:flex-start}}
+  .chips{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:6px}
+  .chip-col{font-size:15px;color:var(--cap)}
+  .lien-mini{background:none;border:0;padding:6px 0;margin-right:16px;font:inherit;font-size:15px;font-weight:800;text-decoration:underline;text-underline-offset:3px;cursor:pointer;color:#111}
+  .entreprise select{min-height:48px;border:0;border-bottom:1.5px solid #111;background:transparent;font:inherit;font-size:16px;max-width:240px}
+  @media (max-width:640px){.ligne-suivi.entreprise{flex-direction:column}.chiffres b{font-size:34px}#app h2{font-size:26px}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="vsf-auth.js"></script>
@@ -146,7 +158,7 @@ async function vueListeCollectifs() {
   var r = await sb.rpc('vsf_collectifs_liste');
   if (r.error) return '<p class="message">Impossible de lire les collectifs : la mise à jour de la base (migration 17) n’est peut-être pas faite.</p>';
   S.liste = r.data || [];
-  return '<section class="collectif"><p class="etiquette" style="margin:10px 0 0">Collectifs</p><h2>' + pluriel(S.liste.length, 'collectif') + '</h2>' +
+  return '<section class="collectif"><h2>' + pluriel(S.liste.length, 'collectif') + '</h2>' +
     '<p class="legende">Un collectif peut en contenir d’autres (fédération nationale, fédérations régionales, groupes). Les entreprises se rattachent à n’importe quel niveau. Cliquez sur un nom pour ouvrir sa fiche.</p>' +
     arbreCollectifsHtml(S.liste) +
     (S.plateforme ? '<p><button type="button" class="bouton" id="nouveauCollectif">Créer un collectif</button></p><div id="zoneCreation"></div>' : '') + '</section>' + socleHtml();
@@ -170,13 +182,13 @@ async function vueFiche(id) {
     '<div><b>' + c.entreprises_directes + '</b><span>Entreprises rattachées ici</span></div><div><b>' + c.entreprises_ensemble + '</b><span>Entreprises dans l’ensemble</span></div>' +
     '<div><b>' + c.etablissements_ensemble + '</b><span>Établissements</span></div><div><b>' + c.membres_ensemble + '</b><span>Membres</span></div></div>' +
     '<p class="legende">« Dans l’ensemble » = ce collectif et tous ses sous-collectifs. Des nombres seulement, jamais les personnes.</p>' : '';
-  var enfants = '<p class="etiquette">Sous-collectifs</p>' + (c.enfants.length ? '<ul class="arbre-col">' + c.enfants.map(function (e) {
+  var enfants = '<h3 class="bloc-titre">Sous-collectifs</h3>' + (c.enfants.length ? '<ul class="arbre-col">' + c.enfants.map(function (e) {
     return '<li><button type="button" class="lien-col" data-ouvrir="' + E(e.id) + '">' + E(e.nom) + '</button> <span class="etat-mini">' + E(GENRES[e.genre] || e.genre) + (e.statut !== 'actif' ? ' · ' + E(STATUTS_COL[e.statut] || e.statut) : '') + '</span></li>';
   }).join('') + '</ul>' : '<p class="legende">Aucun sous-collectif.</p>') +
     (S.plateforme ? '<p><button type="button" class="bouton petit" id="creerSous" data-parent="' + E(c.id) + '">Créer un sous-collectif ici</button></p><div id="zoneCreation"></div>' : '');
   var adherentes = '';
   if (S.plateforme) {
-    adherentes = '<p class="etiquette">Entreprises rattachées directement à ce collectif</p><p class="message" id="msgAdh" role="alert"></p>' +
+    adherentes = '<h3 class="bloc-titre">Entreprises rattachées directement à ce collectif</h3><p class="message" id="msgAdh" role="alert"></p>' +
       ((c.adherentes || []).map(function (o) {
         return '<div class="ligne-suivi entreprise"><div class="qui"><b>' + E(o.nom) + '</b><span>' + pluriel(o.etablissements, 'établissement') + ' · ' + pluriel(o.membres, 'membre') + ' · adhésion ' + E(o.adhesion) + (o.origine ? ' · collectif d’origine' : '') + '</span></div>' +
           '<div class="act">' + (o.origine ? '' : '<span class="chip-col"><button type="button" class="lien-mini" data-retirer-adh="' + E(o.id) + '|' + E(c.id) + '">Retirer</button></span>') + '</div></div>';
@@ -188,7 +200,7 @@ async function vueFiche(id) {
     (c.description ? '<p>' + E(c.description) + '</p>' : '') +
     (S.plateforme ? '<p><button type="button" class="bouton petit discret" id="modifierCollectif">Modifier la fiche</button></p><div id="zoneEdition"></div>' : '') +
     chiffres + enfants + adherentes +
-    '<p class="etiquette">Référentiel métier de ce collectif</p>' + await metiersCollectif({ id: c.id }) + '</section>';
+    '<h3 class="bloc-titre">Référentiel métier de ce collectif</h3>' + await metiersCollectif({ id: c.id }) + '</section>';
 }
 
 async function vueCollectifs() {
@@ -340,7 +352,7 @@ async function vueEntreprises() {
       }).join('') + '</div></div>' +
       '<div class="act">' + (dispo.length && !o.bloquee ? '<select id="sel-' + E(o.id) + '" aria-label="Rattacher à un collectif">' + dispo.map(function (c) { return '<option value="' + E(c.id) + '">' + E(c.name) + '</option>'; }).join('') + '</select> <button type="button" class="bouton petit" data-ajouter-adh="' + E(o.id) + '">Rattacher</button>' : '') + '</div></div>';
   }).join('');
-  return '<section class="collectif"><p class="etiquette" style="margin:10px 0 0">Entreprises</p><h2>' + liste.length + ' entreprise' + (liste.length > 1 ? 's' : '') + '</h2>' +
+  return '<section class="collectif"><h2>' + liste.length + ' entreprise' + (liste.length > 1 ? 's' : '') + '</h2>' +
     '<p class="legende">Pour chaque entreprise : son nom, ses collectifs, le nombre de ses établissements et de ses membres. Jamais le contenu de l’entreprise. Une entreprise peut adhérer à plusieurs collectifs.</p>' +
     '<p class="message" id="msgAdh" role="alert"></p>' + (corps || '<p class="legende">Aucune entreprise.</p>') + '</section>';
 }
@@ -424,7 +436,7 @@ async function vueAmbassadeurs() {
       '<span>' + pluriel(Number(a.offres), 'offre') + ' (' + a.offres_publiees + ' publiée' + (a.offres_publiees > 1 ? 's' : '') + ', ' + a.offres_pilote + ' en pilote) · ' + pluriel(Number(a.ventes), 'vente') + ' · reste à reverser : <b>' + E(euros(a.reste_a_reverser_eur)) + '</b></span>' +
       '<div class="gerer"><button type="button" class="lien-mini" data-modifier-amb="' + E(a.id) + '">Modifier</button></div></div></div>';
   }).join('');
-  return '<section class="collectif"><p class="etiquette" style="margin:10px 0 0">Ambassadeurs métier</p><h2>' + pluriel(liste.length, 'ambassadeur') + ' métier</h2>' +
+  return '<section class="collectif"><h2>' + pluriel(liste.length, 'ambassadeur') + ' métier</h2>' +
     '<p class="legende">Les maîtres artisans qui vendent leur métier sur VRAI-SAVOIRFAIRE. C’est vous qui créez leur compte. La personne se connecte ensuite avec la même adresse e-mail sur « mon-compte-ambassadeur.html », complète sa fiche et accepte le contrat. Pour valider un ambassadeur, publier une offre ou enregistrer un virement :</p>' +
     '<p><a class="bouton" href="admin.html">Ouvrir le tableau de bord</a> <button type="button" class="bouton" id="creerAmb">Créer un ambassadeur métier</button></p><div id="zoneAmb"></div>' +
     (lignes || '<p class="legende">Aucun ambassadeur métier pour le moment.</p>') + '</section>';
@@ -463,11 +475,11 @@ async function vuePersonnes() {
   if (r.error || !r.data) return '<p class="message">Impossible de lire les chiffres : la mise à jour de la base (migration 19) n’est peut-être pas faite.</p>';
   var d = r.data;
   var bloc = function (n, t) { return '<div><b>' + Number(n) + '</b><span>' + E(t) + '</span></div>'; };
-  return '<section class="collectif"><p class="etiquette" style="margin:10px 0 0">Personnes</p><h2>' + pluriel(Number(d.comptes), 'compte') + '</h2>' +
+  return '<section class="collectif"><h2>' + pluriel(Number(d.comptes), 'compte') + '</h2>' +
     '<p class="legende">Des nombres seulement : jamais un nom, jamais un parcours. La liste des comptes (suspendre, rétablir) se trouve dans le tableau de bord.</p>' +
-    '<p class="etiquette">Comptes</p><div class="chiffres">' + bloc(d.verifies, 'Vérifiés') + bloc(d.en_attente, 'En attente') + bloc(d.suspendus, 'Suspendus') + bloc(d.nouveaux_30j, 'Nouveaux (30 jours)') + '</div>' +
-    '<p class="etiquette">Parcours</p><div class="chiffres">' + bloc(d.parcours_commences, 'Parcours commencés') + bloc(d.plans_confirmes, 'Plans confirmés') + '</div>' +
-    '<p class="etiquette">Commandes</p><div class="chiffres">' + bloc(d.commandes_payees, 'Payées') + bloc(d.commandes_en_attente, 'En attente de paiement') + bloc(d.commandes_remboursees, 'Remboursées') + '</div>' +
+    '<h3 class="bloc-titre">Comptes</h3><div class="chiffres">' + bloc(d.verifies, 'Vérifiés') + bloc(d.en_attente, 'En attente') + bloc(d.suspendus, 'Suspendus') + bloc(d.nouveaux_30j, 'Nouveaux (30 jours)') + '</div>' +
+    '<h3 class="bloc-titre">Parcours</h3><div class="chiffres">' + bloc(d.parcours_commences, 'Parcours commencés') + bloc(d.plans_confirmes, 'Plans confirmés') + '</div>' +
+    '<h3 class="bloc-titre">Commandes</h3><div class="chiffres">' + bloc(d.commandes_payees, 'Payées') + bloc(d.commandes_en_attente, 'En attente de paiement') + bloc(d.commandes_remboursees, 'Remboursées') + '</div>' +
     '<p><a class="bouton" href="admin.html">Ouvrir le tableau de bord</a></p></section>';
 }
 
