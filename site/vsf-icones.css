@@ -1,0 +1,9 @@
+/* VSF — icônes pleines. Aucune couleur propre : l'icône prend celle du texte. Cible tactile de 44 px au minimum. */
+.ico{width:24px;height:24px;fill:currentColor;display:block;pointer-events:none}
+.ico-btn,#app .ico-btn,.haut .ico-btn{display:inline-flex !important;align-items:center;justify-content:center;min-width:44px;min-height:44px;padding:10px !important;margin:0 4px 0 0 !important;border:0;border-radius:50%;background:none;color:#111 !important;cursor:pointer;text-decoration:none !important;vertical-align:middle;letter-spacing:0;text-transform:none}
+.ico-btn:hover{background:#f0f0f0}
+.ico-btn:focus-visible{outline:2px solid #111;outline-offset:2px}
+.ico-btn[disabled]{color:#767676 !important;cursor:default}
+.aide{margin:2px 0}
+.aide .aide-texte{margin:2px 0 14px;max-width:46em}
+.aide .aide-btn{color:#444 !important}

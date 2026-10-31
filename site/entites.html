@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;800;900&display=swap">
 <link rel="stylesheet" href="vsf.css">
 <link rel="stylesheet" href="vsf-largeur.css">
+<link rel="stylesheet" href="vsf-icones.css">
 <style>
   /* Lisibilité : deux encres seulement (#111 et #444), pas de filets sauf sous les onglets, de l'air entre les blocs. */
   :root{--cap:#444}
@@ -66,6 +67,7 @@
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="vsf-auth.js"></script>
+<script src="vsf-icones.js"></script>
 </head>
 <body>
 <header class="haut">
@@ -127,8 +129,8 @@ function arbreCollectifsHtml(liste) {
 }
 function socleHtml() {
   return '<section class="socle"><p class="etiquette" style="margin-top:0">Le socle Skolantreuz « comment on travaille »</p>' +
-    '<p>Un seul exemplaire de référence, partagé par tous les collectifs et toutes les entreprises, mis à jour automatiquement. Il est rangé selon les 4 repères du manifeste : <b>ce qu’on fait</b>, <b>le plaisir à le faire</b>, <b>le but</b>, <b>grandir avec le collectif</b>.</p>' +
-    '<p class="legende">En préparation. Le « Guide 1 » actuel (Pilotage, Production, Support) doit d’abord être rangé selon ces 4 repères avant d’être migré en socle.</p></section>';
+    '<p data-aide>Un seul exemplaire de référence, partagé par tous les collectifs et toutes les entreprises, mis à jour automatiquement. Il est rangé selon les 4 repères du manifeste : <b>ce qu’on fait</b>, <b>le plaisir à le faire</b>, <b>le but</b>, <b>grandir avec le collectif</b>.</p>' +
+    '<p class="legende" data-aide>En préparation. Le « Guide 1 » actuel (Pilotage, Production, Support) doit d’abord être rangé selon ces 4 repères avant d’être migré en socle.</p></section>';
 }
 // Le formulaire de création et de modification d'un collectif (pf = préfixe des champs).
 function formCollectifHtml(pf, c, parentId) {
@@ -138,7 +140,7 @@ function formCollectifHtml(pf, c, parentId) {
   var nomFige = c && !S.super;
   return '<div class="ajout">' +
     '<label class="champ" for="' + pf + 'Nom">Nom</label><input id="' + pf + 'Nom" type="text" maxlength="120" value="' + E(c ? c.nom : '') + '"' + (nomFige ? ' disabled' : '') + ' autocomplete="off">' +
-    (nomFige ? '<p class="legende">Seul le super administrateur peut changer le nom.</p>' : '') +
+    (nomFige ? '<p class="legende" data-aide>Seul le super administrateur peut changer le nom.</p>' : '') +
     '<label class="champ" for="' + pf + 'Genre">Genre</label><select id="' + pf + 'Genre" class="champ"><option value="federation"' + (c && c.genre === 'groupe' ? '' : ' selected') + '>Fédération (nationale, régionale…)</option><option value="groupe"' + (c && c.genre === 'groupe' ? ' selected' : '') + '>Groupe (d’entreprises)</option></select>' +
     '<label class="champ" for="' + pf + 'Parent">Rattaché à</label><select id="' + pf + 'Parent" class="champ"><option value="">— aucun (collectif de premier niveau) —</option>' +
       parents.map(function (x) { return '<option value="' + E(x.id) + '"' + (x.id === parentCourant ? ' selected' : '') + '>' + E(x.nom) + '</option>'; }).join('') + '</select>' +
@@ -159,7 +161,7 @@ async function vueListeCollectifs() {
   if (r.error) return '<p class="message">Impossible de lire les collectifs : la mise à jour de la base (migration 17) n’est peut-être pas faite.</p>';
   S.liste = r.data || [];
   return '<section class="collectif"><h2>' + pluriel(S.liste.length, 'collectif') + '</h2>' +
-    '<p class="legende">Un collectif peut en contenir d’autres (fédération nationale, fédérations régionales, groupes). Les entreprises se rattachent à n’importe quel niveau. Cliquez sur un nom pour ouvrir sa fiche.</p>' +
+    '<p class="legende" data-aide>Un collectif peut en contenir d’autres (fédération nationale, fédérations régionales, groupes). Les entreprises se rattachent à n’importe quel niveau. Cliquez sur un nom pour ouvrir sa fiche.</p>' +
     arbreCollectifsHtml(S.liste) +
     (S.plateforme ? '<p><button type="button" class="bouton" id="nouveauCollectif">Créer un collectif</button></p><div id="zoneCreation"></div>' : '') + '</section>' + socleHtml();
 }
@@ -181,7 +183,7 @@ async function vueFiche(id) {
   var chiffres = S.plateforme ? '<div class="chiffres"><div><b>' + c.enfants.length + '</b><span>Sous-collectifs</span></div>' +
     '<div><b>' + c.entreprises_directes + '</b><span>Entreprises rattachées ici</span></div><div><b>' + c.entreprises_ensemble + '</b><span>Entreprises dans l’ensemble</span></div>' +
     '<div><b>' + c.etablissements_ensemble + '</b><span>Établissements</span></div><div><b>' + c.membres_ensemble + '</b><span>Membres</span></div></div>' +
-    '<p class="legende">« Dans l’ensemble » = ce collectif et tous ses sous-collectifs. Des nombres seulement, jamais les personnes.</p>' : '';
+    '<p class="legende" data-aide>« Dans l’ensemble » = ce collectif et tous ses sous-collectifs. Des nombres seulement, jamais les personnes.</p>' : '';
   var enfants = '<h3 class="bloc-titre">Sous-collectifs</h3>' + (c.enfants.length ? '<ul class="arbre-col">' + c.enfants.map(function (e) {
     return '<li><button type="button" class="lien-col" data-ouvrir="' + E(e.id) + '">' + E(e.nom) + '</button> <span class="etat-mini">' + E(GENRES[e.genre] || e.genre) + (e.statut !== 'actif' ? ' · ' + E(STATUTS_COL[e.statut] || e.statut) : '') + '</span></li>';
   }).join('') + '</ul>' : '<p class="legende">Aucun sous-collectif.</p>') +
@@ -260,13 +262,13 @@ async function metiersCollectif(c) {
       metiers += '<div class="metier"><h3>' + E(x.nom) + '</h3><p><span class="etat">' + E(STATUTS[x.statut] || x.statut) + '</span><span class="niveaux">' + E(niv) + '</span></p>' +
         '<div class="chiffres"><div><b>' + noms.length + '</b><span>Processus</span></div><div><b>' + (sous.count == null ? '—' : sous.count) + '</b><span>Sous-processus</span></div>' +
         '<div><b>' + (nMod == null ? '—' : nMod) + '</b><span>Modules</span></div></div>' +
-        (S.referentiels && x.proprietaire_id ? '<p class="legende">Référentiel personnel : il n’est pas mélangé à celui du collectif. Son propre guide d’édition viendra.</p>' : '') +
-        (S.referentiels && !x.proprietaire_id ? '<div class="actions-ligne"><a class="bouton" href="' + E(GUIDE) + '?guide=travailler" target="_blank" rel="noopener">Éditer « comment on travaille »</a>' +
-          '<a class="bouton" href="' + E(GUIDE) + '?guide=peindre" target="_blank" rel="noopener">Éditer « comment on peint »</a></div>' : '') + '</div>';
+        (S.referentiels && x.proprietaire_id ? '<p class="legende" data-aide>Référentiel personnel : il n’est pas mélangé à celui du collectif. Son propre guide d’édition viendra.</p>' : '') +
+        (S.referentiels && !x.proprietaire_id ? '<div class="actions-ligne"><a class="bouton" href="' + E(GUIDE) + '?guide=travailler" data-texte target="_blank" rel="noopener">Éditer « comment on travaille »</a>' +
+          '<a class="bouton" href="' + E(GUIDE) + '?guide=peindre" data-texte target="_blank" rel="noopener">Éditer « comment on peint »</a></div>' : '') + '</div>';
     }
     var nSit = await compter('referentiel_situations', { federation_id: c.id, niveau: { like: 'Niveau 1%' } });
     return '<div class="chiffres"><div><b>' + (nSit == null ? '—' : nSit) + '</b><span>Situations du collectif</span></div></div>' +
-      '<p class="legende">Le référentiel métier collectif est le métier global, et non un poste de travail. Les situations appartiennent au collectif ; leur rattachement à un métier précis est à compléter.</p>' +
+      '<p class="legende" data-aide>Le référentiel métier collectif est le métier global, et non un poste de travail. Les situations appartiennent au collectif ; leur rattachement à un métier précis est à compléter.</p>' +
       (metiers || '<p class="legende">Aucun référentiel métier collectif pour le moment.</p>');
   }
 }
@@ -297,7 +299,7 @@ async function vueSuivi() {
     return '<div class="ligne-suivi"><div class="qui"><b>' + E(x.auteur_email || '—') + '</b><span>' + texte + '</span></div><div class="act"><span class="etat-mini">' + E(jour(x.cree_le)) + '</span></div></div>';
   }).join('');
   return '<section class="collectif"><p class="etiquette" style="margin:10px 0 0">Équipe Skolantreuz</p><h2>Qui a accès à l’administration</h2>' +
-    '<p class="legende">Chaque personne doit déjà avoir un compte (s’être connectée une fois sur le site). Les rôles sont séparés : un administrateur de référentiels ne voit ni les comptes ni les commandes.</p>' +
+    '<p class="legende" data-aide>Chaque personne doit déjà avoir un compte (s’être connectée une fois sur le site). Les rôles sont séparés : un administrateur de référentiels ne voit ni les comptes ni les commandes.</p>' +
     (eq.error ? '<p class="message">' + E(messageErreurRpc(eq.error)) + '</p>' : lignes) +
     '<div class="ajout"><label class="champ" for="eEmail">Ajouter ou changer un rôle (adresse e-mail)</label><input id="eEmail" type="email" placeholder="prenom@exemple.fr" autocomplete="off">' +
     '<label class="champ" for="eRole">Rôle</label><select id="eRole" class="champ"><option value="referentiels">Administrateur de référentiels</option><option value="admin">Administrateur de la plateforme</option><option value="super">Super administrateur</option></select>' +
@@ -353,7 +355,7 @@ async function vueEntreprises() {
       '<div class="act">' + (dispo.length && !o.bloquee ? '<select id="sel-' + E(o.id) + '" aria-label="Rattacher à un collectif">' + dispo.map(function (c) { return '<option value="' + E(c.id) + '">' + E(c.name) + '</option>'; }).join('') + '</select> <button type="button" class="bouton petit" data-ajouter-adh="' + E(o.id) + '">Rattacher</button>' : '') + '</div></div>';
   }).join('');
   return '<section class="collectif"><h2>' + liste.length + ' entreprise' + (liste.length > 1 ? 's' : '') + '</h2>' +
-    '<p class="legende">Pour chaque entreprise : son nom, ses collectifs, le nombre de ses établissements et de ses membres. Jamais le contenu de l’entreprise. Une entreprise peut adhérer à plusieurs collectifs.</p>' +
+    '<p class="legende" data-aide>Pour chaque entreprise : son nom, ses collectifs, le nombre de ses établissements et de ses membres. Jamais le contenu de l’entreprise. Une entreprise peut adhérer à plusieurs collectifs.</p>' +
     '<p class="message" id="msgAdh" role="alert"></p>' + (corps || '<p class="legende">Aucune entreprise.</p>') + '</section>';
 }
 function brancherEntreprises() {
@@ -437,7 +439,7 @@ async function vueAmbassadeurs() {
       '<div class="gerer"><button type="button" class="lien-mini" data-modifier-amb="' + E(a.id) + '">Modifier</button></div></div></div>';
   }).join('');
   return '<section class="collectif"><h2>' + pluriel(liste.length, 'ambassadeur') + ' métier</h2>' +
-    '<p class="legende">Les maîtres artisans qui vendent leur métier sur VRAI-SAVOIRFAIRE. C’est vous qui créez leur compte. La personne se connecte ensuite avec la même adresse e-mail sur « mon-compte-ambassadeur.html », complète sa fiche et accepte le contrat. Pour valider un ambassadeur, publier une offre ou enregistrer un virement :</p>' +
+    '<p class="legende" data-aide>Les maîtres artisans qui vendent leur métier sur VRAI-SAVOIRFAIRE. C’est vous qui créez leur compte. La personne se connecte ensuite avec la même adresse e-mail sur « mon-compte-ambassadeur.html », complète sa fiche et accepte le contrat. Pour valider un ambassadeur, publier une offre ou enregistrer un virement :</p>' +
     '<p><a class="bouton" href="admin.html">Ouvrir le tableau de bord</a> <button type="button" class="bouton" id="creerAmb">Créer un ambassadeur métier</button></p><div id="zoneAmb"></div>' +
     (lignes || '<p class="legende">Aucun ambassadeur métier pour le moment.</p>') + '</section>';
 }
@@ -476,7 +478,7 @@ async function vuePersonnes() {
   var d = r.data;
   var bloc = function (n, t) { return '<div><b>' + Number(n) + '</b><span>' + E(t) + '</span></div>'; };
   return '<section class="collectif"><h2>' + pluriel(Number(d.comptes), 'compte') + '</h2>' +
-    '<p class="legende">Des nombres seulement : jamais un nom, jamais un parcours. La liste des comptes (suspendre, rétablir) se trouve dans le tableau de bord.</p>' +
+    '<p class="legende" data-aide>Des nombres seulement : jamais un nom, jamais un parcours. La liste des comptes (suspendre, rétablir) se trouve dans le tableau de bord.</p>' +
     '<h3 class="bloc-titre">Comptes</h3><div class="chiffres">' + bloc(d.verifies, 'Vérifiés') + bloc(d.en_attente, 'En attente') + bloc(d.suspendus, 'Suspendus') + bloc(d.nouveaux_30j, 'Nouveaux (30 jours)') + '</div>' +
     '<h3 class="bloc-titre">Parcours</h3><div class="chiffres">' + bloc(d.parcours_commences, 'Parcours commencés') + bloc(d.plans_confirmes, 'Plans confirmés') + '</div>' +
     '<h3 class="bloc-titre">Commandes</h3><div class="chiffres">' + bloc(d.commandes_payees, 'Payées') + bloc(d.commandes_en_attente, 'En attente de paiement') + bloc(d.commandes_remboursees, 'Remboursées') + '</div>' +
@@ -495,7 +497,7 @@ async function dessiner() {
   $('app').innerHTML =
     '<p class="etiquette">' + (S.plateforme ? 'Administrateur de la plateforme' : 'Administrateur de référentiels') + '</p>' +
     '<h1>Entités</h1>' +
-    '<p class="legende">Les collectifs, les entreprises et les personnes que Skolantreuz gère. Vous voyez le référentiel et la gestion, jamais les données personnelles des entités.</p>' +
+    '<p class="legende" data-aide>Les collectifs, les entreprises et les personnes que Skolantreuz gère. Vous voyez le référentiel et la gestion, jamais les données personnelles des entités.</p>' +
     ongletsHtml() + '<div>' + corps + '</div>';
   brancherSuivi();
   brancherEntreprises();
