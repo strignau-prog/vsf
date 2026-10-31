@@ -104,6 +104,14 @@ var STATUTS_COL = { actif: 'Actif', en_attente: 'En attente', suspendu: 'Suspend
 S.collectifId = null; S.liste = null;
 
 function pluriel(n, mot) { return n + ' ' + mot + (n > 1 ? 's' : ''); }
+// Ce qui sort de l'ordinaire seulement : un groupe, ou un collectif qui n'est pas actif. Le reste est la règle, on ne l'écrit pas.
+function infoCol(c) {
+  var p = [];
+  if (c.genre === 'groupe') p.push('Groupe');
+  if (c.statut && c.statut !== 'actif') p.push(STATUTS_COL[c.statut] || c.statut);
+  return E(p.join(' · '));
+}
+var STATUTS_ADH = { en_attente: 'En attente', suspendue: 'Suspendue' };
 function descendants(id) {
   var res = {}; res[id] = true;
   var change = true;
@@ -121,8 +129,8 @@ function arbreCollectifsHtml(liste) {
   function noeud(c, niveau) {
     var enfants = par[c.id] || [];
     return '<li><button type="button" class="lien-col" data-ouvrir="' + E(c.id) + '">' + E(c.nom) + '</button> ' +
-      '<span class="etat-mini">' + E(GENRES[c.genre] || c.genre) + (c.statut !== 'actif' ? ' · ' + E(STATUTS_COL[c.statut] || c.statut) : '') + '</span>' +
-      (c.entreprises == null ? '' : ' <span class="resume">' + pluriel(Number(c.entreprises), 'entreprise') + '</span>') +
+      (infoCol(c) ? ' <span class="etat-mini">' + infoCol(c) + '</span>' : '') +
+      (c.entreprises ? ' <span class="resume">' + pluriel(Number(c.entreprises), 'entreprise') + '</span>' : '') +
       (enfants.length && niveau < 10 ? '<ul>' + enfants.map(function (e) { return noeud(e, niveau + 1); }).join('') + '</ul>' : '') + '</li>';
   }
   return '<ul class="arbre-col">' + racines.map(function (c) { return noeud(c, 0); }).join('') + '</ul>';
@@ -179,26 +187,26 @@ async function vueFiche(id) {
   }
   var chemin = '<p class="fil"><button type="button" class="lien-col" data-ouvrir="">Collectifs</button>' +
     (c.chemin || []).map(function (a) { return ' › <button type="button" class="lien-col" data-ouvrir="' + E(a.id) + '">' + E(a.nom) + '</button>'; }).join('') + ' › <b>' + E(c.nom) + '</b></p>';
-  var site = c.site_web && /^https?:\/\//i.test(c.site_web) ? ' · <a href="' + E(c.site_web) + '" target="_blank" rel="noopener">' + E(c.site_web) + '</a>' : '';
+  var site = c.site_web && /^https?:\/\//i.test(c.site_web) ? '<a href="' + E(c.site_web) + '" target="_blank" rel="noopener">' + E(c.site_web) + '</a>' : '';
   var chiffres = S.plateforme ? '<div class="chiffres"><div><b>' + c.enfants.length + '</b><span>Sous-collectifs</span></div>' +
     '<div><b>' + c.entreprises_directes + '</b><span>Entreprises rattachées ici</span></div><div><b>' + c.entreprises_ensemble + '</b><span>Entreprises dans l’ensemble</span></div>' +
     '<div><b>' + c.etablissements_ensemble + '</b><span>Établissements</span></div><div><b>' + c.membres_ensemble + '</b><span>Membres</span></div></div>' +
     '<p class="legende" data-aide>« Dans l’ensemble » = ce collectif et tous ses sous-collectifs. Des nombres seulement, jamais les personnes.</p>' : '';
   var enfants = '<h3 class="bloc-titre">Sous-collectifs</h3>' + (c.enfants.length ? '<ul class="arbre-col">' + c.enfants.map(function (e) {
-    return '<li><button type="button" class="lien-col" data-ouvrir="' + E(e.id) + '">' + E(e.nom) + '</button> <span class="etat-mini">' + E(GENRES[e.genre] || e.genre) + (e.statut !== 'actif' ? ' · ' + E(STATUTS_COL[e.statut] || e.statut) : '') + '</span></li>';
+    return '<li><button type="button" class="lien-col" data-ouvrir="' + E(e.id) + '">' + E(e.nom) + '</button>' + (infoCol(e) ? ' <span class="etat-mini">' + infoCol(e) + '</span>' : '') + '</li>';
   }).join('') + '</ul>' : '<p class="legende">Aucun sous-collectif.</p>') +
     (S.plateforme ? '<p><button type="button" class="bouton petit" id="creerSous" data-parent="' + E(c.id) + '">Créer un sous-collectif ici</button></p><div id="zoneCreation"></div>' : '');
   var adherentes = '';
   if (S.plateforme) {
     adherentes = '<h3 class="bloc-titre">Entreprises rattachées directement à ce collectif</h3><p class="message" id="msgAdh" role="alert"></p>' +
       ((c.adherentes || []).map(function (o) {
-        return '<div class="ligne-suivi entreprise"><div class="qui"><b>' + E(o.nom) + '</b><span>' + pluriel(o.etablissements, 'établissement') + ' · ' + pluriel(o.membres, 'membre') + ' · adhésion ' + E(o.adhesion) + (o.origine ? ' · collectif d’origine' : '') + '</span></div>' +
+        return '<div class="ligne-suivi entreprise"><div class="qui"><b>' + E(o.nom) + '</b>' + (o.adhesion !== 'active' ? '<span>' + E(STATUTS_ADH[o.adhesion] || o.adhesion) + '</span>' : '') + '</div>' +
           '<div class="act">' + (o.origine ? '' : '<span class="chip-col"><button type="button" class="lien-mini" data-retirer-adh="' + E(o.id) + '|' + E(c.id) + '">Retirer</button></span>') + '</div></div>';
       }).join('') || '<p class="legende">Aucune entreprise rattachée ici.</p>') +
       (autres.length ? '<div class="ajout"><label class="champ" for="selIci">Rattacher une entreprise à ce collectif</label><select id="selIci" class="champ">' + autres.map(function (o) { return '<option value="' + E(o.id) + '">' + E(o.nom) + '</option>'; }).join('') + '</select><button type="button" class="bouton petit" id="rattacherIci" data-col="' + E(c.id) + '">Rattacher</button></div>' : '');
   }
-  return '<section class="collectif">' + chemin + '<p class="etiquette" style="margin:10px 0 0">' + E(GENRES[c.genre] || c.genre) + ' · ' + E(STATUTS_COL[c.statut] || c.statut) + '</p><h2>' + E(c.nom) + '</h2>' +
-    '<p class="legende">Créé le ' + E(jour(c.cree_le)) + (c.zone ? ' · ' + E(c.zone) : '') + site + '</p>' +
+  return '<section class="collectif">' + chemin + (infoCol(c) ? '<p class="etiquette" style="margin:10px 0 0">' + infoCol(c) + '</p>' : '') + '<h2>' + E(c.nom) + '</h2>' +
+    ((c.zone || site) ? '<p class="legende">' + [c.zone ? E(c.zone) : '', site].filter(Boolean).join(' · ') + '</p>' : '') +
     (c.description ? '<p>' + E(c.description) + '</p>' : '') +
     (S.plateforme ? '<p><button type="button" class="bouton petit discret" id="modifierCollectif">Modifier la fiche</button></p><div id="zoneEdition"></div>' : '') +
     chiffres + enfants + adherentes +
@@ -290,7 +298,7 @@ async function vueSuivi() {
   var jr = await sb.from('vsf_journal').select('cree_le,auteur_email,action,cible,detail').order('cree_le', { ascending: false }).limit(30);
   var QUI = { equipe_definir: 'a donné un rôle à', equipe_retirer: 'a retiré l’accès de', collectif_renommer: 'a renommé le collectif', collectif_creer: 'a créé le collectif', ambassadeur_creer: 'a créé l’ambassadeur métier', ambassadeur_modifier: 'a modifié l’ambassadeur métier', entreprise_bloquer: 'a bloqué l’entreprise', entreprise_debloquer: 'a débloqué l’entreprise', entreprise_supprimer: 'a supprimé l’entreprise vide', collectif_modifier: 'a modifié la fiche du collectif', adhesion_active: 'a rattaché une entreprise à un collectif :', adhesion_retiree: 'a retiré une entreprise d’un collectif :', adhesion_en_attente: 'a mis en attente l’adhésion de', adhesion_suspendue: 'a suspendu l’adhésion de' };
   var lignes = (eq.data || []).map(function (x) {
-    return '<div class="ligne-suivi"><div class="qui"><b>' + E(x.email) + '</b><span>' + E(ROLES[x.role] || x.role) + ' · ' + E(AIDE_ROLES[x.role] || '') + '</span></div>' +
+    return '<div class="ligne-suivi"><div class="qui"><b>' + E(x.email) + '</b><span>' + E(ROLES[x.role] || x.role) + '</span></div>' +
       '<div class="act">' + (x.user_id === S.moi ? '<span class="etat-mini">C’est vous</span>' : '<button class="bouton petit discret" data-retirer="' + E(x.user_id) + '">Retirer</button>') + '</div></div>';
   }).join('');
   var journal = (jr.data || []).map(function (x) {
@@ -346,16 +354,16 @@ async function vueEntreprises() {
     var gerer = '<div class="gerer">' + (o.bloquee
       ? '<button type="button" class="lien-mini" data-debloquer="' + E(o.id) + '">Débloquer</button>'
       : '<button type="button" class="lien-mini" data-bloquer="' + E(o.id) + '">Bloquer</button>') +
-      (S.super ? (vide ? ' <button type="button" class="lien-mini" data-supprimer="' + E(o.id) + '" data-nom="' + E(o.nom) + '">Supprimer</button>' : ' <span class="resume">Suppression impossible : elle contient des données (la bloquer)</span>') : '') + '</div>';
+      (S.super ? (vide ? ' <button type="button" class="lien-mini" data-supprimer="' + E(o.id) + '" data-nom="' + E(o.nom) + '">Supprimer</button>' : '') : '') + '</div>';
     return '<div class="ligne-suivi entreprise' + (o.bloquee ? ' bloquee' : '') + '"><div class="qui"><b>' + E(o.nom) + (o.bloquee ? ' <span class="etat-mini">Bloquée</span>' : '') + '</b>' +
-      '<span>' + o.etablissements + ' établissement' + (o.etablissements > 1 ? 's' : '') + ' · ' + o.membres + ' membre' + (o.membres > 1 ? 's' : '') + ' · créée le ' + E(jour(o.cree_le)) + (o.bloquee && o.motif ? ' · motif : ' + E(o.motif) : '') + '</span>' + gerer +
+      (o.bloquee && o.motif ? '<span>Motif : ' + E(o.motif) + '</span>' : '') + gerer +
       '<div class="chips">' + o.collectifs.map(function (c) {
-        return '<span class="chip-col">' + E(c.nom) + ' · ' + E(c.statut) + (c.id === o.origine ? ' · origine' : ' <button type="button" class="lien-mini" data-retirer-adh="' + E(o.id) + '|' + E(c.id) + '">Retirer</button>') + '</span>';
+        return '<span class="chip-col">' + E(c.nom) + (c.statut !== 'active' ? ' (' + E(STATUTS_ADH[c.statut] || c.statut) + ')' : '') + (c.id === o.origine ? '' : ' <button type="button" class="lien-mini" data-retirer-adh="' + E(o.id) + '|' + E(c.id) + '">Retirer</button>') + '</span>';
       }).join('') + '</div></div>' +
       '<div class="act">' + (dispo.length && !o.bloquee ? '<select id="sel-' + E(o.id) + '" aria-label="Rattacher à un collectif">' + dispo.map(function (c) { return '<option value="' + E(c.id) + '">' + E(c.name) + '</option>'; }).join('') + '</select> <button type="button" class="bouton petit" data-ajouter-adh="' + E(o.id) + '">Rattacher</button>' : '') + '</div></div>';
   }).join('');
   return '<section class="collectif"><h2>' + liste.length + ' entreprise' + (liste.length > 1 ? 's' : '') + '</h2>' +
-    '<p class="legende" data-aide>Pour chaque entreprise : son nom, ses collectifs, le nombre de ses établissements et de ses membres. Jamais le contenu de l’entreprise. Une entreprise peut adhérer à plusieurs collectifs.</p>' +
+    '<p class="legende" data-aide>Pour chaque entreprise : son nom et ses collectifs, jamais son contenu. Une entreprise peut adhérer à plusieurs collectifs. On ne peut supprimer qu’une entreprise vide (sans établissement ni membre) ; les autres se bloquent.</p>' +
     '<p class="message" id="msgAdh" role="alert"></p>' + (corps || '<p class="legende">Aucune entreprise.</p>') + '</section>';
 }
 function brancherEntreprises() {
@@ -433,9 +441,19 @@ async function vueAmbassadeurs() {
   if (r.error) return '<p class="message">Impossible de lire les ambassadeurs métier : la mise à jour de la base (migration 19 ou 20) n’est peut-être pas faite.</p>';
   var liste = S.ambassadeurs = r.data || [];
   var lignes = liste.map(function (a) {
+    // Seulement ce qui reste à faire ou ce qui compte : on n'écrit pas ce qui va de soi.
+    var alertes = [];
+    if (a.statut !== 'valide') alertes.push(E(STATUTS_AMB[a.statut] || a.statut));
+    if (!a.compte_ouvert) alertes.push('compte non ouvert');
+    if (!a.fiche_complete) alertes.push('fiche à compléter');
+    if (!a.contrat_accepte) alertes.push('contrat à accepter');
+    var chiffresAmb = [];
+    if (Number(a.offres) > 0) chiffresAmb.push(pluriel(Number(a.offres), 'offre'));
+    if (Number(a.ventes) > 0) chiffresAmb.push(pluriel(Number(a.ventes), 'vente'));
+    if (Number(a.reste_a_reverser_eur) > 0) chiffresAmb.push('à reverser : <b>' + E(euros(a.reste_a_reverser_eur)) + '</b>');
     return '<div class="ligne-suivi"><div class="qui"><b>' + E(a.nom) + (a.atelier ? ' <span class="resume">· ' + E(a.atelier) + '</span>' : '') + '</b>' +
-      '<span>' + E(a.email || 'pas d’adresse e-mail') + ' · ' + E(STATUTS_AMB[a.statut] || a.statut) + ' · ' + (a.compte_ouvert ? 'compte ouvert' : 'compte non ouvert') + ' · ' + (a.fiche_complete ? 'fiche complète' : 'fiche à compléter') + ' · ' + (a.contrat_accepte ? 'contrat accepté' + (a.contrat_version ? ' (' + E(a.contrat_version) + ')' : '') : 'contrat non accepté') + (a.collectif ? ' · collectif : ' + E(a.collectif) : '') + '</span>' +
-      '<span>' + pluriel(Number(a.offres), 'offre') + ' (' + a.offres_publiees + ' publiée' + (a.offres_publiees > 1 ? 's' : '') + ', ' + a.offres_pilote + ' en pilote) · ' + pluriel(Number(a.ventes), 'vente') + ' · reste à reverser : <b>' + E(euros(a.reste_a_reverser_eur)) + '</b></span>' +
+      '<span>' + E(a.email || 'pas d’adresse e-mail') + '</span>' + (alertes.length ? '<span>' + alertes.join(' · ') + '</span>' : '') +
+      (chiffresAmb.length ? '<span>' + chiffresAmb.join(' · ') + '</span>' : '') +
       '<div class="gerer"><button type="button" class="lien-mini" data-modifier-amb="' + E(a.id) + '">Modifier</button></div></div></div>';
   }).join('');
   return '<section class="collectif"><h2>' + pluriel(liste.length, 'ambassadeur') + ' métier</h2>' +
