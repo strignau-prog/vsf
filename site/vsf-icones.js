@@ -71,25 +71,42 @@
       b.classList.add('ico-btn');
       b.innerHTML = svg(nom);
     }
-    // Les explications longues se replient derrière « ? ».
+    // Les explications longues se replient derrière un « ? » placé au bout de la ligne du titre qui les précède.
+    // Plusieurs explications sous un même titre partagent un seul « ? ». Sans titre juste avant, le « ? » se met à leur place.
     var aides = (racine || document).querySelectorAll('[data-aide]:not([data-aide-ok])');
     for (var j = 0; j < aides.length; j++) {
       var p = aides[j];
       p.setAttribute('data-aide-ok', '1');
-      var boite = document.createElement('div');
-      boite.className = 'aide';
-      var bt = document.createElement('button');
-      bt.type = 'button'; bt.className = 'ico-btn aide-btn';
-      bt.setAttribute('aria-label', 'Afficher l’aide'); bt.setAttribute('title', 'Aide'); bt.setAttribute('aria-expanded', 'false');
-      bt.innerHTML = svg('help');
-      p.parentNode.insertBefore(boite, p);
-      boite.appendChild(bt); boite.appendChild(p);
-      p.hidden = true; p.classList.add('aide-texte');
-      bt.addEventListener('click', function (ev) {
-        var btn = ev.currentTarget, txt = btn.parentNode.querySelector('.aide-texte');
-        txt.hidden = !txt.hidden; btn.setAttribute('aria-expanded', String(!txt.hidden));
-      });
+      var prev = p.previousElementSibling, tete = null, texte = null;
+      if (prev && prev.classList.contains('aide-texte')) { texte = prev; tete = prev.previousElementSibling; }
+      else if (prev && (/^H[1-3]$/.test(prev.tagName) || prev.classList.contains('etiquette'))) { tete = prev; }
+      if (tete) {
+        if (!texte) {
+          texte = document.createElement('div');
+          texte.className = 'aide-texte'; texte.hidden = true;
+          tete.parentNode.insertBefore(texte, tete.nextSibling);
+          tete.appendChild(boutonAide(texte, 'aide-btn aide-titre'));
+        }
+        texte.appendChild(p);
+      } else {
+        var boite = document.createElement('div');
+        boite.className = 'aide';
+        texte = document.createElement('div');
+        texte.className = 'aide-texte'; texte.hidden = true;
+        p.parentNode.insertBefore(boite, p);
+        boite.appendChild(boutonAide(texte, 'aide-btn'));
+        boite.appendChild(texte);
+        texte.appendChild(p);
+      }
     }
+  }
+  function boutonAide(texte, cls) {
+    var bt = document.createElement('button');
+    bt.type = 'button'; bt.className = 'ico-btn ' + cls;
+    bt.setAttribute('aria-label', 'Afficher l’aide'); bt.setAttribute('title', 'Aide'); bt.setAttribute('aria-expanded', 'false');
+    bt.innerHTML = svg('help');
+    bt.addEventListener('click', function () { texte.hidden = !texte.hidden; bt.setAttribute('aria-expanded', String(!texte.hidden)); });
+    return bt;
   }
 
   var attente = null;
