@@ -561,6 +561,17 @@
   .gate input:focus{outline:none;box-shadow:0 2px 0 0 #111}
   .gate .msg{border-left:3px solid #111;padding:2px 0 2px 12px;margin:16px 0;font-weight:500}
   .gate .msg:empty{display:none}
+  /* étape 1 : sobre, peu de texte */
+  .ent .etiq{font-size:.72rem;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#111;margin:4px 0 8px}
+  .ent .chips{margin-bottom:14px}
+  .ent .chip{font-size:1rem;padding:10px 18px;min-height:44px;border-radius:24px}
+  .po .pc{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:8px 0 0}
+  .po .pn{margin-bottom:2px}
+  button.dchk{border:1px solid #111;background:#fff;color:#111;border-radius:20px;padding:6px 14px;min-height:36px;font:inherit;font-size:.9rem;cursor:pointer}
+  button.dchk.on{background:#111;color:#fff}
+  .po .rmx{margin-left:auto}
+  .po .sitbtn{margin-top:8px}
+  .srch{border-top:0;margin-top:20px;padding-top:0}
   /* moins de filets : les blocs se distinguent par un fond très clair, pas par un cadre */
   .card,details.fixes{border:0 !important;background:#fafafa !important;box-shadow:none !important}
 </style>
@@ -596,13 +607,22 @@ var STEPS = ['Secteur & postes clés','Carte des processus','Diagnostic','Restit
 var FINALITE = 'Ce diagnostic sert un seul objectif : <b>libérer du temps des tâches à faible valeur ajoutée</b> pour le réinvestir dans <b>le geste humain rare</b> et sa différenciation.';
 
 var SECTORS = [
-  {id:'art', l:'Artisanat d’art — décor, enseigne, lettrage', ready:true},
-  {id:'bat', l:'Bâtiment — second œuvre', ready:false},
-  {id:'chr', l:'Hôtellerie-restauration', ready:false},
+  {id:'art', l:'Artisanat d’art', ready:true},
+  {id:'bat', l:'Bâtiment', ready:false},
+  {id:'chr', l:'Restauration', ready:false},
   {id:'bou', l:'Métiers de bouche', ready:false},
-  {id:'aut', l:'Autre secteur', ready:false}
+  {id:'aut', l:'Autre', ready:false}
 ];
 var EFFECTIFS = ['Moi seul·e','2 à 5 personnes','6 à 10 personnes','11 à 20 personnes','21 à 49 personnes'];
+var EFF_COURT = {'Moi seul·e':'Seul·e','2 à 5 personnes':'2 à 5','6 à 10 personnes':'6 à 10','11 à 20 personnes':'11 à 20','21 à 49 personnes':'21 à 49'};
+/* postes proposés d’emblée, selon le secteur (les autres se cherchent dans ROME) */
+var SUGGEST_PAR_SECTEUR = {
+  art:['pel','graph','dor','pose','regi'],
+  bat:['dirp','resp','qual','mag','compta'],
+  chr:['dirp','resp','mag','compta','rh'],
+  bou:['resp','mag','comm','compta','rh'],
+  aut:['dirp','resp','compta','secr','comm']
+};
 
 var SKETCH = {
   art:{pil:['Finalité et stratégie','Pilotage et indicateurs','Management et rituels','Pilotage RSE'],
@@ -946,22 +966,18 @@ function carriedRow(proc){
 function tierPil(mode){
   var sk = sketch(), alone = (S.eff === 'Moi seul·e'), people = totalPeople(), items = sk.pil.slice(), i, e = eqt();
   if (alone){ items[2] = 'Transmission et reprise'; }
-  var h = '<div class="tier t-pil' + (S.flash === 'pil' ? ' flash' : '') + '"><div class="tlabel"><div class="tn">Pilotage</div><div class="verb">À élever</div>' + (mode === 'esq' ? '<div class="etp">≈ ' + fmt1(e.p) + ' ETP</div>' : '') + '</div><div class="tbody"><div class="items">';
+  var h = '<div class="tier t-pil' + (S.flash === 'pil' ? ' flash' : '') + '"><div class="tlabel"><div class="tn">Pilotage</div><div class="verb">À élever</div></div><div class="tbody"><div class="items">';
   for (i=0;i<items.length;i++){
     var hot = (people >= 2 && i === 2);
     h += '<span' + (hot ? ' class="hot"' : '') + '>' + items[i] + (hot ? ' · ' + people + ' pers.' : '') + '</span>';
   }
   h += '</div>' + carriedRow('pil');
   if (mode === 'esq'){
-    h += holders(0);
-    var dem = alone ? ['Excellence du geste','Savoir-faire documenté','Reprise préparée'] : ['Excellence du geste pilotée','Apprentissage en situation de travail','Transmission du métier'];
-    h += '<div class="demain"><b>↗ Demain</b>';
-    for (i=0;i<dem.length;i++){ h += '<span>' + dem[i] + '</span>'; }
-    h += '</div>';
+    h += holders(0, true);
   }
   return h + '</div></div>';
 }
-function linkDown(){ return '<div class="link">↓ cap, excellence et transmission descendent vers le geste</div>'; }
+function linkDown(compact){ return '<div class="link">↓' + (compact ? '' : ' cap, excellence et transmission descendent vers le geste') + '</div>'; }
 function lightBlock(k){
   var v = S.lights[k.id], lab = {r:'Problème', o:'À surveiller', g:'Maîtrisé'}, set = ['r','o','g'], i;
   var h = '<div class="kp"><div class="kty ' + k.ty + '">' + k.ty + '</div><div class="kn">' + k.t + '</div><div class="sig">';
@@ -971,43 +987,30 @@ function lightBlock(k){
 function tierCore(mode){
   var lanes = laneIds(), people = totalPeople(), sk = sketch(), i, j, k, e = eqt(), ds = dirSplitArr();
   var nPostes = sel().length;
-  var h = '<div class="tier t-core' + ((S.pulse || S.flash === 'cor') ? ' pulse' : '') + '"><div class="tlabel"><div class="tn">Cœur de métier</div><div class="verb">À sublimer</div><div class="ts">là où se développent les compétences rares</div>' + (mode === 'esq' ? '<div class="etp">≈ ' + fmt1(e.c) + ' ETP</div>' : '') + '</div><div class="tbody">';
-  h += '<div class="core-head"><div><div class="core-title">Le geste qui vous différencie</div><div class="core-sub">' + (lanes.length ? 'Reconstruit à partir des situations de travail de vos postes clés' : 'Esquisse générique de votre secteur : ajoutez vos postes clés pour la préciser') + '</div></div>';
-  h += '<div class="core-meta">' + (lanes.length ? nPostes + ' poste' + (nPostes>1?'s':'') + ' clé' + (nPostes>1?'s':'') + ' · ' + people + ' personne' + (people>1?'s':'') : '') + '</div></div>';
+  var h = '<div class="tier t-core' + ((S.pulse || S.flash === 'cor') ? ' pulse' : '') + '"><div class="tlabel"><div class="tn">Cœur de métier</div><div class="verb">À sublimer</div>' + (mode === 'esq' ? '' : '<div class="ts">là où se développent les compétences rares</div>') + '</div><div class="tbody">';
+  h += '<div class="core-head"><div><div class="core-title">Le geste qui vous différencie</div>' + (mode === 'esq' ? '' : '<div class="core-sub">' + (lanes.length ? 'Reconstruit à partir des situations de travail de vos postes clés' : 'Esquisse générique de votre secteur : ajoutez vos postes clés pour la préciser') + '</div>') + '</div>';
+  h += '<div class="core-meta">' + (mode !== 'esq' && lanes.length ? nPostes + ' poste' + (nPostes>1?'s':'') + ' clé' + (nPostes>1?'s':'') + ' · ' + people + ' personne' + (people>1?'s':'') : '') + '</div></div>';
   if (S.toast){ h += '<div class="toast">' + S.toast + '</div>'; }
 
   if (!lanes.length){
     h += '<div class="lane"><div class="chain">';
     for (i=0;i<sk.real.length;i++){
-      h += '<div class="node ghost' + (i===sk.real.length-1 ? ' last' : '') + '"><div class="dotn">' + (i+1) + '</div><div class="nt">' + sk.real[i] + '</div><div class="ng">à préciser</div></div>';
+      h += '<div class="node ghost' + (i===sk.real.length-1 ? ' last' : '') + '"><div class="dotn">' + (i+1) + '</div><div class="nt">' + sk.real[i] + '</div>' + (mode === 'esq' ? '' : '<div class="ng">à préciser</div>') + '</div>';
     }
     h += '</div></div>';
   } else {
     for (i=0;i<lanes.length;i++){
       var id = lanes[i], f = laneObj(id), isV = !!f.virtual, n = isV ? 0 : (S.units[id] || 1);
       var fresh = isV ? (S.flash === 'cor' && S.lastSit && S.lastSit.indexOf(f.pid + ':') === 0) : (S.lastAdded === id);
-      h += '<div class="lane' + (fresh ? ' fresh' : '') + '"><div class="lane-h"><span class="nm">' + f.nm + '</span><span class="meta">' + (isV ? 'situations cochées, ajoutées au cœur de métier' : '<b' + (S.bump === id ? ' class="bump"' : '') + '>× ' + n + ' personne' + (n>1?'s':'') + '</b> · ' + (f.rome ? 'lecture ROME, à enrichir' : 'fiche VraiSavoirFaire')) + '</span>' + (mode === 'esq' && !isV && S.dirOn === id ? '<span class="dirtag">dont le/la dirigeant·e (' + ds[1] + ' % de son temps au geste)</span>' : '') + '</div>';
+      h += '<div class="lane' + (fresh ? ' fresh' : '') + '"><div class="lane-h"><span class="nm">' + f.nm + '</span><span class="meta">' + (isV ? (mode === 'esq' ? '' : 'situations cochées, ajoutées au cœur de métier') : '<b' + (S.bump === id ? ' class="bump"' : '') + '>× ' + n + '</b>' + (mode === 'esq' ? '' : ' personne' + (n>1?'s':'') + ' · ' + (f.rome ? 'lecture ROME, à enrichir' : 'fiche VraiSavoirFaire'))) + '</span>' + (mode === 'esq' && !isV && S.dirOn === id ? '<span class="dirtag">dont vous</span>' : '') + '</div>';
       h += '<div class="chain">';
       for (j=0;j<f.steps.length;j++){
         var st = f.steps[j], ss = (mode === 'kpi') ? stepStatus(st) : '';
-        h += '<div class="node' + (j===f.steps.length-1 ? ' last' : '') + '"><div class="dotn' + (ss ? ' s-' + ss : '') + '">' + (j+1) + '</div><div class="nt">' + st.t + '</div>' + (st.gest ? '<div class="ng">✦ ' + st.gest + '</div>' : '');
+        h += '<div class="node' + (j===f.steps.length-1 ? ' last' : '') + '"><div class="dotn' + (ss ? ' s-' + ss : '') + '">' + (j+1) + '</div><div class="nt">' + st.t + '</div>' + (st.gest && mode !== 'esq' ? '<div class="ng">✦ ' + st.gest + '</div>' : '');
         if (mode === 'kpi'){ for (k=0;k<st.kpis.length;k++){ h += lightBlock(st.kpis[k]); } }
         h += '</div>';
       }
       h += '</div>';
-      if (mode === 'esq'){
-        if (isV){
-          h += '<div class="kline"><span class="kh">Indicateurs à suivre</span><span class="kg">pour chaque situation : faite sans reprise · dans le délai prévu · temps passé proportionné</span></div>';
-        } else {
-          h += '<div class="kline"><span class="kh">Indicateurs à suivre</span>';
-          for (j=0;j<f.steps.length;j++){
-            var st2 = f.steps[j], names = [];
-            for (k=0;k<st2.kpis.length;k++){ names.push(st2.kpis[k].t); }
-            h += '<span class="kg"><b>' + (j+1) + '</b>' + names.join(' · ') + '</span>';
-          }
-          h += '</div>';
-        }
-      }
       h += '</div>';
     }
   }
@@ -1017,25 +1020,20 @@ function tierCore(mode){
     h += '</div></div>';
   }
   if (mode === 'esq'){
-    if (lanes.length && !S.dirOn && ds[1] >= 20){
-      h += '<div class="hint">Le/la dirigeant·e consacre ≈ ' + ds[1] + ' % de son temps au geste. Sur quel poste ? Cochez « le/la dirigeant·e en fait partie » à gauche.</div>';
-    }
     if (lanes.length){
-      var rn = []; for (i=0;i<RESULTS.length;i++){ rn.push(RESULTS[i].t); }
-      h += '<div class="resline"><b>Résultats chez le client</b>' + rn.join(' · ') + '</div>';
-      h += '<div class="ctaline">Les feux (maîtrisé, à surveiller, problème) de tous ces indicateurs se renseignent à l’étape suivante.<button class="btn primary" data-act="next">Renseigner mes feux →</button></div>';
+      h += '<div class="ctaline"><button class="btn primary" data-act="next">Continuer →</button></div>';
     }
-    h += '<div class="demain"><b>↗ Demain</b><span>Chaque étape précisée en situations de travail</span><span>Gestes rares repérés</span><span>Parcours N1 → N4 par poste</span></div>';
   }
   return h + '</div></div>';
 }
-function linkUp(){
+function linkUp(compact){
+  if (compact){ return '<div class="link">↑</div>'; }
   var fh = freedHours();
   return '<div class="link">↑ ' + (fh ? '≈ ' + fh + ' h par mois libérées, réinvesties dans le geste' : 'le temps libéré remonte vers le geste') + '</div>';
 }
 function tierSup(mode){
   var e = eqt();
-  var h = '<div class="tier t-sup' + (S.flash === 'sup' ? ' flash' : '') + '"><div class="tlabel"><div class="tn">Support</div><div class="verb">À alléger</div>' + (mode === 'esq' ? '<div class="etp">≈ ' + fmt1(e.s) + ' ETP</div>' : '') + '</div><div class="tbody">', i;
+  var h = '<div class="tier t-sup' + (S.flash === 'sup' ? ' flash' : '') + '"><div class="tlabel"><div class="tn">Support</div><div class="verb">À alléger</div></div><div class="tbody">', i;
   if (mode === 'esq'){
     h += '<div class="items">';
     if (S.sector === 'art'){
@@ -1047,7 +1045,7 @@ function tierSup(mode){
       var sk = SKETCH.gen.sup;
       for (i=0;i<sk.length;i++){ h += '<span class="si">' + sk[i] + '</span>'; }
     }
-    h += '</div>' + carriedRow('sup') + holders(2) + '<div class="demain"><b>↗ Demain</b><span>Automatiser</span><span>Outiller</span><span>Mutualiser</span><span>Du temps rendu au geste</span></div>';
+    h += '</div>' + carriedRow('sup') + holders(2, true);
   } else {
     h += carriedRow('sup') + '<div class="note" style="margin:8px 0 4px">Cochez ce que vous voulez alléger en priorité.</div><div class="supl">';
     for (i=0;i<SUP.length;i++){
@@ -1063,13 +1061,14 @@ function tierSup(mode){
   return h + '</div></div>';
 }
 function stage(mode, compact){
-  return '<div class="stage' + (compact ? ' compact' : '') + '">' + tierPil(mode) + linkDown() + tierCore(mode) + linkUp() + tierSup(mode) + '</div>';
+  return '<div class="stage' + (compact ? ' compact' : '') + '">' + tierPil(mode) + linkDown(compact) + tierCore(mode) + linkUp(compact) + tierSup(mode) + '</div>';
 }
 
 /* ---------- étape 1 ---------- */
 function stepHead(n, title, lead, livr){
   var h = '<div class="stepno">Étape ' + n + ' sur ' + STEPS.length + '</div><h2>' + title + '</h2>';
-  h += '<p class="lead">' + lead + '</p><span class="livr">' + livr + '</span>';
+  if (lead){ h += '<p class="lead">' + lead + '</p>'; }
+  if (livr){ h += '<span class="livr">' + livr + '</span>'; }
   if (S.warn){ h += '<div class="warn">' + S.warn + '</div>'; }
   return h;
 }
@@ -1086,60 +1085,58 @@ function splitSelect(k, cur, withAuto){
 }
 function sitButton(k){
   var n = sitCount(k), open = (S.sitOpen === k);
-  return '<button class="btn sitbtn' + (open ? ' primary' : '') + '" data-act="siton" data-k="' + k + '">' + (open ? 'Fermer les situations' : '☑ Cocher ses situations de travail') + (n ? ' (' + n + ')' : '') + '</button>';
+  return '<button class="btn sitbtn' + (open ? ' primary' : '') + '" data-act="siton" data-k="' + k + '">' + (open ? 'Fermer' : 'Situations') + (n ? ' (' + n + ')' : '') + '</button>';
+}
+/* détail d’un poste : visible seulement quand on le déplie (bouton « Situations ») */
+function detailPoste(k, withAuto){
+  var cur = (k === 'dir') ? S.dirSplit : (S.splitKey[k] || FICHES[k].def), arr = (k === 'dir') ? dirSplitArr() : splitOf(k);
+  return '<div class="pc">' + splitSelect(k, cur, withAuto) + '</div>' + tbar(arr);
 }
 function dirCard(){
-  var h = '<div class="po on"><div class="pn">Dirigeant·e</div><div class="ps">Toujours présent·e · polyvalent·e par nature</div>';
+  var h = '<div class="po on"><div class="pn">Dirigeant·e</div>';
   h += sitButton('dir');
-  h += '<div class="pc">Temps réparti ' + splitSelect('dir', S.dirSplit, true) + '</div>' + tbar(dirSplitArr());
-  if (S.dirSplit === 'auto'){ h += '<div class="note">' + (sitCount('dir') ? 'Déduit de ses ' + sitCount('dir') + ' situations cochées.' : 'Aucune situation cochée : profil « polyvalent » par défaut.') + '</div>'; }
-  h += '<div class="note" style="margin-top:4px">' + (S.dirOn ? 'Tient aussi le poste : <b>' + FICHES[S.dirOn].nm + '</b>' : 'Ne tient aucun des postes ci-dessous (cochez-le sur le poste qu’il/elle exerce).') + '</div></div>';
-  return h;
+  if (S.sitOpen === 'dir'){ h += detailPoste('dir', true); }
+  return h + '</div>';
 }
 function posteItem(k, selected){
-  var f = FICHES[k], h = '<div class="po' + (selected ? ' on' : '') + '"><div class="pn">' + f.nm + '</div><div class="ps">' + f.st + ' · complète : ' + PROCLAB[f.proc] + '</div>';
+  var f = FICHES[k], h = '<div class="po' + (selected ? ' on' : '') + '"><div class="pn">' + f.nm + '</div>';
   if (selected){
-    var n = S.units[k] || 1, sk = S.splitKey[k] || f.def;
-    h += '<div class="pc"><span class="stp"><button data-act="unit" data-k="' + k + '" data-v="-">−</button><b' + (S.bump === k ? ' class="bump"' : '') + '>' + n + '</b><button data-act="unit" data-k="' + k + '" data-v="+">+</button></span><span class="note">≈ personne' + (n > 1 ? 's' : '') + '</span></div>';
+    var n = S.units[k] || 1;
+    h += '<div class="pc"><span class="stp"><button data-act="unit" data-k="' + k + '" data-v="-" aria-label="Une personne de moins">−</button><b' + (S.bump === k ? ' class="bump"' : '') + '>' + n + '</b><button data-act="unit" data-k="' + k + '" data-v="+" aria-label="Une personne de plus">+</button></span>';
+    h += '<button class="dchk' + (S.dirOn === k ? ' on' : '') + '" data-act="dirOn" data-k="' + k + '" title="Le/la dirigeant·e tient ce poste" aria-pressed="' + (S.dirOn === k ? 'true' : 'false') + '">Moi</button>';
+    h += '<button class="rmx" data-act="fiche" data-k="' + k + '" aria-label="Retirer ce poste">Retirer</button></div>';
     if (SITS[k]){ h += sitButton(k); }
-    h += '<div class="pc">Temps réparti ' + splitSelect(k, sk, !!SITS[k]) + '</div>' + tbar(splitOf(k));
-    if (SITS[k] && sk === 'auto'){ h += '<div class="note">' + (sitCount(k) ? 'Déduit de ses ' + sitCount(k) + ' situations cochées.' : 'Aucune situation cochée : profil par défaut du poste.') + '</div>'; }
-    h += '<div class="dchk"><button class="sqb' + (S.dirOn === k ? ' on' : '') + '" data-act="dirOn" data-k="' + k + '">' + (S.dirOn === k ? '✓' : '') + '</button>Le/la dirigeant·e en fait partie</div>';
-    h += '<button class="rmx" data-act="fiche" data-k="' + k + '">Retirer ce poste</button>';
+    if (S.sitOpen === k || !SITS[k]){ h += detailPoste(k, !!SITS[k]); }
   } else {
-    h += '<div class="rare">✦ ' + f.rare + '</div><button class="btn" data-act="fiche" data-k="' + k + '">+ Ajouter</button>';
+    h += '<button class="btn" data-act="fiche" data-k="' + k + '">Ajouter</button>';
   }
   return h + '</div>';
 }
 function searchBlock(){
-  var h = '<div class="srch"><div class="sh">Chercher un autre poste</div>';
-  h += '<div class="reuse">🔗 Recherche ROME 4.0 : l’outil de recherche de fiche métier existant, réutilisé. Résultats illustratifs ici. Les postes trouvés complètent le pilotage, le cœur de métier ou le support.</div>';
-  h += '<div class="sbx"><input type="text" id="rqInput" placeholder="ex. comptable, doreur…" value="' + S.rq + '"><button class="btn primary" data-act="rsearch" style="margin:0 0 0 6px">OK</button></div>';
-  h += '<div class="chips" style="margin-top:8px">';
-  var ex = ['comptable','restaurateur','responsable'], i;
-  for (i=0;i<ex.length;i++){ h += '<button class="chip" data-act="rq" data-k="' + ex[i] + '">' + ex[i] + '</button>'; }
-  h += '</div>';
+  var h = '<div class="srch"><div class="sbx"><input type="text" id="rqInput" placeholder="Chercher un autre poste" aria-label="Chercher un autre poste" value="' + S.rq + '"><button class="btn primary" data-act="rsearch" style="margin:0 0 0 6px">OK</button></div>';
+  var i;
   if (S.rq){
     var res = romeSearch(S.rq);
-    if (!res.length){ h += '<div class="note" style="margin-top:6px">Aucun résultat dans cet exemple pour « ' + S.rq + ' ».</div>'; }
+    if (!res.length){ h += '<div class="note" style="margin-top:6px">Aucun résultat pour « ' + S.rq + ' ».</div>'; }
     for (i=0;i<res.length;i++){
       var f = FICHES[res[i]];
-      h += '<div class="rres"><div><b>' + f.nm + '</b><small>complète : ' + PROCLAB[f.proc] + '</small></div>' + (S.fiches[res[i]] ? '<span class="done">✓ Ajouté</span>' : '<button class="btn" data-act="fiche" data-k="' + res[i] + '">+ Ajouter</button>') + '</div>';
+      h += '<div class="rres"><div><b>' + f.nm + '</b></div>' + (S.fiches[res[i]] ? '<span class="done">✓</span>' : '<button class="btn" data-act="fiche" data-k="' + res[i] + '">Ajouter</button>') + '</div>';
     }
   }
   return h + '</div>';
 }
+function suggestions(){
+  return (SUGGEST_PAR_SECTEUR[S.sector] || SUGGEST_PAR_SECTEUR.aut).filter(function(k){ return !S.fiches[k]; });
+}
 function postesCol(){
-  var h = '', i, s = sel(), sug = SUGGEST.filter(function(k){ return !S.fiches[k]; });
-  h += '<div class="note" style="margin-bottom:10px">Les plus évidents pour votre secteur ; les autres se cherchent dans ROME 4.0.' + (S.limit ? ' <b style="color:#ffffff">Six postes au maximum.</b>' : '') + '</div>';
+  var h = '', i, s = sel(), sug = suggestions();
   h += dirCard();
   for (i=0;i<s.length;i++){ h += posteItem(s[i], true); }
   if (sug.length){
-    h += '<div class="sgh">À ajouter — les plus évidents</div>';
+    h += '<div class="sgh">À ajouter</div>';
     for (i=0;i<sug.length;i++){ h += posteItem(sug[i], false); }
   }
   h += searchBlock();
-  h += '<div class="sumline">≈ ' + totalPeople() + ' personne' + (totalPeople() > 1 ? 's' : '') + ' sur vos postes clés' + (S.eff ? ' · entreprise : ' + S.eff : '') + '</div>';
   return h;
 }
 function sitPanel(){
@@ -1147,8 +1144,7 @@ function sitPanel(){
   if (!pid || !SITS[pid]) return '';
   var list = SITS[pid], nm = (pid === 'dir') ? 'Dirigeant·e' : FICHES[pid].nm, m = S.sit[pid] || {}, i, j, x, c = {pil:0,cor:0,sup:0}, procs = ['pil','cor','sup'];
   for (x in m){ if (m[x]) c[m[x]]++; }
-  var h = '<div class="sitpanel" id="sitpanel"><div class="sph"><div><b>Situations de travail — ' + nm + '</b><span>' + sitCount(pid) + ' cochée' + (sitCount(pid) > 1 ? 's' : '') + ' · Pilotage ' + c.pil + ' · Cœur ' + c.cor + ' · Support ' + c.sup + '</span></div><button class="rmx" data-act="siton" data-k="' + pid + '">Fermer</button></div>';
-  h += '<div class="note" style="margin-bottom:8px">🔗 Liste issue de la fiche ROME 4.0 du poste (outil de recherche existant, réutilisé). Pour chaque situation que ce poste exerce, indiquez le processus dont elle relève ; elle rejoint aussitôt l’esquisse ci-dessous. Laissez vide ce qu’il/elle n’exerce pas.</div>';
+  var h = '<div class="sitpanel" id="sitpanel"><div class="sph"><div><b>' + nm + '</b></div><button class="rmx" data-act="siton" data-k="' + pid + '">Fermer</button></div>';
   h += '<div class="sit-scroll"><div class="sit-head"><span class="st-t">Situation</span><span>Pilotage</span><span>Cœur</span><span>Support</span></div>';
   for (i=0;i<list.length;i++){
     var st = list[i], cur = m[st.id];
@@ -1158,42 +1154,32 @@ function sitPanel(){
     }
     h += '</div>';
   }
-  h += '</div><div class="sit-foot"><button class="btn" data-act="sitpre" data-k="' + pid + '">Pré-cocher selon les usages courants</button><button class="btn" data-act="sitclr" data-k="' + pid + '">Tout décocher</button><span class="note">Le cercle en pointillés marque le processus le plus courant pour cette situation.</span></div></div>';
+  h += '</div><div class="sit-foot"><button class="btn" data-act="sitpre" data-k="' + pid + '">Pré-cocher</button><button class="btn" data-act="sitclr" data-k="' + pid + '">Tout décocher</button></div></div>';
   return h;
 }
 function distrib(){
   var e = eqt(), t = e.t || 1, pp = Math.round(e.p/t*100), pc = Math.round(e.c/t*100), ps = 100 - pp - pc, ds = dirSplitArr();
-  var h = '<div class="distrib"><div class="dh"><b>Où va le temps de mon équipe ?</b><span>≈ ' + fmt1(e.t) + ' ETP · ' + totalPeople() + ' personne' + (totalPeople() > 1 ? 's' : '') + '</span></div>';
+  var h = '<div class="distrib"><div class="dh"><b>Où va le temps de mon équipe ?</b><span>' + totalPeople() + ' personne' + (totalPeople() > 1 ? 's' : '') + '</span></div>';
   h += '<div class="dbar"><span class="sp" style="width:' + pp + '%">' + (pp >= 14 ? 'Pilotage ' + pp + ' %' : '') + '</span><span class="sc" style="width:' + pc + '%">' + (pc >= 14 ? 'Cœur ' + pc + ' %' : '') + '</span><span class="ss" style="width:' + ps + '%">' + (ps >= 14 ? 'Support ' + ps + ' %' : '') + '</span></div>';
-  h += '<div class="dn">Le cœur de métier reçoit ' + pc + ' % du temps ; pilotage et support en prennent ' + (pp + ps) + ' %.' + (ds[1] < 50 ? ' Le/la dirigeant·e passe ' + (100 - ds[1]) + ' % de son temps hors du geste : c’est le premier levier pour libérer du temps.' : '') + '</div></div>';
-  return h;
+  return h + '</div>';
 }
 function step1(){
-  var h = stepHead(1, 'Mon secteur et mes postes clés',
-    'Dites-nous où vous êtes, puis ajoutez vos postes clés : à chaque ajout, l’esquisse de vos processus se précise.',
-    'Livrable : Mon esquisse de processus');
+  var h = stepHead(1, 'Mon entreprise', '', '');
   var i;
-  h += '<div class="card"><h3>1 · Mon entreprise</h3><div class="chips">';
+  h += '<div class="card ent"><div class="etiq">Secteur</div><div class="chips">';
   for (i=0;i<SECTORS.length;i++){
-    h += '<button class="chip' + (S.sector===SECTORS[i].id ? ' on' : '') + '" data-act="sector" data-k="' + SECTORS[i].id + '">' + SECTORS[i].l + '</button>';
+    h += '<button class="chip' + (S.sector===SECTORS[i].id ? ' on' : '') + '" data-act="sector" data-k="' + SECTORS[i].id + '" aria-pressed="' + (S.sector===SECTORS[i].id ? 'true' : 'false') + '">' + SECTORS[i].l + '</button>';
   }
-  h += '</div><div style="font-size:.8rem;color:#444444;margin-top:4px;">Nombre de personnes dans l’entreprise : <select data-act="eff"><option value="">Choisir…</option>';
-  for (i=0;i<EFFECTIFS.length;i++){ h += '<option' + (S.eff===EFFECTIFS[i] ? ' selected' : '') + '>' + EFFECTIFS[i] + '</option>'; }
-  h += '</select></div>';
-  if (S.eff === 'Moi seul·e'){
-    h += '<div class="note" style="margin-top:8px;"><b>L’esquisse s’adapte :</b> seul·e, l’enjeu n’est pas d’organiser l’apprentissage d’une équipe mais de préparer la transmission et la reprise de votre savoir-faire.</div>';
+  h += '</div><div class="etiq">Personnes</div><div class="chips">';
+  for (i=0;i<EFFECTIFS.length;i++){
+    h += '<button class="chip' + (S.eff===EFFECTIFS[i] ? ' on' : '') + '" data-act="effset" data-k="' + EFFECTIFS[i] + '" aria-pressed="' + (S.eff===EFFECTIFS[i] ? 'true' : 'false') + '">' + EFF_COURT[EFFECTIFS[i]] + '</button>';
   }
-  if (S.sector && !SECTORS.filter(function(x){return x.id===S.sector;})[0].ready){
-    h += '<div class="note" style="margin-top:8px;">Pour ce secteur, seule une esquisse générique est disponible. Dans la démo, les étapes suivantes illustrent l’artisanat d’art.</div>';
-  }
-  h += '</div>';
+  h += '</div></div>';
 
-  if (!S.sector){
-    return h + '<div class="card" style="text-align:center;padding:36px 18px;"><div style="font-family:Inter,sans-serif;font-size:1.7rem;color:#363636;margin-bottom:8px;">Choisissez votre secteur</div><div class="note">Vos postes clés et votre esquisse de processus apparaissent ici.</div></div>';
-  }
+  if (!S.sector){ return h; }
 
-  h += '<div class="split"><div class="card left"><h3>2 · Mes postes clés</h3>' + postesCol() + '</div>';
-  h += '<div class="card right"><h3>3 · Mon esquisse de processus</h3>' + sitPanel() + distrib() + stage('esq', true) + '</div></div>';
+  h += '<div class="split"><div class="card left"><h3>Mes postes clés</h3>' + postesCol() + '</div>';
+  h += '<div class="card right"><h3>Mon esquisse</h3>' + sitPanel() + distrib() + stage('esq', true) + '</div></div>';
   return h;
 }
 
@@ -1794,6 +1780,7 @@ function handle(t){
   }
   else if (a === 'prev'){ S.warn = ''; S.step--; render(false); }
   else if (a === 'sector'){ S.sector = k; render(true); }
+  else if (a === 'effset'){ S.eff = (S.eff === k) ? '' : k; render(true); }
   else if (a === 'fiche'){
     S.limit = false;
     if (S.fiches[k]){
