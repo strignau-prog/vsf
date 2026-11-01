@@ -675,6 +675,57 @@
   .nv :focus:not(:focus-visible){outline:none}
   @media(max-width:520px){.nv-chain{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:16px}}
   @media(prefers-reduced-motion:reduce){.nv *{transition:none !important;animation:none !important}}
+  /* étape 3 : les 60 questions. Question en petit libellé gris, niveau choisi en grand, noir, gras ; les autres en gris clair, sans cadre */
+  .nv-q small,.nv-opt small{font-size:12px;font-weight:500;color:#767676}
+  .q3-top{display:flex;align-items:center;flex-wrap:wrap;gap:var(--espace-question,32px);margin-bottom:var(--espace-question,32px)}
+  .q3-count{font-size:clamp(34px,5vw,56px);font-weight:900;line-height:1;letter-spacing:-.02em}
+  .q3-ax{font-size:clamp(24px,3vw,30px);font-weight:900;line-height:1.1;letter-spacing:-.01em;margin-top:var(--espace-question,32px)}
+  #main.lat .nv-field{margin-bottom:var(--espace-question,32px)}
+  .q3{position:relative;margin-top:var(--espace-question,32px)}
+  .q3 > .nvd{position:absolute;left:-32px;top:0}
+  .q3 .nv-q{margin-bottom:var(--espace-qr,8px)}
+  .q3-t{font-size:18px;font-weight:600;line-height:1.35;color:#111;margin-bottom:var(--espace-qr,8px)}
+  .q3-lv{display:grid;grid-template-columns:1fr 1fr;gap:var(--espace-question,32px) 32px}
+  @media(max-width:700px){.q3-lv{grid-template-columns:1fr}}
+  .q3-opt{background:none;border:0;padding:0;text-align:left;font:inherit;font-size:14px;line-height:1.5;color:#767676;cursor:pointer;-webkit-tap-highlight-color:transparent}
+  .q3-n{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:16px;font-weight:500;color:#a0a0a0;margin-bottom:6px}
+  .q3-lv.untouched .q3-n{color:#767676}
+  .q3-opt[aria-pressed="true"]{color:#111}
+  .q3-opt[aria-pressed="true"] .q3-n{color:#111;font-size:20px;font-weight:800}
+  .q3-opt ul.obs{margin:0;padding-left:18px}
+  .q3-opt ul.obs li{margin:2px 0}
+  .q3-n .lbar i{background:#dcdcdc}
+  .q3-n .lbar i.f{background:#b5b5b5}
+  .q3-opt[aria-pressed="true"] .lbar i.f{background:#111}
+  .q3-opt:focus-visible{outline:2px solid #111;outline-offset:4px}
+  /* étape 2 : les feux, un indicateur = une question */
+  .f2-chiffres{display:flex;flex-wrap:wrap;gap:4px 32px;font-size:16px;color:#767676}
+  .f2-chiffres b{font-size:clamp(28px,4vw,40px);font-weight:900;color:#111;letter-spacing:-.02em;margin-right:6px}
+  .f2-groupe{font-size:clamp(24px,3vw,30px);font-weight:900;line-height:1.1;letter-spacing:-.01em;color:#111;margin:var(--espace-etape,64px) 0 var(--espace-question,32px)}
+  .f2-groupe small{font-size:14px;font-weight:500;color:#767676;letter-spacing:0}
+  .f2-brique{margin-bottom:var(--espace-question,32px)}
+  .f2-bt{display:flex;flex-wrap:wrap;align-items:center;gap:8px 20px;font-size:18px;font-weight:800;line-height:1.3;margin-bottom:var(--espace-qr,8px)}
+  .f2-feux{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:var(--espace-question,32px) 32px}
+  .f2-q{position:relative;display:flex;flex-direction:column;justify-content:space-between}
+  .f2-feux .nv-opts.mini .nv-opt[aria-pressed="true"]{font-size:18px}
+  .f2-q > .nvd{position:absolute;left:-32px;top:0}
+  .f2-q .nv-q{margin-bottom:var(--espace-qr,8px)}
+  .f2-alleger{padding:0;min-height:0;font-size:14px}
+  .f2-alleger .n{font-size:14px}
+  .a-grand{font-size:20px;font-weight:800;line-height:1.25}
+  .a-grand small{font-size:14px;font-weight:500;color:#767676}
+  /* restitution et plan : mêmes titres, mêmes espaces, aucun encadré */
+  #main.lat .card{background:none !important;padding:0 !important;margin:0 0 var(--espace-etape,64px) !important}
+  #main.lat .card h3{font-size:clamp(24px,3vw,30px);font-weight:900;letter-spacing:-.01em;text-transform:none;color:#111;margin:0 0 var(--espace-question,32px)}
+  #main.lat .twocol{gap:0 64px}
+  #main.lat .twocol > .card{margin-right:0 !important}
+  #main.lat .rest-hero{margin:var(--espace-question,32px) 0 var(--espace-etape,64px)}
+  #main.lat .lead{font-size:16px;color:#767676;margin:0 0 var(--espace-question,32px)}
+  #main.lat .tgt,#main.lat .mod,#main.lat .tool,#main.lat .role3{background:none !important;border:0 !important;padding:0 !important;margin:0 32px var(--espace-question,32px) 0 !important}
+  #main.lat .tgt{color:#a0a0a0;cursor:pointer}
+  #main.lat .tgt.on{color:#111}
+  #main.lat .tgt.on .tn{font-weight:900}
+  #main.lat .tgt .tk{color:#767676}
   /* moins de filets : les blocs se distinguent par un fond très clair, pas par un cadre */
   .card,details.fixes{border:0 !important;background:#fafafa !important;box-shadow:none !important}
 </style>
@@ -1168,7 +1219,8 @@ function stage(mode, compact){
 
 /* ---------- étape 1 ---------- */
 function stepHead(n, title, lead, livr){
-  var h = '<div class="nv-sh"><span class="nvd" aria-hidden="true"></span><h2>' + title + '</h2></div>';
+  var fait = (n === 3 && AXES.every(function(a){ return answeredIn(a) > 0; })) || (n === 2 && laneIds().length > 0 && lightCounts().n === 0);
+  var h = '<div class="nv-sh"><span class="nvd' + (fait ? ' ok' : '') + '" aria-hidden="true"></span><h2>' + title + '</h2></div>';
   if (n >= 4 && lead){ h += '<p class="lead">' + lead + '</p>'; }          // seules la restitution et le plan gardent leur phrase d'introduction
   if (S.warn){ h += '<div class="warn">' + S.warn + '</div>'; }
   return h;
@@ -1467,70 +1519,83 @@ function versAncien(){
 }
 
 
-/* ---------- étape 2 : indicateurs à feux ---------- */
+/* ---------- étape 2 : ma carte des processus et mes feux (même charte : question en petit libellé, feu choisi en grand) ---------- */
+var FEU_MOTS = {g:'Maîtrisé', o:'À surveiller', r:'Problème'};
+function feuQ(k, attente){
+  var v = S.lights[k.id], set = ['g','o','r'], i, h = '<div class="f2-q">' + (attente ? '<span class="nvd" aria-hidden="true"></span>' : '');
+  h += '<div class="nv-q">' + k.ty + ' · ' + k.t + '</div><div class="nv-opts mini' + (v ? '' : ' untouched') + '" role="group" aria-label="' + eH(k.t) + '">';
+  for (i=0;i<3;i++){ h += '<button type="button" class="nv-opt" data-act="light" data-id="' + eH(k.id) + '" data-v="' + set[i] + '" aria-pressed="' + (v === set[i]) + '">' + FEU_MOTS[set[i]] + '</button>'; }
+  return h + '</div></div>';
+}
 function step2(){
-  var h = stepHead(2, 'Ma carte des processus et mes indicateurs',
-    'Sur chaque étape de votre cœur de métier, dites où vous en êtes pour chaque indicateur : maîtrisé, à surveiller ou problème.',
-    'Livrable : Ma carte des processus et mes feux');
-  h += '<div class="legendrow"><span><span class="dot" style="background:#111111"></span>Maîtrisé</span><span><span class="dot" style="background:#8c8c8c"></span>À surveiller</span><span><span class="dot" style="background:#ffffff"></span>Problème</span><span><span class="dot" style="background:#fff;border:2px solid #c7c7c7"></span>Pas renseigné</span></div>';
-  h += stage('kpi');
-
-  var c = lightCounts(), fr = fragile(), fh = freedHours(), i;
-  h += '<div class="twocol">';
-  h += '<div class="card"><h3>Ce que disent mes feux</h3><div class="cnt">' + pill('#111111', c.g + ' maîtrisés') + pill('#8c8c8c', c.o + ' à surveiller') + pill('#ffffff', c.r + ' en problème') + pill('#c7c7c7', c.n + ' non renseignés') + '</div>';
-  if (fr){
-    h += '<div class="fragile"><div class="note" style="text-transform:uppercase;font-weight:700;letter-spacing:.8px;font-size:.62rem">Point de fragilité de ma chaîne</div><div style="font-family:Inter,sans-serif;font-size:1.6rem;color:var(--navy);font-weight:600;margin-top:3px;line-height:1.2;">' + fr.step.t + '</div><div class="note">' + fr.lane + '</div></div>';
+  var h = stepHead(2, 'Ma carte des processus et mes indicateurs', '', '');
+  var c = lightCounts(), fr = fragile(), fh = freedHours(), i, j, list = brickList(), premiere = true, tierActuel = '';
+  // les quatre nombres, en mots (jamais une note)
+  h += '<div class="q3-top"><div class="nv-field"><div class="nv-q">Mes feux</div><div class="f2-chiffres"><span><b>' + c.g + '</b> maîtrisés</span><span><b>' + c.o + '</b> à surveiller</span><span><b>' + c.r + '</b> en problème</span><span><b>' + c.n + '</b> à renseigner</span></div></div></div>';
+  var titres = {pil:'Pilotage', cor:'Cœur de métier', res:'Résultats chez le client', sup:'Support'};
+  for (i=0;i<list.length;i++){
+    var b = list[i];
+    var groupe = b.tier === 'cor' ? 'cor:' + b.laneId : b.tier;
+    if (groupe !== tierActuel){
+      tierActuel = groupe;
+      h += '<h3 class="f2-groupe">' + (b.tier === 'cor' ? eH(b.lane) : titres[b.tier]) + (b.tier === 'cor' ? ' <small>cœur de métier</small>' : '') + '</h3>';
+    }
+    h += '<div class="f2-brique"><div class="f2-bt">' + (b.tier === 'cor' ? (b.idx + 1) + ' · ' : '') + eH(b.t);
+    if (b.tier === 'sup' && b.sup && !b.sup.keep){
+      h += ' <button type="button" class="nv-poste f2-alleger" data-act="alleger" data-id="' + eH(b.sup.id) + '" aria-pressed="' + (!!S.alleger[b.sup.id]) + '"><span class="nv-box" aria-hidden="true"></span><span class="n">À alléger</span></button>';
+    }
+    h += '</div><div class="f2-feux">';
+    for (j=0;j<b.kpis.length;j++){
+      var attente = (!S.lights[b.kpis[j].id] && premiere); if (attente){ premiere = false; }
+      h += feuQ(b.kpis[j], attente);
+    }
+    h += '</div></div>';
   }
-  h += '</div>';
-
-  h += '<div class="card"><h3>Le temps que je libère</h3><div class="bigfig">≈ ' + fh + ' h <span style="font-size:.9rem;color:#767676;font-family:Inter,sans-serif;">par mois</span></div>';
-  h += '<div class="gauge"><i style="width:' + Math.min(100, Math.round(fh/25*100)) + '%"></i></div>';
-  h += '<div class="note">Soit environ ' + Math.round(fh*12/7) + ' jours par an.</div>';
-  h += '<div style="font-size:.64rem;font-weight:700;color:#767676;text-transform:uppercase;letter-spacing:.8px;margin:12px 0 7px">Je le réinvestis dans</div><div class="chips">';
-  for (i=0;i<REINVEST.length;i++){ h += '<button class="chip' + (S.reinvest[REINVEST[i]] ? ' on' : '') + '" data-act="reinvest" data-k="' + REINVEST[i] + '">' + REINVEST[i] + '</button>'; }
-  h += '</div></div></div>';
+  if (fr){
+    h += '<div class="nv-field" style="margin-top:var(--espace-etape,64px)"><div class="nv-q">Le point le plus fragile de ma chaîne</div><div class="a-grand">' + eH(fr.step.t) + ' <small>' + eH(fr.lane) + '</small></div></div>';
+  }
+  h += '<div class="nv-field" style="margin-top:var(--espace-etape,64px)"><div class="nv-q">Le temps que je libère</div><div class="a-grand">≈ ' + fh + ' h <small>par mois</small></div></div>';
+  h += '<div class="nv-field" style="margin-top:var(--espace-question,32px)"><div class="nv-q">Je le réinvestis dans</div><div class="nv-opts mini" role="group" aria-label="Réinvestissement">';
+  for (i=0;i<REINVEST.length;i++){ h += '<button type="button" class="nv-opt" data-act="reinvest" data-k="' + eH(REINVEST[i]) + '" aria-pressed="' + (!!S.reinvest[REINVEST[i]]) + '">' + REINVEST[i] + '</button>'; }
+  h += '</div></div>';
   h += cartoSection();
   return h;
 }
 
-/* ---------- étape 3 : les 60 questions ---------- */
-function qCard(q){
+/* ---------- étape 3 : les 60 questions (même charte que l’étape 1) ---------- */
+function qCard(q, attente){
   var v = S.ans[q.id], c = CQ[q.cq], l, h = '';
-  h += '<div class="qcard' + (v ? ' done' : '') + '" id="q-' + q.id + '"><div class="qhead"><span class="qid">' + q.id + '</span><span class="qth">' + q.th + '</span><span class="cqtag ' + c[1] + '">' + c[0] + '</span>' + '' + '</div>';
-  h += '<div class="qtext">' + q.q + '</div><div class="lvgrid">';
+  h += '<div class="q3" id="q-' + q.id + '">' + (attente ? '<span class="nvd" aria-hidden="true"></span>' : '');
+  h += '<div class="nv-q">' + q.id + ' · ' + q.th + ' · ' + c[0] + '</div><div class="q3-t">' + q.q + '</div>';
+  h += '<div class="q3-lv' + (v ? '' : ' untouched') + '" role="group" aria-label="Niveau de votre pratique">';
   for (l=1;l<=4;l++){
     var bar = '', b;
     for (b=1;b<=4;b++){ bar += '<i' + (b<=l ? ' class="f"' : '') + '></i>'; }
-    h += '<button class="lvc' + (v===l ? ' on' : '') + '" data-act="ans" data-id="' + q.id + '" data-v="' + l + '"><div class="lvh"><span class="lvn">Niveau ' + l + ' · ' + LVN[l-1] + '</span><span class="lbar">' + bar + '</span></div>' + ulist(q.n[l-1]) + '</button>';
+    h += '<button type="button" class="q3-opt" data-act="ans" data-id="' + q.id + '" data-v="' + l + '" aria-pressed="' + (v === l) + '"><span class="q3-n">Niveau ' + l + ' · ' + LVN[l-1] + '<span class="lbar" aria-hidden="true">' + bar + '</span></span>' + ulist(q.n[l-1]) + '</button>';
   }
   return h + '</div></div>';
 }
 function step3(){
   var h = stepHead(3, 'Mon diagnostic d’organisation apprenante', '', '');
-  var n = totalAnswered(), i;
-  h += '<div class="card"><div class="diag-top"><div class="cmp">' + compassSvg(avgs(), 170) + '</div><div style="flex:1 1 300px;">';
-  h += '<h3 style="margin-bottom:4px">Ma boussole se remplit</h3><div class="note">' + n + ' réponse(s) sur 60</div><div class="prog"><i style="width:' + Math.round(n/60*100) + '%"></i></div><div class="cnt" style="margin-top:6px">';
-  for (i=0;i<AXES.length;i++){ h += pill('#363636', AXES[i].code + ' · ' + answeredIn(AXES[i]) + ' / ' + AXES[i].qs.length); }
-  h += '</div><button class="btn" data-act="nextq">↓ Prochaine question sans réponse</button>';
-  h += '</div></div></div>';
-
-  h += '<div class="tabs">';
-  for (i=0;i<AXES.length;i++){
-    var a = AXES[i], on = (S.axTab === a.code);
-    h += '<button class="tab' + (on ? ' on' : '') + '" data-act="axtab" data-k="' + a.code + '"><b>' + a.code + ' · ' + a.short + '</b>' + answeredIn(a) + ' / ' + a.qs.length + ' répondues</button>';
-  }
-  h += '</div>';
-  var ax = null;
+  var n = totalAnswered(), i, ax = null;
   for (i=0;i<AXES.length;i++){ if (AXES[i].code === S.axTab) ax = AXES[i]; }
-  h += '<div class="card"><div style="font-family:Inter,sans-serif;font-size:1.9rem;color:#363636;font-weight:600;line-height:1.15;">' + ax.name + '</div><div class="note" style="margin-bottom:10px">' + ax.sub + '</div>';
-  h += '<div class="chips"><span class="note" style="margin:6px 8px 0 0">Filtrer :</span>';
+  h += '<div class="q3-top"><div class="cmp">' + compassSvg(avgs(), 130) + '</div><div class="nv-field"><div class="nv-q">' + (n === 0 ? '<span class="nvd" aria-hidden="true"></span>' : '') + 'Questions répondues</div><div class="q3-count"><b>' + n + '</b> / 60</div>';
+  h += '<button type="button" class="nv-fold" data-act="nextq" style="margin-left:0">↓ Prochaine question sans réponse</button></div></div>';
+
+  h += '<div class="nv-field"><div class="nv-q">Axe</div><div class="nv-opts" role="group" aria-label="Axe">';
+  for (i=0;i<AXES.length;i++){
+    var a = AXES[i];
+    h += '<button type="button" class="nv-opt" data-act="axtab" data-k="' + a.code + '" aria-pressed="' + (S.axTab === a.code) + '">' + a.code + ' · ' + a.short + ' <small>' + answeredIn(a) + ' / ' + a.qs.length + '</small></button>';
+  }
+  h += '</div></div>';
+  h += '<div class="nv-field"><div class="nv-q">Afficher</div><div class="nv-opts mini" role="group" aria-label="Filtre">';
   var fl = [['all','Toutes'],['TV','Travail vivant'],['PERF','Performance'],['ESG','RSE · ESG']];
-  for (i=0;i<fl.length;i++){ h += '<button class="chip' + (S.cq === fl[i][0] ? ' on' : '') + '" data-act="cq" data-k="' + fl[i][0] + '">' + fl[i][1] + '</button>'; }
-  h += '</div>';
-  var list = ax.qs.filter(function(q){ return S.cq === 'all' || q.cq === S.cq; }), j;
-  if (!list.length){ h += '<div class="note" style="padding:10px 0">Aucune question de ce type sur cet axe.</div>'; }
-  for (j=0;j<list.length;j++){ h += qCard(list[j]); }
-  h += '</div>';
+  for (i=0;i<fl.length;i++){ h += '<button type="button" class="nv-opt" data-act="cq" data-k="' + fl[i][0] + '" aria-pressed="' + (S.cq === fl[i][0]) + '">' + fl[i][1] + '</button>'; }
+  h += '</div></div>';
+  h += '<div class="nv-field"><div class="q3-ax">' + ax.name + '</div></div>';
+  var list = ax.qs.filter(function(q){ return S.cq === 'all' || q.cq === S.cq; }), j, premiere = true;
+  if (!list.length){ h += '<div class="nv-q">Aucune question de ce type sur cet axe.</div>'; }
+  for (j=0;j<list.length;j++){ var attente = (!S.ans[list[j].id] && premiere); if (attente){ premiere = false; } h += qCard(list[j], attente); }
   return h;
 }
 
