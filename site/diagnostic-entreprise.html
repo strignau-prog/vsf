@@ -2378,7 +2378,23 @@ render = function(k){
 };
 document.addEventListener('visibilitychange', function(){ if (document.visibilityState === 'hidden') { clearTimeout(DIAG.minuteur); sauver(); } });
 
+/* Aperçu (?apercu=1) : on voit les écrans sans compte et sans rien enregistrer. Aucune donnée n'est lue ni écrite. */
+async function apercuDiag(){
+  await nvChargerRef();
+  DIAG.pret = false; DIAG.statut = 'apercu';
+  var det = document.querySelector('details.fixes'); if (det) det.style.display = 'none';
+  dit('Aperçu : rien n’est enregistré');
+  var m = location.search.match(/[?&]etape=([1-5])/);
+  if (/[?&]demo=1/.test(location.search)){        // exemple rempli : 6 à 10 personnes, arts, quatre postes, feux et réponses
+    demo();
+    S.N = {dom:'B', taille:'6 à 10', checked:{'dir':true, 'B:peintre-en-lettres':true, 'B:graphiste-d-atelier':true, 'B:chef-fe-d-atelier':true, 'B:assistant-e-administratif':true}};
+    nvN(); versAncien();
+  }
+  S.step = m ? parseInt(m[1], 10) : 1;
+  render(false);
+}
 async function demarrerDiag(){
+  if (/[?&]apercu=1/.test(location.search)) return apercuDiag();
   ecranDiag('<p>Chargement…</p>');
   var pers = await VSF.exigerPersonneVerifiee();
   if (!pers) return;
