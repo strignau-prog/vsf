@@ -37,7 +37,46 @@ Deno.serve(async (req) => {
   const { data: u } = await admin.auth.getUser(jeton);
   if (!u?.user) return reponse({ erreur: "Connexion requise." }, 401);
 
-  const corps = await req.json().catch(() => ({})) as { commande_id?: string };
+  const corps = await req.json().catch(() => ({})) as { commande_id?: string; diagnostic_id?: string };
+
+  // Paiement du diagnostic entreprise : même sécurité (montant lu en base, appartenance vérifiée, aucune carte ici).
+  if (corps.diagnostic_id) {
+    if (!UUID.test(corps.diagnostic_id)) return reponse({ erreur: "Diagnostic inconnu." }, 400);
+    const { data: d } = await admin.rpc("vsf_diagnostic_a_payer", { p_user: u.user.id, p_id: corps.diagnostic_id });
+    if (!d) return reponse({ erreur: "Diagnostic inconnu." }, 404);
+    if (d.suspendue) return reponse({ erreur: "Cette entreprise est suspendue : écrivez à Skolantreuz." }, 409);
+    if (d.statut !== "a_payer") return reponse({ erreur: "Ce diagnostic n'est plus à payer." }, 409);
+    if (!(d.prix_eur > 0)) return reponse({ erreur: "Montant nul : rien à payer." }, 400);
+    const fd = new URLSearchParams();
+    fd.set("mode", "payment");
+    fd.set("success_url", `${site}/diagnostic-entreprise.html?paiement=ok`);
+    fd.set("cancel_url", `${site}/diagnostic-entreprise.html`);
+    fd.set("client_reference_id", d.id);
+    if (u.user.email) fd.set("customer_email", u.user.email);
+    fd.set("line_items[0][quantity]", "1");
+    fd.set("line_items[0][price_data][currency]", "eur");
+    fd.set("line_items[0][price_data][unit_amount]", String(d.prix_eur * 100));
+    fd.set("line_items[0][price_data][product_data][name]", "Diagnostic VRAI-SAVOIRFAIRE");
+    fd.set("metadata[diagnostic_id]", d.id);
+    fd.set("payment_intent_data[metadata][diagnostic_id]", d.id);
+    const rd = await fetch("https://api.stripe.com/v1/checkout/sessions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${cleStripe}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Idempotency-Key": `vsf-diagnostic-${d.id}-${Math.floor(Date.now() / 3600000)}`,   // un clic répété ne crée pas deux paiements ; une session abandonnée se renouvelle dans l'heure
+      },
+      body: fd.toString(),
+    });
+    const sd = await rd.json().catch(() => ({})) as any;
+    if (!rd.ok || !sd.id || !sd.url) {
+      console.error("Stripe a refusé la session du diagnostic", rd.status, sd?.error?.message);
+      return reponse({ erreur: "Le paiement n'a pas pu être préparé. Réessayez dans un instant." }, 502);
+    }
+    await admin.rpc("vsf_diagnostic_lier_session", { p_id: d.id, p_session: sd.id });
+    return reponse({ url: sd.url });
+  }
+
   if (!corps.commande_id || !UUID.test(corps.commande_id)) return reponse({ erreur: "Commande inconnue." }, 400);
 
   const { data: c } = await admin.from("vsf_commandes")

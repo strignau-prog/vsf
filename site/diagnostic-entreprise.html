@@ -577,8 +577,22 @@
   #main .nv h1{margin:0;font-size:clamp(34px,5.5vw,56px);font-weight:900;line-height:1.02;letter-spacing:-.02em}
   #main .nv h2{margin:0;font-size:clamp(24px,3vw,30px);font-weight:900;line-height:1.1;letter-spacing:-.01em;color:#111}
   #main .nv h3{margin:0}
-  .nv .nvd{width:20px;height:20px;border-radius:50% !important;background:var(--jaune,#ffc400);flex:none;display:inline-block;border:0 !important;margin:0}
-  .nv .nvd.ok{background:var(--vert,#009e73) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6.5 12.5l3.5 3.5 7.5-8' fill='none' stroke='white' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/100% no-repeat}
+  .nvd{width:20px;height:20px;border-radius:50% !important;background:var(--jaune,#ffc400);flex:none;display:inline-block;border:0 !important;margin:0}
+  .nvd.ok{background:var(--vert,#009e73) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6.5 12.5l3.5 3.5 7.5-8' fill='none' stroke='white' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/100% no-repeat}
+  /* étapes suivantes : même charte (rond jaune = en cours, vert = fait, aucun = pas encore ouvert) */
+  #stepper{padding-left:32px;margin:0 0 var(--espace-question,32px)}
+  #stepper:empty{display:none}
+  button.nv-st{background:none;border:0;padding:0;font:inherit;font-weight:800;font-size:15px;color:#111;cursor:pointer;min-height:44px}
+  button.nv-st:focus-visible{outline:2px solid #111;outline-offset:3px}
+  #main.lat{padding-left:32px;max-width:1100px}
+  #main.lat .nv-sh{margin-bottom:var(--espace-question,32px)}
+  #main.lat h2{font-size:clamp(24px,3vw,30px);font-weight:900;line-height:1.1;letter-spacing:-.01em;color:#111;margin:0}
+  #nav{padding-left:32px;display:flex;flex-direction:column;align-items:flex-start;gap:var(--espace-question,32px);margin-top:var(--espace-etape,64px)}
+  #nav:empty{display:none}
+  #nav .nv-go{margin-left:0}
+  #nav .nv-go .nvd{margin-left:-32px}
+  .nv-prec{background:none;border:0;padding:0;min-height:44px;font:inherit;font-size:15px;font-weight:500;color:#767676;cursor:pointer;order:2}
+  .nv-prec:focus-visible{outline:2px solid #111;outline-offset:3px}
   .nv-head{display:flex;flex-direction:column;gap:20px}
   .nv-steps{display:flex;flex-wrap:wrap;gap:8px 32px}
   .nv-st{display:inline-flex;align-items:center;gap:8px;font-weight:800;font-size:15px;min-height:24px}
@@ -647,7 +661,9 @@
   .nv-ch.on .num{background:#111;color:#fff}
   .nv-fait{display:flex;align-items:center;gap:10px;font-size:16px;font-weight:800}
   .nv-go{display:inline-flex;align-items:center;gap:12px;align-self:flex-start;background:none;border:0;padding:0;min-height:56px;font:inherit;font-size:clamp(24px,3vw,30px);font-weight:900;letter-spacing:-.01em;color:#111;cursor:pointer;-webkit-tap-highlight-color:transparent}
-  .nv-go[disabled]{color:var(--off);cursor:default}
+  .nv-go[disabled]{color:#a0a0a0;cursor:default}
+  .nv-go:focus-visible{outline:2px solid #111;outline-offset:4px}
+  .gate .nv-prix{font-size:clamp(34px,5vw,56px);font-weight:900;letter-spacing:-.02em;line-height:1.05;margin:8px 0 28px}
   .nv-go .nvd{margin-left:-32px}
   .nv :focus-visible{outline:2px solid #111;outline-offset:3px}
   .nv :focus:not(:focus-visible){outline:none}
@@ -1068,9 +1084,8 @@ function lightBlock(k){
 function tierCore(mode){
   var lanes = laneIds(), people = totalPeople(), sk = sketch(), i, j, k, e = eqt(), ds = dirSplitArr();
   var nPostes = sel().length;
-  var h = '<div class="tier t-core' + ((S.pulse || S.flash === 'cor') ? ' pulse' : '') + '"><div class="tlabel"><div class="tn">Cœur de métier</div><div class="verb">À sublimer</div>' + (mode === 'esq' ? '' : '<div class="ts">là où se développent les compétences rares</div>') + '</div><div class="tbody">';
-  h += '<div class="core-head"><div><div class="core-title">Le geste qui vous différencie</div>' + (mode === 'esq' ? '' : '<div class="core-sub">' + (lanes.length ? 'Reconstruit à partir des situations de travail de vos postes clés' : 'Esquisse générique de votre secteur : ajoutez vos postes clés pour la préciser') + '</div>') + '</div>';
-  h += '<div class="core-meta">' + (mode !== 'esq' && lanes.length ? nPostes + ' poste' + (nPostes>1?'s':'') + ' clé' + (nPostes>1?'s':'') + ' · ' + people + ' personne' + (people>1?'s':'') : '') + '</div></div>';
+  var h = '<div class="tier t-core' + ((S.pulse || S.flash === 'cor') ? ' pulse' : '') + '"><div class="tlabel"><div class="tn">Cœur de métier</div><div class="verb">À sublimer</div></div><div class="tbody">';
+  h += '<div class="core-head"><div><div class="core-title">Le geste qui vous différencie</div></div></div>';
   if (S.toast){ h += '<div class="toast">' + S.toast + '</div>'; }
 
   if (!lanes.length){
@@ -1142,14 +1157,13 @@ function tierSup(mode){
   return h + '</div></div>';
 }
 function stage(mode, compact){
-  return '<div class="stage' + (compact ? ' compact' : '') + '">' + tierPil(mode) + linkDown(compact) + tierCore(mode) + linkUp(compact) + tierSup(mode) + '</div>';
+  return '<div class="stage' + (compact ? ' compact' : '') + '">' + tierPil(mode) + linkDown(true) + tierCore(mode) + linkUp(true) + tierSup(mode) + '</div>';
 }
 
 /* ---------- étape 1 ---------- */
 function stepHead(n, title, lead, livr){
-  var h = '<div class="stepno">Étape ' + n + ' sur ' + STEPS.length + '</div><h2>' + title + '</h2>';
-  if (lead){ h += '<p class="lead">' + lead + '</p>'; }
-  if (livr){ h += '<span class="livr">' + livr + '</span>'; }
+  var h = '<div class="nv-sh"><span class="nvd" aria-hidden="true"></span><h2>' + title + '</h2></div>';
+  if (n >= 4 && lead){ h += '<p class="lead">' + lead + '</p>'; }          // seules la restitution et le plan gardent leur phrase d'introduction
   if (S.warn){ h += '<div class="warn">' + S.warn + '</div>'; }
   return h;
 }
@@ -1452,23 +1466,20 @@ function step2(){
   var h = stepHead(2, 'Ma carte des processus et mes indicateurs',
     'Sur chaque étape de votre cœur de métier, dites où vous en êtes pour chaque indicateur : maîtrisé, à surveiller ou problème.',
     'Livrable : Ma carte des processus et mes feux');
-  h += '<div class="finalite">' + FINALITE + '</div>';
-  h += '<div class="legendrow"><span><span class="dot" style="background:#111111"></span>Maîtrisé</span><span><span class="dot" style="background:#8c8c8c"></span>À surveiller</span><span><span class="dot" style="background:#ffffff"></span>Problème</span><span><span class="dot" style="background:#fff;border:2px solid #c7c7c7"></span>Pas encore renseigné</span><span style="color:#767676">La pastille numérotée de chaque étape prend l’état de son pire indicateur.</span></div>';
+  h += '<div class="legendrow"><span><span class="dot" style="background:#111111"></span>Maîtrisé</span><span><span class="dot" style="background:#8c8c8c"></span>À surveiller</span><span><span class="dot" style="background:#ffffff"></span>Problème</span><span><span class="dot" style="background:#fff;border:2px solid #c7c7c7"></span>Pas renseigné</span></div>';
   h += stage('kpi');
 
   var c = lightCounts(), fr = fragile(), fh = freedHours(), i;
   h += '<div class="twocol">';
   h += '<div class="card"><h3>Ce que disent mes feux</h3><div class="cnt">' + pill('#111111', c.g + ' maîtrisés') + pill('#8c8c8c', c.o + ' à surveiller') + pill('#ffffff', c.r + ' en problème') + pill('#c7c7c7', c.n + ' non renseignés') + '</div>';
   if (fr){
-    h += '<div class="fragile"><div class="note" style="text-transform:uppercase;font-weight:700;letter-spacing:.8px;font-size:.62rem">Point de fragilité de ma chaîne</div><div style="font-family:Inter,sans-serif;font-size:1.6rem;color:var(--navy);font-weight:600;margin-top:3px;line-height:1.2;">' + fr.step.t + '</div><div class="note">' + fr.lane + ' · c’est là que le geste rare est le plus exposé.</div></div>';
-  } else {
-    h += '<div class="note">Renseignez quelques feux : la chaîne vous montrera où elle est la plus fragile.</div>';
+    h += '<div class="fragile"><div class="note" style="text-transform:uppercase;font-weight:700;letter-spacing:.8px;font-size:.62rem">Point de fragilité de ma chaîne</div><div style="font-family:Inter,sans-serif;font-size:1.6rem;color:var(--navy);font-weight:600;margin-top:3px;line-height:1.2;">' + fr.step.t + '</div><div class="note">' + fr.lane + '</div></div>';
   }
-  h += '<div class="note" style="margin-top:10px">Auto-évaluation déclarative aujourd’hui. Demain, ces indicateurs pourront être mesurés par l’usage de l’atelier.</div></div>';
+  h += '</div>';
 
   h += '<div class="card"><h3>Le temps que je libère</h3><div class="bigfig">≈ ' + fh + ' h <span style="font-size:.9rem;color:#767676;font-family:Inter,sans-serif;">par mois</span></div>';
   h += '<div class="gauge"><i style="width:' + Math.min(100, Math.round(fh/25*100)) + '%"></i></div>';
-  h += '<div class="note">Soit environ ' + Math.round(fh*12/7) + ' jours par an. Ordres de grandeur illustratifs, à calibrer avec vos données.</div>';
+  h += '<div class="note">Soit environ ' + Math.round(fh*12/7) + ' jours par an.</div>';
   h += '<div style="font-size:.64rem;font-weight:700;color:#767676;text-transform:uppercase;letter-spacing:.8px;margin:12px 0 7px">Je le réinvestis dans</div><div class="chips">';
   for (i=0;i<REINVEST.length;i++){ h += '<button class="chip' + (S.reinvest[REINVEST[i]] ? ' on' : '') + '" data-act="reinvest" data-k="' + REINVEST[i] + '">' + REINVEST[i] + '</button>'; }
   h += '</div></div></div>';
@@ -1489,15 +1500,13 @@ function qCard(q){
   return h + '</div></div>';
 }
 function step3(){
-  var h = stepHead(3, 'Mon diagnostic d’organisation apprenante',
-    '60 questions, 15 par axe. Pour chacune, cochez le niveau dont les observables décrivent le mieux votre pratique aujourd’hui — sans vous juger. Le positionnement du nouvel embauché est au cœur de la question d’intégration.',
-    'Livrable : Ma boussole d’organisation apprenante');
+  var h = stepHead(3, 'Mon diagnostic d’organisation apprenante', '', '');
   var n = totalAnswered(), i;
   h += '<div class="card"><div class="diag-top"><div class="cmp">' + compassSvg(avgs(), 170) + '</div><div style="flex:1 1 300px;">';
   h += '<h3 style="margin-bottom:4px">Ma boussole se remplit</h3><div class="note">' + n + ' réponse(s) sur 60</div><div class="prog"><i style="width:' + Math.round(n/60*100) + '%"></i></div><div class="cnt" style="margin-top:6px">';
   for (i=0;i<AXES.length;i++){ h += pill('#363636', AXES[i].code + ' · ' + answeredIn(AXES[i]) + ' / ' + AXES[i].qs.length); }
   h += '</div><button class="btn" data-act="nextq">↓ Prochaine question sans réponse</button>';
-  h += '<div class="note" style="margin-top:8px">Ces questions portent sur le dispositif de l’entreprise, jamais sur le ressenti individuel des personnes. Chaque niveau est décrit par au moins 4 observables factuels : ce que l’on peut voir, compter ou vérifier (documents, fréquences, rôles, traces).</div></div></div></div>';
+  h += '</div></div></div>';
 
   h += '<div class="tabs">';
   for (i=0;i<AXES.length;i++){
@@ -1963,19 +1972,23 @@ function cartoSection(){
 }
 
 /* ---------- rendu ---------- */
+/* même code de couleur qu'à l'étape 1 : vert + coche = fait, jaune = en cours, aucun rond = pas encore ouvert */
 function renderStepper(){
-  var h = '', i;
+  var h = '<nav class="nv-steps" aria-label="Étapes">', i;
   for (i=0;i<STEPS.length;i++){
-    var cls = 'st' + (S.step === i+1 ? ' active' : (S.step > i+1 ? ' done' : ''));
-    h += '<button class="' + cls + '" data-act="go" data-k="' + (i+1) + '"><span class="n">' + (S.step > i+1 ? '✓' : (i+1)) + '</span><span class="l">' + STEPS[i] + '</span></button>';
+    var etat = S.step > i+1 ? 'done' : (S.step === i+1 ? 'now' : 'off');
+    var rond = etat === 'done' ? '<span class="nvd ok" aria-hidden="true"></span>' : (etat === 'now' ? '<span class="nvd" aria-hidden="true"></span>' : '');
+    h += (etat === 'off')
+      ? '<span class="nv-st off">' + STEPS[i] + '</span>'
+      : '<button type="button" class="nv-st ' + etat + '" data-act="go" data-k="' + (i+1) + '"' + (etat === 'now' ? ' aria-current="step"' : '') + '>' + rond + STEPS[i] + '</button>';
   }
-  document.getElementById('stepper').innerHTML = h;
+  document.getElementById('stepper').innerHTML = h + '</nav>';
 }
 function renderNav(){
   if (S.calculating){ document.getElementById('nav').innerHTML = ''; return; }
   var h = '';
-  if (S.step > 1){ h += '<button class="btn" data-act="prev">← Précédent</button>'; } else { h += '<span></span>'; }
-  if (S.step < STEPS.length){ h += '<button class="btn primary" data-act="next">Continuer →</button>'; } else { h += '<span></span>'; }
+  if (S.step > 1){ h += '<button type="button" class="nv-prec" data-act="prev">← Précédent</button>'; } else { h += '<span></span>'; }
+  if (S.step < STEPS.length){ h += '<button type="button" class="nv-go" data-act="next"><span class="nvd" aria-hidden="true"></span>' + (S.step === 3 ? 'Voir ma restitution →' : 'Continuer →') + '</button>'; } else { h += '<span></span>'; }
   document.getElementById('nav').innerHTML = h;
 }
 function render(keepScroll){
@@ -2213,8 +2226,9 @@ async function ouvrirDiag(org){
   if (o.error) return ecranDiag('<h1>Impossible d’ouvrir le diagnostic</h1><p class="msg" role="alert">' + eH(messageDiag(o.error)) + '</p>');
   DIAG.id = o.data.id; DIAG.statut = o.data.statut;
   if (DIAG.statut === 'a_payer') {
-    return ecranDiag('<h1>Votre diagnostic</h1><p>Le diagnostic VRAI-SAVOIRFAIRE coûte <b>' + eH(String(o.data.prix_eur).replace(/\B(?=(\d{3})+(?!\d))/g, ' ')) + ' €</b>. Il s’ouvre dès que le paiement est confirmé.</p>' +
-      '<p class="msg" style="display:block">Le paiement en ligne ouvre très bientôt. Écrivez-nous pour commencer : <a href="mailto:contact@vraisavoirfaire.fr">contact@vraisavoirfaire.fr</a></p>');
+    DIAG.prix = o.data.prix_eur;
+    if (/[?&]paiement=ok/.test(location.search)) return attendrePaiement(0);
+    return ecranPaiement('');
   }
   var d = await VSF.sb.from('vsf_diagnostics').select('etat').eq('id', DIAG.id).maybeSingle();
   var rp = await VSF.sb.from('vsf_diagnostic_reponses').select('q_code,niveau').eq('diagnostic_id', DIAG.id);
@@ -2227,6 +2241,28 @@ async function ouvrirDiag(org){
   if (S.N){ nvN(); versAncien(); }
   DIAG.pret = true;
   render(false);
+}
+/* ---------- paiement du diagnostic : Stripe Checkout (page hébergée par Stripe, aucune carte ici) ---------- */
+function ecranPaiement(msg){
+  var prix = String(DIAG.prix).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' €';
+  ecranDiag('<h1>Votre diagnostic</h1><p class="nv-prix">' + eH(prix) + '</p>' +
+    '<p class="msg" id="msgPaie" role="alert">' + eH(msg || '') + '</p>' +
+    '<button type="button" class="nv-go" id="payer">Payer →</button>');
+  document.getElementById('payer').onclick = async function(){
+    this.disabled = true;
+    var r = await VSF.sb.functions.invoke('creer-paiement', { body: { diagnostic_id: DIAG.id } });
+    var url = r.data && r.data.url;
+    if (url) { location.href = url; return; }
+    ecranPaiement('Le paiement n’a pas pu être préparé. Réessayez dans un instant.');
+  };
+}
+/* Au retour de Stripe, l'accès s'ouvre à la confirmation du webhook (quelques secondes) : on interroge jusqu'à 30 s. */
+async function attendrePaiement(n){
+  ecranDiag('<h1>Paiement en cours de confirmation</h1><p class="msg" style="display:block" role="status">Quelques secondes…</p>');
+  var d = await VSF.sb.from('vsf_diagnostics').select('statut').eq('id', DIAG.id).maybeSingle();
+  if (d.data && d.data.statut !== 'a_payer'){ history.replaceState(null, '', location.pathname); return ouvrirDiag(DIAG.org); }
+  if (n >= 15){ return ecranPaiement('Paiement non confirmé pour l’instant. Rechargez cette page dans une minute.'); }
+  setTimeout(function(){ attendrePaiement(n + 1); }, 2000);
 }
 function etatPersiste(){ var e = {}; PERSISTE.forEach(function(k){ e[k] = S[k]; }); return e; }
 function reponsesPersistees(){ var a = [], k; for (k in S.ans){ if (S.ans[k]) a.push({ q: k, n: S.ans[k] }); } return a; }
@@ -2254,6 +2290,7 @@ render = function(k){
   var champ = (actif && actif.id === 'nv-add') ? [actif.selectionStart, actif.selectionEnd] : null;
   renderMaquette(k);
   var det = document.querySelector('details.fixes'); if (det) det.style.display = (S.step === 4 && !S.calculating) ? '' : 'none';
+  document.getElementById('main').classList.toggle('lat', S.step > 1 && !S.calculating);
   if (S.step === 1 && !S.calculating){ document.getElementById('stepper').innerHTML = ''; document.getElementById('nav').innerHTML = ''; }
   if (S.step === 1){
     var cible = champ ? document.getElementById('nv-add') : (fid ? document.querySelector('[data-fid="' + fid.replace(/"/g, '') + '"]') : null);

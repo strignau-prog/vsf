@@ -49,6 +49,12 @@ Deno.serve(async (req) => {
   try {
     if (ev.type === "checkout.session.completed" || ev.type === "checkout.session.async_payment_succeeded") {
       if (obj.payment_status !== "paid") return reponse("En attente du paiement");   // virement ou prélèvement pas encore confirmé
+      if (obj.metadata?.diagnostic_id) {                    // paiement d'un diagnostic entreprise
+        const pi = typeof obj.payment_intent === "string" ? obj.payment_intent : (obj.payment_intent?.id ?? "");
+        const { data: dd, error: ed } = await admin.rpc("vsf_diagnostic_confirmer_paiement", { p_evenement: ev.id, p_session: obj.id, p_paiement: pi });
+        if (ed) throw ed;
+        return reponse(String(dd));
+      }
       const { data, error } = await admin.rpc("vsf_confirmer_paiement", {
         p_evenement: ev.id, p_session: obj.id, p_paiement: typeof obj.payment_intent === "string" ? obj.payment_intent : (obj.payment_intent?.id ?? ""),
       });
