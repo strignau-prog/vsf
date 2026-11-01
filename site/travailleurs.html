@@ -207,8 +207,8 @@ footer strong { color: var(--fg); font-weight: 800; text-transform: uppercase; }
 .page .texte hr{border:0;border-top:1px solid var(--line);margin:2rem 0;column-span:all}
 footer{max-width:none !important;padding-inline:clamp(1.5rem,5vw,5rem) !important}
 </style>
-</head>
-<body>
+<link rel="stylesheet" href="vsf-icones.css"><link rel="stylesheet" href="vsf-epure.css"><link rel="stylesheet" href="vsf-titres.css"></head>
+<body class="page-publique">
 <header class="nav">
   <div class="nav-in">
     <a class="brand pop" href="./">VRAI-SAVOIRFAIRE</a>
@@ -230,7 +230,7 @@ footer{max-width:none !important;padding-inline:clamp(1.5rem,5vw,5rem) !importan
 <main id="haut">
   <section class="page">
     <p class="label">Travailleurs</p>
-    <h1>Trouvez un métier qui compte. Gardez-en la preuve.</h1>
+    <h1>Trouvez un m<mark>é</mark>tier qui compte. Gardez-en la preuve.</h1>
         <p class="lead">Explorez des métiers manuels, voyez ce qu’ils demandent vraiment, construisez votre parcours. Vos preuves vous suivent toute la vie, dans votre <a class="tl pop" href="puissance.html">coffre-fort</a> personnel.</p>
     <div class="actions"><a class="btn btn-lg" href="connexion.html">Créer mon compte →</a><a class="btn btn-lg" href="connexion.html?mode=connexion" style="border-bottom-color:transparent;text-decoration:underline;text-decoration-thickness:3px;text-underline-offset:0.3rem">Connexion</a></div>
           <ul class="list">
@@ -258,6 +258,6 @@ footer{max-width:none !important;padding-inline:clamp(1.5rem,5vw,5rem) !importan
   Array.prototype.forEach.call(menu.querySelectorAll('a'), function (a) { a.addEventListener('click', fermer); });
 })();
 </script>
-<script src="vsf-pop.js"></script>
-</body>
+<script src="vsf-icones.js"></script><script src="vsf-pop.js"></script>
+<script src="vsf-titres.js"></script></body>
 </html>

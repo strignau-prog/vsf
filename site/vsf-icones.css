@@ -1,11 +1,12 @@
-/* VSF — icônes pleines. Aucune couleur propre : l'icône prend celle du texte. Cible tactile de 44 px au minimum. */
-.ico{width:24px;height:24px;fill:currentColor;display:block;pointer-events:none}
-.ico-btn,#app .ico-btn,.haut .ico-btn{display:inline-flex !important;align-items:center;justify-content:center;min-width:44px;min-height:44px;padding:10px !important;margin:0 4px 0 0 !important;border:0;border-radius:50%;background:none;color:#111 !important;cursor:pointer;text-decoration:none !important;vertical-align:middle;letter-spacing:0;text-transform:none}
-.ico-btn:hover{background:#f0f0f0}
+/* VSF — icônes au trait fin (contour). Aucune couleur propre : l'icône prend la couleur du texte, jamais de fond.
+   Icône 22 px, zone cliquable de 44 px au minimum. Une icône + un mot (.avec-mot) pour les actions importantes ou irréversibles. */
+.ico{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;display:block;pointer-events:none;flex:none}
+.ico-btn,#app .ico-btn,.haut .ico-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-width:44px;min-height:44px;padding:10px;margin:0 2px 0 0;border:0;border-radius:0;background:none;color:#111;cursor:pointer;text-decoration:none;vertical-align:middle;letter-spacing:0;text-transform:none;font:inherit;font-size:14px;font-weight:800;transition:color .18s ease}
+.ico-btn.avec-mot{padding:10px 12px 10px 8px;text-transform:uppercase;letter-spacing:.04em;font-size:13px;text-align:left}
 .ico-btn:focus-visible{outline:2px solid #111;outline-offset:2px}
-.ico-btn[disabled]{color:#767676 !important;cursor:default}
+.ico-btn[disabled]{color:#767676;cursor:default}
 .aide{margin:2px 0}
 .aide-texte{margin:2px 0 14px;max-width:46em}
 .aide-texte p{margin:8px 0}
-.aide-btn{color:#444 !important}
-.aide-btn.aide-titre,#app .aide-btn.aide-titre{margin:0 0 0 8px !important;min-width:40px;min-height:40px;padding:8px !important}
+.aide-btn{color:#444}
+.aide-btn.aide-titre,#app .aide-btn.aide-titre{margin:0 0 0 8px;min-width:40px;min-height:40px;padding:8px}

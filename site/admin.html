@@ -15,20 +15,20 @@
   .chiffres div{min-width:90px}
   .chiffres b{display:block;font-size:34px;font-weight:900;line-height:1.05;letter-spacing:-.02em}
   .chiffres span{font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--cap)}
-  .ligne{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:12px 0;border-top:1px solid var(--line)}
-  .ligne:last-child{border-bottom:1px solid var(--line)}
+  .ligne{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:16px 0}
   .ligne .qui{min-width:0}
   .ligne .qui b{display:block;font-weight:800;overflow-wrap:anywhere}
   .ligne .qui span{font-size:14px;color:var(--cap);overflow-wrap:anywhere}
-  .ligne .actions{flex:none;display:flex;gap:16px;flex-wrap:wrap;justify-content:flex-end}
-  .etat{font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;white-space:nowrap}
-  .etat.fort{border:1.5px solid var(--ink);padding:2px 7px}
+  .ligne .qui span.alerte{color:var(--ink);font-weight:800}
+  .ligne .actions{flex:none;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;align-items:center}
+  .etat{font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;white-space:nowrap;margin-right:6px}
   .bouton.petit{min-height:44px;font-size:12px;padding:10px 0}
+  h2 .ico-btn{vertical-align:middle;margin-left:6px}
   @media (max-width:520px){.ligne{flex-direction:column;align-items:flex-start}.ligne .actions{justify-content:flex-start}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="vsf-auth.js"></script>
-<link rel="stylesheet" href="vsf-largeur.css"></head>
+<link rel="stylesheet" href="vsf-largeur.css"><link rel="stylesheet" href="vsf-icones.css"><link rel="stylesheet" href="vsf-epure.css"></head>
 <body>
 <header class="haut">
   <a class="marque" href="./">VRAI-SAVOIRFAIRE</a>
@@ -47,9 +47,10 @@ var jour = function (d) { try { return new Date(d).toLocaleDateString('fr-FR'); 
 function dire(id, texte) { var m = $(id); if (m) { m.textContent = texte || ''; if (texte && m.scrollIntoView) m.scrollIntoView({ block: "center" }); } }
 function messageErreur(e) {
   var m = String((e && e.message) || e || '');
-  if (e && e.code === 'VSF01' || /VSF01|vendeur est valid/i.test(m)) return 'Cette offre ne peut pas sortir du brouillon : son ambassadeur métier n’est pas validé.';
-  if (/permission|row-level|policy/i.test(m)) return 'Action refusée : ce compte n’a pas ce droit.';
-  return 'Impossible d’enregistrer pour le moment. Réessayez dans un instant.';
+  if (e && e.code === 'VSF01' || /VSF01|vendeur est valid/i.test(m)) return 'Offre bloquée : son ambassadeur métier n’est pas validé.';
+  if (e && e.code === 'VSF08') return /e-mail/i.test(m) ? 'Validation refusée : e-mail manquant.' : 'Validation refusée : contrat non accepté.';
+  if (/permission|row-level|policy/i.test(m)) return 'Action refusée : droit manquant.';
+  return 'Échec. Réessayez.';
 }
 
 /* ───── accès ───── */
@@ -60,8 +61,7 @@ async function demarrer() {
   $('bSortir').style.display = '';
   var a = await sb.rpc('vsf_est_admin');
   if (a.error || a.data !== true) {
-    return $('app').innerHTML = '<p class="etiquette">Tableau de bord</p><h1>Accès réservé.</h1>' +
-      '<p class="message">Cette page est réservée à l’équipe de VRAI-SAVOIRFAIRE.</p><a class="bouton" href="./">Retour à l’accueil</a>';
+    return $('app').innerHTML = '<h1>Accès réservé.</h1><a class="bouton" href="./">Retour</a>';
   }
   var su = await sb.rpc('vsf_est_super');
   moi.super = su.data === true;
@@ -75,27 +75,22 @@ function dessiner() {
   $('app').innerHTML =
     '<p class="etiquette">' + (moi.super ? 'Super administrateur' : 'Administrateur') + '</p>' +
     '<h1>Tableau de bord</h1>' +
-    '<p class="legende">Ce que vous avez à regarder aujourd’hui. Aucune note, aucun classement : seulement l’état des comptes et des ventes.</p>' +
 
     '<h2>Comptes</h2><div class="chiffres" id="chiffres"><div><b>…</b><span>Personnes</span></div></div>' +
-    '<p class="legende">Les comptes entreprise et collectif arriveront avec leur parcours.</p>' +
     '<p class="message" id="msgComptes" role="alert"></p><div id="listeComptes"></div>' +
 
-    '<h2>Ambassadeurs métier et offres à valider</h2>' +
-    '<p class="legende">Aucune offre ne s’ouvre à la vente tant que son ambassadeur métier n’est pas validé.</p>' +
-    '<p class="message" id="msgVendeurs" role="alert"></p>' +
-    '<p class="etiquette">Ambassadeurs métier</p><div id="listeVendeurs"></div>' +
-    '<p class="etiquette">Offres</p><div id="listeOffres"></div>' +
-    '<h2>À reverser aux ambassadeurs métier</h2>' +
-    '<p class="legende">Skolantreuz encaisse la totalité. Voici ce qui revient à chaque ambassadeur métier. Ce n’est pas une facture : c’est l’état qui sert à faire le virement et à préparer la facturation avec votre comptable.</p>' +
+    '<h2>Ambassadeurs</h2>' +
+    '<p class="legende">Aucune offre ne s’ouvre tant que son ambassadeur n’est pas validé.</p>' +
+    '<p class="message" id="msgVendeurs" role="alert"></p><div id="listeVendeurs"></div>' +
+    '<h2>Offres</h2><div id="listeOffres"></div>' +
+    '<h2>À reverser</h2>' +
+    '<p class="legende">État de gestion, pas une facture.</p>' +
     '<p class="message" id="msgReverse" role="alert"></p><div id="listeReverse"></div>' +
 
-    '<h2>Entités</h2>' +
-    '<p class="legende">Un accès par entité (collectifs, entreprises, ambassadeurs métier, personnes, équipe) avec, pour chaque collectif, son référentiel métier collectif. Vous y voyez le référentiel et la gestion, jamais les données personnelles.</p>' +
-    '<a class="bouton" href="entites.html">Ouvrir les entités →</a>' +
+    '<h2>Entités <a class="bouton" href="entites.html">Ouvrir les entités</a></h2>' +
 
-    '<h2>CGV et refacturations</h2>' +
-    '<p class="legende">La version des CGV en vigueur est provisoire, en attente de relecture par Stéphane et votre comptable. Le suivi des 30 % est dans « À reverser aux ambassadeurs métier »</p>';
+    '<h2>CGV</h2>' +
+    '<p class="legende">Version provisoire, à relire avec votre comptable.</p>';
 }
 
 /* ───── comptes ───── */
@@ -117,12 +112,13 @@ async function chargerComptes() {
     var action = soi ? '' :
       (p.statut === 'suspendu'
         ? '<button class="bouton petit" onclick="changerCompte(\'' + p.user_id + '\',\'verifie\',this)">Rétablir</button>'
-        : '<button class="bouton petit discret" onclick="confirmer(this,\'Suspendre ?\',function(){changerCompte(\'' + p.user_id + '\',\'suspendu\')})">Suspendre</button>');
-    return '<div class="ligne"><div class="qui"><b>' + E(nom) + '</b><span>' + E(p.email || '') + ' · ' + jour(p.cree_le) + '</span></div>' +
-      '<div class="actions"><span class="etat' + (p.statut === 'suspendu' ? ' fort' : '') + '">' +
-      ({ verifie: 'Vérifié', en_attente: 'À confirmer', suspendu: 'Suspendu' })[p.statut] + '</span>' + action + '</div></div>';
+        : '<button class="bouton petit" onclick="confirmer(this,\'Suspendre ?\',function(){changerCompte(\'' + p.user_id + '\',\'suspendu\')})">Suspendre</button>');
+    // l'état normal (vérifié) ne s'écrit pas : seuls « À confirmer » et « Suspendu » se lisent
+    var etat = p.statut === 'verifie' ? '' : '<span class="etat">' + ({ en_attente: 'À confirmer', suspendu: 'Suspendu' })[p.statut] + '</span>';
+    return '<div class="ligne"><div class="qui"><b>' + E(nom) + '</b><span>' + E(p.email || '') + '</span></div>' +
+      '<div class="actions">' + etat + action + '</div></div>';
   });
-  $('listeComptes').innerHTML = lignes.length ? lignes.join('') : '<p class="legende">Aucun compte pour le moment.</p>';
+  $('listeComptes').innerHTML = lignes.join('');
 }
 async function changerCompte(uid, statut) {
   dire('msgComptes', '');
@@ -136,29 +132,39 @@ async function chargerVendeurs() {
   var v = await sb.from('vsf_vendeurs').select('id,nom,atelier,email,statut,contrat_accepte_le,cree_le').order('cree_le', { ascending: false });
   if (v.error) { dire('msgVendeurs', messageErreur(v.error)); return; }
   var lv = (v.data || []).map(function (x) {
-    var contrat = x.contrat_accepte_le ? 'contrat accepté le ' + jour(x.contrat_accepte_le) : 'contrat non accepté';
+    // règle : « Validé » exige un e-mail et un contrat accepté (vérifiée aussi par la base, migration 24)
+    var manque = [];
+    if (!x.email) manque.push('e-mail manquant');
+    if (!x.contrat_accepte_le) manque.push('contrat à accepter');
+    var complet = !manque.length;
+    var incoherent = x.statut === 'valide' && !complet;          // validé à tort : à signaler
     var actions = x.statut === 'valide'
-      ? '<button class="bouton petit discret" onclick="confirmer(this,\'Suspendre ?\',function(){changerVendeur(\'' + x.id + '\',\'suspendu\')})">Suspendre</button>'
-      : '<button class="bouton petit" onclick="confirmer(this,\'Valider ?\',function(){changerVendeur(\'' + x.id + '\',\'valide\')})">Valider</button>';
-    return '<div class="ligne"><div class="qui"><b>' + E(x.nom) + (x.atelier ? ' · ' + E(x.atelier) : '') + '</b><span>' + E(x.email || 'sans e-mail') + ' · ' + contrat + '</span></div>' +
-      '<div class="actions"><span class="etat' + (x.statut === 'valide' ? ' fort' : '') + '">' +
+      ? '<button class="bouton petit" onclick="confirmer(this,\'Suspendre ?\',function(){changerVendeur(\'' + x.id + '\',\'suspendu\')})">Suspendre</button>'
+      : (complet ? '<button class="bouton petit" onclick="confirmer(this,\'Valider ?\',function(){changerVendeur(\'' + x.id + '\',\'valide\')})">Valider</button>' : '');
+    var nom = E(x.nom) + (x.atelier && x.atelier !== x.nom ? ' · ' + E(x.atelier) : '');   // pas de doublon nom / atelier
+    var sous = [];
+    if (x.email) sous.push(E(x.email));
+    if (manque.length) sous.push('<span class="alerte">' + (incoherent ? 'À corriger : ' : '') + manque.join(' · ') + '</span>');
+    return '<div class="ligne"><div class="qui"><b>' + nom + '</b><span>' + sous.join(' · ') + '</span></div>' +
+      '<div class="actions"><span class="etat">' +
       ({ valide: 'Validé', en_attente: 'En attente', suspendu: 'Suspendu' })[x.statut] + '</span>' + actions + '</div></div>';
   });
-  $('listeVendeurs').innerHTML = lv.length ? lv.join('') : '<p class="legende">Aucun ambassadeur métier pour le moment.</p>';
+  $('listeVendeurs').innerHTML = lv.join('');
 
   var o = await sb.from('vsf_offres').select('id,intitule,statut,vendeur:vsf_vendeurs(nom)').order('cree_le', { ascending: false });
   if (o.error) { dire('msgVendeurs', messageErreur(o.error)); return; }
   var ORDRE = ['brouillon', 'pilote', 'publiee'];
   var NOMS = { brouillon: 'Brouillon', pilote: 'Pilote', publiee: 'Publiée' };
+  var VERBE = { pilote: 'Pilote', publiee: 'Publier' };      // le geste, pas la phrase
   var lo = (o.data || []).map(function (x) {
     var i = ORDRE.indexOf(x.statut);
     var act = '';
-    if (i < ORDRE.length - 1) act += '<button class="bouton petit" onclick="confirmer(this,\'Passer en ' + NOMS[ORDRE[i + 1]].toLowerCase() + ' ?\',function(){changerOffre(\'' + x.id + '\',\'' + ORDRE[i + 1] + '\')})">Passer en ' + NOMS[ORDRE[i + 1]].toLowerCase() + '</button>';
-    if (i > 0) act += '<button class="bouton petit discret" onclick="changerOffre(\'' + x.id + '\',\'brouillon\')">Remettre en brouillon</button>';
-    return '<div class="ligne"><div class="qui"><b>' + E(x.intitule) + '</b><span>' + E((x.vendeur && x.vendeur.nom) || 'sans ambassadeur métier') + '</span></div>' +
-      '<div class="actions"><span class="etat' + (x.statut !== 'brouillon' ? ' fort' : '') + '">' + NOMS[x.statut] + '</span>' + act + '</div></div>';
+    if (i < ORDRE.length - 1) act += '<button class="bouton petit" onclick="confirmer(this,\'' + VERBE[ORDRE[i + 1]] + ' ?\',function(){changerOffre(\'' + x.id + '\',\'' + ORDRE[i + 1] + '\')})">' + VERBE[ORDRE[i + 1]] + '</button>';
+    if (i > 0) act += '<button class="bouton petit" onclick="changerOffre(\'' + x.id + '\',\'brouillon\')">Remettre en brouillon</button>';
+    return '<div class="ligne"><div class="qui"><b>' + E(x.intitule) + '</b><span>' + E((x.vendeur && x.vendeur.nom) || '') + '</span></div>' +
+      '<div class="actions"><span class="etat">' + NOMS[x.statut] + '</span>' + act + '</div></div>';
   });
-  $('listeOffres').innerHTML = lo.length ? lo.join('') : '<p class="legende">Aucune offre pour le moment.</p>';
+  $('listeOffres').innerHTML = lo.join('');
 }
 async function changerVendeur(id, statut) {
   dire('msgVendeurs', '');
@@ -182,26 +188,26 @@ var REV = { mensuel: [] };
 async function chargerReversements() {
   var a = await sb.from('vsf_a_reverser').select('*').order('nom');
   var m = await sb.from('vsf_a_reverser_mensuel').select('*').order('mois', { ascending: false });
-  if (a.error || m.error) { dire('msgReverse', 'L’état de reversement n’est pas encore installé (mise à jour de la base à faire).'); return; }
+  if (a.error || m.error) { dire('msgReverse', 'État non installé : mise à jour de la base à faire.'); return; }
   REV.mensuel = m.data || [];
   var l = (a.data || []).map(function (x) {
-    return '<div class="ligne"><div class="qui"><b>' + E(x.nom) + '</b><span>Encaissé ' + euros(x.encaisse_eur) + ' · part de Skolantreuz ' + euros(x.part_plateforme_eur) +
-      ' · dû ' + euros(x.du_eur) + ' · déjà viré ' + euros(x.deja_reverse_eur) + '</span></div>' +
-      '<div class="actions"><span class="etat' + (x.reste_eur > 0 ? ' fort' : '') + '">Reste ' + euros(x.reste_eur) + '</span>' +
-      (x.reste_eur > 0 ? '<button class="bouton petit" onclick="formVirement(this,\'' + x.vendeur_id + '\',' + x.reste_eur + ')">J’ai fait le virement</button>' : '') + '</div></div>';
+    return '<div class="ligne"><div class="qui"><b>' + E(x.nom) + '</b><span>Encaissé ' + euros(x.encaisse_eur) + ' · Skolantreuz ' + euros(x.part_plateforme_eur) +
+      ' · dû ' + euros(x.du_eur) + ' · viré ' + euros(x.deja_reverse_eur) + '</span></div>' +
+      '<div class="actions">' + (x.reste_eur > 0 ? '<span class="etat">Reste ' + euros(x.reste_eur) + '</span>' : '') +
+      (x.reste_eur > 0 ? '<button class="bouton petit" onclick="formVirement(this,\'' + x.vendeur_id + '\',' + x.reste_eur + ')">Virement fait</button>' : '') + '</div></div>';
   });
-  $('listeReverse').innerHTML = (l.length ? l.join('') : '<p class="legende">Aucune vente pour le moment.</p>') +
-    (REV.mensuel.length ? '<p><button class="bouton petit discret" onclick="exporterCsv()">Exporter le détail mois par mois (CSV)</button></p>' : '');
+  $('listeReverse').innerHTML = l.join('') +
+    (REV.mensuel.length ? '<p><button class="bouton petit" onclick="exporterCsv()">Exporter en CSV</button></p>' : '');
 }
 function formVirement(bouton, id, reste) {
   var zone = bouton.parentNode, memoire = zone.innerHTML;
   zone.innerHTML = '<input type="text" inputmode="numeric" id="vMontant" value="' + reste + '" aria-label="Montant viré, en euros" style="width:90px"> ' +
-    '<input type="text" id="vRef" placeholder="Référence du virement" aria-label="Référence du virement" style="width:180px">';
+    '<input type="text" id="vRef" placeholder="Référence" aria-label="Référence du virement" style="width:180px">';
   var ok = document.createElement('button'); ok.type = 'button'; ok.className = 'bouton petit'; ok.textContent = 'Enregistrer';
   var non = document.createElement('button'); non.type = 'button'; non.className = 'bouton petit discret'; non.textContent = 'Annuler';
   ok.onclick = function () {
     var mt = parseInt($('vMontant').value, 10);
-    if (!(mt > 0) || mt > reste) { dire('msgReverse', 'Indiquez un montant entre 1 € et ' + euros(reste) + '.'); return; }
+    if (!(mt > 0) || mt > reste) { dire('msgReverse', 'Montant entre 1 € et ' + euros(reste) + '.'); return; }
     enregistrerVirement(id, mt, $('vRef').value.trim());
   };
   non.onclick = function () { zone.innerHTML = memoire; };
@@ -234,5 +240,5 @@ function confirmer(bouton, texte, action) {
 
 demarrer();
 </script>
-<script src="vsf-pop.js"></script></body>
+<script src="vsf-icones.js"></script><script src="vsf-pop.js"></script></body>
 </html>

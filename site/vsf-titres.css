@@ -1,0 +1,26 @@
+/* VSF — titres de pages publiques : « la mise au point » + le geste du logo, en jaune seul (#ffc400).
+   Le titre passe du flou au net. Une lettre marquée à la main rejoue ensuite le geste du i de FAIRE :
+   - un i : le fût se lève de bas en haut, puis son point jaillit en jaune, grossit un instant et repasse au noir ;
+   - une lettre accentuée : elle se lève de bas en haut, grossit un peu, passe un instant en jaune, puis revient au noir.
+   Sans lettre marquée, seule la mise au point joue. Chargé avec vsf-titres.js sur les pages qui portent body.page-publique. */
+.vsf-sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0}
+.vsf-ii{position:relative;display:inline-block}
+.vsf-stem{display:inline-block}
+.vsf-pt{position:absolute;left:50%;top:.09em;width:.16em;height:.16em;margin-left:-.08em;border-radius:50%;background:#111}
+.vsf-ac{display:inline-block;transform-origin:50% 100%}
+
+@keyframes vsf-focus  { from { filter:blur(7px); opacity:0; } to { filter:blur(0); opacity:1; } }
+@keyframes vsf-leve   { from { clip-path:inset(100% 0 -20% 0); } to { clip-path:inset(-20% 0 -20% 0); } }
+@keyframes vsf-leveAc { 0% { clip-path:inset(100% 0 -30% 0); transform:scale(1); } 55% { clip-path:inset(-30% 0 -30% 0); transform:scale(1); } 75% { transform:scale(1.15); } 100% { clip-path:inset(-30% 0 -30% 0); transform:scale(1); } }
+@keyframes vsf-jauneTx { 0%, 30% { color:#111; } 45%, 70% { color:#ffc400; } 100% { color:#111; } }
+@keyframes vsf-pop    { 0% { transform:scale(0); } 55% { transform:scale(1.9); } 100% { transform:scale(1); } }
+@keyframes vsf-jaune  { 0% { background:#ffc400; } 55% { background:#ffc400; } 100% { background:#111; } }
+
+.page-publique .vsf-h1 { animation: vsf-focus .7s ease-out both; }
+.page-publique .vsf-h1 .vsf-stem { animation: vsf-leve .25s cubic-bezier(.65,0,.35,1) .45s both; }
+.page-publique .vsf-h1 .vsf-pt   { animation: vsf-pop .35s cubic-bezier(.3,1.4,.5,1) .62s both, vsf-jaune 1.4s ease-in .62s both; }
+.page-publique .vsf-h1 .vsf-ac   { animation: vsf-leveAc .6s cubic-bezier(.65,0,.35,1) .45s both, vsf-jauneTx 1.4s ease-in .45s both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .page-publique .vsf-h1, .page-publique .vsf-h1 .vsf-stem, .page-publique .vsf-h1 .vsf-pt, .page-publique .vsf-h1 .vsf-ac { animation: none; }
+}
