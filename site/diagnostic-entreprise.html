@@ -663,6 +663,12 @@
   .nv-go{display:inline-flex;align-items:center;gap:12px;align-self:flex-start;background:none;border:0;padding:0;min-height:56px;font:inherit;font-size:clamp(24px,3vw,30px);font-weight:900;letter-spacing:-.01em;color:#111;cursor:pointer;-webkit-tap-highlight-color:transparent}
   .nv-go[disabled]{color:#a0a0a0;cursor:default}
   .nv-go:focus-visible{outline:2px solid #111;outline-offset:4px}
+  a.nv-go{text-decoration:none}
+  .nv-suite{display:flex;flex-direction:column;gap:var(--espace-qr,8px);margin-top:var(--espace-etape,64px);position:relative}
+  .nv-suite h3{font-size:clamp(24px,3vw,30px);font-weight:900;margin:0 0 var(--espace-qr,8px)}
+  .nv-suite p{margin:0}
+  .nv-abo{font-size:14px;font-weight:500;color:#767676}
+  .nv-prix-abo{font-size:20px;font-weight:800;margin-bottom:var(--espace-question,32px) !important}
   .gate .nv-prix{font-size:clamp(34px,5vw,56px);font-weight:900;letter-spacing:-.02em;line-height:1.05;margin:8px 0 28px}
   .nv-go .nvd{margin-left:-32px}
   .nv :focus-visible{outline:2px solid #111;outline-offset:3px}
@@ -1769,6 +1775,9 @@ function step5(){
     h += '<div class="card"><h3>Mon engagement</h3><div style="font-size:.88rem;line-height:1.5;margin-bottom:10px">Je m’engage à mettre en œuvre ces briques et à fournir les preuves associées à l’échéance choisie.</div><button class="btn primary" data-act="sign">Signer mon plan</button></div>';
   } else {
     h += '<div class="signed">✓ Plan signé. Il reste modifiable : vous pouvez réajuster vos échéances à tout moment.</div>';
+    var abo = DIAG.abo ? String(DIAG.abo.prix_eur).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' €' : 'xx €';
+    h += '<div class="nv-suite"><h3>Et ensuite</h3><p class="nv-abo">Abonnement : Maurice + Thérèse + suivi de progression</p><p class="nv-prix-abo">' + abo + '</p>' +
+      '<a class="nv-go" href="mailto:contact@vraisavoirfaire.fr?subject=Abonnement%20Maurice%20%2B%20Th%C3%A9r%C3%A8se"><span class="nvd" aria-hidden="true"></span>Nous écrire →</a></div>';
   }
   h += '<div class="finalite">' + FINALITE + '</div>';
   return h;
@@ -2239,6 +2248,10 @@ async function ouvrirDiag(org){
   S.calculating = false;
   await nvChargerRef();
   if (S.N){ nvN(); versAncien(); }
+  try {                                                         // prix de l'abonnement proposé en fin de parcours (xx € tant qu'il n'est pas fixé)
+    var ab = await VSF.sb.from('vsf_tarifs').select('prix_eur,defini').eq('code', 'entreprise_abonnement').maybeSingle();
+    DIAG.abo = (ab.data && ab.data.defini) ? ab.data : null;
+  } catch (e) { DIAG.abo = null; }
   DIAG.pret = true;
   render(false);
 }
