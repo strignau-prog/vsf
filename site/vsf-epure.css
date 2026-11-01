@@ -5,6 +5,8 @@
 
 /* 1 — lignes */
 :root{--line:transparent;--line-strong:transparent}
+/* espacements fixes, identiques sur toutes les pages : 8 px entre une question et sa réponse, 32 px entre deux questions, 64 px entre deux étapes */
+:root{--espace-qr:8px;--espace-question:32px;--espace-etape:64px;--jaune:#ffc400;--vert:#009e73}
 .haut,.bar{border-bottom:0}
 .filet{border:0;margin:20px 0}
 hr{border:0;margin:28px 0}

@@ -1,6 +1,6 @@
 /* VRAI-SAVOIRFAIRE — la touche de couleur : au survol, un lien, un bouton ou une icône prend une couleur au hasard ; au clic, il s'allume un instant.
    Même geste que sur l'accueil, posé sur toutes les pages (décision de Stéphane, 2026-10-28).
-   Les icônes (.ico-btn) ne prennent que la couleur, jamais de fond (2026-11-01).
+   Au survol comme au clic, seules les lettres (ou l'icône) changent de couleur : jamais de fond (2026-11-01).
    Les éléments à fond plein (noir, etc.) ne sont pas touchés, pour que le texte reste lisible. */
 (function () {
   var PAL = ['#ff3b1f', '#1f4fff', '#e08a00', '#009e73', '#e6007e', '#7a3cff'];
@@ -31,13 +31,7 @@
   document.addEventListener('click', function (e) {
     var el = cible(e);
     if (!el || !fondClair(el)) return;
-    if (el.classList.contains('ico-btn')) {            // une icône ne change que de couleur
-      el.style.color = au_hasard();
-      setTimeout(function () { el.style.color = ''; el.__pop = false; }, 700);
-      return;
-    }
-    var fond = el.style.backgroundColor;
-    el.style.backgroundColor = au_hasard(); el.style.color = '#fff';
-    setTimeout(function () { el.style.backgroundColor = fond; el.style.color = ''; el.__pop = false; }, 700);
+    el.style.color = au_hasard();                      // seules les lettres s'allument, jamais de fond (2026-11-01)
+    setTimeout(function () { el.style.color = ''; el.__pop = false; }, 700);
   });
 })();

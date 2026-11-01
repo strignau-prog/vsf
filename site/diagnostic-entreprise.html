@@ -572,6 +572,87 @@
   .po .rmx{margin-left:auto}
   .po .sitbtn{margin-top:8px}
   .srch{border-top:0;margin-top:20px;padding-top:0}
+  /* ===== Étape 1 (entreprise, postes clés, esquisse) : d'après la maquette de Stéphane ===== */
+  #main .nv{--off:#a0a0a0;--offbg:#f3f3f3;max-width:1100px;padding-left:32px;color:#111;font-size:16px;line-height:1.5;display:flex;flex-direction:column;gap:var(--espace-etape,64px)}
+  #main .nv h1{margin:0;font-size:clamp(34px,5.5vw,56px);font-weight:900;line-height:1.02;letter-spacing:-.02em}
+  #main .nv h2{margin:0;font-size:clamp(24px,3vw,30px);font-weight:900;line-height:1.1;letter-spacing:-.01em;color:#111}
+  #main .nv h3{margin:0}
+  .nv .nvd{width:20px;height:20px;border-radius:50% !important;background:var(--jaune,#ffc400);flex:none;display:inline-block;border:0 !important;margin:0}
+  .nv .nvd.ok{background:var(--vert,#009e73) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6.5 12.5l3.5 3.5 7.5-8' fill='none' stroke='white' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/100% no-repeat}
+  .nv-head{display:flex;flex-direction:column;gap:20px}
+  .nv-steps{display:flex;flex-wrap:wrap;gap:8px 32px}
+  .nv-st{display:inline-flex;align-items:center;gap:8px;font-weight:800;font-size:15px;min-height:24px}
+  .nv-st.off{color:var(--off)}
+  .nv-sec{display:flex;flex-direction:column;gap:var(--espace-question,32px);transition:opacity .3s}
+  .nv-sec.locked{opacity:.3;pointer-events:none}
+  .nv-sh{position:relative}
+  .nv-sh > .nvd{position:absolute;left:-32px;top:6px}
+  .nv-field{display:flex;flex-direction:column;gap:var(--espace-qr,8px)}
+  .nv-q{position:relative;font-size:14px;font-weight:500;color:#767676}
+  .nv-q > .nvd{position:absolute;left:-32px;top:0}
+  .nv-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  .nv-sel{display:inline-flex;align-items:center;gap:6px;align-self:flex-start;max-width:100%;color:#111}
+  .nv-sel select{appearance:none;-webkit-appearance:none;background:none;border:0;font:inherit;font-size:20px;font-weight:800;color:#111;min-height:44px;padding:0;cursor:pointer;max-width:calc(100vw - 100px);text-overflow:ellipsis}
+  .nv-sel.empty select{font-size:16px;font-weight:500;color:#767676}
+  .nv-sel.empty{color:#767676}
+  .nv-sel svg{pointer-events:none;flex:none}
+  .nv-opts{display:flex;flex-wrap:wrap;gap:0 22px}
+  .nv-opt{background:none;border:0;padding:0;min-height:44px;font:inherit;font-size:16px;font-weight:500;color:var(--off);cursor:pointer;text-align:left;-webkit-tap-highlight-color:transparent}
+  .nv-opts.untouched .nv-opt{color:#767676}
+  .nv-opt[aria-pressed="true"]{color:#111;font-weight:800;font-size:20px}
+  .nv-opts.mini .nv-opt{font-size:14px}
+  .nv-opts.mini .nv-opt[aria-pressed="true"]{font-size:14px}
+  .nv-opt small{font-size:12px;color:#767676;font-weight:500}
+  .nv-postes{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:4px 32px}
+  .nv-poste{display:flex;align-items:flex-start;gap:12px;background:none;border:0;padding:8px 0;min-height:44px;font:inherit;text-align:left;cursor:pointer;color:#767676;-webkit-tap-highlight-color:transparent}
+  .nv-box{width:20px;height:20px;border:2px solid var(--off);border-radius:4px !important;flex:none;margin-top:2px;display:flex;align-items:center;justify-content:center}
+  .nv-poste .n{font-weight:500;font-size:16px;display:block;line-height:1.3}
+  .nv-poste .z{font-size:12px;color:var(--off);display:block}
+  .nv-poste[aria-pressed="true"]{color:#111}
+  .nv-poste[aria-pressed="true"] .n{font-weight:800}
+  .nv-poste[aria-pressed="true"] .z{color:#767676}
+  .nv-poste[aria-pressed="true"] .nv-box{background:#111;border-color:#111}
+  .nv-poste[aria-pressed="true"] .nv-box::after{content:"";width:9px;height:5px;border-left:2.5px solid #fff;border-bottom:2.5px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
+  .nv-cell{display:flex;flex-direction:column}
+  .nv-cell .nv-poste{padding-bottom:0;min-height:0}
+  .nv-fold{display:inline-flex;align-items:center;gap:8px;align-self:flex-start;margin-left:32px;background:none;border:0;padding:0;min-height:40px;font:inherit;font-size:14px;font-weight:500;color:#767676;cursor:pointer}
+  .nv-fold b{color:#111;font-weight:800}
+  .nv-fold span{white-space:nowrap}
+  .nv-tr{grid-column:1/-1;display:flex;flex-direction:column;padding:0 0 12px 32px}
+  .nv-sf{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 18px}
+  .nv-sf .nm{font-size:15px;font-weight:500;min-width:min(100%,260px);flex:1 1 260px}
+  .nv-add{display:flex;flex-wrap:wrap;align-items:center;gap:8px 22px}
+  .nv-addwrap{display:flex;align-items:center;min-height:44px;flex:1 1 240px;max-width:420px}
+  .nv-addwrap input{width:100%;min-height:44px;font:inherit;font-size:16px;color:#111}
+  .nv-sugg{display:flex;flex-direction:column;align-items:flex-start}
+  .nv-btn{background:none;border:0;padding:0;min-height:44px;display:inline-flex;align-items:center;font:inherit;font-weight:800;font-size:15px;color:#111;cursor:pointer}
+  .nv-btn span{border-bottom:3px solid currentColor;padding-bottom:2px}
+  .nv-bar{display:flex;gap:4px}
+  .nv-seg{display:flex;align-items:center;padding:6px 12px;min-height:40px;font-size:13px;font-weight:800;line-height:1.2;overflow:hidden;transition:flex-grow .5s,background .3s,color .3s;flex-basis:0}
+  .nv-seg.full{background:#111;color:#fff}
+  .nv-seg.empty{background:repeating-linear-gradient(135deg,var(--offbg) 0 8px,#fff 8px 14px);color:#767676}
+  .nv-bands{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--espace-question,32px)}
+  @media(min-width:900px){.nv-bands{grid-template-columns:1fr 1.6fr 1fr}}
+  .nv-band{display:flex;flex-direction:column;gap:var(--espace-qr,8px)}
+  .nv-band h3{font-size:20px;font-weight:900}
+  .nv-band .verb{font-size:14px;color:#767676}
+  .nv-band.miss h3{color:var(--off)}
+  .nv-who{display:flex;flex-direction:column;gap:2px;font-size:16px;font-weight:800;margin-top:8px}
+  .nv-who .manque{color:#767676;font-weight:500;display:flex;align-items:center;gap:8px}
+  .nv-chain{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-top:16px}
+  .nv-ch{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:800;line-height:1.25}
+  .nv-ch .num{width:26px;height:26px;border-radius:50% !important;display:flex;align-items:center;justify-content:center;font-size:12px}
+  .nv-ch.off{color:var(--off)}
+  .nv-ch.off .num{background:var(--offbg)}
+  .nv-ch.on .num{background:#111;color:#fff}
+  .nv-fait{display:flex;align-items:center;gap:10px;font-size:16px;font-weight:800}
+  .nv-go{display:inline-flex;align-items:center;gap:12px;align-self:flex-start;background:none;border:0;padding:0;min-height:56px;font:inherit;font-size:clamp(24px,3vw,30px);font-weight:900;letter-spacing:-.01em;color:#111;cursor:pointer;-webkit-tap-highlight-color:transparent}
+  .nv-go[disabled]{color:var(--off);cursor:default}
+  .nv-go .nvd{margin-left:-32px}
+  .nv :focus-visible{outline:2px solid #111;outline-offset:3px}
+  .nv :focus:not(:focus-visible){outline:none}
+  @media(max-width:520px){.nv-chain{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:16px}}
+  @media(prefers-reduced-motion:reduce){.nv *{transition:none !important;animation:none !important}}
   /* moins de filets : les blocs se distinguent par un fond très clair, pas par un cadre */
   .card,details.fixes{border:0 !important;background:#fafafa !important;box-shadow:none !important}
 </style>
@@ -603,7 +684,7 @@
 </div>
 
 <script>
-var STEPS = ['Secteur & postes clés','Carte des processus','Diagnostic','Restitution','Outils & plan'];
+var STEPS = ['Mon entreprise','Carte des processus','Diagnostic','Restitution','Outils & plan'];
 var FINALITE = 'Ce diagnostic sert un seul objectif : <b>libérer du temps des tâches à faible valeur ajoutée</b> pour le réinvestir dans <b>le geste humain rare</b> et sa différenciation.';
 
 var SECTORS = [
@@ -1072,116 +1153,299 @@ function stepHead(n, title, lead, livr){
   if (S.warn){ h += '<div class="warn">' + S.warn + '</div>'; }
   return h;
 }
-function tbar(sp){
-  return '<div class="tbar"><i class="sp" style="width:' + sp[0] + '%"></i><i class="sc" style="width:' + sp[1] + '%"></i><i class="ss" style="width:' + sp[2] + '%"></i></div><div class="tlg"><span>Pilotage ' + sp[0] + ' %</span><span>Cœur ' + sp[1] + ' %</span><span>Support ' + sp[2] + ' %</span></div>';
+/* ---------- étape 1 : votre entreprise, vos postes clés, votre esquisse (d’après la maquette de Stéphane) ----------
+   Les postes proposés viennent de la base (vsf_domaines_rome, vsf_postes_proposes, migration 25) ; si elle n’est pas encore
+   installée ou injoignable, la copie de secours ci-dessous prend le relais. L’état de cette étape (S.N) est enregistré tel quel ;
+   versAncien() le traduit pour la suite du diagnostic (carte des processus, indicateurs, restitution). */
+var NV_DOM_SEC=[['A','Agriculture, espaces verts, animaux'],['B',"Arts et façonnage d'ouvrages d'art"],['C','Banque, assurance, immobilier'],['D','Commerce, vente, métiers de bouche'],['E','Communication et multimédia'],['F','Construction et bâtiment'],['G','Hôtellerie-restauration, tourisme'],['H','Industrie'],['I','Installation et maintenance'],['J','Santé'],['K','Services à la personne'],['L','Spectacle'],['M',"Support à l'entreprise"],['N','Transport et logistique']];
+var NV_POSTES_SEC={
+A:'C:Agriculteur·rice|C:Maraîcher·ère|C:Éleveur·euse|C:Jardinier·ère paysagiste|C:Bûcheron·ne|C:Soigneur·euse animalier|C:Toiletteur·euse|P:Chef·fe d\'exploitation|S:Ouvrier·ère agricole polyvalent|S:Secrétaire administratif',
+B:'C:Peintre en lettres|C:Doreur·euse|C:Graphiste d\'atelier|C:Ébéniste|C:Tapissier·ère|C:Céramiste|C:Verrier·ère|C:Bijoutier·ère|C:Relieur·euse|C:Ferronnier·ère d\'art|C:Luthier·ère|C:Restaurateur·rice d\'œuvres|P:Chef·fe d\'atelier|S:Chargé·e de clientèle|S:Assistant·e administratif',
+C:'C:Conseiller·ère clientèle bancaire|C:Agent·e immobilier|C:Gestionnaire de patrimoine|C:Chargé·e de clientèle assurance|C:Gestionnaire locatif|P:Directeur·rice d\'agence|S:Comptable|S:Assistant·e administratif',
+D:'C:Vendeur·euse conseil|C:Boulanger·ère|C:Pâtissier·ère|C:Boucher·ère|C:Fleuriste|C:Coiffeur·euse|C:Esthéticien·ne|P:Responsable de magasin|S:Caissier·ère|S:Commercial·e|S:Assistant·e administratif',
+E:'C:Graphiste|C:Photographe|C:Journaliste|C:Monteur·euse vidéo|C:Imprimeur·euse|C:Sérigraphe|C:Webdesigner|P:Directeur·rice artistique|S:Chargé·e de communication|S:Assistant·e administratif',
+F:'C:Peintre en bâtiment|C:Plâtrier·ère|C:Maçon·ne|C:Menuisier·ère|C:Électricien·ne du bâtiment|C:Plombier·ère chauffagiste|C:Carreleur·euse|C:Couvreur·euse|C:Façadier·ère|P:Conducteur·rice de travaux|P:Chef·fe de chantier|S:Métreur·euse|S:Assistant·e administratif',
+G:'C:Chef·fe de cuisine|C:Cuisinier·ère|C:Serveur·euse|C:Barman·maid|C:Réceptionniste|C:Animateur·rice|P:Responsable de salle|S:Gouvernant·e|S:Plongeur·euse|S:Comptable',
+H:'C:Opérateur·rice de production|C:Usineur·euse|C:Soudeur·euse|C:Chaudronnier·ère|C:Technicien·ne méthodes|P:Responsable de production|S:Contrôleur·euse qualité|S:Logisticien·ne|S:Assistant·e administratif',
+I:'C:Technicien·ne de maintenance|C:Électromécanicien·ne|C:Mécanicien·ne automobile|C:Carrossier·ère|C:Frigoriste|C:Installateur·rice thermique|P:Responsable d\'atelier|S:Responsable SAV|S:Magasinier·ère',
+J:'C:Infirmier·ère|C:Aide-soignant·e|C:Médecin|C:Pharmacien·ne|C:Préparateur·rice en pharmacie|C:Kinésithérapeute|P:Cadre de santé|S:Secrétaire médical·e',
+K:'C:Aide à domicile|C:Auxiliaire de vie|C:Assistant·e maternel·le|C:Éducateur·rice spécialisé·e|C:Animateur·rice socioculturel|C:Formateur·rice|P:Responsable de secteur|S:Agent·e d\'entretien|S:Assistant·e administratif',
+L:'C:Comédien·ne|C:Musicien·ne|C:Technicien·ne son|C:Éclairagiste|C:Costumier·ère|C:Machiniste|P:Régisseur·euse général·e|S:Chargé·e de production|S:Chargé·e de billetterie',
+M:'C:Comptable|C:Développeur·euse informatique|C:Juriste|C:Contrôleur·euse de gestion|C:Chargé·e de ressources humaines|P:Directeur·rice administratif et financier|S:Assistant·e de direction|S:Chargé·e de communication',
+N:'C:Chauffeur·euse livreur|C:Conducteur·rice poids lourd|C:Préparateur·rice de commandes|C:Cariste|C:Magasinier·ère|C:Affréteur·euse|P:Responsable logistique|S:Agent·e d\'exploitation|S:Assistant·e administratif'
+};
+var NV_SF_DIR=[['Définir le cap et la stratégie','P'],['Suivre les chiffres et indicateurs','P'],['Animer et faire grandir l\u2019équipe','P'],['Réaliser le geste du métier','C'],['Accueillir le client et chiffrer','S'],['Gérer administratif et comptabilité','S'],['Acheter et gérer le stock','S']];
+var NV_TAILLES = ['1 personne','2 à 5','6 à 10','11 à 20','21 à 50','Plus de 50'];
+var NV_EFF_ANCIEN = {'1 personne':'Moi seul·e','2 à 5':'2 à 5 personnes','6 à 10':'6 à 10 personnes','11 à 20':'11 à 20 personnes','21 à 50':'21 à 49 personnes','Plus de 50':'21 à 49 personnes'};
+var NV_ZONES = {P:'Pilotage', C:'Cœur de métier', S:'Support', X:'Plusieurs zones'};
+var NV_SF_GEN = [{t:'Savoir-faire 1 (tiré de ROME)', z:'C'}, {t:'Savoir-faire 2 (tiré de ROME)', z:'P'}, {t:'Savoir-faire 3 (tiré de ROME)', z:'S'}];
+var NV_CHEVRON = {
+  haut: '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M6 15l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  bas: '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+};
+var NV_REF = null, NV_DYN = [], NV_ROME_MINUTEUR = null;
+/* postes déjà décrits en détail dans la page (étapes de cœur, indicateurs) : repérés par leur nom */
+var NV_CONNUS = [[/peintre en lettres/,'pel'], [/^doreu/,'dor'], [/graphiste d.atelier/,'graph'], [/^verrier/,'verr'], [/restaurateur.*(oeuvre|patrimoine)/,'resto'],
+  [/^comptable$/,'compta'], [/^magasinier/,'mag'], [/ressources humaines/,'rh'], [/secretaire administratif/,'secr'], [/^regisseur.*atelier/,'regi'], [/^poseu.*enseigne/,'pose']];
+
+function nvSlug(s){ return norm(s).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); }
+function nvN(){
+  if (!S.N){ S.N = {}; }
+  var N = S.N;
+  if (N.dom === undefined) N.dom = null;
+  if (N.taille === undefined) N.taille = null;
+  if (!N.checked) N.checked = {};
+  if (!N.custom) N.custom = [];
+  if (!N.split) N.split = {};
+  if (!N.open) N.open = {};
+  if (!N.zone) N.zone = 'C';
+  if (N.texte === undefined) N.texte = '';
+  if (N.rome === undefined) N.rome = null;
+  if (!N.sugg) N.sugg = [];
+  return N;
 }
-function splitSelect(k, cur, withAuto){
-  var h = '<select data-act="splitsel" data-k="' + k + '">', key;
-  for (key in SPLITLAB){
-    if (key === 'auto' && !withAuto) continue;
-    h += '<option value="' + key + '"' + (cur === key ? ' selected' : '') + '>' + SPLITLAB[key] + '</option>';
+function nvRefSecours(){
+  var ref = {domaines:[], postes:{}, dir:{n:'Dirigeant·e', sf:NV_SF_DIR.map(function(s){ return {t:s[0], z:s[1]}; })}}, c;
+  NV_DOM_SEC.forEach(function(d){ ref.domaines.push({code:d[0], libelle:d[1]}); });
+  for (c in NV_POSTES_SEC){
+    ref.postes[c] = NV_POSTES_SEC[c].split('|').map(function(x){ return {n:x.slice(2), z:x.charAt(0), rome:null, sf:null}; });
   }
-  return h + '</select>';
+  return ref;
 }
-function sitButton(k){
-  var n = sitCount(k), open = (S.sitOpen === k);
-  return '<button class="btn sitbtn' + (open ? ' primary' : '') + '" data-act="siton" data-k="' + k + '">' + (open ? 'Fermer' : 'Situations') + (n ? ' (' + n + ')' : '') + '</button>';
+async function nvChargerRef(){
+  NV_REF = nvRefSecours();
+  try {
+    var d = await VSF.sb.from('vsf_domaines_rome').select('code,libelle,ordre').order('ordre');
+    var p = await VSF.sb.from('vsf_postes_proposes').select('domaine,libelle,zone,code_rome,savoir_faire,ordre').order('ordre');
+    if (d.error || p.error || !d.data || !d.data.length || !p.data || !p.data.length) return;
+    var ref = {domaines:[], postes:{}, dir:NV_REF.dir};
+    d.data.forEach(function(x){ ref.domaines.push({code:x.code, libelle:x.libelle}); });
+    p.data.forEach(function(x){
+      var sf = (x.savoir_faire && x.savoir_faire.length) ? x.savoir_faire : null;
+      if (!x.domaine){ if (x.zone === 'X'){ ref.dir = {n:x.libelle, sf:sf || NV_REF.dir.sf}; } return; }
+      (ref.postes[x.domaine] = ref.postes[x.domaine] || []).push({n:x.libelle, z:x.zone, rome:x.code_rome || null, sf:sf});
+    });
+    NV_REF = ref;
+  } catch (e) { /* la copie de secours reste en place */ }
 }
-/* détail d’un poste : visible seulement quand on le déplie (bouton « Situations ») */
-function detailPoste(k, withAuto){
-  var cur = (k === 'dir') ? S.dirSplit : (S.splitKey[k] || FICHES[k].def), arr = (k === 'dir') ? dirSplitArr() : splitOf(k);
-  return '<div class="pc">' + splitSelect(k, cur, withAuto) + '</div>' + tbar(arr);
-}
-function dirCard(){
-  var h = '<div class="po on"><div class="pn">Dirigeant·e</div>';
-  h += sitButton('dir');
-  if (S.sitOpen === 'dir'){ h += detailPoste('dir', true); }
-  return h + '</div>';
-}
-function posteItem(k, selected){
-  var f = FICHES[k], h = '<div class="po' + (selected ? ' on' : '') + '"><div class="pn">' + f.nm + '</div>';
-  if (selected){
-    var n = S.units[k] || 1;
-    h += '<div class="pc"><span class="stp"><button data-act="unit" data-k="' + k + '" data-v="-" aria-label="Une personne de moins">−</button><b' + (S.bump === k ? ' class="bump"' : '') + '>' + n + '</b><button data-act="unit" data-k="' + k + '" data-v="+" aria-label="Une personne de plus">+</button></span>';
-    h += '<button class="dchk' + (S.dirOn === k ? ' on' : '') + '" data-act="dirOn" data-k="' + k + '" title="Le/la dirigeant·e tient ce poste" aria-pressed="' + (S.dirOn === k ? 'true' : 'false') + '">Moi</button>';
-    h += '<button class="rmx" data-act="fiche" data-k="' + k + '" aria-label="Retirer ce poste">Retirer</button></div>';
-    if (SITS[k]){ h += sitButton(k); }
-    if (S.sitOpen === k || !SITS[k]){ h += detailPoste(k, !!SITS[k]); }
-  } else {
-    h += '<button class="btn" data-act="fiche" data-k="' + k + '">Ajouter</button>';
+function nvListe(){
+  var N = nvN(), ref = NV_REF || nvRefSecours(), out = [{k:'dir', n:ref.dir.n, z:'X', sf:ref.dir.sf}];
+  if (N.dom && ref.postes[N.dom]){
+    ref.postes[N.dom].forEach(function(x){ out.push({k:N.dom + ':' + nvSlug(x.n), n:x.n, z:x.z, rome:x.rome, sf:x.sf}); });
   }
-  return h + '</div>';
+  N.custom.forEach(function(c){ if (c.dom === N.dom) out.push(c); });
+  return out;
 }
-function searchBlock(){
-  var h = '<div class="srch"><div class="sbx"><input type="text" id="rqInput" placeholder="Chercher un autre poste" aria-label="Chercher un autre poste" value="' + S.rq + '"><button class="btn primary" data-act="rsearch" style="margin:0 0 0 6px">OK</button></div>';
-  var i;
-  if (S.rq){
-    var res = romeSearch(S.rq);
-    if (!res.length){ h += '<div class="note" style="margin-top:6px">Aucun résultat pour « ' + S.rq + ' ».</div>'; }
-    for (i=0;i<res.length;i++){
-      var f = FICHES[res[i]];
-      h += '<div class="rres"><div><b>' + f.nm + '</b></div>' + (S.fiches[res[i]] ? '<span class="done">✓</span>' : '<button class="btn" data-act="fiche" data-k="' + res[i] + '">Ajouter</button>') + '</div>';
-    }
+function nvSf(x){ return (x.sf && x.sf.length) ? x.sf : NV_SF_GEN; }
+function nvSplit(x){
+  var N = nvN(), sf = nvSf(x), cur = N.split[x.k];
+  if (!cur || cur.length !== sf.length){ cur = N.split[x.k] = sf.map(function(s){ return s.z; }); }
+  return cur;
+}
+function nvResume(sp){
+  var c = {P:0, C:0, S:0};
+  sp.forEach(function(z){ c[z]++; });
+  return '<b>' + c.P + '</b> pilotage · <b>' + c.C + '</b> cœur · <b>' + c.S + '</b> support';
+}
+function nvCalc(){
+  var N = nvN(), w = {P:0, C:0, S:0}, who = {P:[], C:[], S:[]}, coeurReel = false, n = 0;
+  nvListe().forEach(function(x){
+    if (!N.checked[x.k]) return;
+    n++;
+    if (x.z === 'X'){
+      var sp = nvSplit(x), tot = sp.length;
+      ['P','C','S'].forEach(function(k){
+        var c = sp.filter(function(z){ return z === k; }).length;
+        if (c){ w[k] += c / tot; who[k].push(x.n + ' · ' + Math.round(c / tot * 100) + ' %'); if (k === 'C' && x.k !== 'dir') coeurReel = true; }
+      });
+    } else { w[x.z] += 1; who[x.z].push(x.n); if (x.z === 'C') coeurReel = true; }
+  });
+  var manque = {P: !who.P.length, C: !coeurReel, S: !who.S.length};
+  return {w:w, who:who, manque:manque, coeur:coeurReel, nb:n, complet:(n > 0 && !manque.P && !manque.C && !manque.S)};
+}
+function nvPastille(etat){ return etat ? '<span class="nvd' + (etat === 'ok' ? ' ok' : '') + '" aria-hidden="true"></span>' : ''; }
+
+function step1(){
+  if (!NV_REF){ NV_REF = nvRefSecours(); }
+  var N = nvN(), ref = NV_REF, calc = nvCalc(), i, h = '';
+  var ok1 = !!(N.dom && N.taille), ok2 = ok1 && calc.nb > 0, ok3 = ok2 && calc.complet;
+  var e1 = ok1 ? 'done' : 'now', e2 = ok2 ? 'done' : (ok1 ? 'now' : 'off'), e3 = ok3 ? 'done' : (ok2 ? 'now' : 'off');
+  function haut(id, etat, label){ return '<span class="nv-st ' + etat + '" id="' + id + '">' + (etat === 'done' ? nvPastille('ok') : (etat === 'now' ? nvPastille('now') : '')) + label + '</span>'; }
+  h += '<div class="nv"><header class="nv-head"><h1>Mon organisation, en trois gestes</h1>';
+  h += '<nav class="nv-steps" aria-label="Étapes">' + haut('nv-s1', e1, 'Votre entreprise') + haut('nv-s2', e2, 'Postes clés') + haut('nv-s3', e3, 'Esquisse') + '</nav></header>';
+
+  /* 1 · votre entreprise */
+  h += '<section class="nv-sec"><div class="nv-sh">' + nvPastille(ok1 ? 'ok' : 'now') + '<h2>1 · Votre entreprise</h2></div>';
+  h += '<div class="nv-field"><div class="nv-q">' + nvPastille(N.dom ? '' : 'now') + 'Votre secteur</div>';
+  h += '<label class="nv-sel' + (N.dom ? '' : ' empty') + '"><span class="nv-sr">Secteur, grands domaines ROME</span><select data-act="nvdom" data-fid="dom"><option value="">Choisir dans la liste</option>';
+  for (i = 0; i < ref.domaines.length; i++){
+    h += '<option value="' + eH(ref.domaines[i].code) + '"' + (N.dom === ref.domaines[i].code ? ' selected' : '') + '>' + eH(ref.domaines[i].code) + ' · ' + eH(ref.domaines[i].libelle) + '</option>';
   }
-  return h + '</div>';
-}
-function suggestions(){
-  return (SUGGEST_PAR_SECTEUR[S.sector] || SUGGEST_PAR_SECTEUR.aut).filter(function(k){ return !S.fiches[k]; });
-}
-function postesCol(){
-  var h = '', i, s = sel(), sug = suggestions();
-  h += dirCard();
-  for (i=0;i<s.length;i++){ h += posteItem(s[i], true); }
-  if (sug.length){
-    h += '<div class="sgh">À ajouter</div>';
-    for (i=0;i<sug.length;i++){ h += posteItem(sug[i], false); }
+  h += '</select><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></label></div>';
+  h += '<div class="nv-field"><div class="nv-q">' + nvPastille(!N.taille && N.dom ? 'now' : '') + 'Combien êtes-vous ?</div>';
+  h += '<div class="nv-opts' + (N.taille ? '' : ' untouched') + '" role="group" aria-label="Taille de l’entreprise">';
+  for (i = 0; i < NV_TAILLES.length; i++){
+    h += '<button type="button" class="nv-opt" data-act="nvtaille" data-k="' + eH(NV_TAILLES[i]) + '" data-fid="t:' + i + '" aria-pressed="' + (N.taille === NV_TAILLES[i]) + '">' + eH(NV_TAILLES[i]) + '</button>';
   }
-  h += searchBlock();
-  return h;
-}
-function sitPanel(){
-  var pid = S.sitOpen;
-  if (!pid || !SITS[pid]) return '';
-  var list = SITS[pid], nm = (pid === 'dir') ? 'Dirigeant·e' : FICHES[pid].nm, m = S.sit[pid] || {}, i, j, x, c = {pil:0,cor:0,sup:0}, procs = ['pil','cor','sup'];
-  for (x in m){ if (m[x]) c[m[x]]++; }
-  var h = '<div class="sitpanel" id="sitpanel"><div class="sph"><div><b>' + nm + '</b></div><button class="rmx" data-act="siton" data-k="' + pid + '">Fermer</button></div>';
-  h += '<div class="sit-scroll"><div class="sit-head"><span class="st-t">Situation</span><span>Pilotage</span><span>Cœur</span><span>Support</span></div>';
-  for (i=0;i<list.length;i++){
-    var st = list[i], cur = m[st.id];
-    h += '<div class="sit-row"><span class="st-t">' + st.t + '</span>';
-    for (j=0;j<3;j++){
-      h += '<span class="sit-c"><button class="rb ' + procs[j] + (cur === procs[j] ? ' on' : '') + (st.d === procs[j] ? ' sug' : '') + '" data-act="sitset" data-k="' + pid + '" data-id="' + st.id + '" data-v="' + procs[j] + '" title="' + PROCLAB[procs[j]] + '"></button></span>';
+  h += '</div></div></section>';
+
+  /* 2 · vos postes clés */
+  h += '<section class="nv-sec' + (ok1 ? '' : ' locked') + '"' + (ok1 ? '' : ' inert aria-disabled="true"') + '><div class="nv-sh">' + nvPastille(ok2 ? 'ok' : (ok1 ? 'now' : '')) + '<h2>2 · Vos postes clés</h2></div>';
+  h += '<div class="nv-field"><div class="nv-q">' + nvPastille(ok1 && !ok2 ? 'now' : '') + 'Cochez les postes qui existent chez vous</div><div class="nv-postes">';
+  var L = nvListe();
+  L.forEach(function(x){
+    var coche = !!N.checked[x.k], transversal = (x.z === 'X' && coche);
+    var b = '<button type="button" class="nv-poste" data-act="nvposte" data-k="' + eH(x.k) + '" data-fid="p:' + eH(x.k) + '" aria-pressed="' + coche + '"><span class="nv-box" aria-hidden="true"></span><span><span class="n">' + eH(x.n) + '</span>' + (transversal ? '' : '<span class="z">' + NV_ZONES[x.z === 'X' ? 'X' : x.z] + '</span>') + '</span></button>';
+    if (!transversal){ h += b; return; }
+    var sf = nvSf(x), sp = nvSplit(x), ouvert = N.open[x.k] !== false, j, o;
+    h += '<div class="nv-cell">' + b + '<button type="button" class="nv-fold" data-act="nvfold" data-k="' + eH(x.k) + '" data-fid="f:' + eH(x.k) + '" aria-expanded="' + ouvert + '" aria-label="' + (ouvert ? 'Replier les savoir-faire' : 'Modifier la répartition des savoir-faire') + '"><span>' + nvResume(sp) + '</span>' + (ouvert ? NV_CHEVRON.haut : NV_CHEVRON.bas) + '</button></div>';
+    if (!ouvert) return;
+    h += '<div class="nv-tr">';
+    for (j = 0; j < sf.length; j++){
+      h += '<div class="nv-sf"><span class="nm">' + eH(sf[j].t) + '</span><div class="nv-opts mini" role="group" aria-label="Zone de ' + eH(sf[j].t) + '">';
+      ['P','C','S'].forEach(function(z){
+        h += '<button type="button" class="nv-opt" data-act="nvsf" data-k="' + eH(x.k) + '" data-j="' + j + '" data-v="' + z + '" data-fid="s:' + eH(x.k) + ':' + j + ':' + z + '" aria-pressed="' + (sp[j] === z) + '">' + (z === 'P' ? 'Pilotage' : (z === 'C' ? 'Cœur' : 'Support')) + '</button>';
+      });
+      h += '</div></div>';
     }
     h += '</div>';
-  }
-  h += '</div><div class="sit-foot"><button class="btn" data-act="sitpre" data-k="' + pid + '">Pré-cocher</button><button class="btn" data-act="sitclr" data-k="' + pid + '">Tout décocher</button></div></div>';
-  return h;
-}
-function distrib(){
-  var e = eqt(), t = e.t || 1, pp = Math.round(e.p/t*100), pc = Math.round(e.c/t*100), ps = 100 - pp - pc, ds = dirSplitArr();
-  var h = '<div class="distrib"><div class="dh"><b>Où va le temps de mon équipe ?</b><span>' + totalPeople() + ' personne' + (totalPeople() > 1 ? 's' : '') + '</span></div>';
-  h += '<div class="dbar"><span class="sp" style="width:' + pp + '%">' + (pp >= 14 ? 'Pilotage ' + pp + ' %' : '') + '</span><span class="sc" style="width:' + pc + '%">' + (pc >= 14 ? 'Cœur ' + pc + ' %' : '') + '</span><span class="ss" style="width:' + ps + '%">' + (ps >= 14 ? 'Support ' + ps + ' %' : '') + '</span></div>';
-  return h + '</div>';
-}
-function step1(){
-  var h = stepHead(1, 'Mon entreprise', '', '');
-  var i;
-  h += '<div class="card ent"><div class="etiq">Secteur</div><div class="chips">';
-  for (i=0;i<SECTORS.length;i++){
-    h += '<button class="chip' + (S.sector===SECTORS[i].id ? ' on' : '') + '" data-act="sector" data-k="' + SECTORS[i].id + '" aria-pressed="' + (S.sector===SECTORS[i].id ? 'true' : 'false') + '">' + SECTORS[i].l + '</button>';
-  }
-  h += '</div><div class="etiq">Personnes</div><div class="chips">';
-  for (i=0;i<EFFECTIFS.length;i++){
-    h += '<button class="chip' + (S.eff===EFFECTIFS[i] ? ' on' : '') + '" data-act="effset" data-k="' + EFFECTIFS[i] + '" aria-pressed="' + (S.eff===EFFECTIFS[i] ? 'true' : 'false') + '">' + EFF_COURT[EFFECTIFS[i]] + '</button>';
-  }
+  });
   h += '</div></div>';
+  h += '<div class="nv-field"><div class="nv-q">Un poste manque ?</div><div class="nv-add"><div class="nv-addwrap"><input id="nv-add" type="text" placeholder="Nom du poste ou métier ROME" aria-label="Ajouter un poste" autocomplete="off" maxlength="80" value="' + eH(N.texte) + '"></div>';
+  h += '<div class="nv-opts mini" role="group" aria-label="Zone du poste">';
+  [['P','Pilotage'],['C','Cœur'],['S','Support'],['X','Plusieurs zones']].forEach(function(z){
+    h += '<button type="button" class="nv-opt" data-act="nvzone" data-k="' + z[0] + '" data-fid="z:' + z[0] + '" aria-pressed="' + (N.zone === z[0]) + '">' + z[1] + '</button>';
+  });
+  h += '</div><button type="button" class="nv-btn" data-act="nvajout" data-fid="ajout"><span>Ajouter</span></button></div>';
+  if (N.sugg.length){
+    h += '<div class="nv-sugg" role="group" aria-label="Correspondances ROME">';
+    N.sugg.forEach(function(s, k){ h += '<button type="button" class="nv-opt" data-act="nvsugg" data-k="' + k + '" data-fid="g:' + k + '">' + eH(s.n) + ' <small>' + eH(s.c) + '</small></button>'; });
+    h += '</div>';
+  }
+  h += '</div></section>';
 
-  if (!S.sector){ return h; }
-
-  h += '<div class="split"><div class="card left"><h3>Mes postes clés</h3>' + postesCol() + '</div>';
-  h += '<div class="card right"><h3>Mon esquisse</h3>' + sitPanel() + distrib() + stage('esq', true) + '</div></div>';
+  /* 3 · votre esquisse */
+  var tot = calc.w.P + calc.w.C + calc.w.S || 1;
+  h += '<section class="nv-sec' + (ok2 ? '' : ' locked') + '"' + (ok2 ? '' : ' inert aria-disabled="true"') + '><div class="nv-sh">' + nvPastille(ok3 ? 'ok' : (ok2 ? 'now' : '')) + '<h2>3 · Votre esquisse</h2></div>';
+  h += '<div class="nv-field"><div class="nv-q">Où va le temps</div><div class="nv-bar" role="img" aria-label="Répartition du temps entre pilotage, cœur de métier et support">';
+  ['P','C','S'].forEach(function(k){
+    var plein = !calc.manque[k] && calc.w[k] > 0;
+    h += '<div class="nv-seg ' + (plein ? 'full' : 'empty') + '" style="flex-grow:' + (plein ? Math.max(calc.w[k] / tot, .08) : .34) + '">' + NV_ZONES[k] + (plein ? ' ' + Math.round(calc.w[k] / tot * 100) + ' %' : '') + '</div>';
+  });
+  h += '</div></div><div class="nv-bands">';
+  var verbes = {P:'à élever', C:'le geste à sublimer', S:'à alléger'};
+  ['P','C','S'].forEach(function(k){
+    h += '<div class="nv-band' + (calc.manque[k] ? ' miss' : '') + '"><h3>' + NV_ZONES[k] + '</h3><span class="verb">' + verbes[k] + '</span><div class="nv-who">';
+    calc.who[k].forEach(function(n){ h += '<span>' + eH(n) + '</span>'; });
+    if (calc.manque[k]){ h += '<span class="manque">' + nvPastille('now') + (k === 'C' ? 'Cochez votre métier principal' : 'Qui s’en charge ?') + '</span>'; }
+    h += '</div>';
+    if (k === 'C'){
+      h += '<div class="nv-chain">';
+      ['Recevoir la demande','Préparer','Produire','Contrôler','Livrer'].forEach(function(c, i){ h += '<div class="nv-ch ' + (calc.coeur ? 'on' : 'off') + '"><span class="num">' + (i + 1) + '</span>' + c + '</div>'; });
+      h += '</div>';
+    }
+    h += '</div>';
+  });
+  h += '</div>';
+  if (ok3){ h += '<div class="nv-fait">' + nvPastille('ok') + 'Esquisse complète : chaque zone a son poste.</div>'; }
+  h += '<button type="button" class="nv-go" data-act="nvgo" data-fid="go"' + (ok3 ? '' : ' disabled') + '>' + (ok3 ? nvPastille('now') : '') + 'Passer au diagnostic →</button></section></div>';
   return h;
 }
+
+/* ---------- ROME : correspondance pendant la saisie, savoir-faire d’une fiche ---------- */
+function nvZoneDe(t){
+  var n = norm(t);
+  if (/(pilot|dirig|strateg|manag|encadr|organis|planif|coordon|anim|budget|objectif|decision)/.test(n)) return 'P';
+  if (/(factur|compta|achat|stock|administr|classement|saisie|secretar|paie|approvision|commande|gestion des)/.test(n)) return 'S';
+  return 'C';
+}
+function nvChercherRome(texte){
+  clearTimeout(NV_ROME_MINUTEUR);
+  var N = nvN();
+  if (texte.trim().length < 3){ if (N.sugg.length){ N.sugg = []; render(true); } return; }
+  NV_ROME_MINUTEUR = setTimeout(async function(){
+    try {
+      var r = await VSF.sb.functions.invoke('rome-sync', { body: { recherche: texte.trim() } });
+      if (r.error || !r.data) return;
+      if (nvN().texte !== texte) return;                      // la saisie a changé entre-temps
+      nvN().sugg = (r.data.resultats || []).slice(0, 6).map(function(s){ return {n:s.libelle || s.libelleMetier || '', c:s.codeRome || ''}; }).filter(function(s){ return s.n && s.c; });
+      render(true);
+    } catch (e) { /* pas de suggestion, la saisie libre reste possible */ }
+  }, 400);
+}
+async function nvSavoirFaireRome(code){
+  try {
+    var q = function(){ return VSF.sb.from('rome_competences_cache').select('libelle,code_competence').eq('code_rome', code).eq('type', 'savoir-faire').limit(12); };
+    var r = await q();
+    if (!r.data || !r.data.length){ await VSF.sb.functions.invoke('rome-sync', { body: { codes: [code] } }); r = await q(); }
+    var vus = {}, out = [];
+    (r.data || []).forEach(function(x){ var k = norm(x.libelle || ''); if (x.libelle && !vus[k] && out.length < 8){ vus[k] = 1; out.push({t:x.libelle, z:nvZoneDe(x.libelle)}); } });
+    return out.length ? out : null;
+  } catch (e) { return null; }
+}
+async function nvAjouter(){
+  var N = nvN(), nom = (N.texte || '').trim();
+  if (!nom || !N.dom) return;
+  var base = 'c:' + N.dom + ':' + nvSlug(nom), k = base, i = 1;
+  while (nvListe().some(function(x){ return x.k === k; })){ i++; k = base + '-' + i; }
+  var item = {k:k, dom:N.dom, n:nom, z:N.zone, rome:N.rome || null, sf:null};
+  if (N.zone === 'X'){
+    var sf = N.rome ? await nvSavoirFaireRome(N.rome) : null;
+    item.sf = sf || NV_SF_GEN.map(function(s){ return {t:s.t, z:s.z}; });
+  }
+  N.custom.push(item); N.checked[k] = true; N.texte = ''; N.rome = null; N.sugg = []; N.sale = true;
+  render(true);
+}
+
+/* ---------- traduction vers la suite du diagnostic ---------- */
+function nvConnu(nom){
+  var n = norm(nom), i;
+  for (i = 0; i < NV_CONNUS.length; i++){ if (NV_CONNUS[i][0].test(n) && FICHES[NV_CONNUS[i][1]]) return NV_CONNUS[i][1]; }
+  return null;
+}
+function nvEtapesGeneriques(key){
+  var noms = ['Recevoir la demande','Préparer','Produire','Contrôler','Livrer'];
+  return noms.map(function(t, i){
+    var id = 'g:' + key + ':' + (i + 1);
+    return {id:id, t:t, gest:'', kpis:[{id:id + ':a', ty:'Qualité', t:'Fait sans reprise'}, {id:id + ':b', ty:'Délai', t:'Dans le délai prévu'}, {id:id + ':c', ty:'Efficience', t:'Temps proportionné au résultat'}]};
+  });
+}
+function nvSituations(x, key){
+  var sf = nvSf(x), sp = nvSplit(x), m = {}, list = [], j, P = {P:'pil', C:'cor', S:'sup'};
+  for (j = 0; j < sf.length; j++){ var id = 'n' + (j < 9 ? '0' : '') + (j + 1); list.push({id:id, t:sf[j].t, d:P[sp[j]]}); m[id] = P[sp[j]]; }
+  return {list:list, map:m};
+}
+function versAncien(){
+  var N = nvN();
+  NV_DYN.forEach(function(k){ delete FICHES[k]; delete SITS[k]; });
+  NV_DYN = [];
+  S.sector = N.dom === 'B' ? 'art' : (N.dom ? 'aut' : null);
+  S.eff = N.taille ? NV_EFF_ANCIEN[N.taille] : '';
+  S.fiches = {}; S.units = {}; S.splitKey = {}; S.sit = {}; S.dirOn = null; S.dirSplit = 'poly';
+  var DEF = {P:'pilot', C:'geste', S:'supp'}, PROC = {P:'pil', C:'cor', S:'sup'};
+  nvListe().forEach(function(x){
+    if (!N.checked[x.k]) return;
+    if (x.k === 'dir'){
+      var sd = nvSituations(x, 'dir'); SITS.dir = sd.list; S.sit.dir = sd.map; S.dirSplit = 'auto'; return;
+    }
+    var connu = (x.z !== 'X') ? nvConnu(x.n) : null;
+    if (connu){ S.fiches[connu] = true; S.units[connu] = 1; S.splitKey[connu] = FICHES[connu].def; return; }
+    var key = (x.z === 'X' ? 'x:' : 'n:') + x.k;
+    NV_DYN.push(key);
+    if (FICHE_ORDER.indexOf(key) < 0){ FICHE_ORDER.push(key); }
+    S.fiches[key] = true; S.units[key] = 1;
+    if (x.z === 'X'){
+      var s = nvSituations(x, key);
+      FICHES[key] = {nm:x.n, proc:'cor', def:'poly', st:'', rome:true, kw:'', rare:'', steps:null};
+      SITS[key] = s.list; S.sit[key] = s.map; S.splitKey[key] = 'auto';
+    } else {
+      FICHES[key] = {nm:x.n, proc:PROC[x.z], def:DEF[x.z], st:'', rome:true, kw:'', rare:'', steps:(x.z === 'C' ? nvEtapesGeneriques(key) : null)};
+      S.splitKey[key] = DEF[x.z];
+    }
+  });
+  N.sale = false;
+}
+
 
 /* ---------- étape 2 : indicateurs à feux ---------- */
 function step2(){
@@ -1867,13 +2131,29 @@ function handle(t){
   else if (a === 'role'){ S.roles[k] = !S.roles[k]; render(true); }
   else if (a === 'sign'){ S.signed = true; render(true); }
   else if (a === 'demo'){ demo(); }
+  else if (a.indexOf('nv') === 0){ nvAgir(a, t, k, v); }
+}
+/* gestes de l’étape 1 (entreprise, postes clés, esquisse) */
+function nvAgir(a, t, k, v){
+  var N = nvN();
+  if (a === 'nvtaille'){ N.taille = k; }
+  else if (a === 'nvposte'){ N.checked[k] = !N.checked[k]; }
+  else if (a === 'nvfold'){ N.open[k] = (N.open[k] === false); }
+  else if (a === 'nvsf'){ var cur = N.split[k]; if (cur){ cur[parseInt(t.getAttribute('data-j'), 10)] = v; } }
+  else if (a === 'nvzone'){ N.zone = k; render(true); return; }
+  else if (a === 'nvsugg'){ var s = N.sugg[parseInt(k, 10)]; if (s){ N.texte = s.n; N.rome = s.c; N.sugg = []; } render(true); return; }
+  else if (a === 'nvajout'){ nvAjouter(); return; }
+  else if (a === 'nvgo'){ if (!nvCalc().complet) return; versAncien(); S.warn = ''; S.step = 2; render(false); return; }
+  else { return; }
+  N.sale = true;
+  render(true);
 }
 document.addEventListener('click', function(e){
   var t = e.target;
   while (t && t !== document){
     if (t.getAttribute && t.getAttribute('data-act')){
       var a = t.getAttribute('data-act');
-      if (a === 'eff' || a === 'date' || a === 'splitsel'){ return; }
+      if (a === 'eff' || a === 'date' || a === 'splitsel' || a === 'nvdom'){ return; }
       handle(t); return;
     }
     t = t.parentNode;
@@ -1881,7 +2161,8 @@ document.addEventListener('click', function(e){
 });
 document.addEventListener('change', function(e){
   var t = e.target, a = t.getAttribute && t.getAttribute('data-act');
-  if (a === 'eff'){ S.eff = t.value; render(true); }
+  if (a === 'nvdom'){ var N = nvN(); N.dom = t.value || null; N.checked = {}; N.sugg = []; N.texte = ''; N.rome = null; N.sale = true; render(true); }
+  else if (a === 'eff'){ S.eff = t.value; render(true); }
   else if (a === 'splitsel'){
     var kk = t.getAttribute('data-k');
     if (kk === 'dir'){ S.dirSplit = t.value; } else { S.splitKey[kk] = t.value; }
@@ -1890,16 +2171,17 @@ document.addEventListener('change', function(e){
 });
 document.addEventListener('keydown', function(e){
   var t = e.target;
-  if (e.key === 'Enter' && t && t.id === 'rqInput'){ S.rq = t.value; render(true); }
+  if (e.key === 'Enter' && t && t.id === 'nv-add'){ e.preventDefault(); nvAjouter(); }
 });
 document.addEventListener('input', function(e){
   var t = e.target, a = t.getAttribute && t.getAttribute('data-act');
   if (a === 'date'){ S.dates[t.getAttribute('data-k')] = t.value; }
+  if (t.id === 'nv-add'){ var N = nvN(); N.texte = t.value; N.rome = null; nvChercherRome(t.value); }
 });
 
 /* ===================== VSF : compte, entreprise, paiement, enregistrement ===================== */
 var DIAG = { id: null, org: null, statut: null, pret: false, minuteur: null, enCours: false };
-var PERSISTE = ['sector','eff','fiches','units','splitKey','dirSplit','dirOn','sit','lights','alleger','reinvest','target','modal','dates','roles','signed','step','axTab'];
+var PERSISTE = ['N','sector','eff','fiches','units','splitKey','dirSplit','dirOn','sit','lights','alleger','reinvest','target','modal','dates','roles','signed','step','axTab'];
 function eH(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
 function messageDiag(e){ var m = String((e && e.message) || ''); return (e && e.code === 'VSF08' && m) ? m : 'Cela n’a pas pu être enregistré. Réessayez dans un instant.'; }
 function ecranDiag(html){
@@ -1941,7 +2223,8 @@ async function ouvrirDiag(org){
   S.ans = {}; (rp.data || []).forEach(function(x){ S.ans[x.q_code] = x.niveau; });
   if (!S.step || S.step < 1) S.step = 1;
   S.calculating = false;
-  var det = document.querySelector('details.fixes'); if (det) det.style.display = '';
+  await nvChargerRef();
+  if (S.N){ nvN(); versAncien(); }
   DIAG.pret = true;
   render(false);
 }
@@ -1965,7 +2248,19 @@ function planifierSauvegarde(){
   }
 }
 var renderMaquette = render;
-render = function(k){ renderMaquette(k); planifierSauvegarde(); };
+render = function(k){
+  if (S.step > 1 && S.N && S.N.sale){ versAncien(); }          // l’étape 1 a changé : la suite repart de ses postes
+  var actif = document.activeElement, fid = actif && actif.getAttribute && actif.getAttribute('data-fid');
+  var champ = (actif && actif.id === 'nv-add') ? [actif.selectionStart, actif.selectionEnd] : null;
+  renderMaquette(k);
+  var det = document.querySelector('details.fixes'); if (det) det.style.display = (S.step === 4 && !S.calculating) ? '' : 'none';
+  if (S.step === 1 && !S.calculating){ document.getElementById('stepper').innerHTML = ''; document.getElementById('nav').innerHTML = ''; }
+  if (S.step === 1){
+    var cible = champ ? document.getElementById('nv-add') : (fid ? document.querySelector('[data-fid="' + fid.replace(/"/g, '') + '"]') : null);
+    if (cible && !cible.disabled){ cible.focus({ preventScroll: true }); if (champ && cible.setSelectionRange){ cible.setSelectionRange(champ[0], champ[1]); } }
+  }
+  planifierSauvegarde();
+};
 document.addEventListener('visibilitychange', function(){ if (document.visibilityState === 'hidden') { clearTimeout(DIAG.minuteur); sauver(); } });
 
 async function demarrerDiag(){
