@@ -11,21 +11,27 @@
 <link rel="stylesheet" href="vsf.css">
 <link rel="stylesheet" href="vsf-nav.css">
 <style>
-  .wrap.large{max-width:760px}
-  .groupe{display:flex;flex-direction:column;margin:10px 0 0}
-  .choix-ligne{display:flex;justify-content:space-between;align-items:center;gap:14px;width:100%;min-height:64px;padding:14px 0;border:0;border-top:1px solid var(--line);background:#fff;color:#111;font:inherit;text-align:left;cursor:pointer}
-  .groupe .choix-ligne:last-child{border-bottom:1px solid var(--line)}
-  .choix-ligne b{display:block;font-size:19px;font-weight:900;letter-spacing:-.01em}
-  .choix-ligne span.sous{display:block;font-size:14px;color:var(--cap);font-weight:400}
-  .choix-ligne .etat{font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;white-space:nowrap;color:var(--cap)}
-  .choix-ligne[aria-pressed="true"] .etat{color:#111;border:1.5px solid #111;padding:2px 7px}
-  .choix-ligne[aria-pressed="true"] b{text-decoration:underline;text-decoration-thickness:3px;text-underline-offset:6px}
+  .wrap.large{max-width:760px;padding-left:52px}
+  /* code de couleur commun : rond jaune = la chose à faire maintenant, vert avec coche = fait, aucun rond = déjà répondu */
+  .nvh{position:relative}
+  .nvh > .nvd{position:absolute;left:-32px;top:2px}
+  h1.nvh > .nvd{top:9px}
+  h2.nvh > .nvd{top:6px}
+  .q-lab{position:relative;font-size:14px;font-weight:500;color:var(--cap);margin:var(--espace-question,32px) 0 var(--espace-qr,8px)}
+  .q-lab > .nvd{position:absolute;left:-32px;top:0}
+  /* la réponse choisie en grand, noir, gras ; les autres en gris clair, sans cadre ni ligne */
+  .groupe{display:flex;flex-direction:column;margin:0}
+  .choix-ligne{display:block;width:100%;min-height:44px;padding:6px 0;border:0;background:none;color:#a0a0a0;font:inherit;text-align:left;cursor:pointer}
+  .groupe.untouched .choix-ligne{color:#767676}
+  .choix-ligne b{display:block;font-size:18px;font-weight:500;letter-spacing:-.01em}
+  .choix-ligne span.sous{display:block;font-size:14px;font-weight:400}
+  .choix-ligne[aria-pressed="true"]{color:#111}
+  .choix-ligne[aria-pressed="true"] b{font-size:20px;font-weight:800}
   .choix-ligne:focus-visible{outline:2px solid #111;outline-offset:3px}
-  .detail-niveau{background:var(--panel);padding:16px 18px;margin:18px 0}
+  .detail-niveau{padding:0;margin:var(--espace-question,32px) 0 0}
   .detail-niveau h3{font-size:19px;font-weight:900;margin:0 0 6px}
   .detail-niveau ul{margin:10px 0 0;padding-left:0;list-style:none}
-  .detail-niveau li{padding:10px 0;border-top:1px solid var(--line);font-size:15px}
-  .detail-niveau li:first-child{border-top:0}
+  .detail-niveau li{padding:10px 0;font-size:15px}
   .detail-niveau li b{display:block}
   .detail-niveau li span{display:block;color:var(--cap);font-size:14px}
   .reperes{font-size:14px;color:var(--cap)}
@@ -55,34 +61,32 @@ function dessiner() {
   var pistes = S.pistes.length ? S.pistes : [{ code: 'principale', libelle: NOM, optionnelle: false }];
   var lignesPistes = pistes.map(function (p) {
     return '<button type="button" class="choix-ligne" data-piste="' + E(p.code) + '" aria-pressed="' + (c.piste === p.code) + '">' +
-      '<div><b>' + E(p.libelle) + '</b><span class="sous">' + (p.optionnelle ? 'Option, en plus de la piste principale' : 'Piste principale') + '</span></div><span class="etat">' + (c.piste === p.code ? 'Ma piste' : 'Choisir') + '</span></button>';
+      '<div><b>' + E(p.libelle) + '</b>' + (p.optionnelle ? '<span class="sous">Option</span>' : '') + '</div></button>';
   }).join('');
   var niveaux = [1, 2, 3, 4].map(function (n) {
     var t = (S.chemin[0] && S.chemin[0].niveaux[n]) ? S.chemin[0].niveaux[n].titre : '';
     var d = VSFF.dureeTexte(S.niveaux[n]);
     return '<button type="button" class="choix-ligne" data-niveau="' + n + '" aria-pressed="' + (c.niveau === n) + '">' +
-      '<div><b>N' + n + ' — ' + E(t) + '</b><span class="sous">' + (d ? 'Repère de parcours : ' + E(d) : 'Repère de durée : bientôt') + '</span></div><span class="etat">' + (c.niveau === n ? 'Mon objectif' : 'Choisir') + '</span></button>';
+      '<div><b>N' + n + ' — ' + E(t) + '</b>' + (d ? '<span class="sous">' + E(d) + '</span>' : '') + '</div></button>';
   }).join('');
   var detail = '';
   if (c.niveau) {
     var n = c.niveau, tit = (S.chemin[0] && S.chemin[0].niveaux[n]) ? S.chemin[0].niveaux[n].titre : '';
-    detail = '<div class="detail-niveau"><h3>À ce niveau (N' + n + ' — ' + E(tit) + '), la personne :</h3><ul>' +
+    detail = '<div class="detail-niveau"><h3>N' + n + ' — ' + E(tit) + '</h3><ul>' +
       S.chemin.map(function (s) {
         var x = s.niveaux[n]; if (!x) return '';
         return '<li><b>' + E(s.nom) + '</b>' + E(x.fait) + '<span>Preuve observable : ' + E(x.preuve) + '</span></li>';
-      }).join('') + '</ul><p class="reperes" style="margin-top:12px">Un niveau est validé par un humain, en situation réelle. Les durées sont indicatives, à calibrer avec un tuteur : ce n’est pas une promesse.</p></div>';
+      }).join('') + '</ul><p class="reperes">Durées indicatives, pas une promesse : un niveau est validé par un humain, en situation réelle.</p></div>';
   }
+  var fini = !!(c.piste && c.niveau);
+  var pisteFaite = !!c.piste && S.pistes.length <= 1;          // une seule piste ouverte : déjà choisie d'office
   $('app').innerHTML =
-    '<p class="etiquette">Ma piste et mon objectif</p>' +
-    '<h1>Choisir où aller, et jusqu’où.</h1>' +
-    '<p class="legende">Deux choix sur un seul écran. Rien n’est définitif : vous pouvez les changer à tout moment.</p>' +
-    '<h2>Ma piste</h2>' +
-    (S.pistes.length > 1 ? '' : '<p class="legende">Pour l’instant, une seule piste est ouverte pour ce métier. D’autres arriveront.</p>') +
-    '<div class="groupe" role="group" aria-label="Ma piste">' + lignesPistes + '</div>' +
-    '<h2>Mon objectif pour « ' + E(NOM) + ' »</h2>' +
-    '<p class="legende">Quatre niveaux possibles. Choisissez celui que vous visez : les niveaux d’avant font partie du chemin.</p>' +
-    '<div class="groupe" role="group" aria-label="Mon objectif">' + niveaux + '</div>' + detail +
-    (c.piste && c.niveau ? '' : '<p class="legende" style="margin-top:28px">Choisissez une piste et un niveau pour voir votre plan.</p>');
+    '<p class="etiquette">' + E(NOM) + '</p>' +
+    '<h1 class="nvh"><span class="nvd' + (fini ? ' ok' : '') + '" aria-hidden="true"></span>Ma piste et mon objectif</h1>' +
+    '<div class="q-lab">' + (pisteFaite || c.piste && S.pistes.length > 1 ? '' : '<span class="nvd" aria-hidden="true"></span>') + 'Ma piste</div>' +
+    '<div class="groupe' + (c.piste ? '' : ' untouched') + '" role="group" aria-label="Ma piste">' + lignesPistes + '</div>' +
+    '<div class="q-lab">' + (c.niveau ? '' : '<span class="nvd" aria-hidden="true"></span>') + 'Mon objectif</div>' +
+    '<div class="groupe' + (c.niveau ? '' : ' untouched') + '" role="group" aria-label="Mon objectif">' + niveaux + '</div>' + detail;
   document.querySelectorAll('[data-piste]').forEach(function (b) { b.addEventListener('click', function () { S.choix.piste = b.getAttribute('data-piste'); enregistrer(); dessiner(); }); });
   document.querySelectorAll('[data-niveau]').forEach(function (b) { b.addEventListener('click', function () { S.choix.niveau = +b.getAttribute('data-niveau'); enregistrer(); dessiner(); }); });
 }

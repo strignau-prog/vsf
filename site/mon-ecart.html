@@ -11,26 +11,29 @@
 <link rel="stylesheet" href="vsf.css">
 <link rel="stylesheet" href="vsf-nav.css">
 <style>
-  .wrap.large{max-width:760px}
+  .wrap.large{max-width:760px;padding-left:52px}
+  /* code de couleur commun : rond jaune = la chose à faire maintenant, vert avec coche = fait, aucun rond = déjà répondu */
+  .nvh{position:relative}
+  .nvh > .nvd{position:absolute;left:-32px}
+  h1.nvh > .nvd{top:9px}
+  .situation > .nvd{position:absolute;left:-32px;top:3px}
   .chiffres{display:flex;flex-wrap:wrap;gap:6px 26px;margin:14px 0 6px}
   .chiffres b{display:block;font-size:34px;font-weight:900;line-height:1.05;letter-spacing:-.02em}
   .chiffres span{font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--cap)}
-  .situation{padding:22px 0 14px;border-top:1px solid var(--line)}
-  .situation h3{font-size:20px;font-weight:900;letter-spacing:-.01em;margin:0 0 4px}
-  .palier{font-size:12px;font-weight:900;letter-spacing:.09em;text-transform:uppercase}
-  .origine{font-size:13px;color:var(--cap);margin-left:8px}
-  .grace{margin:8px 0 0;padding-left:18px;font-size:15px}
+  .situation{position:relative;padding:0 0 var(--espace-question,32px)}
+  .situation h3{font-size:20px;font-weight:900;letter-spacing:-.01em;margin:0 0 var(--espace-qr,8px)}
+  .grace{margin:0 0 var(--espace-qr,8px);padding-left:18px;font-size:15px}
   .grace li{margin:3px 0}
-  .rien{font-size:15px;color:var(--cap);margin:8px 0 0}
-  .choix{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 0}
-  .choix button{min-height:44px;border:1.5px solid #111;background:#fff;color:#111;font:inherit;font-size:13px;font-weight:500;padding:8px 12px;cursor:pointer}
-  .choix button[aria-pressed="true"]{background:#111;color:#fff;font-weight:800}
+  .origine{font-size:13px;color:var(--cap)}
+  .rien{font-size:15px;color:var(--cap);margin:0 0 var(--espace-qr,8px)}
+  /* le palier : réponse choisie en grand, noir, gras ; les autres en gris clair, sans cadre */
+  .choix{display:flex;flex-wrap:wrap;gap:0 22px;margin:0}
+  .choix button{min-height:44px;border:0;background:none;color:#a0a0a0;font:inherit;font-size:16px;font-weight:500;padding:0;cursor:pointer;text-align:left}
+  .choix button[aria-pressed="true"]{color:#111;font-weight:800;font-size:20px}
   .choix button:focus-visible{outline:2px solid #111;outline-offset:3px}
-  details.detail{margin-top:12px}
-  details.detail summary{min-height:44px;display:flex;align-items:center;font-size:13px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;color:var(--cap)}
+  details.detail{margin-top:var(--espace-qr,8px)}
+  details.detail summary{min-height:44px;display:flex;align-items:center;font-size:14px;font-weight:500;cursor:pointer;color:var(--cap)}
   details.detail p{font-size:15px;margin:6px 0}
-  .legende-paliers{margin:18px 0 6px;padding:14px 16px;background:var(--panel)}
-  .legende-paliers p{margin:6px 0;font-size:15px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="vsf-auth.js"></script>
@@ -70,12 +73,12 @@ var ETAT = { situations: [], carte: null, choix: lire(CLE_ECART) || {} };
 
 function dessiner() {
   var sits = ETAT.situations;
-  var cnt = { p: 0, t: 0, k: 0, d: 0 };
+  var cnt = { p: 0, t: 0, k: 0, d: 0 }, attente = 0;
   var lignes = sits.map(function (s, i) {
     var sug = s.sug, confirme = ETAT.choix[s.nom], p = confirme || sug.palier;
     cnt[p]++;
-    return '<div class="situation"><h3>' + E((i + 1) + '. ' + s.nom) + '</h3>' +
-      '<span class="palier">' + NOMS[p] + '</span><span class="origine">' + (confirme ? 'confirmé par vous' : 'suggéré d’après votre carte') + '</span>' +
+    if (!confirme) attente++;
+    return '<div class="situation">' + (confirme ? '' : '<span class="nvd" aria-hidden="true"></span>') + '<h3>' + E((i + 1) + '. ' + s.nom) + '</h3>' +
       (sug.preuves.length && p === sug.palier ? '<ul class="grace">' + sug.preuves.map(function (x) { return '<li>' + E(x.t) + ' <span class="origine">(' + E(x.o) + (x.m && x.m.length ? ' · mots communs : ' + E(x.m.join(', ')) : '') + ')</span></li>'; }).join('') + '</ul>'
         : (p === 'd' ? '<p class="rien">Rien dans votre carte de départ ne s’en approche pour l’instant.</p>' : '')) +
       '<div class="choix" role="group" aria-label="Votre palier pour cette situation">' + PALIERS.map(function (q) {
@@ -85,14 +88,12 @@ function dessiner() {
       '<p><b>Les étapes.</b> ' + E(s.etapes) + '</p><p><b>Les décisions.</b> ' + E(s.decisions) + '</p><p><b>Quand c’est réussi.</b> ' + E(s.critere) + '</p></details></div>';
   });
   $('app').innerHTML =
-    '<p class="etiquette">Mon écart</p>' +
-    '<h1>Où j’en suis, situation par situation.</h1>' +
-    '<p class="legende">Pour le métier de ' + E(NOM) + '. Quatre paliers, jamais une note : un palier dit seulement ce que vous avez déjà fait et ce qu’il reste à apprendre. Les paliers sont suggérés à partir de votre carte de départ : c’est vous qui décidez, un clic pour les changer.</p>' +
+    '<p class="etiquette">' + E(NOM) + '</p>' +
+    '<h1 class="nvh"><span class="nvd' + (attente ? '' : ' ok') + '" aria-hidden="true"></span>Où j’en suis</h1>' +
+    '<p class="legende" data-aide>Quatre paliers, jamais une note. Ils sont suggérés d’après votre carte de départ : un clic pour les changer, vos choix sont gardés.</p>' +
+    '<p class="legende" data-aide>' + PALIERS.map(function (q) { return '<b>' + q[1] + '.</b> ' + q[2]; }).join('<br>') + '</p>' +
     '<div class="chiffres">' + PALIERS.map(function (q) { return '<div><b>' + cnt[q[0]] + '</b><span>' + q[1] + '</span></div>'; }).join('') + '</div>' +
-    '<details class="detail"><summary>Ce que veulent dire les quatre paliers</summary><div class="legende-paliers">' +
-    PALIERS.map(function (q) { return '<p><b>' + q[1] + '.</b> ' + q[2] + '</p>'; }).join('') + '</div></details>' +
-    lignes.join('') +
-    '<p class="legende" style="margin-top:28px">Votre écart est gardé : vous pouvez le modifier à tout moment.</p>';
+    lignes.join('');
   document.querySelectorAll('.choix button').forEach(function (b) {
     b.addEventListener('click', function () { ETAT.choix[b.getAttribute('data-s')] = b.getAttribute('data-p'); ecrire(CLE_ECART, ETAT.choix); VSF.parcours.ecrire('ecart', ETAT.choix); dessiner(); });
   });
