@@ -1,20 +1,21 @@
-/* Bandeau et menu horizontal (posés par vsf-nav.js) */
-.vsf-haut{display:flex;flex-wrap:wrap;align-items:center;gap:6px 22px;padding:6px 20px;min-height:56px;border-bottom:1px solid var(--line);background:#fff;position:relative;z-index:30}
+/* Bandeau et menu horizontal (posés par vsf-nav.js) — code de couleur commun : rond vert = fait, rond jaune = en cours, aucun rond = pas encore ouvert */
+.vsf-haut{display:flex;flex-wrap:wrap;align-items:center;gap:6px 22px;padding:6px 20px;min-height:56px;border-bottom:0;background:#fff;position:relative;z-index:30}
 .vsf-marque{font-weight:900;letter-spacing:.02em;color:#111;text-decoration:none;margin-right:auto}
-.vsf-etapes{display:flex;flex-wrap:wrap;gap:0 22px}
-.vsf-etapes a,.vsf-compte{display:inline-flex;align-items:center;min-height:44px;font-size:12px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;color:#767676;text-decoration:none}
-.vsf-etapes a.ici{color:#111;font-weight:900;text-decoration:underline;text-decoration-thickness:3px;text-underline-offset:8px}
+.vsf-etapes{display:flex;flex-wrap:wrap;gap:0 24px}
+.vsf-etapes a,.vsf-etapes .pas-encore,.vsf-compte{display:inline-flex;align-items:center;gap:8px;min-height:44px;font-size:14px;font-weight:500;color:#767676;text-decoration:none}
+.vsf-etapes a.fait{color:#111;font-weight:800}
+.vsf-etapes a.ici{color:#111;font-weight:900}
+.vsf-etapes .pas-encore{color:#a0a0a0;cursor:default}
 .vsf-compte{color:#111;font-weight:800}
 .vsf-etapes a:hover,.vsf-compte:hover{color:#111}
 .vsf-haut a:focus-visible{outline:2px solid #111;outline-offset:3px}
 @media (max-width:640px){.vsf-haut{padding:6px 16px}.vsf-etapes{order:3;width:100%}}
 
 
-/* Fil « étape suivante » (posé par vsf-suite.js) */
-.vsf-suite{max-width:760px;margin:36px auto 0;padding:14px 20px 30px;border-top:1px solid transparent;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:#111}
-.vsf-suite-num{margin:0 0 4px;font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:#767676}
-.vsf-suite-suiv{display:inline-flex;align-items:center;min-height:44px;font-size:18px;font-weight:900;letter-spacing:-.01em;color:#111;text-decoration:underline;text-decoration-thickness:3px;text-underline-offset:6px}
-.vsf-suite-prec{display:flex;align-items:center;min-height:44px;font-size:14px;font-weight:500;color:#767676;text-decoration:underline;text-underline-offset:4px}
+/* Fil « étape suivante » (posé par vsf-suite.js) : un seul grand bouton, rond jaune devant */
+.vsf-suite{max-width:760px;margin:var(--espace-etape,64px) auto 0;padding:14px 20px 30px;border-top:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:#111;display:flex;flex-direction:column;align-items:flex-start;gap:var(--espace-question,32px)}
+.vsf-suite-suiv{display:inline-flex;align-items:center;gap:12px;min-height:56px;font-size:clamp(24px,3vw,30px);font-weight:900;letter-spacing:-.01em;color:#111;text-decoration:none}
+.vsf-suite-prec{display:flex;align-items:center;min-height:44px;font-size:15px;font-weight:500;color:#767676;text-decoration:none;order:2}
 .vsf-suite-fin{margin:6px 0;font-size:16px;font-weight:500}
 .vsf-suite a:focus-visible{outline:2px solid #111;outline-offset:3px}
 @media print{.vsf-suite{display:none !important}}

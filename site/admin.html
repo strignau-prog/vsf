@@ -66,7 +66,7 @@ async function demarrer() {
   var su = await sb.rpc('vsf_est_super');
   moi.super = su.data === true;
   dessiner();
-  await Promise.all([chargerComptes(), chargerVendeurs(), chargerReversements()]);
+  await Promise.all([chargerComptes(), chargerDiagnostics(), chargerVendeurs(), chargerReversements()]);
 }
 async function sortir() { await sb.auth.signOut(); location.replace('./'); }
 
@@ -78,6 +78,8 @@ function dessiner() {
 
     '<h2>Comptes</h2><div class="chiffres" id="chiffres"><div><b>…</b><span>Personnes</span></div></div>' +
     '<p class="message" id="msgComptes" role="alert"></p><div id="listeComptes"></div>' +
+
+    '<h2>Diagnostics</h2><div class="chiffres" id="chiffresDiag"><div><b>…</b><span>À payer</span></div></div><p class="message" id="msgDiag" role="alert"></p>' +
 
     '<h2>Ambassadeurs</h2>' +
     '<p class="legende">Aucune offre ne s’ouvre tant que son ambassadeur n’est pas validé.</p>' +
@@ -91,6 +93,19 @@ function dessiner() {
 
     '<h2>CGV</h2>' +
     '<p class="legende">Version provisoire, à relire avec votre comptable.</p>';
+}
+
+/* ───── diagnostics entreprise : des nombres seulement, jamais le contenu ───── */
+async function chargerDiagnostics() {
+  var r = await sb.rpc('vsf_diagnostics_chiffres');
+  if (r.error || !r.data) { $('chiffresDiag').innerHTML = ''; dire('msgDiag', 'Non installé : migration 23 à jouer.'); return; }
+  var d = r.data;
+  var prix = d.tarif_defini ? euros(d.tarif_eur) : 'xx €';
+  $('chiffresDiag').innerHTML =
+    '<div><b>' + d.en_cours + '</b><span>En cours</span></div>' +
+    '<div><b>' + d.termines + '</b><span>Terminés</span></div>' +
+    '<div><b>' + d.a_payer + '</b><span>À payer</span></div>' +
+    '<div><b>' + prix + '</b><span>Prix</span></div>';
 }
 
 /* ───── comptes ───── */

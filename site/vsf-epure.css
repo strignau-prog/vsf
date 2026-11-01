@@ -3,6 +3,11 @@
    3. Champs : pas de cadre ; un champ vide montre un curseur noir qui clignote, un champ rempli n'affiche que son texte.
    (Les icônes sont dans vsf-icones.css.) Cette règle remplace « listes séparées par un filet fin ». */
 
+/* Code de couleur commun de la progression : rond de 20 px, jaune = la chose à faire maintenant, vert avec coche = fait.
+   Aucun rond = pas encore ouvert. Même code dans les diagnostics (entreprise, travailleur) et dans le parcours. */
+.nvd{width:20px;height:20px;border-radius:50% !important;background:var(--jaune,#ffc400);flex:none;display:inline-block;border:0 !important;margin:0}
+.nvd.ok{background:var(--vert,#009e73) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6.5 12.5l3.5 3.5 7.5-8' fill='none' stroke='white' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/100% no-repeat}
+
 /* 1 — lignes */
 :root{--line:transparent;--line-strong:transparent}
 /* espacements fixes, identiques sur toutes les pages : 8 px entre une question et sa réponse, 32 px entre deux questions, 64 px entre deux étapes */

@@ -22,11 +22,14 @@
     .wrap.wrapWide{max-width:1280px}
     .hero h1{font-size:38px !important;line-height:1.05;margin:22px 0 0 0 !important}
     .hero p{color:var(--muted);font-size:15px;line-height:1.6;margin:10px 0 0 0}
-    .steps{display:flex;gap:4px;margin:24px 0;flex-wrap:wrap}
-    .stepDot{flex:1;min-width:84px;min-height:44px;text-align:center;padding:8px 4px;background:none;border:none;border-bottom:3px solid var(--line);font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
-    .stepDot:disabled{cursor:default;opacity:.4}
-    .stepDot.on{border-color:#111;color:#111}
-    .stepDot.done{border-color:#111;color:#111;font-weight:500}
+    .steps{display:flex;gap:8px 28px;margin:var(--espace-question,32px) 0;flex-wrap:wrap}
+    /* même code de couleur que le diagnostic entreprise : rond jaune = en cours, vert avec coche = fait, aucun rond = pas encore ouvert */
+    .stepDot{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0;background:none;border:none;font-size:15px;font-weight:500;color:#111;cursor:pointer;text-align:left}
+    .stepDot:disabled{cursor:default;color:#a0a0a0}
+    .stepDot.on{font-weight:900}
+    .stepDot.on::before,.stepDot.done::before{content:"";width:20px;height:20px;border-radius:50% !important;flex:none;background:var(--jaune,#ffc400)}
+    .stepDot.done::before{background:var(--vert,#009e73) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6.5 12.5l3.5 3.5 7.5-8' fill='none' stroke='white' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/100% no-repeat}
+    .stepDot.done{font-weight:800}
 
     .field{position:relative;margin-bottom:10px}
     .field label{display:block;font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
@@ -155,14 +158,13 @@
     .roueDetail .note{font-size:13px;color:var(--muted);margin-top:10px}
 
     /* ---- accueil : deux portes ---- */
-    .doors{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:22px 0}
-    @media (max-width:600px){ .doors{grid-template-columns:1fr} }
-    .doorCard{border:1.5px solid #111;border-radius:0;padding:26px 22px;text-align:left;color:#111;background:#fff;min-height:120px;display:flex;flex-direction:column;justify-content:center;gap:8px}
-    .doorCard:hover,.doorCard:focus-visible{background:#111;color:#fff}
-    .doorCard.art{background:#fff}
-    .doorCard.art:hover,.doorCard.art:focus-visible{background:#111}
-    .doorCard .dTitle{font-size:20px;font-weight:900;letter-spacing:-.01em}
-    .doorCard .dSub{font-size:14px;line-height:1.4}
+    /* une question en petit libellé gris, deux réponses écrites en grand : ni cadre, ni fond */
+    .doorQ{font-size:14px;font-weight:500;color:#767676;margin:var(--espace-etape,64px) 0 var(--espace-qr,8px)}
+    .doors{display:flex;flex-direction:column;align-items:flex-start;gap:var(--espace-qr,8px);margin:0 0 var(--espace-etape,64px)}
+    .doorCard{border:0;border-radius:0;padding:0;text-align:left;color:#111;background:none;min-height:44px;display:flex;flex-direction:column;justify-content:center;gap:2px;cursor:pointer}
+    .doorCard:focus-visible{outline:2px solid #111;outline-offset:3px}
+    .doorCard .dTitle{font-size:20px;font-weight:800;letter-spacing:-.01em}
+    .doorCard .dSub{font-size:14px;line-height:1.4;color:#767676}
 
     /* ---- états : dits par des mots et par la graisse ---- */
     .badge{display:inline-block;font-size:11px;padding:3px 8px;border:1.5px solid #111;border-radius:0;font-weight:800;text-transform:uppercase;letter-spacing:.07em;background:#fff;color:#111}
@@ -203,7 +205,6 @@
 <div class="wrap">
   <div class="hero">
     <h1 style="font-size:24px;margin:0">Mon métier qui aurait du sens</h1>
-    <p>Un métier qui a du sens, c'est un métier qui rejoint ce que vous avez déjà vécu et ce que vous voulez vivre demain — jamais un score, jamais une promesse.</p>
   </div>
   <div class="steps" id="steps"></div>
   <div id="app"></div>
@@ -487,21 +488,16 @@ function renderSteps(){
 /* ============================ ÉTAPE 0 — ACCUEIL, DEUX PORTES ============================ */
 function renderEtapeAccueil(){
   return `
-  <div style="text-align:center;padding:10px 0 6px 0">
-    <div class="tag" style="font-size:13px;text-transform:uppercase;letter-spacing:.1em;color:var(--accent-ink);margin-bottom:10px">Votre transition professionnelle</div>
-    <h2 style="font-size:24px;margin:0 0 6px 0">Quel savoir-faire voulez-vous faire grandir ?</h2>
-  </div>
+  <div class="doorQ">Quel savoir-faire voulez-vous faire grandir ?</div>
   <div class="doors">
     <button type="button" class="doorCard" data-porte="tous">
       <div class="dTitle">Explorer tous les métiers</div>
-      <div class="dSub">Partez d'un geste, d'une matière, d'un résultat ou de votre expérience.</div>
     </button>
     <button type="button" class="doorCard art" data-porte="art">
       <div class="dTitle">Explorer les métiers d'art</div>
-      <div class="dSub">281 activités officiellement répertoriées, 16 domaines.</div>
+      <div class="dSub">281 activités, 16 domaines</div>
     </button>
   </div>
-  <div class="disclaimerBox">Les métiers d'art sont un repère officiel. D'autres métiers permettent aussi de construire et transmettre des savoir-faire rares — cette porte ne ferme aucune autre voie.</div>
   `;
 }
 

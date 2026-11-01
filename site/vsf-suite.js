@@ -1,5 +1,6 @@
 /* VRAI-SAVOIRFAIRE — le fil « étape suivante » en bas de chaque page du parcours Personne, de Départ jusqu'au plan.
-   Une seule liste d'étapes (la même que le menu), un seul bouton principal : une action par écran. */
+   Une seule liste d'étapes (la même que le menu), un seul bouton principal : une action par écran.
+   Le bouton est écrit en grand, avec un rond jaune devant (la chose à faire maintenant), comme dans le diagnostic entreprise. */
 (function () {
   var ETAPES = [
     ['mon-passage.html', 'Mon point de départ'],
@@ -21,8 +22,7 @@
     n.className = 'vsf-suite noprint';
     n.setAttribute('aria-label', 'Étape suivante');
     n.innerHTML =
-      '<p class="vsf-suite-num">Étape ' + (i + 1) + ' sur ' + ETAPES.length + '</p>' +
-      (suiv ? '<a class="vsf-suite-suiv" href="' + suiv[0] + '">' + suiv[1] + ' →</a>' : '<p class="vsf-suite-fin">Votre commande est prête à être vérifiée et payée.</p>') +
+      (suiv ? '<a class="vsf-suite-suiv" href="' + suiv[0] + '"><span class="nvd" aria-hidden="true"></span>' + suiv[1] + ' →</a>' : '<p class="vsf-suite-fin">Votre commande est prête à être vérifiée et payée.</p>') +
       (prec ? '<a class="vsf-suite-prec" href="' + prec[0] + '">← ' + prec[1] + '</a>' : '');
     var pied = document.querySelector('footer');
     if (pied && pied.parentNode) pied.parentNode.insertBefore(n, pied); else document.body.appendChild(n);
