@@ -767,7 +767,17 @@
   @keyframes nv-entre{from{opacity:0;transform:scale(.2)}to{opacity:1;transform:scale(1)}}
   @keyframes nv-fond{from{opacity:0}to{opacity:1}}
   @media(prefers-reduced-motion:reduce){.nv-carte.play .nv-chips{max-height:0;animation:none}.nv-carte.play .chip-f,.nv-carte.play .ini,.nv-carte.play .nv-feu i{animation:none}}
-  /* moins de filets : les blocs se distinguent par un fond très clair, pas par un cadre */
+  /* étape 3 : mode précis, quatre niveaux en colonnes */
+  @media(min-width:1000px){.q3-lv{grid-template-columns:repeat(4,minmax(0,1fr))}}
+  .q3-obsl{display:flex;flex-direction:column;gap:2px}
+  .q3-obs{display:flex;align-items:flex-start;gap:10px;background:none;border:0;padding:6px 0;min-height:44px;font:inherit;font-size:14px;line-height:1.4;color:#767676;text-align:left;cursor:pointer}
+  .q3-obs .nv-box{margin-top:2px}
+  .q3-obs[aria-pressed="true"]{color:#111;font-weight:800}
+  .q3-obs[aria-pressed="true"] .nv-box{background:#111;border-color:#111}
+  .q3-obs[aria-pressed="true"] .nv-box::after{content:"";width:9px;height:5px;border-left:2.5px solid #fff;border-bottom:2.5px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
+  .q3-obs:focus-visible{outline:2px solid #111;outline-offset:3px}
+  .q3-res{margin-top:var(--espace-qr,8px);font-size:20px;font-weight:800}
+  .nv-opt svg{vertical-align:-3px;margin-right:2px}  /* moins de filets : les blocs se distinguent par un fond très clair, pas par un cadre */
   .card,details.fixes{border:0 !important;background:#fafafa !important;box-shadow:none !important}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
@@ -1772,40 +1782,94 @@ function step2(){
   return h;
 }
 
-/* ---------- étape 3 : les 60 questions (même charte que l’étape 1) ---------- */
+/* ---------- étape 3 : les questions (deux modes ; questions ajoutées pour les métiers d’art et les labels) ---------- */
+/* Questions AJOUTÉES, même format que les 60 (4 niveaux, observables). Formulations à valider par Stéphane. */
+var Q_PLUS = {
+  art: [{id:'TA-01', th:'Transmission des gestes rares', cq:'TV', q:'Les gestes rares de l’atelier sont-ils transmis avant qu’une personne ne parte ?',
+    n:[['Une seule personne sait faire ; rien n’est écrit ni filmé.', 'Le départ de cette personne arrêterait le geste.', 'Personne n’a été désigné pour reprendre.'],
+       ['Un apprenti observe quand il y a le temps.', 'Quelques explications orales, sans trace.', 'Rien n’est prévu avant un départ.'],
+       ['Un binôme maître et apprenti est organisé.', 'Les gestes sont filmés et décrits.', 'Un calendrier de transmission existe.'],
+       ['Chaque geste rare a au moins deux détenteurs.', 'Les détenteurs sont suivis dans le temps.', 'Les traces servent à former de nouvelles personnes.']]}],
+  epv: [{id:'PA-01', th:'Patrimoine d’outils et d’archives', cq:'ESG', q:'Vos outils, modèles et archives techniques sont-ils conservés et transmissibles ?',
+    n:[['Ils existent mais sont dispersés.', 'Personne n’en a la liste.', 'Aucune règle de conservation.'],
+       ['Ils sont rangés et connus de quelques-uns.', 'Un inventaire partiel existe.', 'La conservation dépend d’une personne.'],
+       ['Ils sont inventoriés et documentés.', 'Les modèles sont datés et rangés.', 'Une règle de conservation est écrite.'],
+       ['Ils sont entretenus et enrichis.', 'Ils servent à former.', 'Leur histoire est racontée aux clients et aux apprentis.']]}]
+};
+var AXE_ICO = {
+  NE: '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15.5 8.5l-2 5-5 2 2-5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>',
+  NO: '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M3 9l9-5 9 5-9 5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M7 11.5V16c1.5 1.3 3 2 5 2s3.5-.7 5-2v-4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>',
+  SO: '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>',
+  SE: '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 10h16M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+  AR: '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 3l8 8-8 10-8-10z" fill="currentColor"/></svg>'
+};
+/* l’axe ajouté : seulement s’il y a un métier d’art ◆ ou une reconnaissance cochée */
+function axePlus(){
+  if (!S.N) return null;
+  var N = nvN(), L = nvListe().filter(function(x){ return N.checked[x.k]; }), qs = [];
+  if (L.some(function(x){ return nvEstArt(x); })) qs = qs.concat(Q_PLUS.art.map(function(q){ return Object.assign({sceau:false}, q); }));
+  if (N.recos.epv) qs = qs.concat(Q_PLUS.epv.map(function(q){ return Object.assign({sceau:true}, q); }));
+  return qs.length ? {code:'AR', short:'Métiers d’art et labels', name:'Métiers d’art et labels', sub:'', qs:qs} : null;
+}
+/* mode précis : le niveau retenu est celui qui a le PLUS d’observables cochés ; à égalité, le plus bas.
+   Il n’est pas obligatoire d’avoir acquis les niveaux inférieurs. */
+function niveauPrecis(qid){
+  var o = (S.obs && S.obs[qid]) || {}, best = 0, lv = 0, l;
+  for (l = 1; l <= 4; l++){ var n = (o[l] || []).length; if (n > best){ best = n; lv = l; } }
+  return lv;
+}
 function qCard(q, attente){
-  var v = S.ans[q.id], c = CQ[q.cq], l, h = '';
+  var v = S.ans[q.id], c = CQ[q.cq] || CQ.TV, l, h = '', precis = (S.mode3 === 'precis');
   h += '<div class="q3" id="q-' + q.id + '">' + (attente ? '<span class="nvd" aria-hidden="true"></span>' : '');
-  h += '<div class="nv-q">' + q.id + ' · ' + q.th + ' · ' + c[0] + '</div><div class="q3-t">' + q.q + '</div>';
+  h += '<div class="nv-q">' + (q.sceau ? NV_ICO_SCEAU + ' ' : (q.id.indexOf('TA') === 0 ? NV_ICO_ART + ' ' : '')) + q.id + ' · ' + q.th + ' · ' + c[0] + '</div><div class="q3-t">' + q.q + '</div>';
   h += '<div class="q3-lv' + (v ? '' : ' untouched') + '" role="group" aria-label="Niveau de votre pratique">';
-  for (l=1;l<=4;l++){
+  for (l = 1; l <= 4; l++){
     var bar = '', b;
-    for (b=1;b<=4;b++){ bar += '<i' + (b<=l ? ' class="f"' : '') + '></i>'; }
-    h += '<button type="button" class="q3-opt" data-act="ans" data-id="' + q.id + '" data-v="' + l + '" aria-pressed="' + (v === l) + '"><span class="q3-n">Niveau ' + l + ' · ' + LVN[l-1] + '<span class="lbar" aria-hidden="true">' + bar + '</span></span>' + ulist(q.n[l-1]) + '</button>';
+    for (b = 1; b <= 4; b++){ bar += '<i' + (b <= l ? ' class="f"' : '') + '></i>'; }
+    var tete = '<span class="q3-n">Niveau ' + l + ' · ' + LVN[l-1] + '<span class="lbar" aria-hidden="true">' + bar + '</span></span>';
+    if (!precis){
+      h += '<button type="button" class="q3-opt" data-act="ans" data-id="' + q.id + '" data-v="' + l + '" data-fid="a:' + q.id + ':' + l + '" aria-pressed="' + (v === l) + '">' + tete + ulist(q.n[l-1]) + '</button>';
+    } else {
+      var cochees = (S.obs && S.obs[q.id] && S.obs[q.id][l]) || [], i;
+      h += '<div class="q3-opt" aria-pressed="' + (v === l) + '">' + tete + '<div class="q3-obsl">';
+      for (i = 0; i < q.n[l-1].length; i++){
+        h += '<button type="button" class="q3-obs" data-act="obs" data-id="' + q.id + '" data-lv="' + l + '" data-i="' + i + '" data-fid="o:' + q.id + ':' + l + ':' + i + '" aria-pressed="' + (cochees.indexOf(i) >= 0) + '"><span class="nv-box" aria-hidden="true"></span><span>' + q.n[l-1][i] + '</span></button>';
+      }
+      h += '</div></div>';
+    }
   }
-  return h + '</div></div>';
+  h += '</div>';
+  if (precis){ h += '<div class="q3-res">' + (v ? 'Niveau retenu : ' + v + ' · ' + LVN[v-1] : 'Cochez ce qui est vrai chez vous') + '</div>'; }
+  return h + '</div>';
 }
 function step3(){
   var h = stepHead(3, 'Mon diagnostic d’organisation apprenante', '', '');
-  var n = totalAnswered(), i, ax = null;
-  for (i=0;i<AXES.length;i++){ if (AXES[i].code === S.axTab) ax = AXES[i]; }
+  var n = totalAnswered(), i, ax = null, plus = axePlus();
+  for (i = 0; i < AXES.length; i++){ if (AXES[i].code === S.axTab) ax = AXES[i]; }
+  if (plus && S.axTab === 'AR'){ ax = plus; }
+  if (!ax){ ax = AXES[0]; }
   h += '<div class="q3-top"><div class="cmp">' + compassSvg(avgs(), 130) + '</div><div class="nv-field"><div class="nv-q">' + (n === 0 ? '<span class="nvd" aria-hidden="true"></span>' : '') + 'Questions répondues</div><div class="q3-count"><b>' + n + '</b> / 60</div>';
   h += '<button type="button" class="nv-fold" data-act="nextq" style="margin-left:0">↓ Prochaine question sans réponse</button></div></div>';
 
+  h += '<div class="nv-field"><div class="nv-q">Mode</div><div class="nv-opts mini" role="group" aria-label="Mode de réponse">';
+  h += '<button type="button" class="nv-opt" data-act="mode3" data-k="rapide" aria-pressed="' + (S.mode3 !== 'precis') + '">Rapide</button>';
+  h += '<button type="button" class="nv-opt" data-act="mode3" data-k="precis" aria-pressed="' + (S.mode3 === 'precis') + '">Précis</button></div></div>';
+
   h += '<div class="nv-field"><div class="nv-q">Axe</div><div class="nv-opts" role="group" aria-label="Axe">';
-  for (i=0;i<AXES.length;i++){
-    var a = AXES[i];
-    h += '<button type="button" class="nv-opt" data-act="axtab" data-k="' + a.code + '" aria-pressed="' + (S.axTab === a.code) + '">' + a.code + ' · ' + a.short + ' <small>' + answeredIn(a) + ' / ' + a.qs.length + '</small></button>';
+  var axes = plus ? AXES.concat([plus]) : AXES;
+  for (i = 0; i < axes.length; i++){
+    var a = axes[i];
+    h += '<button type="button" class="nv-opt" data-act="axtab" data-k="' + a.code + '" aria-pressed="' + (ax.code === a.code) + '">' + (AXE_ICO[a.code] || '') + ' ' + (a.code === 'AR' ? '' : a.code + ' · ') + a.short + ' <small>' + answeredIn(a) + ' / ' + a.qs.length + '</small></button>';
   }
   h += '</div></div>';
   h += '<div class="nv-field"><div class="nv-q">Afficher</div><div class="nv-opts mini" role="group" aria-label="Filtre">';
   var fl = [['all','Toutes'],['TV','Travail vivant'],['PERF','Performance'],['ESG','RSE · ESG']];
-  for (i=0;i<fl.length;i++){ h += '<button type="button" class="nv-opt" data-act="cq" data-k="' + fl[i][0] + '" aria-pressed="' + (S.cq === fl[i][0]) + '">' + fl[i][1] + '</button>'; }
+  for (i = 0; i < fl.length; i++){ h += '<button type="button" class="nv-opt" data-act="cq" data-k="' + fl[i][0] + '" aria-pressed="' + (S.cq === fl[i][0]) + '">' + fl[i][1] + '</button>'; }
   h += '</div></div>';
   h += '<div class="nv-field"><div class="q3-ax">' + ax.name + '</div></div>';
   var list = ax.qs.filter(function(q){ return S.cq === 'all' || q.cq === S.cq; }), j, premiere = true;
   if (!list.length){ h += '<div class="nv-q">Aucune question de ce type sur cet axe.</div>'; }
-  for (j=0;j<list.length;j++){ var attente = (!S.ans[list[j].id] && premiere); if (attente){ premiere = false; } h += qCard(list[j], attente); }
+  for (j = 0; j < list.length; j++){ var attente = (!S.ans[list[j].id] && premiere); if (attente){ premiere = false; } h += qCard(list[j], attente); }
   return h;
 }
 
@@ -2410,6 +2474,8 @@ function handle(t){
   else if (a === 'sitclr'){ S.sit[k] = {}; render(true); }
   else if (a === 'rsearch'){ var inp = document.getElementById('rqInput'); S.rq = inp ? inp.value : S.rq; render(true); }
   else if (a === 'rq'){ S.rq = k; render(true); }
+  else if (a === 'mode3'){ S.mode3 = k; render(true); }
+  else if (a === 'obs'){ var qq = id, ll = parseInt(t.getAttribute('data-lv'), 10), ii = parseInt(t.getAttribute('data-i'), 10); S.obs = S.obs || {}; var oo = S.obs[qq] = S.obs[qq] || {}; var aa = oo[ll] = oo[ll] || []; var pos = aa.indexOf(ii); if (pos >= 0){ aa.splice(pos, 1); } else { aa.push(ii); } var nv = niveauPrecis(qq); if (nv){ S.ans[qq] = nv; } else { delete S.ans[qq]; } render(true); }
   else if (a === 'feu'){ var cyc = {'':'g', g:'o', o:'r', r:''}, cur2 = S.lights[id] || '', nx = cyc[cur2]; if (nx){ S.lights[id] = nx; } else { delete S.lights[id]; } render(true); }
   else if (a === 'light'){ if (S.lights[id] === v) { delete S.lights[id]; } else { S.lights[id] = v; } render(true); }
   else if (a === 'alleger'){ S.alleger[id] = !S.alleger[id]; render(true); }
@@ -2485,7 +2551,7 @@ document.addEventListener('input', function(e){
 
 /* ===================== VSF : compte, entreprise, paiement, enregistrement ===================== */
 var DIAG = { id: null, org: null, statut: null, pret: false, minuteur: null, enCours: false };
-var PERSISTE = ['N','esqVu','sector','eff','fiches','units','splitKey','dirSplit','dirOn','sit','lights','alleger','reinvest','target','modal','dates','roles','signed','step','axTab'];
+var PERSISTE = ['N','esqVu','mode3','obs','sector','eff','fiches','units','splitKey','dirSplit','dirOn','sit','lights','alleger','reinvest','target','modal','dates','roles','signed','step','axTab'];
 function eH(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
 function messageDiag(e){ var m = String((e && e.message) || ''); return (e && e.code === 'VSF08' && m) ? m : 'Cela n’a pas pu être enregistré. Réessayez dans un instant.'; }
 function ecranDiag(html){
