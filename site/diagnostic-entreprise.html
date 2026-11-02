@@ -2268,7 +2268,23 @@ function rareGestes(){
   for (i=0;i<lanes.length;i++){ f = laneObj(lanes[i]); for (j=0;j<f.steps.length;j++){ if (f.steps[j].gest && !seen[f.steps[j].gest]){ seen[f.steps[j].gest] = 1; out.push(f.steps[j].gest); } } }
   return out.slice(0, 8);
 }
-function step5(){
+/* étape 5 : variantes métiers d’art (plan de transmission) et label EPV */
+function nvPlanTransmission(){
+  var N = nvN(), arts = nvListe().filter(function(x){ return N.checked[x.k] && nvEstArt(x); });
+  if (!arts.length) return '';
+  var h = '<div class="card"><h3>' + NV_ICO_ART + ' 5 · Mon plan de transmission</h3><div class="nv-rare">';
+  arts.forEach(function(x){
+    var n = nvEff(x.k);
+    h += '<div style="margin-bottom:var(--espace-question,32px)"><div style="font-weight:800">' + eH(x.n) + '</div><div class="nv-q" style="margin:0">' + (n === 1 ? 'Un seul détenteur : un binôme maître et apprenti' : n + ' détenteurs : filmer les gestes clés') + '</div></div>';
+  });
+  h += '</div><p class="nv-q">Les gestes sont filmés puis décrits. Le maître forme sur VraiSavoirFaire.</p></div>';
+  return h;
+}
+function nvVersEpv(){
+  var N = nvN();
+  if (!N.recos || !N.recos.epv) return '';
+  return '<div class="card"><h3>' + NV_ICO_SCEAU + 'Vers le label EPV</h3><p class="nv-q">Les preuves réunies par votre plan servent au dossier. Les exigences affichées sont des exemples, à valider sur les textes officiels.</p></div>';
+}function step5(){
   var h = stepHead(5, 'Mes outils et mon plan', 'Deux outils, trois rôles, une finalité : libérer du temps pour le geste et faire grandir la compétence humaine rare.', 'Livrable : Mon plan d’action et mon engagement');
   var pal = palier();
   if (!pal){ return h + '<div class="card">Répondez d’abord au diagnostic (étape 3).</div>'; }
@@ -2292,14 +2308,18 @@ function step5(){
   for (i=0;i<PARCOURS.length;i++){ h += '<div class="pc2"><div class="pcc">' + PARCOURS[i].c + '</div><div class="pct">' + PARCOURS[i].t + '</div><div class="pcs2">' + PARCOURS[i].s + '</div></div>'; }
   h += '</div></div>';
 
-  var g = rareGestes();
-  h += '<div class="card"><h3>5 · Trouver la compétence humaine rare</h3>';
-  h += '<div class="note" style="margin-bottom:8px;font-size:.84rem">Un geste où la personne dépasse le référentiel, reconnu par ses pairs ou ses clients, avec peu de reprises, et qu’elle sait transmettre. Thérèse le propose, un humain décide : ni score ni classement.</div><div>';
-  for (i=0;i<g.length;i++){ h += '<span class="gchip">✦ ' + g[i] + '</span>'; }
-  h += '</div></div>';
+  var g = rareGestes(), transm = S.N ? nvPlanTransmission() : '';
+  if (transm){ h += transm; }
+  else {
+    h += '<div class="card"><h3>5 · Trouver la compétence humaine rare</h3>';
+    h += '<div class="note" style="margin-bottom:8px;font-size:.84rem">Un geste où la personne dépasse le référentiel, reconnu par ses pairs ou ses clients, avec peu de reprises, et qu’elle sait transmettre. Thérèse le propose, un humain décide : ni score ni classement.</div><div>';
+    for (i=0;i<g.length;i++){ h += '<span class="gchip">✦ ' + g[i] + '</span>'; }
+    h += '</div></div>';
+  }
 
   var bricks = buildPlan(), b;
   h += '<div class="card"><h3>6 · Mes trois briques pour commencer</h3>';
+  if (S.N){ h += '<p class="nv-q">Chaque brique est un engagement à fournir une preuve à l’échéance : déclaré, documenté, observé, validé. Il n’y a pas de course aux preuves.</p>'; }
   for (b=0;b<bricks.length;b++){
     var br = bricks[b], md = S.modal[br.id] || br.def;
     h += '<div class="brick"><div class="bk">' + br.k + ' · ' + br.tool + '</div><div class="ba">' + br.a + '</div>';
@@ -2322,8 +2342,10 @@ function step5(){
   for (i=0;i<rows.length;i++){ h += '<tr><td>' + rows[i][0] + '</td><td>' + rows[i][1] + '</td><td class="dm">' + rows[i][2] + '</td></tr>'; }
   h += '</table></div>';
 
+  if (S.N){ h += nvVersEpv(); }
   if (!S.signed){
-    h += '<div class="card"><h3>Mon engagement</h3><div style="font-size:.88rem;line-height:1.5;margin-bottom:10px">Je m’engage à mettre en œuvre ces briques et à fournir les preuves associées à l’échéance choisie.</div><button class="btn primary" data-act="sign">Signer mon plan</button></div>';
+    h += '<div class="card"><h3>Mon engagement</h3><div style="font-size:.88rem;line-height:1.5;margin-bottom:10px">Je m’engage à mettre en œuvre ces briques et à fournir les preuves associées à l’échéance choisie.</div>' +
+      (S.N ? '<button type="button" class="nv-go" data-act="sign"><span class="nvd" aria-hidden="true"></span>Signer mon plan →</button>' : '<button class="btn primary" data-act="sign">Signer mon plan</button>') + '</div>';
   } else {
     h += '<div class="signed">✓ Plan signé. Il reste modifiable : vous pouvez réajuster vos échéances à tout moment.</div>';
     var abo = DIAG.abo ? String(DIAG.abo.prix_eur).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' €' : 'xx €';
