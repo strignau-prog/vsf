@@ -777,7 +777,48 @@
   .q3-obs[aria-pressed="true"] .nv-box::after{content:"";width:9px;height:5px;border-left:2.5px solid #fff;border-bottom:2.5px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
   .q3-obs:focus-visible{outline:2px solid #111;outline-offset:3px}
   .q3-res{margin-top:var(--espace-qr,8px);font-size:20px;font-weight:800}
-  .nv-opt svg{vertical-align:-3px;margin-right:2px}  /* moins de filets : les blocs se distinguent par un fond très clair, pas par un cadre */
+  .nv-opt svg{vertical-align:-3px;margin-right:2px}  /* étape 4 : la restitution */
+  .nv-restdeux{display:flex;flex-wrap:wrap;align-items:flex-end;gap:var(--espace-etape,64px);margin:var(--espace-question,32px) 0}
+  .nv-restdeux .bars{display:flex;gap:6px;align-items:flex-end;min-width:220px}
+  .nv-chaine5{display:flex;flex-wrap:wrap;gap:8px 28px;margin-bottom:var(--espace-question,32px)}
+  .nv-ch5{display:flex;align-items:center;gap:8px;font-weight:800}
+  .nv-rare{display:flex;flex-direction:column;gap:4px;max-width:560px;margin-bottom:var(--espace-qr,8px)}
+  .nv-rare .r{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;min-height:40px;font-weight:800}
+  .holders{display:inline-flex;gap:3px}
+  .holders i{width:14px;height:22px;border-radius:7px !important;background:#111}
+  .holders.one i{background:#ff3b1f}
+  .nv-label{margin-top:var(--espace-question,32px);display:flex;flex-direction:column;gap:var(--espace-qr,8px)}
+  .nv-label h3{display:flex;align-items:center;gap:10px;font-size:18px;font-weight:900;margin:0}
+  .meter{display:flex;gap:4px;max-width:360px}
+  .meter i{flex:1;height:10px;background:#f3f3f3}
+  .meter i.f{background:#111}
+  .nv-persp{font-size:clamp(26px,3.4vw,38px);font-weight:900;line-height:1.1;letter-spacing:-.02em;margin:var(--espace-etape,64px) 0 var(--espace-question,32px) !important}
+  .nv-sources{display:flex;flex-wrap:wrap;gap:6px 22px;color:#111;margin-bottom:var(--espace-question,32px)}
+  .nv-sources span{display:inline-flex;min-width:36px;min-height:36px;align-items:center;justify-content:center}
+  .nv-chiffres{display:flex;flex-wrap:wrap;gap:4px 28px;color:#767676;margin-bottom:var(--espace-question,32px)}
+  .nv-chiffres b{font-size:clamp(24px,3vw,32px);font-weight:900;color:#111;margin-right:6px}
+  .nv-etapes{display:flex;flex-wrap:wrap;gap:0 22px;margin-bottom:var(--espace-qr,8px)}
+  .nv-miroir{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--espace-question,32px)}
+  @media(min-width:900px){.nv-miroir{grid-template-columns:1fr 1.5fr;gap:64px}}
+  .nv-miroir .rome p{color:#767676;margin:0 0 10px}
+  .nv-miroir .vide{color:#c4c4c4;margin:0}
+  .nv-miroir .sit{display:flex;gap:12px;align-items:flex-start;margin-bottom:var(--espace-question,32px)}
+  .nv-miroir .sit b{display:block;font-size:18px;font-weight:800;line-height:1.3}
+  .nv-miroir .sit .d{display:block;font-size:14px;color:#767676;margin:2px 0 6px}
+  .nv-miroir .lbar{display:inline-flex}
+  .nv-etat{width:16px;height:16px;border-radius:50% !important;flex:none;margin-top:5px;border:2px solid #111;box-sizing:border-box}
+  .nv-etat.pilotee{background:#111}
+  .nv-etat.non{border-color:#c4c4c4}
+  .nv-legende{display:flex;flex-wrap:wrap;gap:6px 24px;font-size:14px;color:#767676;margin:var(--espace-qr,8px) 0 0}
+  .nv-legende span{display:inline-flex;align-items:center;gap:8px}
+  .nv-legende .nv-etat{margin-top:0}
+  .nv-strat{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--espace-question,32px)}
+  @media(min-width:900px){.nv-strat{grid-template-columns:repeat(3,minmax(0,1fr));gap:48px}}
+  .nv-strat h4{display:flex;align-items:center;gap:10px;font-size:20px;font-weight:900;margin:0 0 var(--espace-qr,8px)}
+  .nv-strat h4 small{font-size:14px;color:#767676;font-weight:500}
+  .nv-strat p{margin:0 0 6px;font-weight:500}
+  .nv-voies{display:flex;flex-direction:column;align-items:flex-start;margin:var(--espace-question,32px) 0 var(--espace-etape,64px)}
+  a.nv-opt.voie{color:#111;font-weight:800;font-size:18px;text-decoration:none;min-height:44px;display:inline-flex;align-items:center}  /* moins de filets : les blocs se distinguent par un fond très clair, pas par un cadre */
   .card,details.fixes{border:0 !important;background:#fafafa !important;box-shadow:none !important}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
@@ -1557,7 +1598,7 @@ function nvCarte(){
 
 /* sous la carte : le point le plus fragile, le temps libéré et son réinvestissement */
 function step2Fin(){
-  var fr = fragile(), fh = freedHours(), i, h = '';
+  var fr = fragile(), fh = heuresLiberables(), i, h = '';
   if (fr){
     h += '<div class="nv-field" style="margin-top:var(--espace-etape,64px)"><div class="nv-q">Le point le plus fragile de ma chaîne</div><div class="a-grand">' + eH(fr.step.t) + '</div></div>';
   }
@@ -1566,6 +1607,176 @@ function step2Fin(){
   for (i=0;i<REINVEST.length;i++){ h += '<button type="button" class="nv-opt" data-act="reinvest" data-k="' + eH(REINVEST[i]) + '" aria-pressed="' + (!!S.reinvest[REINVEST[i]]) + '">' + REINVEST[i] + '</button>'; }
   return h + '</div></div>';
 }
+/* ---------- étape 4 : la restitution (palier et boussole, chaîne en 5 feux, rareté, labels, mise en perspective, stratégie) ---------- */
+var NV_FICHES = null, NV_ROME = null, NV_CHARGE = false;
+/* règle par défaut : chaque situation est reliée à 3 questions selon l'étape de la chaîne qu'elle nourrit (réglable plus tard : table vsf_liaison_situation_question) */
+var NV_LIAISON_DEFAUT = {1:['NE-02','NE-05','NO-02'], 2:['NO-05','NO-08','SE-02'], 3:['NO-08','NE-05','NO-14'], 4:['NE-05','SE-11','NO-07'], 5:['NE-11','NO-07','SE-02']};
+var NV_LABEL_Q = {epv:['PA-01','TA-01','NO-14'], iso:['NE-05','NE-04','SE-02'], epa:['TA-01','NO-14'], maitre:['TA-01','NO-08'], mof:['NO-08','NE-05']};
+var NV_SOURCES = [
+  ['Référentiel national', '<path d="M5 4v17M5 5h12l-2 4 2 4H5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>'],
+  ['Référentiel européen', '<circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7v1M12 16v1M7 12h1M16 12h1" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>'],
+  ['Modèle international', '<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18" fill="none" stroke="currentColor" stroke-width="1.6"/>'],
+  ['Travail réel', '<path d="M14 5l5 5-9 9H5v-5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>'],
+  ['Paliers d’expertise', '<path d="M4 20h5v-5h5v-5h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>'],
+  ['Maîtres d’art', '<path d="M12 3l8 8-8 10-8-10z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>'],
+  ['Boussole', '<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15.5 8.5l-2 5-5 2 2-5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>']
+];
+var NV_EXEMPLE_FICHE = {nom:'Peintre en lettres', situations:[
+  {nom:'Comprendre une demande et un lieu', decisions:'Ce que le client dit vouloir et ce dont le lieu a besoin divergent : conseiller sans imposer.', etape:1},
+  {nom:'Composer une enseigne', decisions:'Lisibilité contre caractère ; budget contre durabilité.', etape:2},
+  {nom:'Préparer le support', decisions:'Support sain ou à reprendre ; temps de séchage contre délai promis.', etape:2},
+  {nom:'Tracer, peindre et dorer', decisions:'Moment exact de la mixtion ; arrêt quand c’est juste.', etape:3},
+  {nom:'Finaliser, livrer, conseiller', decisions:'Retoucher ou refaire ; ce qu’on garde comme preuve.', etape:5}]};
+var NV_EXEMPLE_ROME = {1:['Accueillir le client et identifier son besoin'], 2:['Préparer les supports et le matériel'], 3:['Appliquer une peinture ou une finition', 'Réaliser un tracé ou un décor'], 4:['Contrôler la conformité du travail réalisé'], 5:['Nettoyer le chantier et remettre les lieux']};
+
+function nvEtapeDeTexte(t){
+  t = norm(t);
+  if (/accueil|client|demande|relev|devis|comprendre|recevoir/.test(t)) return 1;
+  if (/prepar|support|compos|concev|croquis|maquet|poncif/.test(t)) return 2;
+  if (/controle|qualite|verif|reception/.test(t)) return 4;
+  if (/finalis|livr|conseil|remise|nettoy|entretien/.test(t)) return 5;
+  return 3;
+}
+function nvLireSituations(md){
+  var lignes = String(md || '').split('\n').map(function(l){ return l.trim(); }).filter(function(l){ return l.charAt(0) === '|'; });
+  if (lignes.length < 3) return [];
+  var cell = function(x){ return x.replace(/^\|/, '').replace(/\|$/, '').split('|').map(function(c){ return c.replace(/\*\*|\*/g, '').trim(); }); };
+  return lignes.slice(2).map(cell).filter(function(c){ return c.length >= 4 && /^\d+\./.test(c[0]); }).map(function(c){
+    var nom = c[0].replace(/^\d+\.\s*/, '');
+    return {nom:nom, decisions:c[2], etape:nvEtapeDeTexte(nom)};
+  });
+}
+async function nvChargerFiches(){
+  NV_FICHES = {}; NV_ROME = {1:[], 2:[], 3:[], 4:[], 5:[]};
+  if (S.apercuFiches){ NV_FICHES['peintre en lettres'] = NV_EXEMPLE_FICHE; NV_ROME = NV_EXEMPLE_ROME; return; }
+  try {
+    var N = nvN(), L = nvListe().filter(function(x){ return N.checked[x.k] && x.k !== 'dir' && (x.z === 'C' || x.z === 'X'); });
+    var r = await VSF.sb.from('postes_apprenance').select('id,nom').is('proprietaire_id', null);
+    var postes = r.data || [];
+    for (var i = 0; i < L.length; i++){
+      var b = nvBase(L[i].n), f = postes.filter(function(p){ return nvBase(p.nom) === b; })[0];
+      if (f){
+        var q = await VSF.sb.from('fiche_vsf_rubriques').select('contenu_md').eq('poste_id', f.id).eq('code', 'quotidien').maybeSingle();
+        var sits = q.data ? nvLireSituations(q.data.contenu_md) : [];
+        if (sits.length) NV_FICHES[b] = {nom:f.nom, situations:sits};
+      }
+      // la vue ROME : les vrais libellés de compétences de la fiche France Travail du poste (fonction rome-sync déjà branchée)
+      try {
+        var rs = await VSF.sb.functions.invoke('rome-sync', { body: { recherche: L[i].n.split('·')[0] } });
+        var code = rs.data && rs.data.resultats && rs.data.resultats[0] && rs.data.resultats[0].codeRome;
+        if (code){
+          var c = await VSF.sb.from('rome_competences_cache').select('libelle').eq('code_rome', code).eq('type', 'savoir-faire').limit(12);
+          (c.data || []).forEach(function(x){ var e = nvEtapeDeTexte(x.libelle); if (NV_ROME[e].length < 4 && NV_ROME[e].indexOf(x.libelle) < 0) NV_ROME[e].push(x.libelle); });
+        }
+      } catch (e2) { /* la vue ROME reste vide pour ce poste */ }
+    }
+  } catch (e) { /* aucune fiche : l'écran l'indique */ }
+}
+function nvEtatSituation(etape){
+  var qs = NV_LIAISON_DEFAUT[etape] || [], v = [], i;
+  for (i = 0; i < qs.length; i++){ if (S.ans[qs[i]]) v.push(S.ans[qs[i]]); }
+  if (!v.length) return {etat:'non', niveau:0};
+  var m = v.reduce(function(a, b){ return a + b; }, 0) / v.length;
+  return {etat: m >= 3 ? 'pilotee' : (m >= 2 ? 'vue' : 'non'), niveau: Math.round(m)};
+}
+function nvPastilleEtat(e){ return '<span class="nv-etat ' + e + '" role="img" aria-label="' + ({pilotee:'pilotée', vue:'vue mais pas pilotée', non:'pas encore vue'})[e] + '" title="' + ({pilotee:'Pilotée', vue:'Vue, pas pilotée', non:'Pas encore vue'})[e] + '"></span>'; }
+function heuresLiberables(){
+  var h = 0, bricks = brickList().filter(function(b){ return b.tier === 'sup'; });
+  bricks.forEach(function(b){
+    var vus = b.kpis.map(function(k){ return S.lights[k.id]; }).filter(Boolean);
+    if (vus.some(function(v){ return v === 'o' || v === 'r'; })) h += (b.sup && b.sup.h) ? b.sup.h : 3;
+  });
+  return h;
+}
+function nvRestitution(){
+  var h = stepHead(4, 'Ma restitution', '', ''), i, N = nvN();
+  var pal = palier();
+  if (!pal){ return h + '<div class="nv-q">Répondez d’abord à quelques questions.</div>'; }
+  var P = PALIERS[pal-1], av = avgs();
+  if (!NV_CHARGE){ NV_CHARGE = true; nvChargerFiches().then(function(){ if (S.step === 4) render(true); }); }
+
+  /* 1. palier et boussole : un repère de maturité, pas un score */
+  h += '<div class="rest-hero"><div class="k">Palier ' + pal + ' sur 4</div><div class="pn">' + P.n + '</div><div class="pd">' + P.d + '</div></div>';
+  h += '<div class="nv-restdeux"><div class="bars">';
+  for (i = 1; i <= 4; i++){ h += '<div class="rung' + (i === pal ? ' here' : (i < pal ? ' past' : '')) + '" style="height:' + (30 + i * 32) + 'px;align-self:flex-end"><div class="barx"></div>' + (i === pal ? '<div class="you">Vous êtes ici</div>' : '') + '</div>'; }
+  h += '</div><div class="cmp">' + compassSvg(av, 200) + '</div></div>';
+
+  /* 2. la chaîne en 5 feux, le temps libérable, le réinvestissement */
+  h += '<h3 class="nv-zone">Votre chaîne</h3><div class="nv-chaine5">';
+  chaineEtapes().forEach(function(e){
+    var worst = e.kpis.map(function(k){ return S.lights[k.id]; }).filter(Boolean);
+    var c = worst.indexOf('r') >= 0 ? 'r' : (worst.indexOf('o') >= 0 ? 'o' : (worst.length ? 'g' : ''));
+    h += '<div class="nv-ch5"><span class="nv-feu auto ' + c + '" role="img" aria-label="' + eH(e.t) + ' : ' + (c ? FEU_MOTS[c] : 'non renseigné') + '"><i></i></span><span>' + eH(e.t) + '</span></div>';
+  });
+  h += '</div>';
+  h += '<div class="nv-field"><div class="nv-q">Temps libérable</div><div class="a-grand">≈ ' + heuresLiberables() + ' h <small>par mois</small></div></div>';
+  h += '<div class="nv-field"><div class="nv-q">À réinvestir dans le geste rare</div><div class="nv-opts mini" role="group" aria-label="Réinvestissement">';
+  for (i = 0; i < REINVEST.length; i++){ h += '<button type="button" class="nv-opt" data-act="reinvest" data-k="' + eH(REINVEST[i]) + '" aria-pressed="' + (!!S.reinvest[REINVEST[i]]) + '">' + REINVEST[i] + '</button>'; }
+  h += '</div></div>';
+
+  /* 3. rareté (métiers d'art) et maturité par label */
+  var L = nvListe().filter(function(x){ return N.checked[x.k]; }), arts = L.filter(function(x){ return nvEstArt(x); });
+  if (arts.length){
+    var min = arts.slice().sort(function(a, b){ return nvEff(a.k) - nvEff(b.k); })[0];
+    h += '<h3 class="nv-zone">' + NV_ICO_ART + ' La rareté</h3><div class="nv-rare">';
+    arts.forEach(function(x){
+      var n = nvEff(x.k), ic = '';
+      for (var j = 0; j < Math.min(n, 8); j++){ ic += '<i></i>'; }
+      h += '<div class="r"><span>' + eH(x.n) + '</span><span class="holders' + (n === 1 ? ' one' : '') + '" title="' + n + ' personne' + (n > 1 ? 's' : '') + '">' + ic + '</span></div>';
+    });
+    h += '</div><div class="nv-q">À transmettre en premier : ' + eH(min.n) + '</div>';
+  }
+  NV_RECOS.filter(function(r){ return N.recos[r[0]] && NV_LABEL_Q[r[0]]; }).forEach(function(r){
+    var qs = NV_LABEL_Q[r[0]], rep = qs.filter(function(c){ return S.ans[c]; }), moy = rep.length ? rep.reduce(function(a, c){ return a + S.ans[c]; }, 0) / rep.length : 0;
+    var cran = Math.round(moy), faible = rep.slice().sort(function(a, b){ return S.ans[a] - S.ans[b]; })[0];
+    var thf = faible ? ((Q60.concat(Q_PLUS.art, Q_PLUS.epv).filter(function(q){ return q.id === faible; })[0] || {}).th || '') : '';
+    h += '<div class="nv-label"><h3>' + NV_ICO_SCEAU + eH(r[1]) + '</h3><div class="meter" role="img" aria-label="Maturité : ' + cran + ' sur 4">';
+    for (i = 1; i <= 4; i++){ h += '<i' + (i <= cran ? ' class="f"' : '') + '></i>'; }
+    h += '</div>' + (thf ? '<div class="nv-q">Point à consolider : ' + eH(thf) + '</div>' : '<div class="nv-q">Répondez aux questions liées pour voir la maturité</div>') + '</div>';
+  });
+
+  /* 4. mise en perspective : seulement ici apparaissent les fiches VraiSavoirFaire */
+  h += '<h2 class="nv-persp">Voyez-vous votre cœur de métier avec cette finesse ?</h2>';
+  h += '<div class="nv-sources" aria-label="Les sept sources de la fiche">';
+  NV_SOURCES.forEach(function(s){ h += '<span title="' + eH(s[0]) + '" role="img" aria-label="' + eH(s[0]) + '"><svg viewBox="0 0 24 24" width="22" height="22">' + s[1] + '</svg></span>'; });
+  h += '</div>';
+  if (!NV_FICHES){ h += '<div class="nv-q">' + (window.VSF_ICO ? VSF_ICO.svg('loader') : '') + ' Chargement des fiches</div>'; return h + nvFinRestitution(); }
+  var sits = [];
+  Object.keys(NV_FICHES).forEach(function(k){ NV_FICHES[k].situations.forEach(function(s){ sits.push({poste:NV_FICHES[k].nom, nom:s.nom, decisions:s.decisions, etape:s.etape}); }); });
+  var etape = S.perspEtape || 1, nbRome = 0, nbVsf = sits.length, pasVues = 0, nbVues = 0, nbPilotees = 0;
+  for (i = 1; i <= 5; i++){ nbRome += (NV_ROME[i] || []).length; }
+  sits.forEach(function(s){ var e = nvEtatSituation(s.etape).etat; if (e === 'non') pasVues++; else if (e === 'vue') nbVues++; else nbPilotees++; });
+  h += '<div class="nv-chiffres"><span><b>' + nbRome + '</b> situations ROME</span><span><b>' + nbVsf + '</b> situations VSF</span><span><b>' + pasVues + '</b> pas encore vues</span>' + (Object.keys(N.recos).some(function(k){ return N.recos[k]; }) ? '<span><b>0</b> exigées par vos labels</span>' : '') + '</div>';
+  h += '<div class="nv-etapes" role="group" aria-label="Étape de la chaîne">';
+  CHAINE.forEach(function(c, k){ h += '<button type="button" class="nv-opt" data-act="persp" data-k="' + (k + 1) + '" aria-pressed="' + (etape === k + 1) + '">' + (k + 1) + ' · ' + eH(c) + '</button>'; });
+  h += '</div><div class="nv-miroir"><div class="rome"><div class="nv-q">Vue ROME</div>';
+  var rr = NV_ROME[etape] || [];
+  h += rr.length ? rr.map(function(t){ return '<p>' + eH(t) + '</p>'; }).join('') : '<p class="vide">—</p>';
+  h += '</div><div class="vsf"><div class="nv-q">Fiche VraiSavoirFaire</div>';
+  var ici = sits.filter(function(s){ return s.etape === etape; });
+  if (!ici.length){ h += '<p class="vide">Aucune situation de vos fiches à cette étape.</p>'; }
+  ici.forEach(function(s){
+    var e = nvEtatSituation(s.etape), bar = '';
+    for (var b = 1; b <= 4; b++){ bar += '<i' + (b <= e.niveau ? ' class="f"' : '') + '></i>'; }
+    h += '<div class="sit">' + nvPastilleEtat(e.etat) + '<div><b>' + eH(s.nom) + '</b><span class="d">' + eH(s.decisions || '') + '</span><span class="lbar" role="img" aria-label="Niveau ' + e.niveau + ' sur 4">' + bar + '</span></div></div>';
+  });
+  h += '<div class="nv-q">Règle par défaut, modifiable : chaque situation est reliée à trois questions ; moyenne ≥ N3 pilotée, N2 vue, ≤ N1 pas vue.</div></div></div>';
+  h += '<div class="nv-legende"><span>' + nvPastilleEtat('pilotee') + ' pilotée</span><span>' + nvPastilleEtat('vue') + ' vue, pas pilotée</span><span>' + nvPastilleEtat('non') + ' pas encore vue</span></div>';
+
+  /* stratégie de professionnalisation : décrire, transmettre, prouver */
+  var col = {decrire:[], transmettre:[], prouver:[]};
+  sits.forEach(function(s){ var e = nvEtatSituation(s.etape); if (e.etat === 'non') col.decrire.push(s.nom); else if (e.etat === 'vue') col.transmettre.push(s.nom); else if (e.niveau < 4) col.prouver.push(s.nom); });
+  h += '<h3 class="nv-zone">Votre stratégie de professionnalisation</h3><div class="nv-strat">';
+  [['decrire','Décrire', '<path d="M5 4h10l4 4v12H5z M9 12h6M9 16h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>'], ['transmettre','Transmettre', NV_ICO_T.replace(/^<svg[^>]*>|<\/svg>$/g, '')], ['prouver','Prouver', '<path d="M5 13l4 4 10-11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>']].forEach(function(c){
+    h += '<div class="col"><h4><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">' + c[2] + '</svg>' + c[1] + ' <small>' + col[c[0]].length + '</small></h4>' + col[c[0]].slice(0, 5).map(function(n){ return '<p>' + eH(n) + '</p>'; }).join('') + '</div>';
+  });
+  h += '</div><div class="nv-voies"><a class="nv-opt voie" href="mes-modules.html">Se former sur VraiSavoirFaire, avec un maître artisan</a><a class="nv-opt voie" href="mailto:contact@vraisavoirfaire.fr?subject=Maurice%20et%20Th%C3%A9r%C3%A8se">S’outiller avec Maurice et Thérèse</a></div>';
+  return h + nvFinRestitution();
+}
+function nvFinRestitution(){
+  return '<button type="button" class="nv-go" data-act="next" data-fid="plan"><span class="nvd" aria-hidden="true"></span>Construire mon plan →</button>';
+}
+
 /* ---------- étape 1 : votre secteur, vos postes clés (avec effectifs), vos reconnaissances ---------- */
 function step1(){
   if (!NV_REF){ NV_REF = nvRefSecours(); }
@@ -1936,6 +2147,7 @@ function miniChain(){
   return h || '<div class="note">Aucun poste clé sélectionné.</div>';
 }
 function step4(){
+  if (S.N){ return nvRestitution(); }
   var h = stepHead(4, 'Ma restitution', 'Où en est votre organisation, ce que révèle le croisement de vos feux et de vos 60 réponses, et ce que vous pouvez en faire.', 'Livrable : Mon diagnostic et mon palier de maturité');
   var pal = palier();
   if (!pal){ return h + '<div class="card">Répondez d’abord à quelques questions du diagnostic (étape 3).</div>'; }
@@ -2474,6 +2686,7 @@ function handle(t){
   else if (a === 'sitclr'){ S.sit[k] = {}; render(true); }
   else if (a === 'rsearch'){ var inp = document.getElementById('rqInput'); S.rq = inp ? inp.value : S.rq; render(true); }
   else if (a === 'rq'){ S.rq = k; render(true); }
+  else if (a === 'persp'){ S.perspEtape = parseInt(k, 10); render(true); }
   else if (a === 'mode3'){ S.mode3 = k; render(true); }
   else if (a === 'obs'){ var qq = id, ll = parseInt(t.getAttribute('data-lv'), 10), ii = parseInt(t.getAttribute('data-i'), 10); S.obs = S.obs || {}; var oo = S.obs[qq] = S.obs[qq] || {}; var aa = oo[ll] = oo[ll] || []; var pos = aa.indexOf(ii); if (pos >= 0){ aa.splice(pos, 1); } else { aa.push(ii); } var nv = niveauPrecis(qq); if (nv){ S.ans[qq] = nv; } else { delete S.ans[qq]; } render(true); }
   else if (a === 'feu'){ var cyc = {'':'g', g:'o', o:'r', r:''}, cur2 = S.lights[id] || '', nx = cyc[cur2]; if (nx){ S.lights[id] = nx; } else { delete S.lights[id]; } render(true); }
@@ -2652,7 +2865,7 @@ render = function(k){
   renderMaquette(k);
   var det = document.querySelector('details.fixes'); if (det) det.style.display = (S.step === 4 && !S.calculating) ? '' : 'none';
   document.getElementById('main').classList.toggle('lat', S.step > 1 && !S.calculating);
-  if ((S.step === 1 || (S.step === 2 && S.N && !S.esqVu)) && !S.calculating){ document.getElementById('nav').innerHTML = ''; }
+  if ((S.step === 1 || (S.step === 2 && S.N && !S.esqVu) || (S.step === 4 && S.N)) && !S.calculating){ document.getElementById('nav').innerHTML = ''; }
   if (S.step === 1){
     var cible = champ ? document.getElementById('nv-add') : (fid ? document.querySelector('[data-fid="' + fid.replace(/"/g, '') + '"]') : null);
     if (cible && !cible.disabled){ cible.focus({ preventScroll: true }); if (champ && cible.setSelectionRange){ cible.setSelectionRange(champ[0], champ[1]); } }
@@ -2664,7 +2877,7 @@ document.addEventListener('visibilitychange', function(){ if (document.visibilit
 /* Aperçu (?apercu=1) : on voit les écrans sans compte et sans rien enregistrer. Aucune donnée n'est lue ni écrite. */
 async function apercuDiag(){
   await nvChargerRef(); await nvChargerArt();
-  DIAG.pret = false; DIAG.statut = 'apercu';
+  DIAG.pret = false; DIAG.statut = 'apercu'; S.apercuFiches = true;
   var det = document.querySelector('details.fixes'); if (det) det.style.display = 'none';
   dit('Aperçu : rien n’est enregistré');
   var m = location.search.match(/[?&]etape=([1-5])/);
