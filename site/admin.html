@@ -24,6 +24,15 @@
   .etat{font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;white-space:nowrap;margin-right:6px}
   .bouton.petit{min-height:44px;font-size:12px;padding:10px 0}
   h2 .ico-btn{vertical-align:middle;margin-left:6px}
+  .ia-power{color:#c4c4c4;margin:0 0 0 -10px;position:relative}
+  .ia-power.on{color:#111}
+  .ia-power.on::after{content:"";position:absolute;right:6px;top:6px;width:10px;height:10px;border-radius:50%;background:var(--vert,#009e73)}
+  .ia-power .ico{width:34px;height:34px}
+  .ia-plafond input{width:70px;font:inherit;font-weight:900;font-size:34px;letter-spacing:-.02em;color:#111;min-height:40px;padding-left:12px}
+  .chiffres .ico-btn{vertical-align:middle;min-width:36px;min-height:36px;padding:6px}
+  .ico-etat{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;color:#767676}
+  .ico-etat.echec{color:var(--pb,#ff3b1f)}
+  .ico-etat.approuvee{color:#111}
   @media (max-width:520px){.ligne{flex-direction:column;align-items:flex-start}.ligne .actions{justify-content:flex-start}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
@@ -82,8 +91,7 @@ function dessiner() {
     '<h2>Diagnostics</h2><div class="chiffres" id="chiffresDiag"><div><b>…</b><span>À payer</span></div></div><p class="message" id="msgDiag" role="alert"></p>' +
 
     '<h2>Fiches</h2><div class="chiffres" id="chiffresIA"><div><b>…</b><span>IA</span></div></div>' +
-    '<p class="legende">Aucune dépense sans votre accord : l’IA est éteinte tant que vous ne l’allumez pas.</p>' +
-    '<p class="message" id="msgIA" role="alert"></p><div id="reglIA"></div><div id="listeDemandes"></div>' +
+    '<p class="message" id="msgIA" role="alert"></p><div id="listeDemandes"></div>' +
 
     '<h2>Ambassadeurs</h2>' +
     '<p class="legende">Aucune offre ne s’ouvre tant que son ambassadeur n’est pas validé.</p>' +
@@ -102,6 +110,7 @@ function dessiner() {
 /* ───── fiches : l'IA ne dépense rien sans l'accord de Stéphane (règle posée en base, migration 28) ───── */
 var IA = { actif: false, plafond: 0 };
 async function chargerFiches() {
+  await new Promise(function (ok) { var n = 0; (function t() { if (window.VSF_ICO || n++ > 40) ok(); else setTimeout(t, 50); })(); });   // les icônes se chargent en fin de page
   var r = await sb.from('vsf_ia_reglages').select('actif,mode,plafond_mensuel_eur,cout_estime_fiche_eur').maybeSingle();
   if (r.error || !r.data) { $('chiffresIA').innerHTML = ''; dire('msgIA', 'Non installé : migration 28 à jouer.'); return; }
   var debut = new Date(); debut.setDate(1); debut.setHours(0, 0, 0, 0);
@@ -110,26 +119,27 @@ async function chargerFiches() {
   var dem = await sb.from('vsf_fiches_demandes').select('id,libelle,statut,cout_estime_eur,message').in('statut', ['en_attente', 'approuvee', 'en_cours', 'echec']).order('cree_le');
   var liste = dem.data || [];
   IA.actif = r.data.actif; IA.plafond = Number(r.data.plafond_mensuel_eur);
+  var ico = function (nom) { return window.VSF_ICO ? VSF_ICO.svg(nom) : ''; };
+  // l'interrupteur : une icône (noire et pointée de vert = allumée ; grise = éteinte) ; le plafond se règle sur place
   $('chiffresIA').innerHTML =
-    '<div><b>' + (r.data.actif ? 'Allumée' : 'Éteinte') + '</b><span>IA</span></div>' +
-    '<div><b>' + euros(Math.round(depense * 100) / 100) + '</b><span>Dépensé ce mois</span></div>' +
-    '<div><b>' + euros(IA.plafond) + '</b><span>Plafond</span></div>' +
+    '<div><button type="button" class="ico-btn ia-power' + (r.data.actif ? ' on' : '') + '"' + (moi.super ? ' onclick="regler(' + (!IA.actif) + ')"' : ' disabled') + ' aria-pressed="' + r.data.actif + '" aria-label="' + (r.data.actif ? 'Éteindre l’IA' : 'Allumer l’IA') + '" title="' + (r.data.actif ? 'Éteindre' : 'Allumer') + '">' + ico('power') + '</button><span>IA</span></div>' +
+    '<div><b>' + euros(Math.round(depense * 100) / 100) + '</b><span>Dépensé</span></div>' +
+    '<div>' + (moi.super
+      ? '<b class="ia-plafond"><input type="text" inputmode="decimal" id="iaPlafond" value="' + IA.plafond + '" aria-label="Plafond mensuel en euros"> €</b><span>Plafond <button type="button" class="ico-btn" aria-label="Enregistrer le plafond" title="Enregistrer" onclick="regler(' + IA.actif + ')">' + ico('check') + '</button></span>'
+      : '<b>' + euros(IA.plafond) + '</b><span>Plafond</span>') + '</div>' +
     '<div><b>' + liste.filter(function (x) { return x.statut === 'en_attente'; }).length + '</b><span>À décider</span></div>';
-  $('reglIA').innerHTML = moi.super
-    ? '<div class="ligne"><div class="qui"><b>Réglage</b><span><input type="text" inputmode="decimal" id="iaPlafond" value="' + IA.plafond + '" aria-label="Plafond mensuel en euros" style="width:90px"> € par mois</span></div>' +
-      '<div class="actions"><button class="bouton petit" data-texte onclick="regler(' + (!IA.actif) + ')">' + (IA.actif ? 'Éteindre l’IA' : 'Allumer l’IA') + '</button>' +
-      '<button class="bouton petit" onclick="regler(' + IA.actif + ')">Enregistrer</button></div></div>'
-    : '';
-  var ETATS = { en_attente: 'À décider', approuvee: 'Approuvée', en_cours: 'En cours', echec: 'Échec' };
+  // un pictogramme par état, aucune phrase ; le détail d'un échec reste dans l'infobulle
+  var ETATS = { en_attente: ['clock', 'À décider'], approuvee: ['check', 'Approuvée'], en_cours: ['loader', 'En cours'], echec: ['alert', 'Échec'] };
   $('listeDemandes').innerHTML = liste.map(function (x) {
-    var act = '';
+    var et = ETATS[x.statut], act = '';
     if (x.statut === 'en_attente') {
-      act = '<button class="bouton petit" onclick="decider(\'' + x.id + '\',true)">Valider</button><button class="bouton petit" onclick="decider(\'' + x.id + '\',false)">Refuser</button>';
+      act = '<button type="button" class="ico-btn" aria-label="Valider" title="Valider" onclick="decider(\'' + x.id + '\',true)">' + ico('check') + '</button>' +
+            '<button type="button" class="ico-btn" aria-label="Refuser" title="Refuser" onclick="decider(\'' + x.id + '\',false)">' + ico('close') + '</button>';
     } else if (x.statut === 'approuvee') {
-      act = '<button class="bouton petit" onclick="confirmer(this,\'Générer (≈ ' + euros(Number(x.cout_estime_eur || 0)) + ') ?\',function(){generer(\'' + x.id + '\')})">Générer</button>';
+      act = '<button class="bouton petit" onclick="confirmer(this,\'Générer ≈ ' + euros(Number(x.cout_estime_eur || 0)) + ' ?\',function(){generer(\'' + x.id + '\')})">Générer</button>';
     }
-    return '<div class="ligne"><div class="qui"><b>' + E(x.libelle) + '</b><span>' + (x.statut === 'echec' && x.message ? '<span class="alerte">' + E(x.message) + '</span>' : '≈ ' + euros(Number(x.cout_estime_eur || 0))) + '</span></div>' +
-      '<div class="actions"><span class="etat">' + ETATS[x.statut] + '</span>' + act + '</div></div>';
+    return '<div class="ligne"><div class="qui"><b>' + E(x.libelle) + '</b></div>' +
+      '<div class="actions"><span class="ico-etat ' + x.statut + '" role="img" aria-label="' + et[1] + '" title="' + E(x.statut === 'echec' && x.message ? et[1] + ' : ' + x.message : et[1]) + '">' + ico(et[0]) + '</span>' + act + '</div></div>';
   }).join('');
 }
 async function regler(actif) {

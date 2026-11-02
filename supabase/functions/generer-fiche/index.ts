@@ -14,7 +14,10 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const CORS = { "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") ?? "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type" };
 const reponse = (obj: unknown, status = 200) => new Response(JSON.stringify(obj), { status, headers: { ...CORS, "Content-Type": "application/json" } });
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const CODES = ["lecture", "poste", "quotidien", "difference", "realite", "chemin", "preuves", "avenir", "outils", "excellence", "sources"];
+// Les 7 rubriques VISIBLES d'une fiche. Les outils sont rangés dans « quotidien », l'excellence dans « difference » ;
+// « lecture » (statuts) et « sources » vont dans les données internes (vsf_fiches_generation.interne), avec la provenance.
+const CODES = ["poste", "quotidien", "difference", "realite", "chemin", "preuves", "avenir"];
+const TITRES: Record<string, string> = { poste: "Le métier en une phrase", quotidien: "Le métier au quotidien", difference: "Ce qui fait la différence", realite: "La réalité à connaître", chemin: "Le chemin pour apprendre", preuves: "Preuves de maîtrise et valeur créée", avenir: "Chemins d'avenir" };
 const MODELES = ["Peintre en lettres", "Peintre en lettres dirigeant", "Graphiste d'atelier"];
 
 async function esco(libelle: string): Promise<{ uri: string; titre: string; competences: { titre: string; type: string; uri: string }[] } | null> {
@@ -76,15 +79,18 @@ Deno.serve(async (req) => {
     const { data: r } = await admin.from("fiche_vsf_rubriques").select("code,titre,contenu_md,ordre").eq("poste_id", m.id).order("ordre");
     exemples += `\n\n=== FICHE MODÈLE : ${m.nom} ===\n` + (r ?? []).map((x) => `## [${x.code}] ${x.titre}\n${x.contenu_md}`).join("\n\n");
   }
+  if (!exemples.includes("[quotidien]") || exemples.includes("[outils]")) return await echec("Les fiches modèles ne sont pas rangées en 7 rubriques (migration 30 à jouer).", 409);
   if (!exemples) return await echec("Aucune fiche modèle en base (migration 29 à jouer).", 409);
 
   // 4. Un seul appel à l'IA
-  const consigne = `Tu rédiges une fiche métier VraiSavoirFaire pour le poste « ${d.libelle} », en suivant EXACTEMENT le gabarit des fiches modèles ci-dessous (11 rubriques, mêmes titres, mêmes tableaux, situations de travail avec N1 à N4 et preuve observable, outils, preuves, sources).
-Règles : la situation de travail est l'unité de vérité (4 à 6 situations, chacune déclinée en N1 Comprendre, N2 Faire avec repères, N3 Réaliser en situation, N4 Maîtriser et transmettre). Chaque affirmation porte un statut : Documenté (présent dans les sources fournies), Hypothèse, ou À valider. N'invente jamais une source, un code ou une exigence officielle ; ce qui ne vient pas des sources fournies est une Hypothèse. Aucun score sur les personnes.
+  const consigne = `Tu rédiges une fiche métier VraiSavoirFaire pour le poste « ${d.libelle} », en suivant EXACTEMENT le gabarit des fiches modèles ci-dessous : 7 rubriques visibles (poste, quotidien, difference, realite, chemin, preuves, avenir), mêmes tableaux, situations de travail avec N1 à N4 et preuve observable.
+Les OUTILS à maîtriser (tableau famille / outils / niveau / statut) se rangent à la fin de la rubrique « quotidien », sous le titre en gras « Outils à maîtriser » ; l'EXCELLENCE et la valeur ajoutée maximale à la fin de « difference », sous le titre en gras « Excellence et valeur ajoutée maximale ». Le mode d'emploi des statuts (« lecture ») et le tableau des sources (« sources ») vont dans "interne", pas dans les rubriques.
+Quatre cadres à appliquer : (1) le travail réel : pour chaque situation, ce que la personne décide, arbitre et subit comme aléa, au-delà de la tâche prescrite ; (2) les niveaux N1 Comprendre, N2 Faire avec repères, N3 Réaliser en situation, N4 Maîtriser et transmettre, chacun avec sa preuve observable ; (3) la transmission : ce qu'un maître d'art ou une entreprise du patrimoine vivant exigerait (geste rare, chef-d'œuvre, binôme, trace), seulement si le métier s'y prête ; (4) la boussole à 4 axes (pilotage, compétences, culture, rituels) : dis pour chaque situation l'axe qu'elle nourrit le plus.
+Règles : la situation de travail est l'unité de vérité (4 à 6 situations). Chaque affirmation porte un statut : Documenté (présent dans les sources fournies), Hypothèse, ou À valider. N'invente jamais une source, un code ou une exigence officielle ; ce qui ne vient pas des sources fournies est une Hypothèse. Aucun score sur les personnes.
 Sources fournies :
 - ROME ${codeRome ?? "(non trouvé)"} : ${JSON.stringify(rome.slice(0, 60))}
 - ESCO ${e ? e.uri : "(non trouvé)"} : ${JSON.stringify(e?.competences ?? [])}
-Réponds UNIQUEMENT par un objet JSON : {"rubriques":{"lecture":"…","poste":"…","quotidien":"…","difference":"…","realite":"…","chemin":"…","preuves":"…","avenir":"…","outils":"…","excellence":"…","sources":"…"},"situations":[{"rang":1,"nom":"…","etape_chaine":1,"themes_questions":["…"]}],"elements":[{"rubrique":"quotidien","element":"situation 1","source":"rome|esco|regle_paliers|travail_reel|maitres_art|boussole|modele_ia","reference":"code ou uri ou null","statut":"documente|a_verifier"}]}
+Réponds UNIQUEMENT par un objet JSON : {"rubriques":{"poste":"…","quotidien":"…","difference":"…","realite":"…","chemin":"…","preuves":"…","avenir":"…"},"interne":{"lecture_md":"…","sources_md":"…"},"situations":[{"rang":1,"nom":"…","etape_chaine":1,"axe_boussole":"pilotage|competences|culture|rituels","themes_questions":["…"]}],"elements":[{"rubrique":"quotidien","element":"situation 1","source":"rome|esco|regle_paliers|travail_reel|maitres_art|boussole|modele_ia","reference":"code ou uri ou null","statut":"documente|a_verifier"}]}
 etape_chaine : 1 Recevoir la demande, 2 Préparer, 3 Produire, 4 Contrôler, 5 Livrer.`;
   const modele = Deno.env.get("ANTHROPIC_MODEL") ?? "claude-sonnet-5-5";
   let ia: any;
@@ -115,8 +121,9 @@ etape_chaine : 1 Recevoir la demande, 2 Préparer, 3 Produire, 4 Contrôler, 5 L
   const { data: poste, error: ep } = await admin.from("postes_apprenance")
     .insert({ nom: d.libelle, ref_vsf: `Fiche VSF générée (${new Date().toISOString().slice(0, 10)}), à vérifier`, proprietaire_id: null }).select("id").single();
   if (ep || !poste) return await echec("Enregistrement impossible (dépense déjà notée).", 500);
-  await admin.from("fiche_vsf_rubriques").insert(CODES.map((c, i) => ({ poste_id: poste.id, code: c, titre: String(fiche.rubriques[c]).split("\n")[0].slice(0, 120), contenu_md: fiche.rubriques[c], statut: null, ordre: i })));
-  await admin.from("vsf_fiches_generation").insert({ poste_id: poste.id, code_rome: codeRome, statut: "a_verifier", modele, sources: { rome: codeRome, esco: e?.uri ?? null, onet: null } });
+  await admin.from("fiche_vsf_rubriques").insert(CODES.map((c, i) => ({ poste_id: poste.id, code: c, titre: TITRES[c], contenu_md: fiche.rubriques[c], statut: null, ordre: i + 1 })));
+  await admin.from("vsf_fiches_generation").insert({ poste_id: poste.id, code_rome: codeRome, statut: "a_verifier", modele, sources: { rome: codeRome, esco: e?.uri ?? null, onet: null },
+    interne: { lecture_md: String(fiche.interne?.lecture_md ?? ""), sources_md: String(fiche.interne?.sources_md ?? ""), situations: fiche.situations ?? [] } });
   const els = (fiche.elements ?? []).slice(0, 200).map((x: any) => ({ poste_id: poste.id, rubrique: String(x.rubrique ?? ""), element: String(x.element ?? ""), source: String(x.source ?? "modele_ia"), reference: x.reference ? String(x.reference) : null, statut: x.statut === "documente" ? "documente" : "a_verifier" }));
   if (els.length) await admin.from("vsf_fiches_elements").insert(els);
   await admin.from("vsf_fiches_demandes").update({ statut: "generee", poste_id: poste.id, message: null, maj_le: new Date().toISOString() }).eq("id", d.id);
