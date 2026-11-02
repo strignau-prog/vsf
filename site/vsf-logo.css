@@ -19,3 +19,6 @@
 @keyframes vsf-logo-monte{from{clip-path:inset(100% 0 0 0)}to{clip-path:inset(0 0 0 0)}}
 @keyframes vsf-logo-pop{0%{transform:scale(0);background:#ffc400}55%{transform:scale(1.7);background:#ffc400}80%{background:#ffc400}100%{transform:scale(1);background:currentColor}}
 @media (prefers-reduced-motion:reduce){.vsf-logo.play .hy .bar,.vsf-logo.play .hy .pt,.vsf-logo.play .ii .stem,.vsf-logo.play .ii .pt{animation:none}}
+
+/* le logo est plus grand : lisible de loin, comme dans la maquette */
+a[data-logo]{font-size:clamp(1.5rem,2.6vw,2.25rem) !important;letter-spacing:-.02em !important;line-height:1}
