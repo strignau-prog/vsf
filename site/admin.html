@@ -66,7 +66,7 @@ async function demarrer() {
   var su = await sb.rpc('vsf_est_super');
   moi.super = su.data === true;
   dessiner();
-  await Promise.all([chargerComptes(), chargerDiagnostics(), chargerVendeurs(), chargerReversements()]);
+  await Promise.all([chargerComptes(), chargerDiagnostics(), chargerFiches(), chargerVendeurs(), chargerReversements()]);
 }
 async function sortir() { await sb.auth.signOut(); location.replace('./'); }
 
@@ -81,6 +81,10 @@ function dessiner() {
 
     '<h2>Diagnostics</h2><div class="chiffres" id="chiffresDiag"><div><b>…</b><span>À payer</span></div></div><p class="message" id="msgDiag" role="alert"></p>' +
 
+    '<h2>Fiches</h2><div class="chiffres" id="chiffresIA"><div><b>…</b><span>IA</span></div></div>' +
+    '<p class="legende">Aucune dépense sans votre accord : l’IA est éteinte tant que vous ne l’allumez pas.</p>' +
+    '<p class="message" id="msgIA" role="alert"></p><div id="reglIA"></div><div id="listeDemandes"></div>' +
+
     '<h2>Ambassadeurs</h2>' +
     '<p class="legende">Aucune offre ne s’ouvre tant que son ambassadeur n’est pas validé.</p>' +
     '<p class="message" id="msgVendeurs" role="alert"></p><div id="listeVendeurs"></div>' +
@@ -93,6 +97,59 @@ function dessiner() {
 
     '<h2>CGV</h2>' +
     '<p class="legende">Version provisoire, à relire avec votre comptable.</p>';
+}
+
+/* ───── fiches : l'IA ne dépense rien sans l'accord de Stéphane (règle posée en base, migration 28) ───── */
+var IA = { actif: false, plafond: 0 };
+async function chargerFiches() {
+  var r = await sb.from('vsf_ia_reglages').select('actif,mode,plafond_mensuel_eur,cout_estime_fiche_eur').maybeSingle();
+  if (r.error || !r.data) { $('chiffresIA').innerHTML = ''; dire('msgIA', 'Non installé : migration 28 à jouer.'); return; }
+  var debut = new Date(); debut.setDate(1); debut.setHours(0, 0, 0, 0);
+  var j = await sb.from('vsf_ia_journal').select('cout_eur').gte('cree_le', debut.toISOString());
+  var depense = (j.data || []).reduce(function (s, x) { return s + Number(x.cout_eur || 0); }, 0);
+  var dem = await sb.from('vsf_fiches_demandes').select('id,libelle,statut,cout_estime_eur,message').in('statut', ['en_attente', 'approuvee', 'en_cours', 'echec']).order('cree_le');
+  var liste = dem.data || [];
+  IA.actif = r.data.actif; IA.plafond = Number(r.data.plafond_mensuel_eur);
+  $('chiffresIA').innerHTML =
+    '<div><b>' + (r.data.actif ? 'Allumée' : 'Éteinte') + '</b><span>IA</span></div>' +
+    '<div><b>' + euros(Math.round(depense * 100) / 100) + '</b><span>Dépensé ce mois</span></div>' +
+    '<div><b>' + euros(IA.plafond) + '</b><span>Plafond</span></div>' +
+    '<div><b>' + liste.filter(function (x) { return x.statut === 'en_attente'; }).length + '</b><span>À décider</span></div>';
+  $('reglIA').innerHTML = moi.super
+    ? '<div class="ligne"><div class="qui"><b>Réglage</b><span><input type="text" inputmode="decimal" id="iaPlafond" value="' + IA.plafond + '" aria-label="Plafond mensuel en euros" style="width:90px"> € par mois</span></div>' +
+      '<div class="actions"><button class="bouton petit" data-texte onclick="regler(' + (!IA.actif) + ')">' + (IA.actif ? 'Éteindre l’IA' : 'Allumer l’IA') + '</button>' +
+      '<button class="bouton petit" onclick="regler(' + IA.actif + ')">Enregistrer</button></div></div>'
+    : '';
+  var ETATS = { en_attente: 'À décider', approuvee: 'Approuvée', en_cours: 'En cours', echec: 'Échec' };
+  $('listeDemandes').innerHTML = liste.map(function (x) {
+    var act = '';
+    if (x.statut === 'en_attente') {
+      act = '<button class="bouton petit" onclick="decider(\'' + x.id + '\',true)">Valider</button><button class="bouton petit" onclick="decider(\'' + x.id + '\',false)">Refuser</button>';
+    } else if (x.statut === 'approuvee') {
+      act = '<button class="bouton petit" onclick="confirmer(this,\'Générer (≈ ' + euros(Number(x.cout_estime_eur || 0)) + ') ?\',function(){generer(\'' + x.id + '\')})">Générer</button>';
+    }
+    return '<div class="ligne"><div class="qui"><b>' + E(x.libelle) + '</b><span>' + (x.statut === 'echec' && x.message ? '<span class="alerte">' + E(x.message) + '</span>' : '≈ ' + euros(Number(x.cout_estime_eur || 0))) + '</span></div>' +
+      '<div class="actions"><span class="etat">' + ETATS[x.statut] + '</span>' + act + '</div></div>';
+  }).join('');
+}
+async function regler(actif) {
+  dire('msgIA', '');
+  var p = parseFloat(String($('iaPlafond').value).replace(',', '.'));
+  var r = await sb.rpc('vsf_ia_regler', { p_actif: actif, p_mode: 'accord', p_plafond: isNaN(p) ? -1 : p });
+  if (r.error) { console.error(r.error); return dire('msgIA', 'Réglage refusé : plafond entre 0 et 500 €.'); }
+  chargerFiches();
+}
+async function decider(id, accord) {
+  dire('msgIA', '');
+  var r = await sb.rpc('vsf_fiche_decider', { p_demande: id, p_accord: accord });
+  if (r.error) { console.error(r.error); return dire('msgIA', 'Décision impossible.'); }
+  chargerFiches();
+}
+async function generer(id) {
+  dire('msgIA', '');
+  var r = await sb.functions.invoke('generer-fiche', { body: { demande_id: id } });
+  if (r.error) { console.error(r.error); dire('msgIA', 'Moteur non déployé ou refusé : rien n’a été dépensé.'); }
+  chargerFiches();
 }
 
 /* ───── diagnostics entreprise : des nombres seulement, jamais le contenu ───── */

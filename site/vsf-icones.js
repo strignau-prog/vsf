@@ -35,6 +35,8 @@
     [/^(enregistrer|confirmer)/i, 'check', 'Enregistrer', false],
     [/^(créer|ajouter|nouveau|nouvelle)/i, 'add', 'Ajouter', false],
     [/^(modifier|éditer|changer)/i, 'edit', 'Modifier', false],
+    [/^refuser/i, 'close', 'Refuser', true],
+    [/^générer/i, 'check', 'Générer', true],
     [/^annuler/i, 'close', 'Annuler', false],
     [/^oui$/i, 'check', 'Oui', false],
     [/^non$/i, 'close', 'Non', false],
