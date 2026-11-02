@@ -6,9 +6,9 @@
    prefers-reduced-motion : tout s'affiche directement. Voir vsf-titres.js pour marquer la lettre. */
 .vt-sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0}
 .vt-nw{white-space:nowrap}
-.vt-i{display:inline-block;position:relative}
+.vt-i{display:inline-block;position:relative;line-height:1}
 .vt-i .stem{display:inline-block}
-.vt-i .pt{position:absolute;width:.16em;height:.16em;border-radius:50% !important;background:currentColor;left:50%;margin-left:-.08em;bottom:.71em}
+.vt-i .pt{position:absolute;width:.18em;height:.18em;border-radius:50% !important;background:currentColor;left:50%;margin-left:-.09em;bottom:.82em}
 .vt-acc{display:inline-block}
 .page-publique .vsf-h1.play{animation:vt-focus .7s ease-out both}
 .page-publique .vsf-h1.play .vt-i .stem{animation:vt-monte .4s .55s both}
