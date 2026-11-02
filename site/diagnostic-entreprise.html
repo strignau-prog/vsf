@@ -639,6 +639,12 @@
   .nv-addwrap{display:flex;align-items:center;min-height:44px;flex:1 1 240px;max-width:420px}
   .nv-addwrap input{width:100%;min-height:44px;font:inherit;font-size:16px;color:#111}
   .nv-sugg{display:flex;flex-direction:column;align-items:flex-start}
+  .nv-sous{display:flex;flex-wrap:wrap;align-items:center;gap:0 14px;margin-left:32px}
+  .nv-cpt{display:inline-flex;align-items:center;gap:4px;font-weight:800}
+  .nv-cpt button{background:none;border:0;padding:0;min-width:44px;min-height:44px;font:inherit;font-size:20px;font-weight:800;color:#111;cursor:pointer}
+  .nv-cpt b{min-width:1.4em;text-align:center;font-size:18px}
+  .nv-total{display:inline-flex;align-items:center;gap:10px;margin-top:var(--espace-question,32px);font-size:20px;font-weight:800}
+  .nv-art{vertical-align:-2px;color:#111;margin-right:2px}
   .nv-btn{background:none;border:0;padding:0;min-height:44px;display:inline-flex;align-items:center;font:inherit;font-weight:800;font-size:15px;color:#111;cursor:pointer}
   .nv-btn span{border-bottom:3px solid currentColor;padding-bottom:2px}
   .nv-bar{display:flex;gap:4px}
@@ -757,7 +763,7 @@
 </div>
 
 <script>
-var STEPS = ['Mon entreprise','Carte des processus','Diagnostic','Restitution','Outils & plan'];
+var STEPS = ['Mon entreprise','Carte des processus','Questions','Restitution','Plan'];
 var FINALITE = 'Ce diagnostic sert un seul objectif : <b>libérer du temps des tâches à faible valeur ajoutée</b> pour le réinvestir dans <b>le geste humain rare</b> et sa différenciation.';
 
 var SECTORS = [
@@ -1270,6 +1276,9 @@ function nvN(){
   if (!N.custom) N.custom = [];
   if (!N.split) N.split = {};
   if (!N.open) N.open = {};
+  if (!N.eff) N.eff = {};
+  if (!N.recos) N.recos = {};
+  if (N.recoOuvert === undefined) N.recoOuvert = false;
   if (!N.zone) N.zone = 'C';
   if (N.texte === undefined) N.texte = '';
   if (N.rome === undefined) N.rome = null;
@@ -1328,77 +1337,43 @@ function nvCalc(){
       var sp = nvSplit(x), tot = sp.length;
       ['P','C','S'].forEach(function(k){
         var c = sp.filter(function(z){ return z === k; }).length;
-        if (c){ w[k] += c / tot; who[k].push(x.n + ' · ' + Math.round(c / tot * 100) + ' %'); if (k === 'C' && x.k !== 'dir') coeurReel = true; }
+        if (c){ w[k] += (c / tot) * nvEff(x.k); who[k].push(x.n + ' · ' + Math.round(c / tot * 100) + ' %'); if (k === 'C' && x.k !== 'dir') coeurReel = true; }
       });
-    } else { w[x.z] += 1; who[x.z].push(x.n); if (x.z === 'C') coeurReel = true; }
+    } else { w[x.z] += nvEff(x.k); who[x.z].push(x.n); if (x.z === 'C') coeurReel = true; }
   });
   var manque = {P: !who.P.length, C: !coeurReel, S: !who.S.length};
   return {w:w, who:who, manque:manque, coeur:coeurReel, nb:n, complet:(n > 0 && !manque.P && !manque.C && !manque.S)};
 }
 function nvPastille(etat){ return etat ? '<span class="nvd' + (etat === 'ok' ? ' ok' : '') + '" aria-hidden="true"></span>' : ''; }
 
-function step1(){
-  if (!NV_REF){ NV_REF = nvRefSecours(); }
-  var N = nvN(), ref = NV_REF, calc = nvCalc(), i, h = '';
-  var ok1 = !!(N.dom && N.taille), ok2 = ok1 && calc.nb > 0, ok3 = ok2 && calc.complet;
-  var e1 = ok1 ? 'done' : 'now', e2 = ok2 ? 'done' : (ok1 ? 'now' : 'off'), e3 = ok3 ? 'done' : (ok2 ? 'now' : 'off');
-  function haut(id, etat, label){ return '<span class="nv-st ' + etat + '" id="' + id + '">' + (etat === 'done' ? nvPastille('ok') : (etat === 'now' ? nvPastille('now') : '')) + label + '</span>'; }
-  h += '<div class="nv"><header class="nv-head"><h1>Mon organisation, en trois gestes</h1>';
-  h += '<nav class="nv-steps" aria-label="Étapes">' + haut('nv-s1', e1, 'Votre entreprise') + haut('nv-s2', e2, 'Postes clés') + haut('nv-s3', e3, 'Esquisse') + '</nav></header>';
+/* ---------- métiers d’art : un seul picto ◆, posé automatiquement (liste officielle des 281 + Peintre en lettres, hors liste) ---------- */
+var NV_ART = null;
+var NV_ICO_ART = '<svg class="nv-art" viewBox="0 0 24 24" width="18" height="18" role="img" aria-label="Métier d’art"><title>Métier d’art</title><path d="M12 3l8 8-8 10-8-10z" fill="currentColor"/></svg>';
+var NV_ICO_PERSONNES = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>';
+var NV_RECOS = [['epv','Entreprise du Patrimoine Vivant (EPV)'], ['iso','ISO 9001'], ['epa','Entreprise des métiers d’art'], ['maitre','Un Maître d’art dans l’entreprise'], ['mof','Un MOF dans l’entreprise'], ['autre','Autre label ou norme']];
+async function nvChargerArt(){
+  if (NV_ART) return;
+  try {
+    var r = await fetch('data/referentiel-metiers-art-v2.json'), j = await r.json(), s = [];
+    j.domaines.forEach(function(d){ d.metiers.forEach(function(m){ s.push(norm(m)); }); });
+    NV_ART = s;
+  } catch (e) { NV_ART = []; }
+}
+function nvBase(nom){ return norm(nom).replace(/\(.*?\)/g, '').split(/[\/·]/)[0].replace(/\s+/g, ' ').trim(); }      // « Doreur·euse » → « doreur »
+function nvEstArt(x){
+  if (x.k === 'dir' || !NV_ART) return false;
+  var b = nvBase(x.n);
+  if (!b) return false;
+  if (/^peintre en lettres/.test(b)) return true;                       // hors liste officielle, ajouté à la main (filière de test)
+  return NV_ART.some(function(m){ return m === b || m.indexOf(b + ' ') === 0; });
+}
+function nvEff(k){ var N = nvN(); return Math.max(1, Math.min(99, parseInt(N.eff[k], 10) || 1)); }
+function nvTotalPersonnes(){ var N = nvN(), t = 0; nvListe().forEach(function(x){ if (N.checked[x.k]) t += nvEff(x.k); }); return t; }
+function nvEffAncien(t){ return t <= 1 ? 'Moi seul·e' : (t <= 5 ? '2 à 5 personnes' : (t <= 10 ? '6 à 10 personnes' : (t <= 20 ? '11 à 20 personnes' : '21 à 49 personnes'))); }
 
-  /* 1 · votre entreprise */
-  h += '<section class="nv-sec"><div class="nv-sh">' + nvPastille(ok1 ? 'ok' : 'now') + '<h2>1 · Votre entreprise</h2></div>';
-  h += '<div class="nv-field"><div class="nv-q">' + nvPastille(N.dom ? '' : 'now') + 'Votre secteur</div>';
-  h += '<label class="nv-sel' + (N.dom ? '' : ' empty') + '"><span class="nv-sr">Secteur, grands domaines ROME</span><select data-act="nvdom" data-fid="dom"><option value="">Choisir dans la liste</option>';
-  for (i = 0; i < ref.domaines.length; i++){
-    h += '<option value="' + eH(ref.domaines[i].code) + '"' + (N.dom === ref.domaines[i].code ? ' selected' : '') + '>' + eH(ref.domaines[i].code) + ' · ' + eH(ref.domaines[i].libelle) + '</option>';
-  }
-  h += '</select><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></label></div>';
-  h += '<div class="nv-field"><div class="nv-q">' + nvPastille(!N.taille && N.dom ? 'now' : '') + 'Combien êtes-vous ?</div>';
-  h += '<div class="nv-opts' + (N.taille ? '' : ' untouched') + '" role="group" aria-label="Taille de l’entreprise">';
-  for (i = 0; i < NV_TAILLES.length; i++){
-    h += '<button type="button" class="nv-opt" data-act="nvtaille" data-k="' + eH(NV_TAILLES[i]) + '" data-fid="t:' + i + '" aria-pressed="' + (N.taille === NV_TAILLES[i]) + '">' + eH(NV_TAILLES[i]) + '</button>';
-  }
-  h += '</div></div></section>';
-
-  /* 2 · vos postes clés */
-  h += '<section class="nv-sec' + (ok1 ? '' : ' locked') + '"' + (ok1 ? '' : ' inert aria-disabled="true"') + '><div class="nv-sh">' + nvPastille(ok2 ? 'ok' : (ok1 ? 'now' : '')) + '<h2>2 · Vos postes clés</h2></div>';
-  h += '<div class="nv-field"><div class="nv-q">' + nvPastille(ok1 && !ok2 ? 'now' : '') + 'Cochez les postes qui existent chez vous</div><div class="nv-postes">';
-  var L = nvListe();
-  L.forEach(function(x){
-    var coche = !!N.checked[x.k], transversal = (x.z === 'X' && coche);
-    var b = '<button type="button" class="nv-poste" data-act="nvposte" data-k="' + eH(x.k) + '" data-fid="p:' + eH(x.k) + '" aria-pressed="' + coche + '"><span class="nv-box" aria-hidden="true"></span><span><span class="n">' + eH(x.n) + '</span>' + (transversal ? '' : '<span class="z">' + NV_ZONES[x.z === 'X' ? 'X' : x.z] + '</span>') + '</span></button>';
-    if (!transversal){ h += b; return; }
-    var sf = nvSf(x), sp = nvSplit(x), ouvert = N.open[x.k] !== false, j, o;
-    h += '<div class="nv-cell">' + b + '<button type="button" class="nv-fold" data-act="nvfold" data-k="' + eH(x.k) + '" data-fid="f:' + eH(x.k) + '" aria-expanded="' + ouvert + '" aria-label="' + (ouvert ? 'Replier les savoir-faire' : 'Modifier la répartition des savoir-faire') + '"><span>' + nvResume(sp) + '</span>' + (ouvert ? NV_CHEVRON.haut : NV_CHEVRON.bas) + '</button></div>';
-    if (!ouvert) return;
-    h += '<div class="nv-tr">';
-    for (j = 0; j < sf.length; j++){
-      h += '<div class="nv-sf"><span class="nm">' + eH(sf[j].t) + '</span><div class="nv-opts mini" role="group" aria-label="Zone de ' + eH(sf[j].t) + '">';
-      ['P','C','S'].forEach(function(z){
-        h += '<button type="button" class="nv-opt" data-act="nvsf" data-k="' + eH(x.k) + '" data-j="' + j + '" data-v="' + z + '" data-fid="s:' + eH(x.k) + ':' + j + ':' + z + '" aria-pressed="' + (sp[j] === z) + '">' + (z === 'P' ? 'Pilotage' : (z === 'C' ? 'Cœur' : 'Support')) + '</button>';
-      });
-      h += '</div></div>';
-    }
-    h += '</div>';
-  });
-  h += '</div></div>';
-  h += '<div class="nv-field"><div class="nv-q">Un poste manque ?</div><div class="nv-add"><div class="nv-addwrap"><input id="nv-add" type="text" placeholder="Nom du poste ou métier ROME" aria-label="Ajouter un poste" autocomplete="off" maxlength="80" value="' + eH(N.texte) + '"></div>';
-  h += '<div class="nv-opts mini" role="group" aria-label="Zone du poste">';
-  [['P','Pilotage'],['C','Cœur'],['S','Support'],['X','Plusieurs zones']].forEach(function(z){
-    h += '<button type="button" class="nv-opt" data-act="nvzone" data-k="' + z[0] + '" data-fid="z:' + z[0] + '" aria-pressed="' + (N.zone === z[0]) + '">' + z[1] + '</button>';
-  });
-  h += '</div><button type="button" class="nv-btn" data-act="nvajout" data-fid="ajout"><span>Ajouter</span></button></div>';
-  if (N.sugg.length){
-    h += '<div class="nv-sugg" role="group" aria-label="Correspondances ROME">';
-    N.sugg.forEach(function(s, k){ h += '<button type="button" class="nv-opt" data-act="nvsugg" data-k="' + k + '" data-fid="g:' + k + '">' + eH(s.n) + ' <small>' + eH(s.c) + '</small></button>'; });
-    h += '</div>';
-  }
-  h += '</div></section>';
-
-  /* 3 · votre esquisse */
-  var tot = calc.w.P + calc.w.C + calc.w.S || 1;
-  h += '<section class="nv-sec' + (ok2 ? '' : ' locked') + '"' + (ok2 ? '' : ' inert aria-disabled="true"') + '><div class="nv-sh">' + nvPastille(ok3 ? 'ok' : (ok2 ? 'now' : '')) + '<h2>3 · Votre esquisse</h2></div>';
+/* ---------- l’esquisse (étape 2) : barre de temps pondérée par les effectifs, bandes, chaîne ---------- */
+function nvEsquisseHtml(calc){
+  var h = '', tot = calc.w.P + calc.w.C + calc.w.S || 1;
   h += '<div class="nv-field"><div class="nv-q">Où va le temps</div><div class="nv-bar" role="img" aria-label="Répartition du temps entre pilotage, cœur de métier et support">';
   ['P','C','S'].forEach(function(k){
     var plein = !calc.manque[k] && calc.w[k] > 0;
@@ -1419,8 +1394,89 @@ function step1(){
     h += '</div>';
   });
   h += '</div>';
-  if (ok3){ h += '<div class="nv-fait">' + nvPastille('ok') + 'Esquisse complète : chaque zone a son poste.</div>'; }
-  h += '<button type="button" class="nv-go" data-act="nvgo" data-fid="go"' + (ok3 ? '' : ' disabled') + '>' + (ok3 ? nvPastille('now') : '') + 'Passer au diagnostic →</button></section></div>';
+  if (calc.complet){ h += '<div class="nv-fait">' + nvPastille('ok') + 'Esquisse complète : chaque zone a son poste.</div>'; }
+  return h;
+}
+function nvStep2Esquisse(){
+  var calc = nvCalc(), h = stepHead(2, 'Votre esquisse', '', '');
+  h += nvEsquisseHtml(calc);
+  h += '<button type="button" class="nv-go" data-act="nvdiag" data-fid="diag"' + (calc.complet ? '' : ' disabled') + '>' + (calc.complet ? nvPastille('now') : '') + 'Passer au diagnostic →</button>';
+  return h;
+}
+
+/* ---------- étape 1 : votre secteur, vos postes clés (avec effectifs), vos reconnaissances ---------- */
+function step1(){
+  if (!NV_REF){ NV_REF = nvRefSecours(); }
+  var N = nvN(), ref = NV_REF, calc = nvCalc(), i, h = '';
+  var ok1 = !!N.dom, ok2 = ok1 && calc.nb > 0, total = nvTotalPersonnes();
+  var L = nvListe(), nbArt = L.filter(function(x){ return N.checked[x.k] && nvEstArt(x); }).length;
+  h += '<div class="nv">';
+
+  /* secteur */
+  h += '<section class="nv-sec"><div class="nv-sh">' + nvPastille(ok1 ? 'ok' : 'now') + '<h2>Votre secteur</h2></div>';
+  h += '<div class="nv-field"><label class="nv-sel' + (N.dom ? '' : ' empty') + '"><span class="nv-sr">Secteur, grands domaines ROME</span><select data-act="nvdom" data-fid="dom"><option value="">Choisir dans la liste</option>';
+  for (i = 0; i < ref.domaines.length; i++){
+    h += '<option value="' + eH(ref.domaines[i].code) + '"' + (N.dom === ref.domaines[i].code ? ' selected' : '') + '>' + eH(ref.domaines[i].code) + ' · ' + eH(ref.domaines[i].libelle) + '</option>';
+  }
+  h += '</select><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></label></div></section>';
+
+  /* postes clés */
+  h += '<section class="nv-sec' + (ok1 ? '' : ' locked') + '"' + (ok1 ? '' : ' inert aria-disabled="true"') + '><div class="nv-sh">' + nvPastille(ok2 ? 'ok' : (ok1 ? 'now' : '')) + '<h2>Vos postes clés</h2></div>';
+  h += '<div class="nv-field"><div class="nv-q">Une estimation suffit : il s’agit d’une photo rapide de votre organisation, pas d’un organigramme.</div><div class="nv-postes">';
+  L.forEach(function(x){
+    var coche = !!N.checked[x.k], transversal = (x.z === 'X' && coche), art = nvEstArt(x);
+    var b = '<button type="button" class="nv-poste" data-act="nvposte" data-k="' + eH(x.k) + '" data-fid="p:' + eH(x.k) + '" aria-pressed="' + coche + '"><span class="nv-box" aria-hidden="true"></span><span><span class="n">' + (art ? NV_ICO_ART + ' ' : '') + eH(x.n) + '</span>' + (transversal ? '' : '<span class="z">' + NV_ZONES[x.z === 'X' ? 'X' : x.z] + '</span>') + '</span></button>';
+    if (!coche){ h += b; return; }
+    var n = nvEff(x.k);
+    var cpt = '<span class="nv-cpt" role="group" aria-label="Nombre de personnes : ' + eH(x.n) + '"><button type="button" data-act="nveff" data-k="' + eH(x.k) + '" data-v="-" data-fid="e-:' + eH(x.k) + '" aria-label="Une personne de moins">−</button><b>' + n + '</b><button type="button" data-act="nveff" data-k="' + eH(x.k) + '" data-v="+" data-fid="e+:' + eH(x.k) + '" aria-label="Une personne de plus">+</button></span>';
+    var fold = '';
+    if (transversal){
+      var sp = nvSplit(x), ouvert = N.open[x.k] !== false;
+      fold = '<button type="button" class="nv-fold" data-act="nvfold" data-k="' + eH(x.k) + '" data-fid="f:' + eH(x.k) + '" aria-expanded="' + ouvert + '" aria-label="' + (ouvert ? 'Replier les savoir-faire' : 'Modifier la répartition des savoir-faire') + '"><span>' + nvResume(sp) + '</span>' + (ouvert ? NV_CHEVRON.haut : NV_CHEVRON.bas) + '</button>';
+    }
+    h += '<div class="nv-cell">' + b + '<div class="nv-sous">' + cpt + fold + '</div></div>';
+    if (transversal && N.open[x.k] !== false){
+      var sf = nvSf(x), sp2 = nvSplit(x), j;
+      h += '<div class="nv-tr">';
+      for (j = 0; j < sf.length; j++){
+        h += '<div class="nv-sf"><span class="nm">' + eH(sf[j].t) + '</span><div class="nv-opts mini" role="group" aria-label="Zone de ' + eH(sf[j].t) + '">';
+        ['P','C','S'].forEach(function(z){
+          h += '<button type="button" class="nv-opt" data-act="nvsf" data-k="' + eH(x.k) + '" data-j="' + j + '" data-v="' + z + '" data-fid="s:' + eH(x.k) + ':' + j + ':' + z + '" aria-pressed="' + (sp2[j] === z) + '">' + (z === 'P' ? 'Pilotage' : (z === 'C' ? 'Cœur' : 'Support')) + '</button>';
+        });
+        h += '</div></div>';
+      }
+      h += '</div>';
+    }
+  });
+  h += '</div>';
+  h += '<div class="nv-total" aria-live="polite">' + NV_ICO_PERSONNES + '<b>' + total + '</b><span class="nv-sr"> personne' + (total > 1 ? 's' : '') + '</span></div></div>';
+  h += '<div class="nv-field"><div class="nv-q">Un poste manque ?</div><div class="nv-add"><div class="nv-addwrap"><input id="nv-add" type="text" placeholder="Nom du poste ou métier ROME" aria-label="Ajouter un poste" autocomplete="off" maxlength="80" value="' + eH(N.texte) + '"></div>';
+  h += '<div class="nv-opts mini" role="group" aria-label="Zone du poste">';
+  [['P','Pilotage'],['C','Cœur'],['S','Support'],['X','Plusieurs zones']].forEach(function(z){
+    h += '<button type="button" class="nv-opt" data-act="nvzone" data-k="' + z[0] + '" data-fid="z:' + z[0] + '" aria-pressed="' + (N.zone === z[0]) + '">' + z[1] + '</button>';
+  });
+  h += '</div><button type="button" class="nv-btn" data-act="nvajout" data-fid="ajout"><span>Ajouter</span></button></div>';
+  if (N.sugg.length){
+    h += '<div class="nv-sugg" role="group" aria-label="Correspondances ROME">';
+    N.sugg.forEach(function(s, k){ h += '<button type="button" class="nv-opt" data-act="nvsugg" data-k="' + k + '" data-fid="g:' + k + '">' + eH(s.n) + ' <small>' + eH(s.c) + '</small></button>'; });
+    h += '</div>';
+  }
+  h += '</div></section>';
+
+  /* reconnaissances de l’entreprise : après les postes ; question complète s’il y a au moins un ◆, sinon une ligne repliée */
+  h += '<section class="nv-sec' + (ok2 ? '' : ' locked') + '"' + (ok2 ? '' : ' inert aria-disabled="true"') + '>';
+  if (nbArt > 0 || N.recoOuvert){
+    h += '<div class="nv-sh">' + nvPastille(ok2 && !Object.keys(N.recos).some(function(k){ return N.recos[k]; }) ? 'now' : (ok2 ? 'ok' : '')) + '<h2>Reconnaissances</h2></div><div class="nv-field"><div class="nv-q">Cochez ce que l’entreprise a, ou vise</div><div class="nv-postes">';
+    NV_RECOS.forEach(function(r){
+      h += '<button type="button" class="nv-poste" data-act="nvreco" data-k="' + r[0] + '" data-fid="r:' + r[0] + '" aria-pressed="' + (!!N.recos[r[0]]) + '"><span class="nv-box" aria-hidden="true"></span><span><span class="n">' + eH(r[1]) + '</span></span></button>';
+    });
+    h += '</div></div>';
+  } else {
+    h += '<div class="nv-field"><button type="button" class="nv-fold" style="margin-left:0" data-act="nvrecoouvrir" data-fid="reco">Un label ou une norme ? ' + NV_CHEVRON.bas + '</button></div>';
+  }
+  h += '</section>';
+
+  h += '<button type="button" class="nv-go" data-act="nvgo" data-fid="go"' + (ok2 ? '' : ' disabled') + '>' + (ok2 ? nvPastille('now') : '') + 'Continuer →</button></div>';
   return h;
 }
 
@@ -1492,7 +1548,7 @@ function versAncien(){
   NV_DYN.forEach(function(k){ delete FICHES[k]; delete SITS[k]; });
   NV_DYN = [];
   S.sector = N.dom === 'B' ? 'art' : (N.dom ? 'aut' : null);
-  S.eff = N.taille ? NV_EFF_ANCIEN[N.taille] : '';
+  S.eff = nvEffAncien(nvTotalPersonnes());
   S.fiches = {}; S.units = {}; S.splitKey = {}; S.sit = {}; S.dirOn = null; S.dirSplit = 'poly';
   var DEF = {P:'pilot', C:'geste', S:'supp'}, PROC = {P:'pil', C:'cor', S:'sup'};
   nvListe().forEach(function(x){
@@ -1501,11 +1557,11 @@ function versAncien(){
       var sd = nvSituations(x, 'dir'); SITS.dir = sd.list; S.sit.dir = sd.map; S.dirSplit = 'auto'; return;
     }
     var connu = (x.z !== 'X') ? nvConnu(x.n) : null;
-    if (connu){ S.fiches[connu] = true; S.units[connu] = 1; S.splitKey[connu] = FICHES[connu].def; return; }
+    if (connu){ S.fiches[connu] = true; S.units[connu] = nvEff(x.k); S.splitKey[connu] = FICHES[connu].def; return; }
     var key = (x.z === 'X' ? 'x:' : 'n:') + x.k;
     NV_DYN.push(key);
     if (FICHE_ORDER.indexOf(key) < 0){ FICHE_ORDER.push(key); }
-    S.fiches[key] = true; S.units[key] = 1;
+    S.fiches[key] = true; S.units[key] = nvEff(x.k);
     if (x.z === 'X'){
       var s = nvSituations(x, key);
       FICHES[key] = {nm:x.n, proc:'cor', def:'poly', st:'', rome:true, kw:'', rare:'', steps:null};
@@ -1528,6 +1584,7 @@ function feuQ(k, attente){
   return h + '</div></div>';
 }
 function step2(){
+  if (S.N && !S.esqVu){ return nvStep2Esquisse(); }
   var h = stepHead(2, 'Ma carte des processus et mes indicateurs', '', '');
   var c = lightCounts(), fr = fragile(), fh = freedHours(), i, j, list = brickList(), premiere = true, tierActuel = '';
   // les quatre nombres, en mots (jamais une note)
@@ -2230,7 +2287,11 @@ function nvAgir(a, t, k, v){
   else if (a === 'nvzone'){ N.zone = k; render(true); return; }
   else if (a === 'nvsugg'){ var s = N.sugg[parseInt(k, 10)]; if (s){ N.texte = s.n; N.rome = s.c; N.sugg = []; } render(true); return; }
   else if (a === 'nvajout'){ nvAjouter(); return; }
-  else if (a === 'nvgo'){ if (!nvCalc().complet) return; versAncien(); S.warn = ''; S.step = 2; render(false); return; }
+  else if (a === 'nveff'){ var e0 = nvEff(k); N.eff[k] = Math.max(1, Math.min(99, e0 + (v === '+' ? 1 : -1))); }
+  else if (a === 'nvreco'){ N.recos[k] = !N.recos[k]; }
+  else if (a === 'nvrecoouvrir'){ N.recoOuvert = true; }
+  else if (a === 'nvgo'){ if (!(N.dom && nvCalc().nb > 0)) return; versAncien(); S.warn = ''; S.step = 2; S.esqVu = false; render(false); return; }
+  else if (a === 'nvdiag'){ if (!nvCalc().complet) return; S.esqVu = true; render(false); return; }
   else { return; }
   N.sale = true;
   render(true);
@@ -2268,7 +2329,7 @@ document.addEventListener('input', function(e){
 
 /* ===================== VSF : compte, entreprise, paiement, enregistrement ===================== */
 var DIAG = { id: null, org: null, statut: null, pret: false, minuteur: null, enCours: false };
-var PERSISTE = ['N','sector','eff','fiches','units','splitKey','dirSplit','dirOn','sit','lights','alleger','reinvest','target','modal','dates','roles','signed','step','axTab'];
+var PERSISTE = ['N','esqVu','sector','eff','fiches','units','splitKey','dirSplit','dirOn','sit','lights','alleger','reinvest','target','modal','dates','roles','signed','step','axTab'];
 function eH(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
 function messageDiag(e){ var m = String((e && e.message) || ''); return (e && e.code === 'VSF08' && m) ? m : 'Cela n’a pas pu être enregistré. Réessayez dans un instant.'; }
 function ecranDiag(html){
@@ -2311,7 +2372,7 @@ async function ouvrirDiag(org){
   S.ans = {}; (rp.data || []).forEach(function(x){ S.ans[x.q_code] = x.niveau; });
   if (!S.step || S.step < 1) S.step = 1;
   S.calculating = false;
-  await nvChargerRef();
+  await nvChargerRef(); await nvChargerArt();
   if (S.N){ nvN(); versAncien(); }
   try {                                                         // prix de l'abonnement proposé en fin de parcours (xx € tant qu'il n'est pas fixé)
     var ab = await VSF.sb.from('vsf_tarifs').select('prix_eur,defini').eq('code', 'entreprise_abonnement').maybeSingle();
@@ -2369,7 +2430,7 @@ render = function(k){
   renderMaquette(k);
   var det = document.querySelector('details.fixes'); if (det) det.style.display = (S.step === 4 && !S.calculating) ? '' : 'none';
   document.getElementById('main').classList.toggle('lat', S.step > 1 && !S.calculating);
-  if (S.step === 1 && !S.calculating){ document.getElementById('stepper').innerHTML = ''; document.getElementById('nav').innerHTML = ''; }
+  if ((S.step === 1 || (S.step === 2 && S.N && !S.esqVu)) && !S.calculating){ document.getElementById('nav').innerHTML = ''; }
   if (S.step === 1){
     var cible = champ ? document.getElementById('nv-add') : (fid ? document.querySelector('[data-fid="' + fid.replace(/"/g, '') + '"]') : null);
     if (cible && !cible.disabled){ cible.focus({ preventScroll: true }); if (champ && cible.setSelectionRange){ cible.setSelectionRange(champ[0], champ[1]); } }
@@ -2380,7 +2441,7 @@ document.addEventListener('visibilitychange', function(){ if (document.visibilit
 
 /* Aperçu (?apercu=1) : on voit les écrans sans compte et sans rien enregistrer. Aucune donnée n'est lue ni écrite. */
 async function apercuDiag(){
-  await nvChargerRef();
+  await nvChargerRef(); await nvChargerArt();
   DIAG.pret = false; DIAG.statut = 'apercu';
   var det = document.querySelector('details.fixes'); if (det) det.style.display = 'none';
   dit('Aperçu : rien n’est enregistré');
