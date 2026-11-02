@@ -1,26 +1,21 @@
-/* VSF — titres de pages publiques : « la mise au point » + le geste du logo, en jaune seul (#ffc400).
-   Le titre passe du flou au net. Une lettre marquée à la main rejoue ensuite le geste du i de FAIRE :
-   - un i : le fût se lève de bas en haut, puis son point jaillit en jaune, grossit un instant et repasse au noir ;
-   - une lettre accentuée : elle se lève de bas en haut, grossit un peu, passe un instant en jaune, puis revient au noir.
-   Sans lettre marquée, seule la mise au point joue. Chargé avec vsf-titres.js sur les pages qui portent body.page-publique. */
-.vsf-sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0}
-.vsf-ii{position:relative;display:inline-block}
-.vsf-stem{display:inline-block}
-.vsf-pt{position:absolute;left:50%;top:.09em;width:.16em;height:.16em;margin-left:-.08em;border-radius:50%;background:#111}
-.vsf-ac{display:inline-block;transform-origin:50% 100%}
-
-@keyframes vsf-focus  { from { filter:blur(7px); opacity:0; } to { filter:blur(0); opacity:1; } }
-@keyframes vsf-leve   { from { clip-path:inset(100% 0 -20% 0); } to { clip-path:inset(-20% 0 -20% 0); } }
-@keyframes vsf-leveAc { 0% { clip-path:inset(100% 0 -30% 0); transform:scale(1); } 55% { clip-path:inset(-30% 0 -30% 0); transform:scale(1); } 75% { transform:scale(1.15); } 100% { clip-path:inset(-30% 0 -30% 0); transform:scale(1); } }
-@keyframes vsf-jauneTx { 0%, 30% { color:#111; } 45%, 70% { color:#ffc400; } 100% { color:#111; } }
-@keyframes vsf-pop    { 0% { transform:scale(0); } 55% { transform:scale(1.9); } 100% { transform:scale(1); } }
-@keyframes vsf-jaune  { 0% { background:#ffc400; } 55% { background:#ffc400; } 100% { background:#111; } }
-
-.page-publique .vsf-h1 { animation: vsf-focus .7s ease-out both; }
-.page-publique .vsf-h1 .vsf-stem { animation: vsf-leve .25s cubic-bezier(.65,0,.35,1) .45s both; }
-.page-publique .vsf-h1 .vsf-pt   { animation: vsf-pop .35s cubic-bezier(.3,1.4,.5,1) .62s both, vsf-jaune 1.4s ease-in .62s both; }
-.page-publique .vsf-h1 .vsf-ac   { animation: vsf-leveAc .6s cubic-bezier(.65,0,.35,1) .45s both, vsf-jauneTx 1.4s ease-in .45s both; }
-
-@media (prefers-reduced-motion: reduce) {
-  .page-publique .vsf-h1, .page-publique .vsf-h1 .vsf-stem, .page-publique .vsf-h1 .vsf-pt, .page-publique .vsf-h1 .vsf-ac { animation: none; }
-}
+/* VSF — titres des pages publiques (d'après la maquette logo-titres.html du 2 novembre 2026).
+   « Mise au point » (flou → net) + UNE lettre marquée à la main par titre :
+   - un i : sa hampe monte de bas en haut et son point grossit en jaune (#ffc400) ;
+   - une lettre accentuée : elle monte et passe en jaune un instant.
+   Toujours jaune, jamais une autre couleur ; tout revient au noir. Pages publiques seulement (body.page-publique).
+   prefers-reduced-motion : tout s'affiche directement. Voir vsf-titres.js pour marquer la lettre. */
+.vt-sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0}
+.vt-nw{white-space:nowrap}
+.vt-i{display:inline-block;position:relative}
+.vt-i .stem{display:inline-block}
+.vt-i .pt{position:absolute;width:.16em;height:.16em;border-radius:50% !important;background:currentColor;left:50%;margin-left:-.08em;bottom:.71em}
+.vt-acc{display:inline-block}
+.page-publique .vsf-h1.play{animation:vt-focus .7s ease-out both}
+.page-publique .vsf-h1.play .vt-i .stem{animation:vt-monte .4s .55s both}
+.page-publique .vsf-h1.play .vt-i .pt{animation:vt-pop .45s .9s both}
+.page-publique .vsf-h1.play .vt-acc{animation:vt-haut .7s .55s both}
+@keyframes vt-focus{from{filter:blur(10px);opacity:0;letter-spacing:.02em}to{filter:blur(0);opacity:1;letter-spacing:-.02em}}
+@keyframes vt-monte{from{clip-path:inset(100% 0 0 0)}to{clip-path:inset(0 0 0 0)}}
+@keyframes vt-pop{0%{transform:scale(0);background:#ffc400}55%{transform:scale(1.7);background:#ffc400}80%{background:#ffc400}100%{transform:scale(1);background:currentColor}}
+@keyframes vt-haut{0%{transform:translateY(.35em);opacity:0;color:#ffc400}40%{transform:none;opacity:1;color:#ffc400}100%{color:inherit}}
+@media (prefers-reduced-motion:reduce){.page-publique .vsf-h1.play,.page-publique .vsf-h1.play .vt-i .stem,.page-publique .vsf-h1.play .vt-i .pt,.page-publique .vsf-h1.play .vt-acc{animation:none}}

@@ -5,7 +5,7 @@
 .vsf-etapes a,.vsf-etapes .pas-encore,.vsf-compte{display:inline-flex;align-items:center;gap:8px;min-height:44px;font-size:14px;font-weight:500;color:#767676;text-decoration:none}
 .vsf-etapes a.fait{color:#111;font-weight:800}
 .vsf-etapes a.ici{color:#111;font-weight:900}
-.vsf-etapes .pas-encore{color:#a0a0a0;cursor:default}
+.vsf-etapes .pas-encore{color:#c4c4c4;cursor:default}
 .vsf-compte{color:#111;font-weight:800}
 .vsf-etapes a:hover,.vsf-compte:hover{color:#111}
 .vsf-haut a:focus-visible{outline:2px solid #111;outline-offset:3px}

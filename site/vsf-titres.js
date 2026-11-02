@@ -1,28 +1,31 @@
-/* VSF — titres animés des pages publiques. Pour marquer la lettre qui rejoue le geste du logo, il suffit
-   d'entourer cette lettre de <mark> dans le titre :   <h1>Trouvez un m<mark>é</mark>tier qui compte.</h1>
-   (un i, ou une lettre accentuée). Le HTML animé est généré ici ; le titre complet reste lisible
-   par les lecteurs d'écran et les moteurs (copie masquée visuellement : .vsf-sr). Une seule lettre par titre. */
+/* VSF — titres animés des pages publiques. Pour marquer la lettre qui rejoue le geste du logo, entourer cette lettre de <mark> :
+       <h1>Votre chaîne de cœur de m<mark>é</mark>tier</h1>      (un i, ou une lettre accentuée ; une seule par titre)
+   Le HTML animé est généré ici. Le titre complet reste lisible par les lecteurs d'écran et les moteurs (copie masquée : .vt-sr).
+   Le mot qui porte la lettre marquée ne se coupe pas en fin de ligne (.vt-nw). Sans lettre marquée, seule la mise au point joue. */
 (function () {
   function echapper(s) { return s.replace(/[&<>"]/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]; }); }
   function fabriquer(h1) {
-    if (h1.classList.contains('vsf-h1') || h1.getAttribute('data-vsf-h1')) return;
-    h1.setAttribute('data-vsf-h1', '1');
-    var marque = h1.querySelector('mark');
-    var plein = h1.textContent;
-    var visible = '';
-    h1.childNodes.forEach(function (n) {
-      if (n.nodeType === 3) { visible += echapper(n.nodeValue); return; }
-      if (n === marque) {
-        var l = n.textContent.charAt(0);
-        visible += /^[iïîíì]$/.test(l)
-          ? '<span class="vsf-ii"><span class="vsf-stem">ı</span><span class="vsf-pt"></span></span>'
-          : '<span class="vsf-ac">' + echapper(l) + '</span>' + echapper(n.textContent.slice(1));
-        return;
-      }
-      visible += echapper(n.textContent);                       // tout autre élément : son texte seulement
-    });
-    h1.innerHTML = '<span class="vsf-sr">' + echapper(plein) + '</span><span aria-hidden="true">' + visible + '</span>';
-    h1.classList.add('vsf-h1');
+    if (h1.getAttribute('data-vt')) return;
+    h1.setAttribute('data-vt', '1');
+    var marque = h1.querySelector('mark'), plein = h1.textContent, morceaux = [], i, n, html = '';
+    for (i = 0; i < h1.childNodes.length; i++) morceaux.push(h1.childNodes[i]);
+    if (!marque) {
+      html = echapper(plein);
+    } else {
+      var avant = '', apres = '', vu = false, l = marque.textContent.charAt(0);
+      morceaux.forEach(function (n) {
+        if (n === marque) { vu = true; return; }
+        (vu ? (apres += n.textContent) : (avant += n.textContent));
+      });
+      var m = avant.match(/(\S*)$/), debutMot = m ? m[1] : '', tete = avant.slice(0, avant.length - debutMot.length);
+      var f = apres.match(/^(\S*)/), finMot = f ? f[1] : '', queue = apres.slice(finMot.length);
+      var lettre = /^[iïîíì]$/.test(l)
+        ? '<span class="vt-i"><span class="stem">ı</span><b class="pt"></b></span>'
+        : '<span class="vt-acc">' + echapper(l) + '</span>';
+      html = echapper(tete) + '<span class="vt-nw">' + echapper(debutMot) + lettre + echapper(marque.textContent.slice(1)) + echapper(finMot) + '</span>' + echapper(queue);
+    }
+    h1.innerHTML = '<span class="vt-sr">' + echapper(plein) + '</span><span aria-hidden="true">' + html + '</span>';
+    h1.classList.add('vsf-h1', 'play');
   }
   function demarrer() {
     if (!document.body.classList.contains('page-publique')) return;

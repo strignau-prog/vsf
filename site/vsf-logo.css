@@ -1,0 +1,21 @@
+/* VSF — logo VRAI-SAVOIRFAIRE (d'après la maquette logo-titres.html du 2 novembre 2026).
+   Le trait d'union est un « i couché » (une barre et son point, centrés à mi-hauteur des capitales) ; le I de FAIRE est un i minuscule pointé.
+   Animation d'ouverture sur les pages publiques seulement (classe .play posée par vsf-logo.js) :
+   la barre se trace, son point grossit, la hampe du i monte AVANT la fin du point, son point grossit à son tour.
+   Seuls les points sont jaunes, seulement pendant l'apparition ; tout revient à la couleur du texte. prefers-reduced-motion : rien ne bouge. */
+.vsf-logo{white-space:nowrap;line-height:1;text-transform:none}   /* sinon « ı » repasse en « I » capitale dans les en-têtes en capitales */
+.vsf-logo .hy{display:inline-block;position:relative;width:.86em;height:1em;vertical-align:baseline}
+.vsf-logo .hy .bar{position:absolute;left:.07em;bottom:.29em;width:.46em;height:.15em;background:currentColor;transform-origin:left center}
+.vsf-logo .pt{position:absolute;width:.16em;height:.16em;border-radius:50% !important;background:currentColor}
+.vsf-logo .hy .pt{left:.6em;bottom:.285em}
+.vsf-logo .ii{display:inline-block;position:relative;line-height:1}
+.vsf-logo .ii .stem{display:inline-block}
+.vsf-logo .ii .pt{left:50%;margin-left:-.08em;bottom:.71em}
+.vsf-logo.play .hy .bar{animation:vsf-logo-trace .45s cubic-bezier(.6,0,.3,1) both}
+.vsf-logo.play .hy .pt{animation:vsf-logo-pop .45s .42s both}
+.vsf-logo.play .ii .stem{animation:vsf-logo-monte .4s .55s cubic-bezier(.6,0,.3,1) both}
+.vsf-logo.play .ii .pt{animation:vsf-logo-pop .45s .9s both}
+@keyframes vsf-logo-trace{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes vsf-logo-monte{from{clip-path:inset(100% 0 0 0)}to{clip-path:inset(0 0 0 0)}}
+@keyframes vsf-logo-pop{0%{transform:scale(0);background:#ffc400}55%{transform:scale(1.7);background:#ffc400}80%{background:#ffc400}100%{transform:scale(1);background:currentColor}}
+@media (prefers-reduced-motion:reduce){.vsf-logo.play .hy .bar,.vsf-logo.play .hy .pt,.vsf-logo.play .ii .stem,.vsf-logo.play .ii .pt{animation:none}}
