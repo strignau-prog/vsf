@@ -10,7 +10,7 @@
 .vsf-logo .hy .pt{left:.6em;bottom:.275em}
 .vsf-logo .ii{display:inline-block;position:relative;line-height:1}
 .vsf-logo .ii .stem{display:inline-block}
-.vsf-logo .ii .pt{left:50%;margin-left:-.09em;bottom:.82em}   /* hampe : x-height .55 au-dessus de la ligne de base (.167 du bas de la boîte) + .10 d'espace */
+.vsf-logo .ii .pt{left:50%;width:.13em;height:.13em;margin-left:-.065em;bottom:.745em}   /* hampe : x-height .55 au-dessus de la ligne de base (.167 du bas de la boîte) + .10 d'espace */
 .vsf-logo.play .hy .bar{animation:vsf-logo-trace .45s cubic-bezier(.6,0,.3,1) both}
 .vsf-logo.play .hy .pt{animation:vsf-logo-pop .45s .42s both}
 .vsf-logo.play .ii .stem{animation:vsf-logo-monte .4s .55s cubic-bezier(.6,0,.3,1) both}

@@ -32,3 +32,8 @@ input:placeholder-shown:focus,textarea:placeholder-shown:focus{background-image:
 input::placeholder,textarea::placeholder{color:#767676;opacity:1}
 @keyframes vsf-curseur{50%{background-size:0 0}}
 @media (prefers-reduced-motion:reduce){input:placeholder-shown,textarea:placeholder-shown{animation:none}}
+
+/* Déconnexion : un mot et son icône, dans l'en-tête de toutes les pages connectées */
+.vsf-deco{background:none;border:0;padding:0;margin-left:auto;display:inline-flex;align-items:center;gap:8px;min-height:44px;font:inherit;font-size:14px;font-weight:800;color:#111;cursor:pointer;text-decoration:none}
+.vsf-deco .ico{width:20px;height:20px}
+.nav-right a{white-space:nowrap}
