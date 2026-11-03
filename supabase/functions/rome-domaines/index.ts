@@ -38,9 +38,10 @@ Deno.serve(async (req) => {
     if (estAdmin !== true) return reponse({ erreur: "Réservé à l'administrateur." }, 403);
 
     const t = await jeton();
-    const grands = (await lire("grand-domaine", "code,libelle,obsolete", t)).filter((g) => !g.obsolete && /^[A-N]$/.test(g.code ?? ""));
-    const domaines = (await lire("domaine-professionnel", "code,libelle,obsolete,grandDomaine(code,libelle),metiers(code,libelle,obsolete)", t))
-      .filter((d) => !d.obsolete && /^[A-N][0-9]{2}$/.test(d.code ?? ""));
+    // champs autorisés par la spécification de l'API (« obsolete » n'en fait pas partie)
+    const grands = (await lire("grand-domaine", "code,libelle", t)).filter((g) => /^[A-N]$/.test(g.code ?? ""));
+    const domaines = (await lire("domaine-professionnel", "code,libelle,grandDomaine(code,libelle),metiers(code,libelle)", t))
+      .filter((d) => /^[A-N][0-9]{2}$/.test(d.code ?? ""));
     if (!grands.length || !domaines.length) return reponse({ erreur: "L'API n'a rien renvoyé : rien n'est modifié." }, 502);
 
     // 1. grands domaines : libellés officiels (on garde l'ancien pour le montrer s'il change)
@@ -60,7 +61,7 @@ Deno.serve(async (req) => {
     if (e) throw new Error("vsf_filieres_rome : " + e.message);
     const fiches: { code_rome: string; libelle: string; filiere: string; maj_le: string }[] = [];
     for (const d of domaines) for (const m of d.metiers ?? []) {
-      if (!m.obsolete && /^[A-N][0-9]{4}$/.test(m.code ?? "")) fiches.push({ code_rome: m.code, libelle: m.libelle, filiere: d.code, maj_le: maintenant });
+      if (/^[A-N][0-9]{4}$/.test(m.code ?? "")) fiches.push({ code_rome: m.code, libelle: m.libelle, filiere: d.code, maj_le: maintenant });
     }
     for (let i = 0; i < fiches.length; i += 200) {
       e = (await admin.from("vsf_filiere_fiches").upsert(fiches.slice(i, i + 200), { onConflict: "code_rome" })).error;
