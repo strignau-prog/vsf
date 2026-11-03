@@ -20,9 +20,16 @@ async function jeton(): Promise<string> {
   if (!r.ok) throw new Error(`Authentification France Travail refusée (${r.status}) : ${await r.text()}`);
   return (await r.json()).access_token;
 }
+// L'abonnement autorise 1 appel par seconde : pause avant chaque appel, et jusqu'à 3 essais si France Travail répond 429.
+const pause = (ms: number) => new Promise((ok) => setTimeout(ok, ms));
 async function lire(chemin: string, champs: string, t: string): Promise<any[]> {
-  const r = await fetch(`${BASE}/${chemin}?champs=${encodeURIComponent(champs)}`, { headers: { Authorization: `Bearer ${t}` } });
-  if (!r.ok) throw new Error(`Appel ${chemin} refusé (${r.status}) : ${await r.text()}`);
+  let r: Response | null = null;
+  for (let essai = 0; essai < 3; essai++) {
+    await pause(1300 * (essai + 1));
+    r = await fetch(`${BASE}/${chemin}?champs=${encodeURIComponent(champs)}`, { headers: { Authorization: `Bearer ${t}` } });
+    if (r.status !== 429) break;
+  }
+  if (!r || !r.ok) throw new Error(`Appel ${chemin} refusé (${r?.status}) : ${r ? await r.text() : ""}`);
   const d = await r.json();
   return Array.isArray(d) ? d : (d ? [d] : []);
 }
