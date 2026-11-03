@@ -173,8 +173,13 @@ async function syncRome(b) {
   dire('msgRome', ''); b.disabled = true; $('listeRome').innerHTML = '';
   var r = await sb.functions.invoke('rome-domaines', { body: {} });
   b.disabled = false;
-  var d = r.data;
-  if (r.error || !d || d.erreur) { console.error(r.error || d); return dire('msgRome', 'Synchronisation impossible : ' + (d && d.erreur ? d.erreur : 'fonction non déployée ?')); }
+  var d = r.data, cause = '';
+  if (r.error && r.error.context && r.error.context.json) { try { var c = await r.error.context.json(); cause = c && c.erreur ? c.erreur : ''; } catch (e) {} }   // la réponse d'erreur de la fonction (JSON), sinon fonction absente
+  if (r.error || !d || d.erreur) {
+    console.error(r.error || d);
+    var st = r.error && r.error.context ? r.error.context.status : '';
+    return dire('msgRome', 'Synchronisation impossible : ' + (cause || (d && d.erreur) || (st === 404 ? 'la fonction « rome-domaines » n’est pas déployée dans Edge Functions.' : 'réponse ' + (st || 'inconnue') + '.')));
+  }
   var mod = d.libelles_grands_domaines_modifies || [];
   $('listeRome').innerHTML =
     '<div class="chiffres"><div><b>' + d.grands_domaines + '</b><span>Grands domaines</span></div><div><b>' + d.filieres + '</b><span>Filières</span></div><div><b>' + d.fiches + '</b><span>Fiches</span></div></div>' +
