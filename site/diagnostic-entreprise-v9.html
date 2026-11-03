@@ -7,6 +7,8 @@
 <meta name="robots" content="noindex">
 <link rel="stylesheet" href="vsf-diag.css">
 <link rel="stylesheet" href="vsf-logo.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="vsf-auth.js"></script>
 </head>
 <body>
 <div class="top">
@@ -361,7 +363,7 @@ function fillSel(){
   $('filh').textContent=S.sector==='MA'?'Votre domaine de métiers d\u2019art':'Votre filière';
   var fl=FIL[S.sector]||[];
   $('filw').style.display=S.sector?'block':'none';$('filh').style.display=S.sector?'block':'none';
-  $('fil').innerHTML='<option value="">'+(S.sector==='MA'?'Choisir votre domaine…':'Choisir votre filière…')+'</option>'+(fl.length?fl.map(function(x){return '<option value="'+x[0]+'"'+(x[0]===S.fil?' selected':'')+'>'+x[1]+'</option>'}).join(''):'<option value="" disabled>Démo : filières chargées pour B et F</option>');
+  $('fil').innerHTML='<option value="">'+(S.sector==='MA'?'Choisir votre domaine…':'Choisir votre filière…')+'</option>'+(fl.length?fl.map(function(x){return '<option value="'+x[0]+'"'+(x[0]===S.fil?' selected':'')+'>'+x[1]+'</option>'}).join(''):'<option value="" disabled>Aucune filière chargée</option>');
   $('selw').classList.toggle('todo',!S.sector); $('filw').classList.toggle('todo',!S.fil);
 }
 function goPostes(){setTimeout(function(){$('sPostes').scrollIntoView({behavior:'smooth',block:'start'})},150);}
@@ -396,6 +398,26 @@ $('postes').onclick=function(e){var tg=e.target.tagName;if(tg==='SELECT'||tg==='
   all();
 };
 all();
+
+/* ===================== RÉFÉRENTIELS : secteurs et filières lus en base, métiers d'art lus dans la liste des 281 =====================
+   Les valeurs écrites plus haut ne servent que de secours (hors ligne). Les postes de départ (F) restent ceux de la maquette tant que le moteur des fiches n'est pas en service. */
+var CORE={}; Object.keys(FIL).forEach(function(s){FIL[s].forEach(function(f){if(f[2])CORE[f[0]]=f[2];});});
+var CORE_MA={ameublement_decoration:['DO','PD','LQ'],verre_cristal:['VI','SV'],papier_graphisme_impression:['PL','CA','EN'],restauration:['RT']};
+function chargerRef(){
+  var sb=window.VSF&&window.VSF.sb; if(!sb) return Promise.resolve();
+  return Promise.all([
+    sb.from('vsf_domaines_rome').select('code,libelle,ordre').order('ordre'),
+    sb.from('vsf_filieres_rome').select('code,libelle,domaine').order('code'),
+    fetch('data/referentiel-metiers-art-v2.json').then(function(r){return r.json();}).catch(function(){return null;})
+  ]).then(function(r){
+    var d=r[0].data, f=r[1].data, ma=r[2], nf={};
+    if(d&&d.length===14) SECT=d.map(function(x){return [x.code,x.libelle];});
+    if(f&&f.length){ f.forEach(function(x){(nf[x.domaine]=nf[x.domaine]||[]).push([x.code,x.libelle,CORE[x.code]]);}); FIL=nf; }
+    if(ma&&ma.domaines) FIL.MA=ma.domaines.map(function(x){return ['MA:'+x.id,x.nom,CORE_MA[x.id]];});
+    fillSel(); all();
+  }).catch(function(e){ console.warn('Référentiels non chargés, valeurs de secours :', e); });
+}
+chargerRef();
 
 /* ===================== ÉTAPE 2 : carte et feux ===================== */
 var KPI={p1:['Le cap est partagé','Décisions prises à temps','Peu de réunions inutiles'],p2:['Indicateurs justes','Suivis à temps','Simples à tenir'],p3:['Équipe qui progresse','Transmission régulière','Rituels courts et utiles'],
