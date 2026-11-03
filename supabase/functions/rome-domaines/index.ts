@@ -16,7 +16,7 @@ async function jeton(): Promise<string> {
   const id = Deno.env.get("FRANCETRAVAIL_CLIENT_ID"), secret = Deno.env.get("FRANCETRAVAIL_CLIENT_SECRET");
   if (!id || !secret) throw new Error("FRANCETRAVAIL_CLIENT_ID / FRANCETRAVAIL_CLIENT_SECRET manquants");
   const r = await fetch(TOKEN_URL, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({ grant_type: "client_credentials", client_id: id, client_secret: secret, scope: "api_rome-metiersv1" }) });
+    body: new URLSearchParams({ grant_type: "client_credentials", client_id: id, client_secret: secret, scope: "api_rome-metiersv1 nomenclatureRome" }) });   // les deux droits sont obligatoires (spécification de l'API)
   if (!r.ok) throw new Error(`Authentification France Travail refusée (${r.status}) : ${await r.text()}`);
   return (await r.json()).access_token;
 }
