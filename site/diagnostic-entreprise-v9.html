@@ -246,7 +246,7 @@ function zoneOf(step){return step[0].toUpperCase();}
 function sfs(f){return f.sf.concat(S.extra[f.k]);}
 function norm(t){return t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
 function filObj(){return (FIL[S.sector]||[]).filter(function(x){return x[0]===S.fil})[0];}
-function groups(){var fo=filObj(),core=(fo&&fo[2])||[],tr=(TRANS[S.sector]||['DI','CO']).filter(function(k){return core.indexOf(k)<0});var ad=S.added.filter(function(k){return core.indexOf(k)<0&&tr.indexOf(k)<0});return [['Les métiers de votre filière',core],['Souvent présents dans ce secteur',tr],['Ajoutés',ad]];}
+function groups(){var fo=filObj(),core=(fo&&fo[2])||[],tr=(TRANS[S.sector]||TRANS.defaut||['DI','CO']).filter(function(k){return core.indexOf(k)<0});var ad=S.added.filter(function(k){return core.indexOf(k)<0&&tr.indexOf(k)<0});return [['Les métiers de votre filière',core],['Souvent présents dans ce secteur',tr],['Ajoutés',ad]];}
 function visible(){var v=[];groups().forEach(function(g){v=v.concat(g[1]);});return v;}
 function onKeys(){var v=visible();return F.filter(function(f){return v.indexOf(f.k)>=0&&S.on[f.k]}).map(function(f){return f.k});}
 function dxValid(){return S.on.DI&&S.dx&&S.dx!=='non'&&S.on[S.dx];}
@@ -405,21 +405,38 @@ all();
    Les valeurs écrites plus haut ne servent que de secours (hors ligne). Les postes de départ (F) restent ceux de la maquette tant que le moteur des fiches n'est pas en service. */
 var CORE={}; Object.keys(FIL).forEach(function(s){FIL[s].forEach(function(f){if(f[2])CORE[f[0]]=f[2];});});
 var CORE_MA={ameublement_decoration:['DO','PD','LQ'],verre_cristal:['VI','SV'],papier_graphisme_impression:['PL','CA','EN'],restauration:['RT']};
+/* données modifiables en admin (vsf_donnees, migration 33) : les valeurs de la maquette ne servent que de secours ; les exigences restent « exemple » tant que valide est faux */
+var PAR={part_alleger:.5,modules_maurice_min:2}, REQ_OK=false;
+var SC={geste_un_detenteur:10,feu_rouge_coeur:9,feu_rouge_autre:8,exigence_rouge:7,support_a_alleger:6,axe_le_plus_bas:5.5,exigence_jaune:5,feu_jaune_coeur:4};
+function appliquerDonnees(lignes){
+  var d={};(lignes||[]).forEach(function(x){d[x.code]=x;});
+  if(d.indicateurs)KPI=d.indicateurs.valeur;
+  if(d.engagements){ENG=d.engagements.valeur.liste;ESH=d.engagements.valeur.sigles;}
+  if(d.exigences){REQ=d.exigences.valeur;REQ_OK=!!d.exigences.valide;}
+  if(d.questions_taggees)QTAG=d.questions_taggees.valeur;
+  if(d.questions_ajoutees)QX=d.questions_ajoutees.valeur;
+  if(d.micro_actions)MICRO=d.micro_actions.valeur;
+  if(d.modules_maurice)MOD=d.modules_maurice.valeur;
+  if(d.postes_souvent_presents)TRANS=d.postes_souvent_presents.valeur;
+  if(d.parametres){var p=d.parametres.valeur;PAR.part_alleger=p.part_alleger;PAR.modules_maurice_min=p.recommandation.modules_maurice_min;SC=p.scores;}
+}
 function chargerRef(){
   var sb=window.VSF&&window.VSF.sb; if(!sb) return Promise.resolve();
   return Promise.all([
     sb.from('vsf_domaines_rome').select('code,libelle,ordre').order('ordre'),
     sb.from('vsf_filieres_rome').select('code,libelle,domaine').order('code'),
-    fetch('data/referentiel-metiers-art-v2.json').then(function(r){return r.json();}).catch(function(){return null;})
+    fetch('data/referentiel-metiers-art-v2.json').then(function(r){return r.json();}).catch(function(){return null;}),
+    sb.from('vsf_donnees').select('code,valeur,valide')
   ]).then(function(r){
     var d=r[0].data, f=r[1].data, ma=r[2], nf={};
+    appliquerDonnees(r[3].data);
     if(d&&d.length===14) SECT=d.map(function(x){return [x.code,x.libelle];});
     if(f&&f.length){ f.forEach(function(x){(nf[x.domaine]=nf[x.domaine]||[]).push([x.code,x.libelle,CORE[x.code]]);}); FIL=nf; }
     if(ma&&ma.domaines) FIL.MA=ma.domaines.map(function(x){return ['MA:'+x.id,x.nom,CORE_MA[x.id]];});
     fillSel(); all();
   }).catch(function(e){ console.warn('Référentiels non chargés, valeurs de secours :', e); });
 }
-chargerRef();
+var REF_PRET=chargerRef();
 
 /* ===================== ÉTAPE 2 : carte et feux ===================== */
 var KPI={p1:['Le cap est partagé','Décisions prises à temps','Peu de réunions inutiles'],p2:['Indicateurs justes','Suivis à temps','Simples à tenir'],p3:['Équipe qui progresse','Transmission régulière','Rituels courts et utiles'],
@@ -435,7 +452,7 @@ function artCell(id){var m=contrib()[id]||[];return m.some(function(k){return AR
 S.hold={};
 function nR(id){return 3+exOf(id).length;}
 function nRows(id){return nR(id)+(artCell(id)?1:0);}
-function exRows(id,pad){var ex=exOf(id),h=ex.map(function(e,j){var i=3+j,v=S.lights[id+':'+i]||'';return '<div class="krow ex" title="'+ESH[e[0]]+' : '+e[1]+' (exemple à valider)"><span class="kp">⚑</span><span class="kl">'+ESH[e[0]]+'</span><span class="fxs">'+['g','y','r'].map(function(c){return '<button class="fx '+c+(v===c?' on':'')+'" data-l="'+id+':'+i+'" data-v="'+c+'" aria-label="'+ESH[e[0]]+' : '+e[1]+'"></button>'}).join('')+'</span></div>'}).join('');if(artCell(id)){var hv=S.hold[id]||'';h+='<div class="krow hold" title="Combien de personnes savent faire ce geste seules ?"><span class="kp">◆</span><span class="kl">Savent seuls</span><span class="fxs">'+['1','2','3'].map(function(o){return '<button class="hb'+(hv===o?' on':'')+(o==='1'?' one':'')+'" data-hold="'+id+'" data-hv="'+o+'">'+(o==='3'?'3+':o)+'</button>'}).join('')+'</span></div>';}
+function exRows(id,pad){var ex=exOf(id),h=ex.map(function(e,j){var i=3+j,v=S.lights[id+':'+i]||'';return '<div class="krow ex" title="'+ESH[e[0]]+' : '+e[1]+(REQ_OK?'':' (exemple à valider)')+'"><span class="kp">⚑</span><span class="kl">'+ESH[e[0]]+'</span><span class="fxs">'+['g','y','r'].map(function(c){return '<button class="fx '+c+(v===c?' on':'')+'" data-l="'+id+':'+i+'" data-v="'+c+'" aria-label="'+ESH[e[0]]+' : '+e[1]+'"></button>'}).join('')+'</span></div>'}).join('');if(artCell(id)){var hv=S.hold[id]||'';h+='<div class="krow hold" title="Combien de personnes savent faire ce geste seules ?"><span class="kp">◆</span><span class="kl">Savent seuls</span><span class="fxs">'+['1','2','3'].map(function(o){return '<button class="hb'+(hv===o?' on':'')+(o==='1'?' one':'')+'" data-hold="'+id+'" data-hv="'+o+'">'+(o==='3'?'3+':o)+'</button>'}).join('')+'</span></div>';}
 for(var k=ex.length+(artCell(id)?1:0);k<pad;k++)h+='<div class="krow sp"></div>';return h;}
 S.lights={}; S.alleger={};
 function calc(){var m=contrib(),hs={},teamH=0;onKeys().forEach(function(k){var f=FK[k],sh=shares(f),hk=hoursOf(k);teamH+=hk;for(var st in sh){hs[st]=(hs[st]||0)+hk*sh[st];}});return {m:m,hs:hs,teamH:teamH};}
@@ -454,7 +471,7 @@ function drawMap(){
       total++; var nn=nR(id), ok=rated(id,nn)&&(!artCell(id)||!!S.hold[id]), w=worst(id,nn); if(!ok)todo++;
       var sc=0;for(var j=0;j<nn;j++){var v=S.lights[id+':'+j];if(v)cnt[v]++;if(v==='r')sc+=2;else if(v==='y')sc+=1;} if(sc>fragS&&sc>0){fragS=sc;frag=s[1];}
       var pc=c.teamH?Math.round((c.hs[id]||0)/c.teamH*100):0;
-      if(z==='S'&&S.alleger[id])freed+=(c.hs[id]||0)*.5;
+      if(z==='S'&&S.alleger[id])freed+=(c.hs[id]||0)*PAR.part_alleger;
       b+='<div class="mcell'+(ok?'':' todo')+(w?' w-'+w:'')+'" id="mc-'+id+'">'+num+'<span class="t">'+s[1]+(exOf(id).length?' <span class="sl" title="Concerné par vos engagements">⚑</span>':'')+'</span><span class="meta">'+ps.map(function(k){return '<span class="ini">'+(ART[k]?'◆ ':'')+k+'</span>'}).join('')+(S.part[id]?'<span class="ini" style="background:#fff;box-shadow:inset 0 0 0 1.5px #111">+ ext.</span>':'')+'<span>'+pc+' % du temps</span></span><div class="kbox">'+KPI[id].map(function(lb,j){return feuxRow(id,j,lb)}).join('')+exRows(id,padZ)+'</div>'+(z==='S'?'<label class="alg" data-a="'+id+'"><span class="box sm'+(S.alleger[id]?' on':'')+'"></span>À alléger</label>':'')+'</div>';
     });
     b+='</div></div>';
@@ -585,7 +602,7 @@ function drawRest(){
   h+=blk('r-lect','Trois lectures de vos réponses','Les mêmes réponses, relues sous trois angles. Chaque barre va de 1 (informel) à 4 (piloté).',lc);
   /* 3 chaîne */
   var fragS=-1,frag='',freed=0,geste=0;
-  var ch='<div class="chain">'+['P','C','S'].map(function(z){return '<div class="chz '+z+'"><b>'+ZN[z]+'</b><div class="chips">'+CH[z].map(function(s){var id=s[0];if(!(c.m[id]||[]).length)return '<span class="chp"><i></i>'+s[1]+' <small>'+(S.ext[id]?'externalisé':'—')+'</small></span>';var nn=nR(id),w=worst(id,nn),sc=0;for(var j=0;j<nn;j++){var v=S.lights[id+':'+j];if(v==='r')sc+=2;else if(v==='y')sc+=1;}if(sc>fragS){fragS=sc;frag=s[1];}var pc=c.teamH?Math.round((c.hs[id]||0)/c.teamH*100):0;if(z==='C')geste+=pc;if(z==='S'&&S.alleger[id])freed+=(c.hs[id]||0)*.5;return '<span class="chp"><i class="'+w+'"></i>'+s[1]+' <small>'+pc+' %</small></span>'}).join('')+'</div></div>'}).join('')+'</div>';
+  var ch='<div class="chain">'+['P','C','S'].map(function(z){return '<div class="chz '+z+'"><b>'+ZN[z]+'</b><div class="chips">'+CH[z].map(function(s){var id=s[0];if(!(c.m[id]||[]).length)return '<span class="chp"><i></i>'+s[1]+' <small>'+(S.ext[id]?'externalisé':'—')+'</small></span>';var nn=nR(id),w=worst(id,nn),sc=0;for(var j=0;j<nn;j++){var v=S.lights[id+':'+j];if(v==='r')sc+=2;else if(v==='y')sc+=1;}if(sc>fragS){fragS=sc;frag=s[1];}var pc=c.teamH?Math.round((c.hs[id]||0)/c.teamH*100):0;if(z==='C')geste+=pc;if(z==='S'&&S.alleger[id])freed+=(c.hs[id]||0)*PAR.part_alleger;return '<span class="chp"><i class="'+w+'"></i>'+s[1]+' <small>'+pc+' %</small></span>'}).join('')+'</div></div>'}).join('')+'</div>';
   ch+='<div class="kpis"><div><b>'+geste+' %</b><span>du temps va au geste</span></div><div><b>≈ '+Math.round(freed)+' h</b><span>par semaine rendues au cœur de métier</span></div><div><b style="font-size:22px">'+frag+'</b><span>le point le plus fragile</span></div></div>';
   h+=blk('r-ch','Votre chaîne','Vos feux de l’étape 2. Le levier : les points rouges, c’est là que le temps et la qualité se perdent.',ch);
   /* 4 rareté */
@@ -595,7 +612,7 @@ function drawRest(){
   /* 5 engagements */
   var act=engActive(); if(act.length){var gb=act.map(function(cd){var vals=[],gaps=[];stepsAll().forEach(function(x){var ex=exOf(x.id);ex.forEach(function(e,j){if(e[0]!==cd)return;var v=S.lights[x.id+':'+(3+j)];if(v){vals.push(score(v));if(v!=='g')gaps.push(e[1]+' ('+x.t+')');}});});AXM.forEach(function(a){qsOf(a[0]).forEach(function(q){if(qtags(q).indexOf(cd)>=0&&S.ans[q.id])vals.push(S.ans[q.id]);});});var m=vals.length?vals.reduce(function(a,b){return a+b},0)/vals.length:0,cr=Math.max(1,Math.min(4,Math.round(m)));
       return '<div class="gauge"><div class="nm">⚑ '+ESH[cd]+'<small>'+(S.eng[cd]==='vise'?'visé':'obtenu')+' · '+fr(m)+' / 4</small></div><div><div class="meter">'+[1,2,3,4].map(function(i){return '<i'+(i<=cr?' class="f"':'')+'></i>'}).join('')+'</div><div class="gaps">'+(gaps.length?'À consolider : '+gaps.slice(0,3).join(' · '):'Rien d’urgent relevé.')+'</div></div></div>'}).join('');
-    h+=blk('r-eng','Vos engagements','Votre maturité face à chaque reconnaissance que vous avez ou visez (exigences données à titre d’exemple, à valider sur les textes officiels).',gb);}
+    h+=blk('r-eng','Vos engagements','Votre maturité face à chaque reconnaissance que vous avez ou visez'+(REQ_OK?'':' (exigences données à titre d’exemple, à valider sur les textes officiels)')+'.',gb);}
   /* 6 mise en perspective */
   var dcnt={D:0,T:0,P:0}, pr='<div class="persp">'+CH.C.map(function(s){var id=s[0],sit=[];onKeys().forEach(function(k){sfs(FK[k]).forEach(function(x,i){if(x[1]===id&&!S.off[k+i]&&sit.indexOf(x[0])<0)sit.push(x[0]);});});if(!sit.length)return '';var w=worst(id,nR(id));
       return '<div class="pr"><b>'+s[1]+'</b><div class="rome">Vue ROME : une ligne générique pour toute l’étape.</div><div class="vsf">'+sit.map(function(t,i){var stt=(w==='g'&&i<2)?'p':(w==='r'||i>=2?'n':'v');if(stt==='n')dcnt[i%3===0?'D':(i%3===1?'T':'P')]++;else if(stt==='v')dcnt.T++;return '<span><i class="st-'+stt+'"></i>'+t+'</span>'}).join('')+'</div></div>'}).join('')+'</div>';
@@ -610,14 +627,14 @@ S.pick={}; S.det={}; S.obj=''; S.rdv=''; S.signed=false;
 function actions(){
   var c=calc(),L=[];
   stepsAll().forEach(function(x){var id=x.id;if(!(c.m[id]||[]).length)return;
-    if(artCell(id)&&S.hold[id]==='1')L.push({k:'h'+id,t:'Former une deuxième personne sur « '+x.t+' »',tag:'Geste à un seul détenteur',s:10});
-    for(var j=0;j<3;j++){var v=S.lights[id+':'+j];if(v==='r')L.push({k:'r'+id+j,t:'Agir sur « '+KPI[id][j]+' » ('+x.t+')',tag:'Feu rouge · '+KL[j],s:x.z==='C'?9:8});}
-    exOf(id).forEach(function(e,j){var v=S.lights[id+':'+(3+j)];if(v==='r'||v==='y')L.push({k:'e'+id+j,t:'Vers '+ESH[e[0]]+' : « '+e[1]+' » ('+x.t+')',tag:'Engagement '+(S.eng[e[0]]==='vise'?'visé':'obtenu'),s:v==='r'?7:5});});
-    if(x.z==='S'&&S.alleger[id])L.push({k:'a'+id,t:'Alléger « '+x.t+' » pour rendre du temps au cœur de métier',tag:'Support à alléger',s:6});
-    for(j=0;j<3;j++){if(S.lights[id+':'+j]==='y'&&x.z==='C')L.push({k:'y'+id+j,t:'Fiabiliser « '+KPI[id][j]+' » ('+x.t+')',tag:'À surveiller · '+KL[j],s:4});}
+    if(artCell(id)&&S.hold[id]==='1')L.push({k:'h'+id,t:'Former une deuxième personne sur « '+x.t+' »',tag:'Geste à un seul détenteur',s:SC.geste_un_detenteur});
+    for(var j=0;j<3;j++){var v=S.lights[id+':'+j];if(v==='r')L.push({k:'r'+id+j,t:'Agir sur « '+KPI[id][j]+' » ('+x.t+')',tag:'Feu rouge · '+KL[j],s:x.z==='C'?SC.feu_rouge_coeur:SC.feu_rouge_autre});}
+    exOf(id).forEach(function(e,j){var v=S.lights[id+':'+(3+j)];if(v==='r'||v==='y')L.push({k:'e'+id+j,t:'Vers '+ESH[e[0]]+' : « '+e[1]+' » ('+x.t+')',tag:'Engagement '+(S.eng[e[0]]==='vise'?'visé':'obtenu'),s:v==='r'?SC.exigence_rouge:SC.exigence_jaune});});
+    if(x.z==='S'&&S.alleger[id])L.push({k:'a'+id,t:'Alléger « '+x.t+' » pour rendre du temps au cœur de métier',tag:'Support à alléger',s:SC.support_a_alleger});
+    for(j=0;j<3;j++){if(S.lights[id+':'+j]==='y'&&x.z==='C')L.push({k:'y'+id+j,t:'Fiabiliser « '+KPI[id][j]+' » ('+x.t+')',tag:'À surveiller · '+KL[j],s:SC.feu_jaune_coeur});}
   });
   var low=AXM.map(function(a){return [a,avg(a[0])]}).filter(function(x){return x[1]}).sort(function(a,b){return a[1]-b[1]})[0];
-  if(low)L.push({k:'ax'+low[0][0],t:'Progresser sur « '+low[0][1]+' » (moyenne '+fr(low[1])+')',tag:'Axe le plus bas',s:5.5});
+  if(low)L.push({k:'ax'+low[0][0],t:'Progresser sur « '+low[0][1]+' » (moyenne '+fr(low[1])+')',tag:'Axe le plus bas',s:SC.axe_le_plus_bas});
   L.sort(function(a,b){return b.s-a.s});var seen={};return L.filter(function(a){if(seen[a.t])return false;seen[a.t]=1;return true;}).slice(0,8);
 }
 var PROOF=[['','Preuve : à choisir'],['decl','Déclaré'],['doc','Documenté'],['obs','Observé'],['val','Validé']];
@@ -664,12 +681,12 @@ function drawAcc(){
   h+=blk('a-therese','Thérèse, en situation de travail','Pour chaque personne, y compris le/la dirigeant·e : une question courte à la fois, jamais de note, jamais hors des heures de travail.','<div class="mods">'+onKeys().map(function(k){return '<div class="mod"><b>'+(ART[k]?'◆ ':'')+FK[k].n+'</b><small>'+S.q[k]+' pers.</small></div>'}).join('')+'</div>');
   var ones=stepsAll().filter(function(x){return artCell(x.id)&&S.hold[x.id]==='1'});
   /* formation : seulement s'il existe une offre d'un Ambassadeur métier ou du collectif de rattachement */
-  var gform=ones.map(function(x){var ks=(c.m[x.id]||[]).filter(function(k){return ART[k]});var off=null;ks.forEach(function(k){if(!off&&AMB[k])off=AMB[k];if(!off&&COLL&&COLL.offers.indexOf(k)>=0)off=COLL.name;});return {t:x.t,off:off};});
+  var gform=ones.map(function(x){var ks=(c.m[x.id]||[]).filter(function(k){return ART[k]});var off=null;ks.forEach(function(k){if(!off)off=offreDe(k);});return {t:x.t,off:off};});
   var withOff=gform.filter(function(g){return g.off});
-  if(ones.length)h+=blk('a-form','Transmettre vos gestes rares','Pour chaque geste qui ne tient qu’à une personne : une formation par un maître artisan quand une offre existe, et dans tous les cas un kit pour transmettre dans l’atelier.','<div class="mods">'+gform.map(function(g){return '<div class="mod"><b>◆ '+g.t+'</b>'+(g.off?'Formation par <b style="display:inline">'+g.off+'</b>':'<small>Pas encore d’offre de formation pour ce geste.</small> <button class="lnk3">Être prévenu·e →</button>')+'</div>'}).join('')+'</div>');
-  var rec=mods.length>=2?'D':(ones.length?'E':'G');
+  if(ones.length)h+=blk('a-form','Transmettre vos gestes rares','Pour chaque geste qui ne tient qu’à une personne : une formation par un maître artisan quand une offre existe, et dans tous les cas un kit pour transmettre dans l’atelier.','<div class="mods">'+gform.map(function(g){return '<div class="mod"><b>◆ '+g.t+'</b>'+(g.off?'Formation par <b style="display:inline">'+g.off+'</b>':'<small>Pas encore d’offre de formation pour ce geste.</small> <button class="lnk3" data-geste="'+eH(g.t)+'">Être prévenu·e →</button>')+'</div>'}).join('')+'</div>');
+  var rec=mods.length>=PAR.modules_maurice_min?'D':(ones.length?'E':'G');
   var pri=A.length, ex=A[0]?A[0].t:'';
-  var fh=0;['s1','s2','s3','s4'].forEach(function(id){if(S.alleger[id])fh+=(c.hs[id]||0)*.5;});
+  var fh=0;['s1','s2','s3','s4'].forEach(function(id){if(S.alleger[id])fh+=(c.hs[id]||0)*PAR.part_alleger;});
   function gq(n){return '<span class="gq">'+[1,2,3].map(function(i){return '<i'+(i<=n?' class="f"':'')+'></i>'}).join('')+'</span>';}
   function cell(v){return v===1?'<span class="ck">✓</span>':(v===0?'<span class="no">—</span>':v);}
   var formE=withOff.length?'✓ '+withOff.map(function(g){return '◆ '+g.t}).join(', ')+'<small>par '+withOff[0].off+'</small>':(ones.length?'<small>Aucune offre pour l’instant</small>':'<span class="no">—</span>');
@@ -698,8 +715,11 @@ function drawAcc(){
 }
 
 /* rattachement de l'entreprise et offres de formation existantes (démo) */
-var AMB={PL:'Tristan Gesret, Ambassadeur peintre en lettres'};
-var COLL={name:'votre Fédération des peintres en lettres',offers:['PL']};
+/* formations : offres d'un maître artisan validé (Ambassadeur) ou du collectif de rattachement, lues en base (vsf_formations_disponibles) */
+var FORM=[];
+function norm2(t){return norm(t).replace(/[^a-z]/g,'');}
+function offreDe(k){var n=norm2(FK[k].n),o=FORM.filter(function(f){var i=norm2(f.intitule);return i===n||i.indexOf(n)>=0||n.indexOf(i)>=0;})[0];if(!o)return null;return o.maitre?(o.maitre+', Ambassadeur '+FK[k].n.toLowerCase()):('votre '+o.collectif);}
+
 $('acc').addEventListener('click',function(e){var b=e.target.closest('[data-oc]');if(!b)return;var t=$('acc').querySelector('.cmpt');t.dataset.col=b.dataset.oc;$('acc').querySelectorAll('[data-oc]').forEach(function(x){x.classList.toggle('on',x===b)});});
 
 /* écran de calcul (~8 s) entre les questions et la restitution */
@@ -762,6 +782,8 @@ async function ouvrirDiag(org){
   }
   var d=await VSF.sb.from('vsf_diagnostics').select('etat').eq('id',DIAG.id).maybeSingle();
   var rp=await VSF.sb.from('vsf_diagnostic_reponses').select('q_code,niveau').eq('diagnostic_id',DIAG.id);
+  await REF_PRET;                                        // les données modifiables doivent être là avant de redessiner l'état
+  var fo=await VSF.sb.rpc('vsf_formations_disponibles',{p_org:org});FORM=fo.data||[];
   restaurer(d.data&&d.data.etat,rp.data);
   fillSel();all();drawMap();drawSide3();
   var n=S.step||1;                                       // on reprend où l'on s'était arrêté, sans passer une étape non débloquée
@@ -803,6 +825,12 @@ async function sauver(){
 function planifierSauvegarde(){if(!DIAG.pret)return;dit('en-cours','Enregistrement…');clearTimeout(DIAG.minuteur);DIAG.minuteur=setTimeout(sauver,1200);}
 ['click','change','input'].forEach(function(ev){document.addEventListener(ev,function(){setTimeout(planifierSauvegarde,0);},true);});
 document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden'&&DIAG.pret){clearTimeout(DIAG.minuteur);sauver();}});
+$('acc').addEventListener('click',async function(e){     // « Être prévenu·e » : la demande est enregistrée pour l'administrateur
+  var b=e.target.closest('.lnk3');if(!b||b.disabled)return;
+  b.disabled=true;
+  if(!DIAG.apercu){var r=await VSF.sb.rpc('vsf_demander_etre_prevenu',{p_org:DIAG.org,p_geste:b.dataset.geste});if(r.error){b.disabled=false;return;}}
+  b.textContent='✓ Demande enregistrée';
+});
 $('sign').addEventListener('click',function(){          // priorités validées : on enregistre puis on termine le diagnostic
   if(!S.signed||DIAG.apercu||!DIAG.pret||DIAG.statut==='termine'||DIAG.terminant)return;
   DIAG.terminant=true;clearTimeout(DIAG.minuteur);
@@ -811,6 +839,7 @@ $('sign').addEventListener('click',function(){          // priorités validées 
 });
 /* aperçu (?apercu=1) : on voit les écrans sans compte et sans rien enregistrer ; ?demo=1 remplit l'exemple, ?demo=full va jusqu'aux priorités signées, ?etape=n ouvre l'étape n */
 function apercu(){
+  FORM=[{intitule:'Peintre en lettres',maitre:'Tristan Gesret',collectif:'Fédération des peintres en lettres'}];   // exemple d'aperçu seulement
   $('demo').hidden=false;dit('apercu','Aperçu : rien n’est enregistré');
   var dm=location.search.match(/[?&]demo=(1|full)/),et=location.search.match(/[?&]etape=([1-5])/);
   if(dm){
