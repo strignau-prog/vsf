@@ -75,7 +75,7 @@ async function demarrer() {
   var su = await sb.rpc('vsf_est_super');
   moi.super = su.data === true;
   dessiner();
-  await Promise.all([chargerComptes(), chargerDiagnostics(), chargerFiches(), chargerVendeurs(), chargerReversements()]);
+  await Promise.all([chargerComptes(), chargerDiagnostics(), chargerFiches(), chargerDonnees(), chargerVendeurs(), chargerReversements()]);
 }
 async function sortir() { await sb.auth.signOut(); location.replace('./'); }
 
@@ -98,6 +98,10 @@ function dessiner() {
     '<p class="message" id="msgRome" role="alert"></p>' +
     (moi.super ? '<button type="button" class="bouton petit" onclick="syncRome(this)">Synchroniser</button>' : '') +
     '<div id="listeRome"></div>' +
+
+    '<h2>Données du diagnostic</h2>' +
+    '<p class="legende">Ce que le diagnostic affiche : indicateurs, exigences, questions ajoutées, micro-actions, modules, postes, paramètres. Une exigence reste « exemple » tant qu’elle n’est pas validée sur les textes officiels.</p>' +
+    '<p class="message" id="msgDon" role="alert"></p><div id="listeDonnees"></div>' +
 
     '<h2>Ambassadeurs</h2>' +
     '<p class="legende">Aucune offre ne s’ouvre tant que son ambassadeur n’est pas validé.</p>' +
@@ -166,6 +170,55 @@ async function generer(id) {
   var r = await sb.functions.invoke('generer-fiche', { body: { demande_id: id } });
   if (r.error) { console.error(r.error); dire('msgIA', 'Moteur non déployé ou refusé : rien n’a été dépensé.'); }
   chargerFiches();
+}
+
+/* ───── données du diagnostic (table vsf_donnees, migration 33) : on modifie les textes et les nombres, jamais la structure ───── */
+var DON = {};          // code → { libelle, valeur, valide }
+function chemin(p) { return p.join('.'); }
+function champsDonnee(code, v, p) {                    // un champ par texte ou nombre ; les tableaux et objets se déplient
+  if (v !== null && typeof v === 'object') {
+    var cles = Array.isArray(v) ? v.map(function (_, i) { return i; }) : Object.keys(v);
+    return '<div class="don-bloc">' + cles.map(function (k) {
+      var fils = v[k], feuille = (fils === null || typeof fils !== 'object');
+      return '<div class="don-ligne">' + (feuille ? '' : '<span class="legende">' + E(String(k)) + '</span>') + champsDonnee(code, fils, p.concat([k])) + '</div>';
+    }).join('') + '</div>';
+  }
+  var num = typeof v === 'number';
+  return '<label class="don-champ"><input type="text" ' + (num ? 'inputmode="decimal" ' : '') + 'value="' + E(String(v)) + '" data-num="' + (num ? 1 : 0) + '" onchange="saisirDonnee(\'' + code + '\',' + JSON.stringify(p).replace(/"/g, '&quot;') + ',this)" aria-label="' + E(String(p[p.length - 1])) + '"></label>';
+}
+function saisirDonnee(code, p, input) {
+  var cur = DON[code].valeur, i;
+  for (i = 0; i < p.length - 1; i++) cur = cur[p[i]];
+  var v = input.value;
+  if (input.getAttribute('data-num') === '1') { v = parseFloat(String(v).replace(',', '.')); if (isNaN(v)) { input.value = cur[p[p.length - 1]]; return dire('msgDon', 'Un nombre est attendu ici.'); } }
+  cur[p[p.length - 1]] = v;
+  DON[code].modifie = true;
+  dire('msgDon', '');
+}
+async function chargerDonnees() {
+  var r = await sb.from('vsf_donnees').select('code,libelle,valeur,valide').order('code');
+  if (r.error || !r.data) { $('listeDonnees').innerHTML = ''; return dire('msgDon', 'Non installé : migration 33 à jouer.'); }
+  var ouverts = {}; Object.keys(DON).forEach(function (c) { ouverts[c] = DON[c].ouvert; });
+  DON = {}; r.data.forEach(function (x) { DON[x.code] = { libelle: x.libelle, valeur: x.valeur, valide: x.valide, ouvert: !!ouverts[x.code] }; });
+  var ico = function (nom) { return window.VSF_ICO ? VSF_ICO.svg(nom) : ''; };
+  $('listeDonnees').innerHTML = r.data.map(function (x) {
+    var d = DON[x.code];
+    return '<div class="ligne"><div class="qui"><b>' + E(x.libelle) + '</b></div><div class="actions">' +
+      '<span class="ico-etat ' + (x.valide ? 'approuvee' : 'en_attente') + '" role="img" aria-label="' + (x.valide ? 'Validée' : 'Exemple, à valider') + '" title="' + (x.valide ? 'Validée' : 'Exemple, à valider') + '">' + ico(x.valide ? 'check' : 'clock') + '</span>' +
+      '<button type="button" class="ico-btn" aria-label="Modifier" title="Modifier" onclick="ouvrirDonnee(\'' + x.code + '\')">' + ico('edit') + '</button></div></div>' +
+      (d.ouvert ? '<div class="don-edit" id="don-' + x.code + '">' + champsDonnee(x.code, x.valeur, []) +
+        '<div class="actions"><button type="button" class="bouton petit" onclick="enregistrerDonnee(\'' + x.code + '\',' + x.valide + ')">Enregistrer</button> ' +
+        '<button type="button" class="bouton petit" onclick="enregistrerDonnee(\'' + x.code + '\',' + (!x.valide) + ')">' + (x.valide ? 'Remettre en exemple' : 'Enregistrer et valider') + '</button> ' +
+        '<button type="button" class="ico-btn" aria-label="Fermer" title="Fermer" onclick="ouvrirDonnee(\'' + x.code + '\')">' + ico('close') + '</button></div></div>' : '');
+  }).join('');
+}
+function ouvrirDonnee(code) { DON[code].ouvert = !DON[code].ouvert; chargerDonnees(); }
+async function enregistrerDonnee(code, valide) {
+  dire('msgDon', '');
+  var r = await sb.from('vsf_donnees').update({ valeur: DON[code].valeur, valide: valide, maj_le: new Date().toISOString() }).eq('code', code);
+  if (r.error) { console.error(r.error); return dire('msgDon', 'Enregistrement refusé : seuls les administrateurs des référentiels peuvent modifier.'); }
+  DON[code].ouvert = false;
+  chargerDonnees();
 }
 
 /* ───── référentiel ROME : la fonction « rome-domaines » lit l'API France Travail (aucune saisie manuelle) ───── */
