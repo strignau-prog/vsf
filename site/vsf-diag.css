@@ -491,3 +491,22 @@ td.rec .octa{font-size:17px}
 /* logo posé par vsf-logo.js dans le bandeau */
 .top a[data-logo]{font-size:20px !important;flex:none;color:#111;text-decoration:none}
 @media(max-width:900px){.top a[data-logo]{font-size:17px !important}}
+
+/* contenu masqué par l'attribut hidden, même quand une règle fixe son affichage */
+[hidden]{display:none !important}
+/* pastille d'enregistrement, discrète, à droite du bandeau (aucun mot à côté du logo) */
+.sauv{width:10px;height:10px;border-radius:50%;background:transparent;flex:none;transition:background .3s}
+.sauv.ok{background:var(--ok)} .sauv.en-cours{background:var(--now)} .sauv.erreur{background:#ff3b1f} .sauv.apercu{background:var(--off)}
+/* écrans avant le diagnostic : entreprise, paiement */
+.gate{max-width:640px;padding:48px 0}
+.gate h1{margin-bottom:16px}
+.gate .gf{margin:32px 0 0}
+.gate label{display:block;font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.gate .srch{margin-left:0}
+.gate .gprix{font-size:40px;font-weight:900;margin:8px 0 32px}
+.gate .next{margin-top:48px}
+/* largeur intermédiaire : le bandeau tient sur une ligne, seule l'étape en cours garde son libellé */
+@media(min-width:901px) and (max-width:1300px){
+  .top .stp:not(.now) .l{display:none}
+  .top .link{width:clamp(10px,2vw,28px)}
+}

@@ -20,9 +20,11 @@
     <button class="stp" data-go="4"><span class="c">4</span><span class="l">Restitution</span></button><i class="link"></i>
     <button class="stp" data-go="5"><span class="c">5</span><span class="l">Accompagnement</span></button>
   </nav>
-  <button class="demo" id="demo">Démo</button>
+  <span class="sauv" id="etatSauv" role="status" aria-live="polite" title=""></span>
+  <button class="demo" id="demo" hidden>Démo</button>
 </div>
 <div class="wrap">
+  <div id="gate" class="gate" hidden></div>
 
 
   <div id="v1">
@@ -484,6 +486,7 @@ $('map').onclick=function(e){
   var a=e.target.closest('[data-a]'); if(a){e.preventDefault();S.alleger[a.dataset.a]=!S.alleger[a.dataset.a];drawMap();}
 };
 function setStep(n){
+  S.step=n; if($('gate'))$('gate').hidden=true;
   $('v1').hidden=n!==1; $('v2').hidden=n!==2; $('v3').hidden=n!==3; $('v4').hidden=n!==4; $('v5').hidden=n!==5; if(n===3)drawQ(); if(n===4)drawRest(); if(n===5)drawAcc();
   document.querySelectorAll('.stp').forEach(function(b,i){b.className='stp'+(i+1===n?' now':(i+1<n?' done':''));b.querySelector('.c').textContent=(i+1<n?'✓':(i+1));});
   document.querySelectorAll('.steps .link').forEach(function(l,i){l.className='link'+(i+1<n?' done':'');});
@@ -715,6 +718,123 @@ document.querySelectorAll('.next').forEach(function(b){
   var was=b.classList.contains('ready');
   new MutationObserver(function(){var now=b.classList.contains('ready');if(now&&!was){b.classList.remove('go');void b.offsetWidth;b.classList.add('go');setTimeout(function(){b.classList.remove('go');},3200);}was=now;}).observe(b,{attributes:true,attributeFilter:['class']});
 });
+
+/* ===================== COMPTE, ENTREPRISE, PAIEMENT, ENREGISTREMENT ===================== */
+var DIAG={id:null,org:null,statut:null,pret:false,minuteur:null,enCours:false,terminant:false,apercu:/[?&]apercu=1/.test(location.search)};
+var TRANSIT=['open','prev','asks'];                    // ce qui ne s'enregistre pas (affichage seulement)
+function eH(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];});}
+function messageDiag(e){var m=String((e&&e.message)||'');return (e&&e.code==='VSF08'&&m)?m:'Cela n’a pas pu être enregistré. Réessayez dans un instant.';}
+function gate(html){['v1','v2','v3','vcalc','v4','v5'].forEach(function(v){$(v).hidden=true;});$('gate').hidden=false;$('gate').innerHTML=html;window.scrollTo(0,0);}
+function dit(etat,txt){var e=$('etatSauv');if(!e)return;e.className='sauv '+(etat||'');e.title=txt||'';e.setAttribute('aria-label',txt||'');}
+function etatPersiste(){var e={v9:true};Object.keys(S).forEach(function(k){if(TRANSIT.indexOf(k)<0)e[k]=S[k];});return e;}
+/* seules les réponses aux questions de base (NO-01…) vont dans la table des réponses ; les questions ajoutées (EPV-1…) restent dans l'état */
+function reponsesPersistees(){var a=[],k;for(k in S.ans){if(S.ans[k]&&/^[A-Z]{2}-[0-9]{2}$/.test(k))a.push({q:k,n:S.ans[k]});}return a;}
+function restaurer(etat,reps){
+  if(etat&&etat.v9){Object.keys(etat).forEach(function(k){if(TRANSIT.indexOf(k)<0&&k!=='v9')S[k]=etat[k];});}
+  S.ans=S.ans||{};(reps||[]).forEach(function(x){S.ans[x.q_code]=x.niveau;});
+  S.open=null;S.prev={};
+}
+function ecranEntreprise(msg){
+  gate('<h1>Votre entreprise</h1><p class="lead">Le diagnostic se rattache à votre entreprise. Quelques informations suffisent, vous pourrez les compléter plus tard.</p>'+
+    '<div class="gf"><label for="nomEnt">Nom de l’entreprise</label><div class="srch todo"><input id="nomEnt" type="text" maxlength="120" autocomplete="organization"></div></div>'+
+    '<div class="gf"><label for="siretEnt">SIRET (facultatif, 14 chiffres)</label><div class="srch"><input id="siretEnt" type="text" inputmode="numeric" maxlength="20" autocomplete="off"></div></div>'+
+    '<p class="why" id="msgEnt" role="alert" style="display:block">'+eH(msg||'')+'</p><button type="button" class="next ready" id="okEnt"><span class="dot"></span><span class="lbl">Continuer →</span></button>');
+  $('okEnt').onclick=async function(){
+    var r=await VSF.sb.rpc('vsf_entreprise_creer',{p_nom:$('nomEnt').value,p_siret:$('siretEnt').value});
+    if(r.error)return ecranEntreprise(messageDiag(r.error));
+    ouvrirDiag(r.data);
+  };
+}
+async function trouverEntreprise(uid){
+  var r=await VSF.sb.from('members').select('role,establishments(organization_id)').eq('user_id',uid).eq('role','gerant').limit(1);
+  if(r.error||!r.data||!r.data.length||!r.data[0].establishments)return null;
+  return r.data[0].establishments.organization_id;
+}
+async function ouvrirDiag(org){
+  DIAG.org=org;
+  var o=await VSF.sb.rpc('vsf_diagnostic_ouvrir',{p_org:org});
+  if(o.error)return gate('<h1>Impossible d’ouvrir le diagnostic</h1><p class="why" role="alert" style="display:block">'+eH(messageDiag(o.error))+'</p>');
+  DIAG.id=o.data.id;DIAG.statut=o.data.statut;
+  if(DIAG.statut==='a_payer'){
+    DIAG.prix=o.data.prix_eur;
+    if(/[?&]paiement=ok/.test(location.search))return attendrePaiement(0);
+    return ecranPaiement('');
+  }
+  var d=await VSF.sb.from('vsf_diagnostics').select('etat').eq('id',DIAG.id).maybeSingle();
+  var rp=await VSF.sb.from('vsf_diagnostic_reponses').select('q_code,niveau').eq('diagnostic_id',DIAG.id);
+  restaurer(d.data&&d.data.etat,rp.data);
+  fillSel();all();drawMap();drawSide3();
+  var n=S.step||1;                                       // on reprend où l'on s'était arrêté, sans passer une étape non débloquée
+  if(n>=2&&!$('next').classList.contains('ready'))n=1;
+  if(n>=3&&!$('next2').classList.contains('ready'))n=Math.min(n,2);
+  if(n>=4&&!$('next3').classList.contains('ready'))n=Math.min(n,3);
+  if(n===5&&!S.signed)n=4;
+  DIAG.pret=true;dit('ok','Enregistré');
+  setStep(n);
+}
+/* paiement du diagnostic : Stripe Checkout (page hébergée par Stripe, aucune carte ici) */
+function ecranPaiement(msg){
+  var prix=String(DIAG.prix).replace(/\B(?=(\d{3})+(?!\d))/g,' ')+' €';
+  gate('<h1>Votre diagnostic</h1><p class="gprix">'+eH(prix)+'</p><p class="why" id="msgPaie" role="alert" style="display:block">'+eH(msg||'')+'</p>'+
+    '<button type="button" class="next ready" id="payer"><span class="dot"></span><span class="lbl">Payer →</span></button>');
+  $('payer').onclick=async function(){
+    this.disabled=true;
+    var r=await VSF.sb.functions.invoke('creer-paiement',{body:{diagnostic_id:DIAG.id}});
+    var url=r.data&&r.data.url;
+    if(url){location.href=url;return;}
+    ecranPaiement('Le paiement n’a pas pu être préparé. Réessayez dans un instant.');
+  };
+}
+async function attendrePaiement(n){      // au retour de Stripe, l'accès s'ouvre à la confirmation du webhook : on interroge jusqu'à 30 s
+  gate('<h1>Paiement en cours de confirmation</h1><p class="why" role="status" style="display:block">Quelques secondes…</p>');
+  var d=await VSF.sb.from('vsf_diagnostics').select('statut').eq('id',DIAG.id).maybeSingle();
+  if(d.data&&d.data.statut!=='a_payer'){history.replaceState(null,'',location.pathname);return ouvrirDiag(DIAG.org);}
+  if(n>=15)return ecranPaiement('Paiement non confirmé pour l’instant. Rechargez cette page dans une minute.');
+  setTimeout(function(){attendrePaiement(n+1);},2000);
+}
+async function sauver(){
+  if(!DIAG.pret||DIAG.statut==='termine'||DIAG.enCours)return;
+  DIAG.enCours=true;dit('en-cours','Enregistrement…');
+  var r=await VSF.sb.rpc('vsf_diagnostic_enregistrer',{p_id:DIAG.id,p_etat:etatPersiste(),p_reponses:reponsesPersistees()});
+  DIAG.enCours=false;
+  if(r.error)console.warn('Non enregistré :',r.error);
+  dit(r.error?'erreur':'ok',r.error?'Non enregistré. Nous réessayons à votre prochaine action.':'Enregistré');
+}
+function planifierSauvegarde(){if(!DIAG.pret)return;dit('en-cours','Enregistrement…');clearTimeout(DIAG.minuteur);DIAG.minuteur=setTimeout(sauver,1200);}
+['click','change','input'].forEach(function(ev){document.addEventListener(ev,function(){setTimeout(planifierSauvegarde,0);},true);});
+document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden'&&DIAG.pret){clearTimeout(DIAG.minuteur);sauver();}});
+$('sign').addEventListener('click',function(){          // priorités validées : on enregistre puis on termine le diagnostic
+  if(!S.signed||DIAG.apercu||!DIAG.pret||DIAG.statut==='termine'||DIAG.terminant)return;
+  DIAG.terminant=true;clearTimeout(DIAG.minuteur);
+  sauver().then(function(){return VSF.sb.rpc('vsf_diagnostic_terminer',{p_id:DIAG.id});})
+    .then(function(r){if(!r.error){DIAG.statut='termine';dit('ok','Diagnostic terminé');}else{DIAG.terminant=false;dit('erreur','Non terminé. Nous réessayons.');}});
+});
+/* aperçu (?apercu=1) : on voit les écrans sans compte et sans rien enregistrer ; ?demo=1 remplit l'exemple, ?demo=full va jusqu'aux priorités signées, ?etape=n ouvre l'étape n */
+function apercu(){
+  $('demo').hidden=false;dit('apercu','Aperçu : rien n’est enregistré');
+  var dm=location.search.match(/[?&]demo=(1|full)/),et=location.search.match(/[?&]etape=([1-5])/);
+  if(dm){
+    $('demo').click();
+    if(dm[1]==='full'){
+      AXM.forEach(function(a){qsOf(a[0]).forEach(function(q){if(!S.ans[q.id])S.ans[q.id]=2;});});
+      S.ax='NE';S.obj='12';S.rdv=months().slice(10)[0][0];
+      actions().slice(0,3).forEach(function(a){S.pick[a.k]=true;S.det[a.k]={w:onKeys()[0],m:months()[3][0],p:'doc'};});
+      S.signed=true;drawMap();drawSide3();
+    }
+    if(et)setStep(+et[1]);
+  } else if(et&&+et[1]===1){setStep(1);}
+}
+async function demarrerDiag(){
+  if(DIAG.apercu)return apercu();
+  gate('<p class="why" role="status" style="display:block">Chargement…</p>');
+  var pers=await VSF.exigerPersonneVerifiee();
+  if(!pers)return;
+  var s=await VSF.sb.auth.getSession();
+  var org=await trouverEntreprise(s.data.session.user.id);
+  if(!org)return ecranEntreprise('');
+  ouvrirDiag(org);
+}
+demarrerDiag();
 
 window.addEventListener('scroll',function(){document.querySelector('.top').classList.toggle('sh',scrollY>4);},{passive:true});
 })();
