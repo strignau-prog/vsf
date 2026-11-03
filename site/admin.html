@@ -93,6 +93,12 @@ function dessiner() {
     '<h2>Fiches</h2><div class="chiffres" id="chiffresIA"><div><b>…</b><span>IA</span></div></div>' +
     '<p class="message" id="msgIA" role="alert"></p><div id="listeDemandes"></div>' +
 
+    '<h2>Référentiel ROME</h2>' +
+    '<p class="legende">Grands domaines, filières et fiches métiers, recopiés depuis l’API France Travail.</p>' +
+    '<p class="message" id="msgRome" role="alert"></p>' +
+    (moi.super ? '<button type="button" class="bouton petit" onclick="syncRome(this)">Synchroniser</button>' : '') +
+    '<div id="listeRome"></div>' +
+
     '<h2>Ambassadeurs</h2>' +
     '<p class="legende">Aucune offre ne s’ouvre tant que son ambassadeur n’est pas validé.</p>' +
     '<p class="message" id="msgVendeurs" role="alert"></p><div id="listeVendeurs"></div>' +
@@ -160,6 +166,20 @@ async function generer(id) {
   var r = await sb.functions.invoke('generer-fiche', { body: { demande_id: id } });
   if (r.error) { console.error(r.error); dire('msgIA', 'Moteur non déployé ou refusé : rien n’a été dépensé.'); }
   chargerFiches();
+}
+
+/* ───── référentiel ROME : la fonction « rome-domaines » lit l'API France Travail (aucune saisie manuelle) ───── */
+async function syncRome(b) {
+  dire('msgRome', ''); b.disabled = true; $('listeRome').innerHTML = '';
+  var r = await sb.functions.invoke('rome-domaines', { body: {} });
+  b.disabled = false;
+  var d = r.data;
+  if (r.error || !d || d.erreur) { console.error(r.error || d); return dire('msgRome', 'Synchronisation impossible : ' + (d && d.erreur ? d.erreur : 'fonction non déployée ?')); }
+  var mod = d.libelles_grands_domaines_modifies || [];
+  $('listeRome').innerHTML =
+    '<div class="chiffres"><div><b>' + d.grands_domaines + '</b><span>Grands domaines</span></div><div><b>' + d.filieres + '</b><span>Filières</span></div><div><b>' + d.fiches + '</b><span>Fiches</span></div></div>' +
+    (mod.length ? '<p class="legende">Libellés modifiés : ' + mod.map(function (m) { return E(m.code + ' : ' + (m.avant || '—') + ' → ' + m.apres); }).join(' · ') + '</p>' : '') +
+    (d.liste || []).map(function (g) { return '<div class="ligne"><div class="qui"><b>' + E(g.code + ' · ' + g.libelle) + '</b><span class="legende"> ' + E((g.filieres || []).join(' · ')) + '</span></div></div>'; }).join('');
 }
 
 /* ───── diagnostics entreprise : des nombres seulement, jamais le contenu ───── */
