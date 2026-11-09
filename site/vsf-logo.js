@@ -2,7 +2,7 @@
    Le lien garde son nom accessible « VRAI-SAVOIRFAIRE ». L'animation d'ouverture ne joue que sur les pages publiques
    (body.page-publique, ou l'attribut data-public sur <html>) ; sur les pages connectées le logo est immobile. */
 (function () {
-  var SEL = 'a.brand, a.marque, a.vsf-marque';
+  var SEL = 'a.brand, a.marque, a.vsf-marque, a.vsf-m-marque';
   var LOGO = 'VRAI<span class="hy"><b class="bar"></b><b class="pt"></b></span>SAVOIRFA<span class="ii"><span class="stem">ı</span><b class="pt"></b></span>RE';
   function public_() { return document.body.classList.contains('page-publique') || document.documentElement.hasAttribute('data-public'); }
   function monter() {

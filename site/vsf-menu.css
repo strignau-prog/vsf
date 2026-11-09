@@ -1,0 +1,58 @@
+/* VSF — menu unique du site (posé par vsf-menu.js). Un seul style partout : taille unique, la page courante en couleur avec un point de couleur dessous.
+   Pour changer la couleur de la page courante : --vsf-menu-on (texte) et --vsf-menu-point (point). */
+:root{--vsf-menu-on:#9a6700;--vsf-menu-point:#ffc400}
+
+/* les anciens bandeaux disparaissent au profit du menu unique */
+html.vsf-menu-on body > header.nav,
+html.vsf-menu-on body > header.top,
+html.vsf-menu-on body > header.haut,
+html.vsf-menu-on body > nav.topnav{display:none !important}
+/* pages à barre d'étapes (diagnostic, production, parcours) : la barre reste, sans second logo */
+html.vsf-menu-on body > .top .brand,
+html.vsf-menu-on body > .top .logo,
+html.vsf-menu-on .vsf-haut .vsf-marque,
+html.vsf-menu-on .vsf-haut .vsf-compte{display:none !important}
+html.vsf-menu-on body > .top{position:static}
+
+.vsf-menu{position:sticky;top:0;z-index:60;background:#fff;color:#111;font-family:Inter,'Helvetica Neue',Helvetica,Arial,sans-serif;transition:box-shadow .2s}
+.vsf-menu.sh{box-shadow:0 6px 14px -10px rgba(0,0,0,.35)}
+.vsf-menu-in{display:flex;align-items:center;gap:28px;padding:8px clamp(16px,4vw,56px);min-height:60px}
+.vsf-m-marque{flex:none;font-weight:900;color:#111;text-decoration:none;letter-spacing:-.02em;font-size:1.0625rem}
+.vsf-mi-liste{display:flex;align-items:center;justify-content:center;gap:clamp(14px,2vw,26px);flex:1;min-width:0}
+.vsf-mi-droite-bloc{display:flex;align-items:center;gap:22px;flex:none}
+.vsf-mi-mobile{display:none}
+
+/* une entrée : même taille, même graisse partout */
+.vsf-mi{position:relative;display:inline-flex;align-items:center;min-height:44px;font:700 14px/1.2 Inter,'Helvetica Neue',Helvetica,Arial,sans-serif;color:#111;text-decoration:none;white-space:nowrap;transition:color .18s ease}
+.vsf-mi:hover{color:var(--vsf-menu-on)}
+.vsf-mi.on{color:var(--vsf-menu-on)}
+.vsf-mi.on::after{content:"";position:absolute;left:50%;bottom:3px;width:7px;height:7px;margin-left:-3.5px;border-radius:50%;background:var(--vsf-menu-point)}
+.vsf-mi-cta{box-shadow:inset 0 -3px 0 #111;padding-bottom:2px}
+.vsf-mi-cta.on{box-shadow:inset 0 -3px 0 #111}
+.vsf-mi-cta.on::after{bottom:-8px}
+.vsf-menu a:focus-visible,.vsf-menu button:focus-visible{outline:2px solid #111;outline-offset:3px}
+.vsf-mi-bouton{display:none;background:none;border:0;padding:0 4px;min-height:44px;font:800 13px/1 Inter,'Helvetica Neue',Arial,sans-serif;text-transform:uppercase;letter-spacing:.08em;color:#111;cursor:pointer}
+
+@media (max-width:64rem){
+  .vsf-menu-in{flex-wrap:wrap;gap:0 16px}
+  .vsf-m-marque{margin-right:auto}
+  .vsf-mi-bouton{display:inline-block}
+  .vsf-mi-droite-bloc{display:none}
+  .vsf-mi-liste{display:none;flex-direction:column;align-items:flex-start;gap:0;width:100%;flex-basis:100%;order:3;padding:4px 0 14px}
+  .vsf-mi-liste.ouvert{display:flex}
+  .vsf-mi-liste .vsf-mi{min-height:48px;font-size:18px;width:100%}
+  .vsf-mi-liste .vsf-mi.on::after{left:auto;right:0;margin-left:0;bottom:auto;top:calc(50% - 3.5px)}
+  .vsf-mi-mobile{display:flex;flex-direction:column;align-items:flex-start;width:100%}
+  .vsf-mi-mobile .vsf-mi-cta{box-shadow:none}
+}
+@media (prefers-reduced-motion:reduce){.vsf-menu,.vsf-mi{transition:none}}
+@media print{.vsf-menu{display:none}}
+
+/* barres d'étapes déjà présentes sur certaines pages : même code pour la page en cours (couleur + point dessous), même taille */
+.vsf-etapes a,.vsf-etapes .pas-encore{font-size:14px;font-weight:700}
+.vsf-etapes a.ici,.vsf-etapes a.fait.ici{position:relative;color:var(--vsf-menu-on);font-weight:700}
+.vsf-etapes a.ici::after{content:"";position:absolute;left:50%;bottom:3px;width:7px;height:7px;margin-left:-3.5px;border-radius:50%;background:var(--vsf-menu-point)}
+.vsf-etapes a.fait{font-weight:700}
+.vsf-haut{padding:0 clamp(16px,4vw,56px)}
+.vsf-etapes{justify-content:center;margin:0 auto}
+.vsf-etapes a.ici .nvd{display:none}   /* l'étape en cours : couleur + point dessous (plus de rond devant) ; les étapes faites gardent leur rond vert */

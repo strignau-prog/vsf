@@ -38,7 +38,9 @@
       }).join('') +
       '</nav>' +
       '<a class="vsf-compte" href="connexion.html?suite=' + encodeURIComponent(location.href) + '">Mon compte</a>';
-    document.body.insertBefore(h, document.body.firstChild);
+    var menu = document.querySelector('.vsf-menu');      // le menu unique du site reste au-dessus ; la barre d'étapes vient dessous
+    if (menu && menu.parentNode === document.body) document.body.insertBefore(h, menu.nextSibling);
+    else document.body.insertBefore(h, document.body.firstChild);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', monter); else monter();
 })();

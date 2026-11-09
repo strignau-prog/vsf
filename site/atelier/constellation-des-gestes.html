@@ -361,7 +361,7 @@ async function chargerNodes(){
    Ajouter/retirer une fiche ROME sans repasser par du code. Recherche via le
    même mécanisme que Reconversion (edge function rome-sync), jamais un second
    moteur de recherche construit à part. */
-const CONSTELLATION_COMITE_EMAIL = 'strignau@gmail.com';
+const CONSTELLATION_COMITE_EMAIL = 'contact@vraisavoirfaire.fr';
 function escHtml(s){ return String(s??'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])); }
 let gestionEtat = { recherche:'', suggestions:[], rechercheEnCours:false, ajoutEnCours:null, messageAjout:'' };
 let gestionTimer = null;

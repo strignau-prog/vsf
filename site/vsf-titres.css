@@ -8,7 +8,7 @@
 .vt-nw{white-space:nowrap}
 .vt-i{display:inline-block;position:relative;line-height:1}
 .vt-i .stem{display:inline-block}
-.vt-i .pt{position:absolute;width:.13em;height:.13em;border-radius:50% !important;background:currentColor;left:50%;margin-left:-.065em;bottom:.745em}
+.vt-i .pt{position:absolute;width:.19em;height:.19em;border-radius:50% !important;background:currentColor;left:50%;margin-left:-.095em;bottom:.74em}   /* mesuré sur le i d'Inter Black : point de .19em, bas du point à .605em de la ligne de base */
 .vt-acc{display:inline-block}
 .page-publique .vsf-h1.play{animation:vt-focus .7s ease-out both}
 .page-publique .vsf-h1.play .vt-i .stem{animation:vt-monte .4s .55s both}

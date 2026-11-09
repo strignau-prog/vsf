@@ -3,7 +3,7 @@
    référentiel-formation dans le menu "Ma Fédération", et droits d'écriture associés).
    Avant ce fichier, cette adresse était recopiée séparément dans 5 pages : une correction
    faite dans une seule ne se propageait jamais aux autres. */
-const COMITE_EMAIL_FEDERATION = 'strignau@gmail.com';
+const COMITE_EMAIL_FEDERATION = 'contact@vraisavoirfaire.fr';
 
 // Affiche/masque les liens comité d'un dropdown "Ma Fédération" selon la session réelle.
 // ids : tableau d'ids d'éléments <a> à révéler uniquement si comité.

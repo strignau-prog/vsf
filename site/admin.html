@@ -37,8 +37,10 @@
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="vsf-auth.js"></script>
-<link rel="stylesheet" href="vsf-largeur.css"><link rel="stylesheet" href="vsf-icones.css"><link rel="stylesheet" href="vsf-epure.css"><link rel="stylesheet" href="vsf-logo.css"></head>
+<link rel="stylesheet" href="vsf-largeur.css"><link rel="stylesheet" href="vsf-icones.css"><link rel="stylesheet" href="vsf-epure.css"><link rel="stylesheet" href="vsf-logo.css"><link rel="stylesheet" href="vsf-menu.css">
+</head>
 <body>
+<script src="vsf-menu.js"></script>
 <header class="haut">
   <a class="marque" href="./">VRAI-SAVOIRFAIRE</a>
   <button class="bouton" id="bSortir" data-texte data-deconnexion style="display:none" onclick="sortir()">Déconnexion</button>
@@ -110,6 +112,9 @@ function dessiner() {
     '<h2>À reverser</h2>' +
     '<p class="legende">État de gestion, pas une facture.</p>' +
     '<p class="message" id="msgReverse" role="alert"></p><div id="listeReverse"></div>' +
+
+    '<h2>Accès privés <a class="bouton" href="admin-acces.html">Créer un lien</a></h2>' +
+    '<p class="legende">Un lien et un mot de passe pour faire le diagnostic entreprise ou travailleur, sans créer de compte.</p>' +
 
     '<h2>Entités <a class="bouton" href="entites.html">Ouvrir les entités</a></h2>' +
 
