@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Déploiement référentiel-formation</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600;700&display=swap">
+  <style>
+    /* V0 — même système typo/couleurs que tout le projet, voir atelier-compte.html. */
+    :root{
+      --bg:#fff; --ink:#1c1a17; --muted:#55504a; --line:#e4e0d9; --soft:#f7f5f2;
+      --accent:#a8461f;
+      --red:var(--ink); --amber:var(--ink); --green:var(--ink);
+      --redBg:var(--soft); --amberBg:var(--soft); --greenBg:var(--soft);
+      --blue:var(--ink); --blueBg:var(--soft);
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif}
+    body{font-size:16px;line-height:1.4;font-variant-numeric:tabular-nums}
+    button,input,select{font:inherit;color:inherit}
+    button{cursor:pointer}
+    nav.topnav{background:#1c1a17;color:#fff;display:flex;align-items:center;gap:4px;padding:0 20px;height:52px;font-size:14px}
+    nav.topnav a.brand{color:#fff;text-decoration:none;font-weight:600;font-size:15px;margin-right:24px}
+    nav.topnav a.brand,.hero h1{font-family:Fraunces,Georgia,serif;font-weight:600}
+    nav.topnav .navToggle{display:none;margin-left:auto;background:none;border:none;color:#fff;font-size:20px;cursor:pointer}
+    nav.topnav .menuItem{position:relative;height:100%;display:flex;align-items:center}
+    nav.topnav .menuItem>span,nav.topnav .menuItem>a.topLink{padding:0 14px;cursor:pointer;color:#d7dbe4;text-decoration:none}
+    nav.topnav .menuItem:hover>span,nav.topnav .menuItem>a.topLink:hover{color:#fff}
+    nav.topnav .dropdown{display:none;position:absolute;top:100%;left:0;background:#fff;color:var(--ink);min-width:220px;box-shadow:0 8px 24px rgba(0,0,0,.18);border-radius:0 0 10px 10px;overflow:hidden;z-index:50}
+    nav.topnav .menuItem:hover .dropdown{display:block}
+    nav.topnav .dropdown a{display:block;padding:10px 16px;color:var(--ink);text-decoration:none;font-size:13.5px;border-bottom:1px solid var(--line)}
+    nav.topnav .dropdown a:last-child{border-bottom:none}
+    nav.topnav .dropdown a:hover{background:var(--soft)}
+    @media (max-width:820px){
+      nav.topnav{flex-wrap:wrap;height:auto;padding:10px 16px}
+      nav.topnav .navToggle{display:block}
+      nav.topnav .menuItem{display:none;width:100%;height:auto;flex-direction:column;align-items:stretch}
+      nav.topnav.navOpen .menuItem{display:flex}
+      nav.topnav .menuItem>span,nav.topnav .menuItem>a.topLink{padding:12px 0 4px;cursor:pointer;display:block}
+      nav.topnav .dropdown{position:static;box-shadow:none;border-radius:0;background:transparent;min-width:0}
+      nav.topnav .menuItem.open .dropdown{display:block}
+      nav.topnav .dropdown a{color:#fff;padding:10px 0 10px 14px;border-bottom:1px solid rgba(255,255,255,.12)}
+      nav.topnav .dropdown a:hover{background:rgba(255,255,255,.06)}
+    }
+    .wrap{max-width:1100px;margin:0 auto;padding:32px 20px 80px 20px}
+    .hero h1{font-size:26px;margin:0 0 8px 0}
+    .hero p{color:var(--muted);font-size:15px;line-height:1.5;margin:0 0 20px 0}
+    .section{margin-top:32px}
+    .section h2{font-size:14px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:0 0 12px 0}
+    .porteCard{border:1px solid var(--line);border-radius:14px;padding:14px 18px;margin-bottom:10px;display:flex;gap:14px;align-items:flex-start}
+    .statutPastille{flex:0 0 auto;padding:4px 11px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap;margin-top:2px}
+    .statutPastille.fonctionnel{background:var(--soft);color:var(--ink);font-weight:700}
+    .statutPastille.partiel{background:var(--soft);color:var(--ink);font-style:italic}
+    .statutPastille.non_branche{background:var(--soft);color:var(--muted)}
+    .porteNom{font-weight:700;font-size:15px}
+    .porteDetail{font-size:13.5px;color:var(--muted);margin-top:4px}
+    .porteDate{font-size:11.5px;color:var(--muted);margin-top:6px}
+    .statGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:20px}
+    .statCard{border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+    .statNum{font-size:24px;font-weight:700}
+    .statLbl{font-size:12.5px;color:var(--muted);margin-top:2px}
+    .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+    .tableWrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px}
+    table.matrice{border-collapse:collapse;width:100%;font-size:13px}
+    table.matrice th,table.matrice td{padding:8px 10px;text-align:center;border-bottom:1px solid var(--line);white-space:nowrap}
+    table.matrice th{background:var(--soft);font-weight:700;font-size:11.5px;text-transform:uppercase;letter-spacing:.02em}
+    table.matrice td.situNom{text-align:left;font-weight:600;max-width:280px;white-space:normal}
+    table.matrice td.groupeNom{text-align:left;color:var(--muted);font-size:11.5px}
+    .cellCount{display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:22px;border-radius:6px;font-weight:700}
+    .cellCount.trou{background:var(--redBg);color:var(--red)}
+    .cellCount.ok{background:var(--greenBg);color:var(--green)}
+    .groupeRow td{background:var(--soft);font-weight:700;text-align:left;padding-top:10px}
+    .tiny{font-size:12.5px;color:var(--muted)}
+    .errBox{padding:16px;color:var(--red);font-family:monospace;white-space:pre-wrap;font-size:13px}
+    .input,.select{border:1px solid var(--line);border-radius:10px;padding:7px 10px;font-size:13.5px}
+  </style>
+<script src="acces-entreprise.js" defer></script>
+</head>
+<body>
+<nav class="topnav">
+  <a class="brand" href="federation-accueil.html">Maurice</a>
+  <button class="navToggle" onclick="toggleNav()" aria-label="Menu">☰</button>
+  <div class="menuItem"><span onclick="toggleMenuItem(this)">Mon Atelier</span>
+    <div class="dropdown">
+      <a href="atelier-compte.html">Accueil atelier</a>
+      <a href="devis-interne.html">Devis</a>
+      <a href="stock-atelier.html">Stock</a>
+      <a href="client-projet.html">Client / Projet</a>
+    </div>
+  </div>
+  <div class="menuItem"><span onclick="toggleMenuItem(this)">Ma Fédération</span>
+    <div class="dropdown">
+      <a href="federation-accueil.html">Accueil Fédération</a>
+      <a href="federation-accueil.html?tab=peintres">Nos peintres</a>
+      <a href="guide-production-mindmap.html">Guide comment on travaille</a>
+      <a href="guide-production-mindmap.html?guide=peindre">Guide comment on peint</a>
+      <a href="federation-accueil.html?tab=devenir">Nous rejoindre (Constellation &amp; Reconversion)</a>
+      <a href="therese.html" id="lienTherese" style="display:none">Thérèse</a>
+      <a href="federation-editos.html" id="lienEditos">Éditos du site public</a>
+      <a href="admin-metiers.html" id="lienAdminMetiers">Admin métiers</a>
+      <a href="deploiement-referentiel-formation.html" id="lienDeploiementFormation">Déploiement référentiel-formation</a>
+    </div>
+  </div>
+</nav>
+<div class="wrap" id="app"></div>
+<script src="federation-nav.js"></script>
+<script>
+const SUPABASE_URL = 'https://uuuigousvpijskbdhcal.supabase.co';
+const SUPABASE_KEY = 'sb_publishable__YuNj5XCo5YF8lwhwTu5OQ_RDM1Eesp';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const COMITE_EMAIL = COMITE_EMAIL_FEDERATION; // source unique : federation-nav.js
+function toggleNav(){ document.querySelector('nav.topnav').classList.toggle('navOpen'); }
+function toggleMenuItem(el){ el.parentElement.classList.toggle('open'); }
+function escapeHtml(s){ return String(s??'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])) }
+
+const NIVEAUX = ['Niveau 1 débutant','Niveau 2 apprenti opérationnel','Niveau 3 compagnon','Niveau 4 maître'];
+const TRANSITIONS = [['Niveau 1 débutant','Niveau 2 apprenti opérationnel'],['Niveau 2 apprenti opérationnel','Niveau 3 compagnon'],['Niveau 3 compagnon','Niveau 4 maître']];
+const STATUT_LABEL = { fonctionnel:'Fonctionnel', partiel:'Partiel', non_branche:'Non branché' };
+
+let session = null;
+let etat = { chargement:true, autorise:false, portes:[], matrice:[], parGroupe:{}, tauxGlobal:0, filtreTrousSeuls:false };
+
+function render(){
+  const el = document.getElementById('app');
+  if(etat.chargement){ el.innerHTML = `<div class="wrap tiny">Chargement…</div>`; return; }
+  if(!etat.autorise){ el.innerHTML = `<div class="hero"><h1>Accès réservé</h1><p>Réservé au comité référentiel.</p></div>`; return; }
+  el.innerHTML = `
+    <div class="hero">
+      <h1>Déploiement du référentiel-formation</h1>
+      <p>Volet 1 : où un module de formation est réellement atteignable aujourd'hui. Volet 2 : ce qui manque, situation par situation. Rien ici ne modifie le référentiel — un écran pour voir, pas pour agir.</p>
+    </div>
+
+    <div class="section">
+      <h2>Volet 1 — Portes d'accès aux modules</h2>
+      <div class="tiny" style="margin-bottom:12px">Fiche de statut tenue à la main (pas un calcul automatique — "câblé ou pas" est un fait sur le code, pas sur les données).</div>
+      ${etat.portes.map(p=>`
+        <div class="porteCard">
+          <span class="statutPastille ${p.statut}">${STATUT_LABEL[p.statut]}</span>
+          <div>
+            <div class="porteNom">${escapeHtml(p.porte)}</div>
+            <div class="porteDetail">${escapeHtml(p.detail_technique)}</div>
+            <div class="porteDate">Vérifié le ${escapeHtml(p.derniere_verification)}</div>
+          </div>
+        </div>`).join('')}
+    </div>
+
+    <div class="section">
+      <h2>Volet 2 — Matrice de couverture</h2>
+      <div class="statGrid">
+        <div class="statCard"><div class="statNum">${etat.tauxGlobal}%</div><div class="statLbl">Couverture globale (situations × cases)</div></div>
+        ${Object.entries(etat.parGroupe).map(([g,pct])=>`<div class="statCard"><div class="statNum">${pct}%</div><div class="statLbl">${escapeHtml(g)}</div></div>`).join('')}
+      </div>
+      <div class="toolbar">
+        <label class="tiny" style="display:flex;align-items:center;gap:6px;cursor:pointer">
+          <input type="checkbox" ${etat.filtreTrousSeuls?'checked':''} onchange="etat.filtreTrousSeuls=this.checked;render()">
+          N'afficher que les trous (priorité N3-N4)
+        </label>
+      </div>
+      ${renderMatrice()}
+    </div>
+  `;
+}
+
+function renderMatrice(){
+  let lignes = etat.matrice;
+  if(etat.filtreTrousSeuls){
+    lignes = lignes.filter(l => l.approf.some(c=>c===0) || l.trans.some(c=>c===0));
+    lignes = lignes.slice().sort((a,b)=>{
+      const scoreA = (a.approf[2]===0?2:0)+(a.approf[3]===0?2:0)+(a.trans[1]===0?1:0)+(a.trans[2]===0?1:0);
+      const scoreB = (b.approf[2]===0?2:0)+(b.approf[3]===0?2:0)+(b.trans[1]===0?1:0)+(b.trans[2]===0?1:0);
+      return scoreB - scoreA;
+    });
+  }
+  const cell = (n) => `<span class="cellCount ${n===0?'trou':'ok'}">${n}</span>`;
+  let dernierGroupe = null;
+  const corps = lignes.map(l=>{
+    let entete = '';
+    if(l.groupe !== dernierGroupe){ dernierGroupe = l.groupe; entete = `<tr class="groupeRow"><td colspan="9">${escapeHtml(l.groupe)}</td></tr>`; }
+    return entete + `
+    <tr>
+      <td class="situNom">${escapeHtml(l.situation)}</td>
+      ${l.approf.map(cell).join('')}
+      ${l.trans.map(cell).join('')}
+    </tr>`;
+  }).join('');
+  return `
+  <div class="tableWrap">
+    <table class="matrice">
+      <thead><tr>
+        <th style="text-align:left">Situation</th>
+        <th colspan="4">Approfondissement</th>
+        <th colspan="3">Transition</th>
+      </tr>
+      <tr>
+        <th></th>
+        <th>N1</th><th>N2</th><th>N3</th><th>N4</th>
+        <th>N1→N2</th><th>N2→N3</th><th>N3→N4</th>
+      </tr></thead>
+      <tbody>${corps || `<tr><td colspan="9" class="tiny" style="text-align:left;padding:16px">Aucune situation ne correspond au filtre.</td></tr>`}</tbody>
+    </table>
+  </div>`;
+}
+
+async function chargerDonnees(){
+  const { data: portes } = await sb.from('portes_acces_modules_statut').select('*').order('porte');
+  etat.portes = portes || [];
+
+  const { data: situRows, error: e1 } = await sb.from('referentiel_situations').select('situation_uid,situation,processus');
+  if(e1) throw e1;
+  const situParUid = {};
+  for(const s of situRows) if(s.situation_uid && !situParUid[s.situation_uid]) situParUid[s.situation_uid] = { situation:s.situation, processus:s.processus };
+  const uids = Object.keys(situParUid);
+
+  const { data: axesLies } = await sb.from('situation_axes').select('situation_uid,axe_id');
+  const { data: axes } = await sb.from('axes_metier').select('id,label');
+  const labelAxe = {}; for(const a of (axes||[])) labelAxe[a.id] = a.label;
+  const axeParSituUid = {};
+  for(const l of (axesLies||[])) if(!axeParSituUid[l.situation_uid]) axeParSituUid[l.situation_uid] = labelAxe[l.axe_id];
+
+  const { data: liaisons, error: e2 } = await sb.from('module_situations').select('situation_id,niveau_depart,niveau_arrivee,type');
+  if(e2) throw e2;
+  const compteParSituUid = {};
+  for(const l of (liaisons||[])){
+    if(!compteParSituUid[l.situation_id]) compteParSituUid[l.situation_id] = {};
+    const cle = l.niveau_depart+'|'+l.niveau_arrivee;
+    compteParSituUid[l.situation_id][cle] = (compteParSituUid[l.situation_id][cle]||0) + 1;
+  }
+
+  const matrice = uids.map(uid=>{
+    const info = situParUid[uid];
+    const compte = compteParSituUid[uid] || {};
+    const approf = NIVEAUX.map(n => compte[n+'|'+n] || 0);
+    const trans = TRANSITIONS.map(([d,a]) => compte[d+'|'+a] || 0);
+    const groupe = axeParSituUid[uid] || info.processus;
+    return { situation: info.situation, groupe, approf, trans };
+  }).sort((a,b)=> a.groupe.localeCompare(b.groupe) || a.situation.localeCompare(b.situation));
+
+  const totalCases = matrice.length * 7;
+  const casesCouvertes = matrice.reduce((n,l)=> n + l.approf.filter(c=>c>0).length + l.trans.filter(c=>c>0).length, 0);
+  const tauxGlobal = totalCases ? Math.round(casesCouvertes/totalCases*100) : 0;
+
+  const parGroupeBrut = {};
+  for(const l of matrice){
+    if(!parGroupeBrut[l.groupe]) parGroupeBrut[l.groupe] = { total:0, couvert:0 };
+    parGroupeBrut[l.groupe].total += 7;
+    parGroupeBrut[l.groupe].couvert += l.approf.filter(c=>c>0).length + l.trans.filter(c=>c>0).length;
+  }
+  const parGroupe = {};
+  for(const g in parGroupeBrut) parGroupe[g] = Math.round(parGroupeBrut[g].couvert/parGroupeBrut[g].total*100);
+
+  etat.matrice = matrice;
+  etat.tauxGlobal = tauxGlobal;
+  etat.parGroupe = parGroupe;
+}
+
+(async function init(){
+  const { data } = await sb.auth.getSession();
+  session = data.session || null;
+  if(session && session.user.email===COMITE_EMAIL){
+    etat.autorise = true;
+    try{ await chargerDonnees(); }catch(e){ console.error(e); }
+  }
+  if(session){
+    const { data: fm } = await sb.from('federation_members').select('therese_actif').eq('user_id', session.user.id).maybeSingle();
+    if(fm && fm.therese_actif){
+      const lienT = document.getElementById('lienTherese');
+      if(lienT) lienT.style.display = '';
+    }
+  }
+  etat.chargement = false;
+  render();
+})();
+</script>
+</body>
+</html>

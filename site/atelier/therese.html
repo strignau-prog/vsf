@@ -1,0 +1,752 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <script src="boite-message.js"></script>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Thérèse — clôture de chantier</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+  /* V0 — même système typo/couleurs que tout le projet, voir atelier-compte.html. */
+  * { font-family:Inter,system-ui,sans-serif; box-sizing:border-box; }
+  h1,h2,.head .name{font-family:Fraunces,Georgia,serif;font-weight:600}
+  html,body{margin:0;background:#ffffff;font-variant-numeric:tabular-nums;}
+  body{padding:20px 12px 60px 12px;}
+  .wrap{max-width:460px;margin:0 auto;}
+  .backlink{display:block;max-width:400px;margin:0 auto 10px auto;font-size:13px;color:#55504a;text-decoration:none;}
+  .phone{max-width:400px;margin:0 auto;background:#f7f5f2;border-radius:20px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.12);}
+  .head{background:#1c1a17;color:#fff;padding:14px 16px;display:flex;align-items:center;gap:10px;}
+  .avatar{width:34px;height:34px;border-radius:50%;background:#3a352d;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex:none;}
+  .head .name{font-size:14px;font-weight:700;}
+  .head .status{font-size:10.5px;color:#a39c90;}
+
+  .setup{padding:16px;}
+  .setup h1{font-size:18px;margin:4px 0 6px 0;color:#1c1a17;}
+  .setup p{font-size:13px;color:#55504a;line-height:1.5;margin:0 0 16px 0;}
+  .setup label{display:block;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#55504a;margin:14px 0 5px 0;}
+  .roleRow{display:flex;gap:6px;flex-wrap:wrap;}
+  .roleBtn{border:1.5px solid #1c1a17;color:#1c1a17;background:#fff;border-radius:999px;padding:6px 12px;font-size:12.5px;font-weight:600;}
+  .roleBtn.actif{background:#1c1a17;color:#fff;}
+  select.selSitu{width:100%;border:1px solid #e4e0d9;border-radius:10px;padding:9px 10px;font-size:13.5px;background:#fff;color:#1c1a17;}
+  .startBtn{margin-top:18px;width:100%;border:none;background:#1c1a17;color:#fff;border-radius:12px;padding:12px;font-size:14.5px;font-weight:700;}
+  .startBtn:disabled{opacity:.4;}
+  .miniNote{margin-top:14px;font-size:11px;color:#55504a;font-style:italic;line-height:1.4;}
+
+  .thread{padding:14px 12px;display:flex;flex-direction:column;gap:8px;min-height:120px;}
+  .row{display:flex;}
+  .row.therese{justify-content:flex-start;}
+  .row.app{justify-content:flex-end;}
+  .bubble{max-width:82%;padding:9px 12px;border-radius:14px;font-size:13px;line-height:1.42;white-space:pre-wrap;}
+  .row.therese .bubble{background:#ffffff;border:1px solid #e4e0d9;color:#1c1a17;border-bottom-left-radius:4px;}
+  .row.app .bubble{background:#1c1a17;color:#fff;border-bottom-right-radius:4px;}
+  .row.therese .bubble.cloture{background:#1c1a17;color:#f7f5f2;border-color:#1c1a17;}
+
+  .choices{display:flex;flex-direction:column;gap:6px;max-width:82%;margin:2px 0 0 0;}
+  .choice{border:1.5px solid #1c1a17;color:#1c1a17;background:#fff;border-radius:10px;padding:7px 10px;font-size:12px;text-align:left;font-weight:600;}
+  .choice.picked{background:#1c1a17;color:#fff;}
+  .choice.picked::after{content:' \2713';}
+
+  .actionZone{padding:6px 12px 16px 12px;border-top:1px solid #e4e0d9;}
+  .freeRow{display:flex;gap:6px;}
+  .freeInput{flex:1;border:1px solid #e4e0d9;border-radius:12px;padding:9px 11px;font-size:13px;background:#fff;color:#1c1a17;}
+  .sendBtn{border:none;background:#1c1a17;color:#fff;border-radius:12px;padding:0 14px;font-size:13px;font-weight:700;}
+  .sendBtn:disabled{opacity:.4;}
+  .contBtn{width:100%;border:none;background:#1c1a17;color:#fff;border-radius:12px;padding:10px;font-size:13px;font-weight:700;}
+
+  .foot{padding:10px 14px 16px;text-align:center;font-size:9.5px;color:#55504a;font-style:italic;border-top:1px solid #e4e0d9;}
+  .restartLine{max-width:400px;margin:14px auto 0 auto;text-align:center;}
+  .restartLine button{border:1px solid #1c1a17;color:#1c1a17;background:#fff;border-radius:999px;padding:7px 16px;font-size:12.5px;font-weight:600;}
+  .errBox{padding:16px;color:#1c1a17;font-weight:600;font-size:13px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+<a class="backlink" href="federation-accueil.html">&larr; Ma Fédération</a>
+<div class="phone" id="app"></div>
+<div class="restartLine" id="restartLine" style="display:none"><button onclick="recommencer()">Recommencer un échange</button></div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://uuuigousvpijskbdhcal.supabase.co';
+const SUPABASE_KEY = 'sb_publishable__YuNj5XCo5YF8lwhwTu5OQ_RDM1Eesp';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:true } });
+function escapeHtml(s){ return String(s??'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])) }
+let SESSION = null;
+function getCurrentEstId(){ const fromUrl=new URLSearchParams(window.location.search).get('est'); if(fromUrl) return fromUrl; return localStorage.getItem('ac_current_est_v1')||''; }
+let ESTABLISHMENT_ID = '';
+
+// Point 2 de la charte : "silence par défaut, budget capté par semaine" — jusqu'ici seulement
+// journalisé (sollicitations_therese), jamais vraiment appliqué. Plafond sur les PISTES
+// (les suggestions de progression), jamais sur la valorisation qui, elle, n'est jamais bloquée.
+const PLAFOND_PISTES_PAR_SEMAINE = 2;
+
+// Générique par métier (roles_metier) — plus de rôles codés en dur, voir guide-production-mindmap.html.
+let ROLES = [];
+async function chargerRoles(){
+  const { data: metiers } = await sb.from('metiers').select('id').order('ordre').limit(1);
+  const metierId = metiers && metiers[0] ? metiers[0].id : null;
+  if(!metierId){ ROLES = []; return; }
+  const { data } = await sb.from('roles_metier').select('code,label').eq('metier_id', metierId).order('ordre');
+  ROLES = (data||[]).map(r=>({ v:r.code, l:r.label }));
+}
+
+let etat = {
+  etape: 'choix', // 'choix' | 'dialogue' | 'mesValidations' | 'avantChantier'
+  role: 'peintre',
+  situations: [],
+  chargement: false,
+  erreur: null,
+  situationId: '',
+  situation: null,
+  pas: 0, // -1 = observation (premier contact) ; 0..7 = étape courante du cycle en cadrans
+  // Cycle après-chantier : Q3 Sud-Ouest (ressenti), Q3bis Sud-Est (collectif, si équipe),
+  // Q4 Nord-Ouest + matière 5e case (appris/comment), Q5 (si refaire, nourrit la 5e case aussi).
+  // La 5e case (intelligence créative) ne se questionne jamais directement.
+  reponses: { enEquipe:null, q3:'', q3bis:'', q4:'', q5:'', piste:null, chantier:'' },
+  pistes: [],
+  chargementPistes: false,
+  plafondPistesAtteint: false,
+  mesValidations: [],
+  chargementValidations: false,
+  // Piste 1 (Kata) — intention posée avant chantier : Q1 Nord-Ouest (méthode), Q2 Nord-Est (indicateur)
+  chantiersEnAttente: [], // projets à l'étape "chantier / réalisation" de l'atelier, sans intention ouverte
+  chargementChantiers: false,
+  chantierChoisi: null,
+  situationIntentionId: '',
+  methodeIntention: '',
+  indicateurIntention: '',
+  enregistrementIntention: false,
+  intentionOuverte: null, // intention en cours référencée pendant la clôture, s'il y en a une
+  // Piste 2 — premier contact avec une situation : dialogue allégé, pas d'interrogatoire
+  premierContact: false,
+  // Modules pour progresser seul — jamais un module qui nécessite un tiers (AFEST/mentorat)
+  modulesSolo: [],
+  chargementModulesSolo: false,
+  // Quizz d'une étape (traçabilité xAPI dans formation_events)
+  quiz: null, // { etapeId, questions:[{id,question,reponses,bonne_reponse}], reponses:{questionId:choix}, resultat:null|{score,total,reussi} }
+};
+
+async function chargerSituations(){
+  etat.chargement = true; etat.erreur = null; render();
+  const { data, error } = await sb.from('referentiel_situations')
+    .select('id,situation,sous_processus,processus,niveau,verbalisation,role,situation_uid')
+    .eq('role', etat.role)
+    .in('niveau', ['Niveau 1 débutant','Niveau 2 apprenti opérationnel'])
+    .order('sous_processus').order('situation');
+  etat.chargement = false;
+  if (error){ etat.erreur = error.message; render(); return; }
+  etat.situations = data || [];
+  etat.situationId = etat.situations[0]?.id || '';
+  render();
+}
+
+function choisirRole(r){
+  etat.role = r;
+  chargerSituations();
+}
+
+async function demarrerEchange(){
+  etat.situation = etat.situations.find(s => s.id === etat.situationId);
+  if (!etat.situation) return;
+  const uid = etat.situation.situation_uid;
+  etat.reponses = { enEquipe:null, q3:'', q3bis:'', q4:'', q5:'', piste:null, chantier:'' };
+  etat.intentionOuverte = null;
+  etat.premierContact = false;
+
+  if (uid) {
+    // Piste 2 — premier contact : aucune trace antérieure (progression, validation ou
+    // sollicitation) sur cette situation pour cette personne → dialogue allégé, jamais
+    // d'interrogatoire dès la découverte d'un geste.
+    const [{ data: prog }, { data: val }, { data: sol }] = await Promise.all([
+      sb.from('progressions_formation').select('id').eq('user_id', SESSION.user.id).eq('situation_id', uid).limit(1),
+      sb.from('validations_competence').select('id').eq('user_id', SESSION.user.id).eq('situation_id', uid).limit(1),
+      sb.from('sollicitations_therese').select('id').eq('user_id', SESSION.user.id).eq('situation_uid', uid).limit(1),
+    ]);
+    etat.premierContact = !(prog&&prog.length) && !(val&&val.length) && !(sol&&sol.length);
+
+    // Piste 1 — une intention posée avant ce chantier, pas encore clôturée ? La clôture s'y
+    // réfère directement plutôt que de questionner à froid.
+    const { data: intentions } = await sb.from('intentions_geste')
+      .select('*').eq('user_id', SESSION.user.id).eq('situation_uid', uid).eq('cloturee', false)
+      .order('created_at', { ascending:false }).limit(1);
+    etat.intentionOuverte = (intentions && intentions[0]) || null;
+  }
+
+  document.getElementById('restartLine').style.display = 'block';
+  if (etat.premierContact) {
+    if(uid) await sb.from('sollicitations_therese').insert({ user_id: SESSION.user.id, situation_uid: uid, type:'observation' });
+    etat.etape = 'dialogue';
+    etat.pas = -1; // marqueur : dialogue allégé (observation), pas d'interrogatoire
+    render();
+    return;
+  }
+  etat.etape = 'dialogue';
+  etat.pas = 0;
+  render();
+}
+
+function renderObservation(){
+  const s = etat.situation;
+  const rows = bulleTherese(`Première fois que tu abordes « ${s.situation} » — pas de question aujourd'hui, c'est le temps de regarder et d'essayer. On en reparlera la prochaine fois que tu retravailles cette situation.`);
+  return coquille(s, rows, `<button class="contBtn" onclick="terminerObservation()">Continuer</button>`, true);
+}
+function terminerObservation(){
+  etat.etape = 'choix';
+  etat.situation = null;
+  document.getElementById('restartLine').style.display = 'none';
+  render();
+}
+
+/* =========================================================================
+   AVANT CHANTIER (Kata) — poser une intention sur un geste ou une
+   compréhension à travailler, jamais un objectif de résultat. Déclenché
+   depuis le Kanban (client-projet.html) quand un projet atteint l'étape
+   "Chantier / réalisation", mais accessible aussi ici à tout moment.
+   ========================================================================= */
+async function chargerChantiersEnAttente(){
+  etat.chargementChantiers = true; render();
+  if(!ESTABLISHMENT_ID){ etat.chantiersEnAttente = []; etat.chargementChantiers = false; render(); return; }
+  const { data: projets } = await sb.from('projets').select('id,nom,nom_projet,numero_projet')
+    .eq('establishment_id', ESTABLISHMENT_ID).eq('etape','chantier_realisation');
+  const ids = (projets||[]).map(p=>p.id);
+  let idsAvecIntention = new Set();
+  if(ids.length){
+    const { data: intentions } = await sb.from('intentions_geste').select('projet_id')
+      .eq('user_id', SESSION.user.id).eq('cloturee', false).in('projet_id', ids);
+    idsAvecIntention = new Set((intentions||[]).map(i=>i.projet_id));
+  }
+  etat.chantiersEnAttente = (projets||[]).filter(p=>!idsAvecIntention.has(p.id));
+  etat.chargementChantiers = false;
+  render();
+}
+function ouvrirAvantChantier(){
+  etat.etape = 'avantChantier';
+  etat.chantierChoisi = null;
+  etat.situationIntentionId = etat.situations[0]?.id || '';
+  etat.methodeIntention = '';
+  etat.indicateurIntention = '';
+  chargerChantiersEnAttente();
+}
+function choisirChantierIntention(id){
+  etat.chantierChoisi = etat.chantiersEnAttente.find(p=>p.id===id) || null;
+  render();
+}
+async function enregistrerIntention(){
+  const s = etat.situations.find(x=>x.id===etat.situationIntentionId);
+  if(!s || !etat.methodeIntention.trim() || !etat.indicateurIntention.trim() || !etat.chantierChoisi) return;
+  etat.enregistrementIntention = true; render();
+  const { error } = await sb.from('intentions_geste').insert({
+    user_id: SESSION.user.id, situation_uid: s.situation_uid, situation_texte: s.situation,
+    methode: etat.methodeIntention.trim(), indicateur: etat.indicateurIntention.trim(),
+    projet_id: etat.chantierChoisi.id,
+    chantier_nom: etat.chantierChoisi.nom_projet || etat.chantierChoisi.nom || null,
+  });
+  if(!error && s.situation_uid){
+    await sb.from('sollicitations_therese').insert({ user_id: SESSION.user.id, situation_uid: s.situation_uid, type:'intention' });
+  }
+  etat.enregistrementIntention = false;
+  if(error){ alert('Erreur : '+error.message); render(); return; }
+  etat.etape = 'choix';
+  render();
+}
+function renderAvantChantier(){
+  const pret = etat.methodeIntention.trim() && etat.indicateurIntention.trim();
+  return `
+    <div class="head">
+      <div class="avatar">T</div>
+      <div><div class="name">Thérèse</div><div class="status">Avant de commencer</div></div>
+    </div>
+    <div class="setup">
+      <h1>Poser une intention avant le chantier</h1>
+      <p>Pas un objectif de résultat — la méthode et le repère que tu te donnes pour ce geste aujourd'hui. On en reparlera à la clôture.</p>
+      ${etat.chargementChantiers ? `<div class="miniNote">Chargement…</div>` : ''}
+      ${!etat.chargementChantiers && !etat.chantiersEnAttente.length ? `<div class="miniNote">Aucun chantier en attente d'intention pour l'instant.</div>` : ''}
+      ${!etat.chantierChoisi && etat.chantiersEnAttente.length ? `
+        <label>Chantier</label>
+        <div class="roleRow">
+          ${etat.chantiersEnAttente.map(p=>`<button class="roleBtn" onclick="choisirChantierIntention('${p.id}')">${escapeHtml(p.nom_projet||p.nom||'Sans nom')}</button>`).join('')}
+        </div>
+      ` : ''}
+      ${etat.chantierChoisi ? `
+        <div class="miniNote" style="margin-top:0">Chantier : ${escapeHtml(etat.chantierChoisi.nom_projet||etat.chantierChoisi.nom||'Sans nom')}</div>
+        <label>Sur quelle situation ?</label>
+        <select class="selSitu" onchange="etat.situationIntentionId=this.value">
+          ${etat.situations.map(s=>`<option value="${s.id}" ${s.id===etat.situationIntentionId?'selected':''}>${escapeHtml(s.situation)} (${escapeHtml(s.niveau)})</option>`).join('')}
+        </select>
+        <label>Comment tu comptes t'y prendre ?</label>
+        <textarea class="freeInput" style="width:100%;min-height:56px;resize:vertical;font-family:inherit" placeholder="…" oninput="etat.methodeIntention=this.value">${escapeHtml(etat.methodeIntention)}</textarea>
+        <label>Qu'est-ce qui va t'indiquer que tu avances bien ?</label>
+        <textarea class="freeInput" style="width:100%;min-height:56px;resize:vertical;font-family:inherit" placeholder="…" oninput="etat.indicateurIntention=this.value">${escapeHtml(etat.indicateurIntention)}</textarea>
+        <button class="startBtn" ${!pret||etat.enregistrementIntention?'disabled':''} onclick="enregistrerIntention()">${etat.enregistrementIntention?'Enregistrement…':"Poser l'intention"}</button>
+      ` : ''}
+      <div class="restartLine" style="margin-top:14px"><button onclick="etat.etape='choix';render()">&larr; Retour</button></div>
+    </div>`;
+}
+
+function recommencer(){
+  etat.etape = 'choix';
+  etat.situation = null;
+  etat.pistes = [];
+  document.getElementById('restartLine').style.display = 'none';
+  render();
+}
+
+function envoyerLibre(champ, inputId){
+  const el = document.getElementById(inputId);
+  const val = (el?.value || '').trim();
+  if (!val) return;
+  etat.reponses[champ] = val;
+  if (champ === 'q3') etat.pas = 2;
+  else if (champ === 'q3bis') etat.pas = 3;
+  else if (champ === 'q4') etat.pas = 4;
+  else if (champ === 'q5') { etat.pas = 5; chargerPistesEtAvancer(); return; }
+  render();
+  focusInputCourant();
+}
+
+function choisirEquipe(val){
+  etat.reponses.enEquipe = val;
+  etat.pas = 1;
+  render();
+  focusInputCourant();
+}
+
+async function chargerPistesEtAvancer(){
+  etat.chargementPistes = true; etat.plafondPistesAtteint = false; render();
+  const s = etat.situation;
+
+  const depuis = new Date(Date.now() - 7*24*3600*1000).toISOString();
+  const { data: recentes } = await sb.from('sollicitations_therese').select('id')
+    .eq('user_id', SESSION.user.id).eq('type','piste').gte('created_at', depuis);
+  if ((recentes||[]).length >= PLAFOND_PISTES_PAR_SEMAINE){
+    etat.pistes = [];
+    etat.plafondPistesAtteint = true;
+    etat.chargementPistes = false;
+    render();
+    return;
+  }
+
+  let pistes = [];
+  const base = sb.from('referentiel_situations')
+    .select('id,situation,niveau,sous_processus')
+    .eq('role', s.role)
+    .neq('situation', s.situation)
+    .in('niveau', ['Niveau 3 compagnon','Niveau 4 maître'])
+    .limit(3);
+  let { data } = await base.eq('sous_processus', s.sous_processus);
+  if (data && data.length) pistes = data;
+  else {
+    const { data: data2 } = await sb.from('referentiel_situations')
+      .select('id,situation,niveau,sous_processus')
+      .eq('role', s.role)
+      .eq('processus', s.processus)
+      .neq('situation', s.situation)
+      .in('niveau', ['Niveau 3 compagnon','Niveau 4 maître'])
+      .limit(3);
+    pistes = data2 || [];
+  }
+  etat.pistes = pistes;
+  etat.chargementPistes = false;
+  if (pistes.length && s.situation_uid){
+    await sb.from('sollicitations_therese').insert({ user_id: SESSION.user.id, situation_uid: s.situation_uid, type:'piste' });
+  }
+  render();
+}
+
+function choisirPiste(idx){
+  etat.reponses.piste = etat.pistes[idx] || null;
+  etat.pas = 6;
+  render();
+  focusInputCourant();
+}
+
+function envoyerChantier(){
+  const el = document.getElementById('inpChantier');
+  const val = (el?.value || '').trim();
+  etat.reponses.chantier = val || '(non précisé)';
+  etat.pas = 7;
+  render();
+  enregistrerValidation();
+}
+
+// Traçabilité (voir architecture Thérèse) : ce qui a été dit, quel critère ça valide, reste
+// consultable et contestable par la personne. Enjeu "pédagogique" ici — cet échange n'a pas
+// de conséquence sur une contribution ou une rémunération, donc pas de cosignature requise.
+async function enregistrerValidation(){
+  if(!SESSION) return;
+  const s = etat.situation, r = etat.reponses;
+  const verbatim = [
+    `Ressenti : ${r.q3}`,
+    r.enEquipe ? `Vécu collectif : ${r.q3bis}` : null,
+    `Ce qui a été appris et comment : ${r.q4}`,
+    `Si c'était à refaire : ${r.q5}`,
+  ].filter(Boolean).join('\n');
+  const { error } = await sb.from('validations_competence').insert({
+    user_id: SESSION.user.id,
+    situation_id: s.situation_uid || null,
+    situation_texte: s.situation,
+    niveau: s.niveau,
+    verbatim,
+    critere_valide: `Progression confirmée sur : « ${s.situation} »`,
+    enjeu: 'pedagogique',
+  });
+  if(error) console.error('Enregistrement de la validation échoué :', error.message);
+  if(s.situation_uid){
+    await sb.from('sollicitations_therese').insert({ user_id: SESSION.user.id, situation_uid: s.situation_uid, type:'cloture' });
+  }
+  if(etat.intentionOuverte){
+    await sb.from('intentions_geste').update({ cloturee:true, cloturee_le: new Date().toISOString() }).eq('id', etat.intentionOuverte.id);
+  }
+}
+
+async function ouvrirMesValidations(){
+  etat.etape = 'mesValidations';
+  etat.chargementValidations = true;
+  render();
+  const { data, error } = await sb.from('validations_competence')
+    .select('*').eq('user_id', SESSION.user.id).order('created_at', { ascending:false });
+  etat.chargementValidations = false;
+  etat.mesValidations = error ? [] : (data||[]);
+  render();
+}
+
+async function contesterValidation(id){
+  const commentaire = await demander("Explique en quelques mots pourquoi tu n'es pas d'accord avec cette validation — un humain (pas Thérèse) va l'examiner :");
+  if(commentaire===null) return;
+  const v = etat.mesValidations.find(x=>x.id===id); if(!v) return;
+  const patch = { contestee:true, contestation_commentaire: commentaire, contestee_le: new Date().toISOString() };
+  Object.assign(v, patch); render();
+  const { error } = await sb.from('validations_competence').update(patch).eq('id', id);
+  if(error) alert('Erreur : '+error.message);
+}
+
+function focusInputCourant(){
+  requestAnimationFrame(()=>{
+    const el = document.querySelector('.freeInput');
+    if (el) el.focus();
+  });
+}
+
+// Principe fondateur de la charte : toujours remarquer ce qui a déjà été accompli avant de
+// proposer une piste de progression — jamais l'inverse. La valorisation est dite avant même
+// d'afficher les pistes (cf. renderDialogue) ; cette clôture ne fait que la reprendre sans
+// jamais y ajouter une nouvelle piste non annoncée avant.
+function verbatimCloture(){
+  const piste = etat.reponses.piste;
+  const suite = piste
+    ? `Si tu veux continuer sur cette lancée, il y a « ${piste.situation} » — ce sera l'occasion, sur ${etat.reponses.chantier}.`
+    : `On verra comment continuer la prochaine fois.`;
+  return `Un niveau, ce n'est pas une étape vers un but à atteindre — c'est un miroir tendu à l'instant présent. Ce n'est pas le chantier qui compte, c'est le savoir-faire que tu en gardes.\n\n${suite}`;
+}
+
+function render(){
+  const app = document.getElementById('app');
+  if (etat.etape === 'choix') { app.innerHTML = renderChoix(); return; }
+  if (etat.etape === 'mesValidations') { app.innerHTML = renderMesValidations(); return; }
+  if (etat.etape === 'modulesSolo') { app.innerHTML = renderModulesSolo(); return; }
+  if (etat.etape === 'quiz') { app.innerHTML = renderQuiz(); return; }
+  if (etat.etape === 'avantChantier') { app.innerHTML = renderAvantChantier(); return; }
+  if (etat.pas === -1) { app.innerHTML = renderObservation(); return; }
+  app.innerHTML = renderDialogue();
+  const thread = app.querySelector('.thread');
+  if (thread) thread.scrollTop = thread.scrollHeight;
+  focusInputCourant();
+}
+
+function renderChoix(){
+  let situOptions = '';
+  const parSousProcessus = {};
+  for (const s of etat.situations){
+    (parSousProcessus[s.sous_processus] ||= []).push(s);
+  }
+  for (const [sp, list] of Object.entries(parSousProcessus)){
+    situOptions += `<optgroup label="${escapeHtml(sp)}">`;
+    for (const s of list){
+      situOptions += `<option value="${s.id}" ${s.id===etat.situationId?'selected':''}>${escapeHtml(s.situation)} (${escapeHtml(s.niveau)})</option>`;
+    }
+    situOptions += `</optgroup>`;
+  }
+  return `
+    <div class="head">
+      <div class="avatar">T</div>
+      <div><div class="name">Thérèse</div><div class="status">Choisir une situation pour démarrer</div></div>
+    </div>
+    <div class="setup">
+      <h1>Clôture de chantier — échange avec Thérèse</h1>
+      <p>Thérèse pose ses questions à partir d'une situation réelle du référentiel des situations de travail — jamais inventée. Choisis un rôle, puis la situation la plus proche de ce qui vient d'être travaillé (niveaux 1 débutant / 2 apprenti opérationnel).</p>
+      <label>Rôle</label>
+      <div class="roleRow">
+        ${ROLES.map(r=>`<button class="roleBtn ${r.v===etat.role?'actif':''}" onclick="choisirRole('${r.v}')">${r.l}</button>`).join('')}
+      </div>
+      <label>Situation de travail</label>
+      ${etat.chargement ? `<div class="miniNote">Chargement…</div>`
+        : etat.erreur ? `<div class="errBox">${escapeHtml(etat.erreur)}</div>`
+        : etat.situations.length === 0 ? `<div class="miniNote">Aucune situation niveau 1/2 trouvée pour ce rôle.</div>`
+        : `<select class="selSitu" onchange="etat.situationId=this.value">${situOptions}</select>`}
+      <button class="startBtn" ${!etat.situationId?'disabled':''} onclick="demarrerEchange()">Démarrer l'échange</button>
+      <div class="restartLine" style="margin-top:14px">
+        <button onclick="ouvrirAvantChantier()">Poser une intention avant chantier</button>
+        <button onclick="ouvrirMesValidations()" style="margin-left:6px">Voir mes validations</button>
+        <button ${!etat.situationId?'disabled':''} onclick="ouvrirModulesSolo()" style="margin-left:6px">Progresser seul sur cette situation</button>
+      </div>
+      <div class="miniNote">Prototype : les questions de Thérèse sont un scénario fixe illustrant le principe « ce n'est pas le chantier qui compte, c'est le savoir-faire ». Tes réponses libres ne sont pas encore analysées automatiquement — seule la situation de départ et les pistes de suite viennent réellement du référentiel. Ce que tu dis à la clôture d'un échange est en revanche bien enregistré, et reste consultable ici à tout moment.</div>
+    </div>`;
+}
+
+function renderMesValidations(){
+  const lignes = etat.mesValidations;
+  return `
+    <div class="head">
+      <div class="avatar">T</div>
+      <div><div class="name">Thérèse</div><div class="status">Ce que Thérèse sait de toi</div></div>
+    </div>
+    <div class="setup">
+      <h1>Mes validations</h1>
+      <p>Chaque échange clôturé avec Thérèse est enregistré ici : ce que tu as dit, quel critère ça valide. Si une validation ne te semble pas juste, tu peux la contester — ça part vers un humain, jamais vers Thérèse seule.</p>
+      ${etat.chargementValidations ? `<div class="miniNote">Chargement…</div>` : ''}
+      ${!etat.chargementValidations && !lignes.length ? `<div class="miniNote">Aucune validation enregistrée pour l'instant.</div>` : ''}
+      ${lignes.map(v=>`
+        <div style="border:1px solid #e4e0d9;border-radius:12px;padding:10px 12px;margin-bottom:10px;background:#fff">
+          <div style="font-size:11px;color:#55504a;text-transform:uppercase;letter-spacing:.03em">${new Date(v.created_at).toLocaleDateString('fr-FR')} · ${v.enjeu==='fort'?'Enjeu fort':'Enjeu pédagogique'}${v.cosignature_requise?(v.cosigne_le?' · Cosigné':' · Cosignature en attente'):''}</div>
+          <div style="font-size:13.5px;font-weight:700;color:#1c1a17;margin:4px 0 2px 0">${escapeHtml(v.critere_valide)}</div>
+          <div style="font-size:12.5px;color:#55504a;white-space:pre-wrap;margin-bottom:8px">${escapeHtml(v.verbatim)}</div>
+          ${v.contestee
+            ? `<div style="font-size:12px;color:#55504a;font-weight:600">Contestée le ${new Date(v.contestee_le).toLocaleDateString('fr-FR')} : ${escapeHtml(v.contestation_commentaire||'')}</div>`
+            : `<button class="roleBtn" onclick="contesterValidation('${v.id}')">Je ne suis pas d'accord</button>`}
+        </div>`).join('')}
+      <div class="restartLine" style="margin-top:6px"><button onclick="etat.etape='choix';render()">&larr; Retour</button></div>
+    </div>`;
+}
+
+async function ouvrirModulesSolo(){
+  const s = etat.situations.find(x=>x.id===etat.situationId);
+  if(!s || !s.situation_uid) return;
+  etat.etape = 'modulesSolo';
+  etat.chargementModulesSolo = true;
+  etat.situation = s;
+  render();
+  const { data: liens } = await sb.from('module_situations').select('module_id').eq('situation_id', s.situation_uid);
+  const moduleIds = [...new Set((liens||[]).map(l=>l.module_id))];
+  let modules = [];
+  if(moduleIds.length){
+    const { data } = await sb.from('modules_apprentissage')
+      .select('id,nom,description,lien_ressource,autoformation')
+      .in('id', moduleIds).eq('autoformation', true);
+    modules = data || [];
+    if(modules.length){
+      const { data: etapes } = await sb.from('module_etapes')
+        .select('id,module_id,ordre,titre,type_contenu,contenu')
+        .in('module_id', modules.map(m=>m.id)).order('ordre');
+      const etapesParModule = {};
+      for(const e of (etapes||[])) (etapesParModule[e.module_id] ||= []).push(e);
+      for(const m of modules) m.etapes = etapesParModule[m.id] || [];
+    }
+  }
+  etat.modulesSolo = modules;
+  etat.chargementModulesSolo = false;
+  render();
+}
+
+function renderModulesSolo(){
+  const s = etat.situation;
+  return `
+    <div class="head">
+      <div class="avatar">T</div>
+      <div><div class="name">Thérèse</div><div class="status">Progresser seul</div></div>
+    </div>
+    <div class="setup">
+      <h1>Progresser seul sur « ${escapeHtml(s?.situation||'')} »</h1>
+      <p>Seuls les modules utilisables en autoformation (tuto, lecture, quizz) sont proposés ici — jamais un module qui nécessite un accompagnant (AFEST, mentorat), puisque tu veux avancer seul.</p>
+      ${etat.chargementModulesSolo ? `<div class="miniNote">Chargement…</div>` : ''}
+      ${!etat.chargementModulesSolo && !etat.modulesSolo.length ? `<div class="miniNote">Aucun module en autoformation n'est encore rattaché à cette situation.</div>` : ''}
+      ${etat.modulesSolo.map(m=>`
+        <div style="border:1px solid #e4e0d9;border-radius:12px;padding:10px 12px;margin-bottom:10px;background:#fff">
+          <div style="font-size:13.5px;font-weight:700;color:#1c1a17">${escapeHtml(m.nom)}</div>
+          ${m.description?`<div style="font-size:12.5px;color:#55504a;margin:4px 0">${escapeHtml(m.description)}</div>`:''}
+          ${m.etapes.length ? `<div style="margin-top:6px">${m.etapes.map(e=>`
+            <div style="font-size:12px;color:#55504a;padding:2px 0">▸ ${escapeHtml(e.titre)}
+              ${e.type_contenu==='quiz'
+                ? ` — <a href="#" onclick="event.preventDefault();ouvrirQuiz('${e.id}')">passer le quizz</a>`
+                : (e.contenu?` — <a href="${escapeHtml(e.contenu)}" target="_blank" rel="noopener" onclick="logConsultationEtape('${e.id}')">ouvrir</a>`:'')}
+            </div>
+          `).join('')}</div>` : (m.lien_ressource?`<a href="${escapeHtml(m.lien_ressource)}" target="_blank" rel="noopener" style="font-size:12.5px">▶ Voir la ressource</a>`:'')}
+        </div>`).join('')}
+      <div class="restartLine" style="margin-top:6px"><button onclick="etat.etape='choix';render()">&larr; Retour</button></div>
+    </div>`;
+}
+
+function logConsultationEtape(etapeId){
+  sb.from('formation_events').insert({ personne_id: SESSION.user.id, verbe:'a_consulte', etape_id: etapeId }).then(()=>{});
+}
+
+async function ouvrirQuiz(etapeId){
+  etat.etape = 'quiz';
+  etat.quiz = { etapeId, questions:[], reponses:{}, resultat:null, chargement:true };
+  render();
+  const { data } = await sb.from('quiz_questions').select('id,question,reponses,bonne_reponse,ordre').eq('etape_id', etapeId).order('ordre');
+  etat.quiz.questions = data || [];
+  etat.quiz.chargement = false;
+  render();
+  await sb.from('formation_events').insert({ personne_id: SESSION.user.id, verbe:'a_commence', etape_id: etapeId });
+}
+function choisirReponseQuiz(questionId, reponse){
+  if(!etat.quiz) return;
+  etat.quiz.reponses[questionId] = reponse;
+  render();
+}
+async function validerQuiz(){
+  const q = etat.quiz; if(!q) return;
+  const total = q.questions.length;
+  let score = 0;
+  for(const question of q.questions){ if(q.reponses[question.id] === question.bonne_reponse) score++; }
+  const reussi = total>0 && score===total;
+  q.resultat = { score, total, reussi };
+  render();
+  await sb.from('formation_events').insert([
+    { personne_id: SESSION.user.id, verbe:'a_termine', etape_id: q.etapeId, resultat:`${score}/${total}` },
+    { personne_id: SESSION.user.id, verbe: reussi?'a_reussi_quiz':'a_echoue_quiz', etape_id: q.etapeId, resultat:`${score}/${total}` },
+  ]);
+}
+function renderQuiz(){
+  const q = etat.quiz;
+  if(!q || q.chargement) return `
+    <div class="head"><div class="avatar">T</div><div><div class="name">Thérèse</div><div class="status">Quizz</div></div></div>
+    <div class="setup"><div class="miniNote">Chargement…</div></div>`;
+  if(!q.questions.length) return `
+    <div class="head"><div class="avatar">T</div><div><div class="name">Thérèse</div><div class="status">Quizz</div></div></div>
+    <div class="setup"><div class="miniNote">Aucune question dans ce quizz pour l'instant.</div>
+    <div class="restartLine" style="margin-top:6px"><button onclick="etat.etape='modulesSolo';render()">&larr; Retour</button></div></div>`;
+  return `
+    <div class="head">
+      <div class="avatar">T</div>
+      <div><div class="name">Thérèse</div><div class="status">Quizz</div></div>
+    </div>
+    <div class="setup">
+      <h1>Petit quizz</h1>
+      ${q.questions.map((question,i)=>`
+        <div style="border:1px solid #e4e0d9;border-radius:12px;padding:10px 12px;margin-bottom:10px;background:#fff">
+          <div style="font-size:13.5px;font-weight:700;color:#1c1a17;margin-bottom:6px">${i+1}. ${escapeHtml(question.question)}</div>
+          ${(question.reponses||[]).map(r=>`
+            <label style="display:block;font-size:13px;padding:3px 0;cursor:pointer">
+              <input type="radio" name="q_${question.id}" ${q.reponses[question.id]===r?'checked':''} ${q.resultat?'disabled':''} onchange="choisirReponseQuiz('${question.id}','${r.replace(/'/g,"\\'")}')"> ${escapeHtml(r)}
+            </label>`).join('')}
+          ${q.resultat ? `<div style="font-size:12px;margin-top:4px;color:#1c1a17;font-weight:${q.reponses[question.id]===question.bonne_reponse?'400':'700'}">${q.reponses[question.id]===question.bonne_reponse?'Correct.':'Réponse attendue : '+escapeHtml(question.bonne_reponse)}</div>` : ''}
+        </div>`).join('')}
+      ${q.resultat
+        ? `<div class="miniNote" style="font-weight:700">${q.resultat.reussi?'Quizz réussi !':'Pas encore, tu peux réessayer plus tard.'} (${q.resultat.score}/${q.resultat.total})</div>
+           <div class="restartLine" style="margin-top:10px"><button onclick="etat.etape='modulesSolo';render()">&larr; Retour aux modules</button></div>`
+        : `<button class="startBtn" ${Object.keys(q.reponses).length<q.questions.length?'disabled':''} onclick="validerQuiz()">Valider mes réponses</button>`}
+    </div>`;
+}
+
+function renderDialogue(){
+  const s = etat.situation;
+  const r = etat.reponses;
+  let rows = '';
+
+  rows += bulleTherese(`Ce chantier, tu l'as fait seul ou en équipe ?`);
+  if (etat.pas >= 1) {
+    rows += `<div class="choices">
+      <div class="choice ${r.enEquipe===false?'picked':''}">Seul</div>
+      <div class="choice ${r.enEquipe===true?'picked':''}">En équipe</div>
+    </div>`;
+  } else {
+    return coquille(s, rows, `<div class="choices">
+      <div class="choice" onclick="choisirEquipe(false)">Seul</div>
+      <div class="choice" onclick="choisirEquipe(true)">En équipe</div>
+    </div>`);
+  }
+
+  rows += bulleTherese(`Comment tu as vécu ça ? En quoi ça t'a fait du bien ?`);
+  if (etat.pas >= 2) rows += bulleApp(r.q3);
+  else return coquille(s, rows, zoneLibre('q3','inpQ3','Ta réponse…'));
+
+  if (r.enEquipe) {
+    rows += bulleTherese(`Comment tu as vécu ça avec les autres ?`);
+    if (etat.pas >= 3) rows += bulleApp(r.q3bis);
+    else return coquille(s, rows, zoneLibre('q3bis','inpQ3bis','Ta réponse…'));
+  } else if (etat.pas < 3) {
+    etat.pas = 3; // seul : pas de question collective
+  }
+
+  rows += bulleTherese(etat.intentionOuverte
+    ? `Tu disais vouloir t'y prendre par : « ${etat.intentionOuverte.methode} ». Qu'est-ce que tu as appris, et comment tu t'y es pris sur : « ${s.situation} » ?`
+    : `Qu'est-ce que tu as appris, et comment tu t'y es pris sur : « ${s.situation} » ?`);
+  if (etat.pas >= 4) rows += bulleApp(r.q4);
+  else return coquille(s, rows, zoneLibre('q4','inpQ4','Ta réponse…'));
+
+  rows += bulleTherese(`Si c'était à refaire, tu t'y prendrais comment ?`);
+  if (etat.pas >= 5) rows += bulleApp(r.q5);
+  else return coquille(s, rows, zoneLibre('q5','inpQ5','Ta réponse…'));
+
+  if (etat.chargementPistes) return coquille(s, rows, `<div class="miniNote" style="padding:4px 4px 10px">Thérèse consulte le référentiel…</div>`);
+
+  // Toujours remarquer ce qui a déjà été accompli avant de proposer une piste — jamais l'inverse
+  // (principe fondateur de la charte). Cette phrase précède donc systématiquement les pistes.
+  rows += bulleTherese(`Ce que je retiens : ${r.q4}`);
+
+  const pistesTxt = etat.pistes.length
+    ? `Pour continuer sur cette lancée, voici ${etat.pistes.length} piste${etat.pistes.length>1?'s':''} du référentiel :`
+    : etat.plafondPistesAtteint
+      ? `Pas de nouvelle piste cette semaine — tu as déjà de quoi faire avec ce que tu viens de te dire. On regardera une prochaine fois.`
+      : `Pas d'autre situation de niveau supérieur enregistrée pour ce sous-processus pour l'instant — on continue quand même.`;
+  rows += bulleTherese(pistesTxt);
+  if (etat.pistes.length){
+    if (etat.pas >= 6){
+      rows += `<div class="choices">${etat.pistes.map(p=>`<div class="choice ${r.piste && r.piste.id===p.id?'picked':''}">${escapeHtml(p.situation)} (${escapeHtml(p.niveau)})</div>`).join('')}</div>`;
+    } else {
+      return coquille(s, rows, `<div class="choices">${etat.pistes.map((p,i)=>`<div class="choice" onclick="choisirPiste(${i})">${escapeHtml(p.situation)} (${escapeHtml(p.niveau)})</div>`).join('')}</div>`);
+    }
+  } else if (etat.pas < 6) {
+    etat.pas = 6; // pas de pistes réelles à choisir, on avance directement
+  }
+
+  rows += bulleTherese(`Sur quel prochain chantier tu pourrais tester ça ?`);
+  if (etat.pas >= 7) rows += bulleApp(r.chantier);
+  else return coquille(s, rows, `<div class="freeRow">
+      <input class="freeInput" id="inpChantier" placeholder="Nom du chantier…" onkeydown="if(event.key==='Enter')envoyerChantier()"/>
+      <button class="sendBtn" onclick="envoyerChantier()">Envoyer</button>
+    </div>`);
+
+  rows += `<div class="row therese"><div class="bubble cloture">${escapeHtml(verbatimCloture())}</div></div>`;
+  return coquille(s, rows, '', true);
+}
+
+function bulleTherese(txt){ return `<div class="row therese"><div class="bubble">${escapeHtml(txt)}</div></div>`; }
+function bulleApp(txt){ return `<div class="row app"><div class="bubble">${escapeHtml(txt)}</div></div>`; }
+
+function zoneLibre(champ, inputId, placeholder){
+  return `<div class="freeRow">
+    <input class="freeInput" id="${inputId}" placeholder="${placeholder}" onkeydown="if(event.key==='Enter')envoyerLibre('${champ}','${inputId}')"/>
+    <button class="sendBtn" onclick="envoyerLibre('${champ}','${inputId}')">Envoyer</button>
+  </div>`;
+}
+
+function coquille(s, rows, action, fin){
+  return `
+    <div class="head">
+      <div class="avatar">T</div>
+      <div><div class="name">Thérèse</div><div class="status">${escapeHtml(s.sous_processus)}</div></div>
+    </div>
+    <div class="thread">${rows}</div>
+    <div class="actionZone">${action}</div>
+    ${fin ? `<div class="foot">Ce n'est pas le produit qui compte, c'est le savoir-faire.</div>` : ''}
+  `;
+}
+
+async function initApp(){
+  const { data:{ session } } = await sb.auth.getSession();
+  if(!session){ window.location.href='federation-accueil.html'; return; }
+  SESSION = session;
+  ESTABLISHMENT_ID = getCurrentEstId();
+  await chargerRoles();
+  if(ROLES.length) etat.role = ROLES[0].v;
+  chargerSituations();
+}
+initApp();
+</script>
+</body>
+</html>

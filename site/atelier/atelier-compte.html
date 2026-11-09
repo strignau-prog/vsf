@@ -1,0 +1,958 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <script src="boite-message.js"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Mon atelier — Équipe</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600;700&display=swap">
+  <style>
+    /* V0 — système typo/couleurs unique à tout le projet (Fédération + Maurice) : Fraunces
+       pour les grands titres seulement, Inter partout ailleurs, palette noir/gris/blanc.
+       Une seule couleur d'accent (--accent, terre cuite) réservée à un usage exceptionnel
+       et manuel (un mot dans un titre) — jamais une règle de style systématique. */
+    :root{
+      --bg:#fff; --ink:#1c1a17; --muted:#55504a; --line:#e4e0d9; --soft:#f7f5f2;
+      --accent:#a8461f;
+      --red:var(--ink); --amber:var(--ink); --green:var(--ink);
+      --redBg:var(--soft); --amberBg:var(--soft); --greenBg:var(--soft);
+      --blue:var(--ink); --blueBg:var(--soft);
+      --sidebar:#1c1a17; --sidebarSoft:#2b2823; --sidebarLine:#3a352d;
+      --sidebarInk:#f7f5f2; --sidebarMuted:#a39c90;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif}
+    body{font-size:16px;line-height:1.3;font-variant-numeric:tabular-nums}
+    h1,h2,.treeTitle,.portalTitle,nav.topnav .brandBtn{font-family:Fraunces,Georgia,serif;font-weight:600}
+    a{color:inherit}
+    button,input,select,textarea{font:inherit;color:inherit}
+    button{cursor:pointer;background:none;border:none;padding:0}
+
+    /* ---------- Nav horizontale — jamais latérale, sous-menu au survol ---------- */
+    nav.topnav{background:var(--sidebar);color:var(--sidebarInk);display:flex;align-items:center;gap:4px;padding:0 20px;height:56px;font-size:14.5px;position:sticky;top:0;z-index:40}
+    nav.topnav .brandBtn{color:#fff;background:none;border:none;font:inherit;cursor:pointer;font-weight:700;margin-right:22px;font-size:15.5px;letter-spacing:.02em;padding:0}
+    nav.topnav .menuItem{position:relative;height:100%;display:flex;align-items:center}
+    nav.topnav .menuItem>span,nav.topnav .menuItem>a.topLink,nav.topnav .menuItem>button.topLink{padding:0 14px;cursor:pointer;color:var(--sidebarMuted);text-decoration:none;background:none;border:none;font:inherit}
+    nav.topnav .menuItem:hover>span,nav.topnav .menuItem>a.topLink:hover,nav.topnav .menuItem>button.topLink:hover{color:#fff}
+    nav.topnav .dropdown{display:none;position:absolute;top:100%;left:0;background:#fff;color:var(--ink);min-width:240px;box-shadow:0 8px 24px rgba(0,0,0,.18);border-radius:0 0 10px 10px;overflow:hidden;z-index:50}
+    nav.topnav .menuItem:hover .dropdown{display:block}
+    nav.topnav .dropdown a,nav.topnav .dropdown button.ddItem{display:block;width:100%;text-align:left;padding:10px 16px;color:var(--ink);text-decoration:none;font-size:13.5px;border-bottom:1px solid var(--line);background:none;border-left:none;border-right:none;border-top:none;cursor:pointer;font-family:inherit}
+    nav.topnav .dropdown a:last-child,nav.topnav .dropdown button.ddItem:last-child{border-bottom:none}
+    nav.topnav .dropdown a:hover,nav.topnav .dropdown button.ddItem:hover{background:var(--soft)}
+    nav.topnav .navRight{margin-left:auto;display:flex;align-items:center;gap:14px}
+    nav.topnav .navRight span{color:var(--sidebarMuted);font-size:12.5px}
+    nav.topnav .navRight button{color:var(--sidebarMuted);background:none;border:none;font:inherit;cursor:pointer}
+    nav.topnav .navRight button:hover{color:#fff}
+    .navToggle{display:none;background:none;border:none;color:#fff;font-size:22px;cursor:pointer;padding:4px 10px;margin-left:auto}
+    @media (max-width:720px){
+      nav.topnav{flex-wrap:wrap;height:auto;padding:10px 16px}
+      .navToggle{display:block}
+      nav.topnav .menuItem{display:none;width:100%;height:auto;flex-direction:column;align-items:stretch}
+      nav.topnav.navOpen .menuItem{display:flex}
+      nav.topnav .menuItem>span,nav.topnav .menuItem>button.topLink{padding:12px 0 4px;cursor:pointer;text-align:left;width:100%}
+      nav.topnav .dropdown{position:static;box-shadow:none;border-radius:0;background:transparent;min-width:0}
+      nav.topnav .menuItem.open .dropdown{display:block}
+      nav.topnav .dropdown a,nav.topnav .dropdown button.ddItem{color:#fff;padding:10px 0 10px 14px;border-bottom:1px solid rgba(255,255,255,.12)}
+      nav.topnav .dropdown a:hover,nav.topnav .dropdown button.ddItem:hover{background:rgba(255,255,255,.06)}
+      nav.topnav .navRight{width:100%;order:-1;margin-left:0}
+    }
+
+    .content{padding:32px 32px 60px 32px;max-width:1400px;margin:0 auto}
+    .section{margin:0 0 24px 0}
+    .toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px}
+    .miniBtn,.ghostBtn,.actionBtn{border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 14px;min-height:38px}
+    .actionBtn{background:#111;color:#fff;border-color:#111;text-decoration:none;display:inline-flex;align-items:center}
+    .ghostBtn{color:var(--muted)}
+    .input,.select,.textarea{width:100%;border:1px solid var(--line);border-radius:12px;padding:9px 11px;background:#fff}
+    .fieldAuto{position:relative}
+    .sugBox{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid var(--line);border-radius:10px;margin-top:4px;max-height:220px;overflow-y:auto;z-index:20;box-shadow:0 8px 24px rgba(0,0,0,.10)}
+    .sugItem{padding:9px 12px;cursor:pointer;font-size:13.5px;border-bottom:1px solid var(--line)}
+    .sugItem:last-child{border-bottom:none}
+    .sugItem:hover{background:var(--soft)}
+    .grid3{display:grid;gap:10px;grid-template-columns:1fr 1fr auto}
+    .grid2{display:grid;gap:10px;grid-template-columns:1fr 1fr}
+    .portalList{display:grid;gap:10px}
+    .portalItem{padding:12px 0;border-bottom:1px solid var(--line)}
+    .portalItem:last-child{border-bottom:none}
+    .portalTitle{font-weight:700;font-size:18px}
+    .portalMeta{font-size:13.5px;color:var(--muted);margin-top:4px;line-height:1.35}
+    .chip{display:inline-flex;align-items:center;padding:4px 8px;font-size:13px;border:1px solid var(--line);background:#fff;border-radius:999px;white-space:nowrap}
+    .chip.amber,.chip.red,.chip.blue,.chip.green{border-color:var(--line);background:var(--soft);color:var(--ink);font-weight:600}
+    .treeTitle{font-weight:700;font-size:23px;margin:0 0 8px 0}
+    .muted{color:var(--muted)}
+    .tiny{font-size:13px;line-height:1.3}
+    .sectionSub{font-size:14.5px;color:var(--muted);margin:0 0 14px 0;line-height:1.4}
+    .errBox{padding:24px;color:var(--red);font-family:monospace;white-space:pre-wrap}
+    @media (max-width:860px){.grid3{grid-template-columns:1fr}.grid2{grid-template-columns:1fr}.content{padding:16px}.treeTitle{font-size:20px}}
+    .overlay{position:fixed;inset:0;background:rgba(20,15,10,.4);display:flex;align-items:flex-start;justify-content:center;padding:60px 16px;overflow-y:auto;z-index:200}
+    .modal{background:#fff;border-radius:16px;max-width:520px;width:100%;padding:22px 24px;max-height:80vh;overflow-y:auto}
+    .modal .modalTitre{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px}
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="atelier-nav.js"></script>
+  <link rel="stylesheet" href="charte-vsf.css">
+<script src="acces-entreprise.js" defer></script>
+</head>
+<body>
+<div class="app"></div>
+<script>
+/* Cet outil suppose qu'on est déjà connecté au niveau Fédération (federation-accueil.html) —
+   il ne gère plus ni connexion, ni création de compte, ni portail multi-ateliers : tout ça
+   vit maintenant côté Fédération. Ici, on ne gère qu'un atelier précis (équipe, rôles). */
+const SUPABASE_URL = 'https://uuuigousvpijskbdhcal.supabase.co';
+const SUPABASE_KEY = 'sb_publishable__YuNj5XCo5YF8lwhwTu5OQ_RDM1Eesp';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+});
+
+const STORAGE = { currentEst: 'ac_current_est_v1' };
+function getCurrentEstId(){
+  const fromUrl = new URLSearchParams(window.location.search).get('est');
+  if(fromUrl) return fromUrl;
+  return localStorage.getItem(STORAGE.currentEst) || '';
+}
+function setCurrentEstId(id){ id ? localStorage.setItem(STORAGE.currentEst, id) : localStorage.removeItem(STORAGE.currentEst) }
+function goToFederation(){ window.location.href = 'federation-accueil.html'; }
+function estUrl(page){ return page+'?est='+encodeURIComponent(state.estId); }
+
+// Générique par métier (roles_metier, rattaché à metiers) — plus de rôles codés en dur.
+// Un seul métier actif pour l'instant (voir guide-production-mindmap.html, même convention).
+let ROLES = [];
+async function chargerRoles(){
+  const { data: metiers } = await sb.from('metiers').select('id').order('ordre').limit(1);
+  const metierId = metiers && metiers[0] ? metiers[0].id : null;
+  if(!metierId){ ROLES = []; return; }
+  const { data } = await sb.from('roles_metier').select('code,label').eq('metier_id', metierId).order('ordre');
+  ROLES = (data||[]).map(r=>({ value:r.code, label:r.label }));
+}
+function roleLabel(v){ return (ROLES.find(r=>r.value===v)||{}).label || v || '—' }
+function roleOptions(selected){ return ROLES.map(r=>`<option value="${r.value}" ${r.value===selected?'selected':''}>${escapeHtml(r.label)}</option>`).join('') }
+
+// Phase 6 — profils de poste-type (rattachement). Le référentiel des profils lui-même
+// est géré côté comité dans guide-production-mindmap.html ; ici on ne fait que lire
+// la liste pour rattacher un membre.
+let POSTES_TYPES = [];
+async function chargerPostesTypes(){
+  const { data } = await sb.from('postes_types').select('id,nom').order('nom');
+  POSTES_TYPES = data || [];
+}
+function posteTypeLabel(id){ return id ? ((POSTES_TYPES.find(p=>p.id===id)||{}).nom || '—') : null }
+function renderBadgePositionnement(pos){
+  if(!pos) return '';
+  if(pos.statut==='en_cours') return ` <span class="chip" style="font-style:italic">Positionnement en cours — accès à Maurice bloqué</span>`;
+  if(pos.statut==='en_validation'){
+    const relance = pos.nb_relances>0 ? ` — relancé ${pos.nb_relances}×` : '';
+    return ` <span class="chip" style="font-weight:700">À valider${relance} — la personne attend, accès toujours bloqué</span>`;
+  }
+  return '';
+}
+function posteTypeOptions(selected){
+  return `<option value="">— aucun profil —</option>` + POSTES_TYPES.map(p=>`<option value="${p.id}" ${p.id===selected?'selected':''}>${escapeHtml(p.nom)}</option>`).join('');
+}
+function escapeHtml(s){ return String(s??'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])) }
+function toggleNav(){ document.querySelector('nav.topnav').classList.toggle('navOpen'); }
+function toggleMenuItem(el){ el.parentElement.classList.toggle('open'); }
+
+let currentUser = null;
+const state = { tab:'accueil', estId:'', establishment:null, myRole:null, vueRole:null, kpiOuvert:null, team:{members:[],invites:[]}, devisKpis:null, accueil:null, situationsRef:null, qfq:{ ouvertPour:null, chargement:false, assignations:new Set() }, tempsTravail:null, rattachement:null, historique:{ ouvertPour:null, lignes:[] } };
+// Logo en attente d'enregistrement (data URL) — undefined = pas encore touché (garder l'existant),
+// null = retiré explicitement, string = nouveau logo choisi. Remis à undefined à chaque rendu de l'écran.
+let logoDataUrlEnAttente;
+function handleLogoFileChange(event){
+  if(!event){ logoDataUrlEnAttente = null; renderTab(); return; }
+  const file = event.target.files && event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = () => { logoDataUrlEnAttente = reader.result; renderTab(); };
+  reader.readAsDataURL(file);
+}
+
+function isGerant(role){ return role==='gerant' || role==='admin' }
+
+async function loadAtelier(estId){
+  const { data: memberRows, error: e1 } = await sb.from('members').select('id,establishment_id,role').eq('user_id', currentUser.id);
+  if(e1) throw e1;
+  const mine = memberRows.find(m=>m.establishment_id===estId);
+  if(!mine){ goToFederation(); return false; }
+  state.myRole = mine.role;
+  state.vueRole = mine.role;
+
+  const { data: est, error: e2 } = await sb.from('establishments').select('id,name,mode,siret,adresse,telephone,email_contact,logo_data_url,pied_de_page_devis,coordonnees_bancaires').eq('id', estId).single();
+  if(e2) throw e2;
+  state.establishment = est;
+  state.estId = estId;
+
+  // Interrupteur « formulaire d'estimation public » : la colonne n'existe qu'après migration_estimation_publique.sql.
+  try{
+    const { data: flag, error: fe } = await sb.from('devis_reglages').select('estimation_ouverte').eq('establishment_id', estId).maybeSingle();
+    if(!fe) state.estimationOuverte = flag ? flag.estimation_ouverte !== false : true;
+  }catch(e){ /* colonne absente : l'interrupteur affiche la marche à suivre */ }
+  await loadTeam(estId);
+  await loadAccueilData(estId);
+  await chargerTempsTravail(estId);
+  return true;
+}
+// Partie 2, item 10 (clarifié : "qui passe combien de temps sur quoi", pas un agenda de congés) —
+// agrège heures_travaillees (saisi projet par projet dans client-projet.html) par personne et par
+// projet. Pas de nouvelle table : juste une lecture croisée de ce qui existe déjà.
+async function chargerTempsTravail(estId){
+  const idsProjets = (state.accueil?.projets||[]).map(p=>p.id);
+  if(!idsProjets.length){ state.tempsTravail = { lignes:[], parPersonne:{} }; return; }
+  const { data: heures, error } = await sb.from('heures_travaillees').select('personne_id,projet_id,heures').in('projet_id', idsProjets);
+  if(error){ console.error(error); state.tempsTravail = { lignes:[], parPersonne:{} }; return; }
+  const idsPersonnes = [...new Set((heures||[]).map(h=>h.personne_id))];
+  let noms = {};
+  if(idsPersonnes.length){
+    const { data: fm } = await sb.from('federation_members').select('user_id,nom,prenom').in('user_id', idsPersonnes);
+    for(const f of (fm||[])) noms[f.user_id] = `${f.prenom||''} ${f.nom||''}`.trim();
+  }
+  const nomPar = (id) => noms[id] || (state.team.members.find(m=>m.user_id===id)||{}).email || id.slice(0,8);
+  const projetNom = (id) => { const p=(state.accueil.projets||[]).find(x=>x.id===id); return p ? (p.numero_projet?p.numero_projet+'. ':'')+(p.nom_projet||p.nom||'Sans nom') : id.slice(0,8); };
+  const parPersonne = {};
+  for(const h of (heures||[])){
+    if(!parPersonne[h.personne_id]) parPersonne[h.personne_id] = { nom: nomPar(h.personne_id), total:0, parProjet:{} };
+    parPersonne[h.personne_id].total += Number(h.heures);
+    parPersonne[h.personne_id].parProjet[h.projet_id] = (parPersonne[h.personne_id].parProjet[h.projet_id]||0) + Number(h.heures);
+  }
+  state.tempsTravail = { parPersonne, projetNom };
+}
+// Regroupement des 14 étapes du Kanban Client/Projet (client-projet.html) en 4 zones de funnel,
+// et association à chaque rôle de son terrain d'action — même vocabulaire d'étapes, jamais dupliqué.
+const FUNNEL_ZONES = [
+  { cle:'devis', titre:'Devis en cours', etapes:['qualification','devis_a_faire','croquis_a_faire','devis_croquis_envoyes'] },
+  { cle:'bat', titre:'Signé / BAT', etapes:['devis_signe','bat_a_faire','bat_envoye','bat_signe'] },
+  { cle:'prepa', titre:'Prépa / Stock', etapes:['stock_a_commander','stock_pret','poncif_impression','chantier_prepare'] },
+  { cle:'chantier', titre:'En chantier', etapes:['chantier_en_cours','facture'] },
+];
+async function loadAccueilData(estId){
+  try{
+    const { data, error } = await sb.from('devis').select('id,numero,client_nom,statut,historique').eq('establishment_id', estId);
+    if(error) throw error;
+    const rows = data||[];
+    const cinqJours = 5*24*60*60*1000;
+    const maintenant = Date.now();
+    let brouillon=0, envoye=0;
+    const relances = [];
+    const enAttenteSignature = [];
+    for(const d of rows){
+      if(d.statut==='brouillon'){ brouillon++; enAttenteSignature.push({ id:d.id, numero:d.numero, client:d.client_nom||'Sans nom', statut:'Brouillon' }); }
+      if(d.statut==='envoye'){
+        envoye++;
+        enAttenteSignature.push({ id:d.id, numero:d.numero, client:d.client_nom||'Sans nom', statut:'Envoyé' });
+        const dernier = (d.historique||[]).slice(-1)[0];
+        if(dernier){
+          const ecartMs = maintenant - new Date(dernier.date).getTime();
+          if(ecartMs > cinqJours) relances.push({ id:d.id, numero:d.numero, client:d.client_nom||'Sans nom', jours: Math.floor(ecartMs/86400000) });
+        }
+      }
+    }
+
+    // Cartes "à trancher" : lit la décision d'arbitrage déjà calculée et enregistrée par
+    // devis-interne.html sur chaque ligne (aucun recalcul du moteur BASE×COEF ici).
+    let arbitrages = [];
+    const devisIds = rows.map(d=>d.id);
+    if(devisIds.length){
+      const { data: lignes, error: eL } = await sb.from('devis_lignes').select('devis_id,arbitrage_decision').in('devis_id', devisIds).like('arbitrage_decision','Arbitrage requis%');
+      if(eL) throw eL;
+      const rowsById = {}; for(const d of rows) rowsById[d.id]=d;
+      const parDevis = {};
+      for(const l of (lignes||[])) parDevis[l.devis_id] = (parDevis[l.devis_id]||0)+1;
+      arbitrages = Object.entries(parDevis).map(([devisId,nbLignes])=>({
+        id:devisId, numero: rowsById[devisId]?.numero||'?', client: rowsById[devisId]?.client_nom||'Sans nom', nbLignes
+      }));
+    }
+    state.devisKpis = { total:rows.length, brouillon, envoye, relances, arbitrages, enAttenteSignature };
+
+    // Projets (Kanban Client/Projet) — même table, même étapes que client-projet.html.
+    const { data: projets, error: eP } = await sb.from('projets').select('id,nom,nom_projet,numero_projet,client_nom,etape,echeance_date,echeance_label,checklist_coche').eq('establishment_id', estId);
+    if(eP) throw eP;
+
+    // "Chantiers prêts" — projets dont tous les points de contrôle de leur étape actuelle
+    // sont cochés (signal réel, vérifiable, plutôt qu'un concept de stock jamais construit).
+    const { data: pointsControle, error: ePC } = await sb.from('checklist_points_erp').select('etape_cle');
+    if(ePC) throw ePC;
+    const nbPointsParEtape = {};
+    for(const pc of (pointsControle||[])) nbPointsParEtape[pc.etape_cle] = (nbPointsParEtape[pc.etape_cle]||0) + 1;
+    const chantiersPrets = (projets||[]).filter(p => {
+      const total = nbPointsParEtape[p.etape] || 0;
+      if(!total) return false;
+      const coches = (p.checklist_coche && p.checklist_coche[p.etape]) || [];
+      return coches.length >= total;
+    });
+    const projetsParEtape = {};
+    for(const p of (projets||[])) (projetsParEtape[p.etape] = projetsParEtape[p.etape]||[]).push(p);
+
+    // Point 7 — dates de rappel (bloc Relations client) en retard ou du jour, remontées ici.
+    const aujourdhui = new Date().toISOString().slice(0,10);
+    const rappelsUrgents = (projets||[]).filter(p=>p.echeance_date && p.echeance_date<=aujourdhui)
+      .sort((a,b)=>a.echeance_date<b.echeance_date?-1:1);
+
+    // Point 1 — signaux client en attente depuis plus de 3 jours, remontés ici.
+    const projetIds = (projets||[]).map(p=>p.id);
+    let signauxUrgents = [];
+    if(projetIds.length){
+      const { data: signaux, error: eS } = await sb.from('signaux_client').select('id,projet_id,type,date').eq('statut','en_attente').in('projet_id', projetIds);
+      if(eS) throw eS;
+      const projetParId = {}; for(const p of (projets||[])) projetParId[p.id] = p;
+      const troisJours = 3*24*60*60*1000;
+      signauxUrgents = (signaux||[]).filter(s => (Date.now() - new Date(s.date).getTime()) >= troisJours)
+        .map(s => ({ ...s, projet: projetParId[s.projet_id] }));
+    }
+
+    // Commandes fournisseur en attente (régisseur/logistique) — pas de recalcul, lecture seule
+    // de ce que stock-atelier.html a déjà déterminé nécessaire.
+    const { data: commandes, error: eC } = await sb.from('commandes_fournisseur').select('cle_produit,quantite_a_commander').eq('establishment_id', estId).gt('quantite_a_commander', 0);
+    if(eC) throw eC;
+
+    // Phase 6, point 6 — relance : le gérant n'a pas le monopole du blocage. Même mécanisme
+    // que "Date de rappel" (Relations client) : un simple flag visuel calculé à la volée,
+    // pas une vraie notification. Chaque chargement de l'accueil qui trouve une validation en
+    // attente depuis plus de 24h sans relance récente bascule une relance (max 3), puis reste
+    // signalé en évidence au lieu de continuer à relancer dans le vide.
+    let positionnementsAValider = [];
+    try{
+      const { data: membresEst } = await sb.from('members').select('id,email').eq('establishment_id', estId);
+      const idsEst = (membresEst||[]).map(m=>m.id);
+      const emailParId = {}; for(const m of (membresEst||[])) emailParId[m.id] = m.email;
+      if(idsEst.length){
+        const { data: pos } = await sb.from('positionnements').select('id,member_id,statut,nb_relances,date_derniere_relance,date_fin_autopositionnement')
+          .in('member_id', idsEst).eq('statut','en_validation');
+        const vingtQuatreH = 24*60*60*1000;
+        for(const p of (pos||[])){
+          const derniere = p.date_derniere_relance ? new Date(p.date_derniere_relance).getTime() : (p.date_fin_autopositionnement ? new Date(p.date_fin_autopositionnement).getTime() : 0);
+          if(p.nb_relances < 3 && derniere && (Date.now() - derniere) >= vingtQuatreH){
+            const { error: eRel } = await sb.from('positionnements').update({ nb_relances: p.nb_relances+1, date_derniere_relance: new Date().toISOString() }).eq('id', p.id);
+            if(!eRel){ p.nb_relances += 1; p.date_derniere_relance = new Date().toISOString(); }
+          }
+          positionnementsAValider.push({ ...p, email: emailParId[p.member_id] });
+        }
+      }
+    }catch(e){ /* table Phase 6 pas encore migrée */ }
+
+    state.accueil = { projets: projets||[], projetsParEtape, commandesEnAttente: commandes||[], rappelsUrgents, signauxUrgents, chantiersPrets, positionnementsAValider };
+  }catch(e){ console.error(e); state.devisKpis = null; state.accueil = null; }
+}
+async function loadTeam(estId){
+  const { data: members, error:e1 } = await sb.from('members').select('id,user_id,role,email,poste_type_id').eq('establishment_id', estId);
+  if(e1) throw e1;
+  const { data: invites, error:e2 } = await sb.from('invitations').select('id,role,invitee_user_id').eq('establishment_id', estId).eq('status','pending');
+  if(e2) throw e2;
+  state.team = { members: members||[], invites: invites||[] };
+  // Phase 6 — positionnements en cours pour cette équipe (blocage/validation), une requête
+  // best-effort : la table peut ne pas encore exister si la migration n'est pas passée.
+  state.team.positionnements = {};
+  try{
+    const ids = (members||[]).map(m=>m.id);
+    if(ids.length){
+      const { data: pos } = await sb.from('positionnements').select('id,member_id,type,statut,nb_relances,date_derniere_relance')
+        .in('member_id', ids).neq('statut','valide').order('date_debut', { ascending:false });
+      for(const p of (pos||[])) if(!state.team.positionnements[p.member_id]) state.team.positionnements[p.member_id] = p;
+    }
+  }catch(e){ /* table Phase 6 pas encore migrée — pas bloquant pour le reste de l'écran */ }
+}
+async function inviteByNumero(estId, numero, role){
+  const { error } = await sb.rpc('invite_by_numero', { p_establishment_id: estId, p_numero_membre: numero.trim().toUpperCase(), p_role: role });
+  if(error) throw error;
+}
+async function cancelInvitation(id){
+  const { error } = await sb.from('invitations').delete().eq('id', id);
+  if(error) throw error;
+}
+async function logout(){ try{ await sb.auth.signOut(); }catch(e){ console.error(e); } goToFederation(); }
+
+function shell(contentHtml){
+  const est = state.establishment;
+  document.querySelector('.app').innerHTML = `
+  <nav class="topnav">
+    ${navAtelierHtml(state.estId, {})}
+  </nav>
+  <main class="content">${contentHtml}</main>`;
+}
+
+function setTab(tab){ state.tab=tab; renderTab(); }
+function renderTab(){
+  if(state.tab==='equipe') return renderEquipe();
+  if(state.tab==='temps') return renderTempsTravail();
+  return renderAccueilAtelier();
+}
+function renderTempsTravail(){
+  const t = state.tempsTravail || { parPersonne:{} };
+  const personnes = Object.entries(t.parPersonne||{}).sort((a,b)=>b[1].total-a[1].total);
+  shell(`
+  <div class="section">
+    <div class="treeTitle">Temps de travail</div>
+    <div class="sectionSub">Qui passe combien de temps sur quoi — à partir des heures saisies projet par projet dans Client / Projet.</div>
+  </div>
+  <div class="section">
+    ${personnes.length ? personnes.map(([id, p])=>`
+      <div class="portalItem" style="margin-bottom:10px">
+        <div class="portalTitle">${escapeHtml(p.nom)} — ${p.total.toFixed(1)}h au total</div>
+        ${Object.entries(p.parProjet).sort((a,b)=>b[1]-a[1]).map(([projetId, h])=>`
+          <div class="portalMeta">${escapeHtml(t.projetNom(projetId))} — ${h.toFixed(1)}h</div>
+        `).join('')}
+      </div>`).join('') : `<p class="tiny muted">Aucune heure saisie pour l'instant — les heures se déclarent depuis la fiche d'un projet, dans Client / Projet.</p>`}
+  </div>`);
+}
+function renderKpiRole(vue, k, acc){
+  if(!k || !acc) return `<div class="section"><div class="sectionSub">Chargement...</div></div>`;
+  let tuiles = [];
+  if(vue==='gerant'){
+    tuiles = [
+      { cle:'arbitrages', n:k.arbitrages.length, lbl:'Devis à trancher', alerte:k.arbitrages.length>0,
+        liste:k.arbitrages.map(a=>({ href:`${estUrl('devis-interne.html')}&devis=${a.id}`, texte:`Devis ${a.numero} — ${a.client}`, detail:`${a.nbLignes} ligne(s) avec écart de prix` })) },
+      { cle:'relances', n:k.relances.length, lbl:'Relances à faire (>5 jours)', alerte:k.relances.length>0,
+        liste:k.relances.map(r=>({ href:`${estUrl('devis-interne.html')}&devis=${r.id}`, texte:`Devis ${r.numero} — ${r.client}`, detail:`${r.jours} jour(s) sans réponse` })) },
+      { cle:'signature', n:k.brouillon+k.envoye, lbl:'Devis en attente de signature',
+        liste:k.enAttenteSignature.map(d=>({ href:`${estUrl('devis-interne.html')}&devis=${d.id}`, texte:`Devis ${d.numero} — ${d.client}`, detail:d.statut })) },
+    ];
+  } else if(vue==='graphiste'){
+    const aFaire = (acc.projetsParEtape['croquis_intention']||[]).length + (acc.projetsParEtape['maquette_finale_bat']||[]).length;
+    const enAttenteListe = acc.projetsParEtape['bat_attente']||[];
+    const idsRappelsUrgents = new Set((acc.rappelsUrgents||[]).map(p=>p.id));
+    const enAttenteEnRetard = enAttenteListe.some(p=>idsRappelsUrgents.has(p.id));
+    tuiles = [
+      { n:aFaire, lbl:'Croquis / BAT à faire', alerte:aFaire>0 },
+      { n:enAttenteListe.length, lbl:'BAT envoyés, en attente client', alerte:enAttenteEnRetard },
+    ];
+  } else if(vue==='peintre'){
+    const aPreparer = (acc.projetsParEtape['poncifs_impression']||[]).length;
+    const enCours = (acc.projetsParEtape['chantier_realisation']||[]).length;
+    tuiles = [
+      { n:aPreparer, lbl:'Chantiers à préparer' },
+      { n:enCours, lbl:'Chantiers en cours' },
+    ];
+  } else {
+    const aCommander = acc.commandesEnAttente.length;
+    const pret = (acc.chantiersPrets||[]).length;
+    tuiles = [
+      { n:aCommander, lbl:'Produits à commander', alerte:aCommander>0 },
+      { n:pret, lbl:'Chantiers prêts' },
+    ];
+  }
+  const kpiOuvert = state.kpiOuvert;
+  const tuileOuverte = tuiles.find(t=>t.cle && t.cle===kpiOuvert);
+  return `
+  <div class="section">
+    <div class="grid3" style="grid-template-columns:repeat(${tuiles.length},1fr)">
+      ${tuiles.map(t=>`
+        <div class="portalItem" ${t.cle?`onclick="state.kpiOuvert='${t.cle}';renderTab()"`:''} style="border:1px solid var(--line);border-radius:12px;padding:14px 16px${t.alerte?';background:var(--amberBg)':''}${t.cle?';cursor:pointer':''}">
+          <div style="font-size:24px;font-weight:700${t.alerte?';color:var(--amber)':''}">${t.n}</div>
+          <div class="tiny muted">${escapeHtml(t.lbl)}</div>
+        </div>`).join('')}
+    </div>
+  </div>
+  ${tuileOuverte ? `
+  <div class="overlay" onclick="if(event.target===this){state.kpiOuvert=null;renderTab()}">
+    <div class="modal">
+      <div class="modalTitre">
+        <div class="treeTitle" style="margin:0;font-size:18px">${escapeHtml(tuileOuverte.lbl)}</div>
+        <button class="ghostBtn" onclick="state.kpiOuvert=null;renderTab()">Fermer</button>
+      </div>
+      ${tuileOuverte.liste.length ? tuileOuverte.liste.map(i=>`
+        <a href="${i.href}" style="text-decoration:none;color:inherit">
+          <div class="portalItem" style="display:flex;justify-content:space-between;gap:10px;align-items:center;padding:10px 0">
+            <span class="tiny">${escapeHtml(i.texte)}</span>
+            <span class="tiny muted">${escapeHtml(i.detail)}</span>
+          </div>
+        </a>`).join('') : `<div class="tiny muted" style="padding:6px 0">Rien à afficher.</div>`}
+    </div>
+  </div>` : ''}`;
+}
+
+function renderFunnel(acc){
+  if(!acc) return '';
+  return `
+  <div class="section">
+    <div class="treeTitle" style="font-size:19px">Projets en cours</div>
+    <div class="grid3" style="grid-template-columns:repeat(4,1fr);gap:10px">
+      ${FUNNEL_ZONES.map(z=>{
+        const projets = z.etapes.flatMap(e=>acc.projetsParEtape[e]||[]);
+        return `
+        <div style="background:var(--soft);border-radius:10px;padding:10px;display:flex;flex-direction:column">
+          <div class="tiny" style="font-weight:700;text-align:center;margin-bottom:6px">${escapeHtml(z.titre)}</div>
+          <div class="tiny muted" style="text-align:center;margin-bottom:8px">${projets.length} projet(s)</div>
+          <div style="max-height:280px;overflow-y:auto;padding-right:2px">
+          ${projets.length ? projets.map(p=>`
+            <a href="${estUrl('client-projet.html')}&projet=${encodeURIComponent(p.id)}" style="text-decoration:none;color:inherit">
+              <div style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:7px 9px;margin-bottom:6px;font-size:12.5px">
+                <div style="font-weight:700">${escapeHtml(p.client_nom||'Sans nom')}</div>
+                <div class="tiny muted">${escapeHtml(p.nom)}</div>
+              </div>
+            </a>`).join('') : ''}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+    <a class="tiny" style="display:inline-block;margin-top:8px" href="${estUrl('client-projet.html')}">Ouvrir le Kanban complet →</a>
+  </div>`;
+}
+
+const TYPE_SIGNAL_LABEL_ACCUEIL = { validation_devis:'Devis validé', validation_croquis:'Croquis validé', paiement_acompte:'Acompte reçu' };
+function renderPriorites(vue, k, acc){
+  if(!k || !acc) return '';
+  const items = [];
+  for(const a of k.arbitrages) items.push({ urg:2, pill:'Arbitrage', pillColor:'red', texte:`Devis ${a.numero} — ${a.client} : ${a.nbLignes} ligne(s) avec écart de prix`, href:`${estUrl('devis-interne.html')}&devis=${a.id}` });
+  for(const r of k.relances) items.push({ urg: r.jours>10?2:1, pill:'Relance', pillColor:'amber', texte:`Devis ${r.numero} — ${r.client} : ${r.jours} jour(s) sans réponse`, href:`${estUrl('devis-interne.html')}&devis=${r.id}` });
+  for(const c of acc.commandesEnAttente) items.push({ urg:1, pill:'Stock', pillColor:'amber', texte:`Commander ${c.cle_produit} (${c.quantite_a_commander} L)`, href:estUrl('stock-atelier.html') });
+  for(const p of (acc.rappelsUrgents||[])) items.push({ urg: p.echeance_date<new Date().toISOString().slice(0,10)?2:1, pill:'Rappel', pillColor:'amber', texte:`${p.client_nom||'Sans nom'}${p.echeance_label?' — '+p.echeance_label:''} (${p.echeance_date})`, href:`${estUrl('client-projet.html')}&projet=${encodeURIComponent(p.id)}` });
+  for(const s of (acc.signauxUrgents||[])) items.push({ urg:1, pill:'Signal client', pillColor:'amber', texte:`${(s.projet&&s.projet.client_nom)||'Projet'} : ${TYPE_SIGNAL_LABEL_ACCUEIL[s.type]||s.type} — pas encore traité`, href:s.projet?`${estUrl('client-projet.html')}&projet=${encodeURIComponent(s.projet.id)}`:estUrl('client-projet.html') });
+  for(const p of (acc.positionnementsAValider||[])) items.push({ urg: p.nb_relances>=3?2:1, pill:'Positionnement', pillColor:'red', texte:`${p.email||'Un membre'} attend la validation de son positionnement${p.nb_relances?` — relancé ${p.nb_relances}×`:''}`, href:`positionnement.html?est=${encodeURIComponent(state.estId)}&valider=${p.member_id}` });
+  items.sort((a,b)=>b.urg-a.urg);
+
+  const itemsVue = vue==='gerant' ? items : vue==='logistique' ? items.filter(i=>i.pill==='Stock'||i.pill==='Relance') : [];
+
+  return `
+  <div class="section">
+    <div class="treeTitle" style="font-size:19px">Priorités du jour</div>
+    ${itemsVue.length ? itemsVue.map(i=>`
+      <a href="${i.href}" style="text-decoration:none;color:inherit">
+        <div class="portalItem" style="border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin-bottom:8px;display:flex;gap:10px;align-items:center">
+          <span class="chip ${i.pillColor}">${escapeHtml(i.pill)}</span>
+          <span class="tiny">${escapeHtml(i.texte)}</span>
+        </div>
+      </a>`).join('') : `<div class="tiny muted">Rien de pressant pour l'instant.</div>`}
+  </div>`;
+}
+
+// Ouvre / ferme le formulaire d'estimation public (estimation.etsgesret.fr) — réservé au dirigeant (gérant) et à l'admin.
+async function basculerEstimationPublique(){
+  if(!isGerant(state.myRole) || state.estimationOuverte === undefined) return;
+  const nouveau = !state.estimationOuverte;
+  if(!await confirmer(nouveau ? "Ouvrir le formulaire d'estimation aux clients ?" : "Fermer le formulaire d'estimation aux clients ? Ils verront un message les invitant à vous contacter.")) return;
+  const { data, error } = await sb.from('devis_reglages').update({ estimation_ouverte: nouveau }).eq('establishment_id', state.estId).select('establishment_id');
+  if(error){ alert("Changement impossible : " + error.message); return; }
+  if(!data || !data.length){ alert("Aucune fiche de tarifs n'existe encore pour cet atelier. Ouvrez Devis, puis Réglages tarifs, enregistrez une modification, et réessayez."); return; }
+  state.estimationOuverte = nouveau;
+  renderTab();
+}
+function renderInterrupteurEstimation(){
+  if(!isGerant(state.myRole)) return '';
+  const o = state.estimationOuverte;
+  if(o === undefined) return `<div class="section"><div class="treeTitle" style="font-size:19px">Formulaire d'estimation en ligne</div><div class="tiny muted">L'interrupteur sera disponible après l'application de <b>migration_estimation_publique.sql</b> dans Supabase.</div></div>`;
+  return `<div class="section">
+    <div class="treeTitle" style="font-size:19px">Formulaire d'estimation en ligne</div>
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:${o?'#fff':'#fff7ee'}">
+      <div style="flex:1;min-width:220px">
+        <div style="font-weight:700;font-size:16px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${o?'#2e8b57':'#d9822b'};margin-right:8px"></span>${o?'Ouvert aux clients':'Fermé aux clients'}</div>
+        <div class="tiny muted" style="margin-top:3px">${o?'Les clients peuvent demander une estimation.':'Les clients voient un message les invitant à vous contacter.'} <a href="https://estimation.etsgesret.fr" target="_blank" rel="noopener">Voir le formulaire public ↗</a></div>
+      </div>
+      <button class="${o?'ghostBtn':'actionBtn'}" onclick="basculerEstimationPublique()">${o?'Fermer le formulaire':'Ouvrir le formulaire'}</button>
+    </div></div>`;
+}
+
+function renderAccueilAtelier(){
+  const est = state.establishment;
+  const k = state.devisKpis;
+  const acc = state.accueil;
+  const vue = state.vueRole || state.myRole;
+  shell(`
+    <div class="section">
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <div class="treeTitle" style="margin:0">${escapeHtml(est?est.name:'Atelier')}</div>
+        <div class="tiny muted">Mode : ${est&&est.mode==='diagplus'?'Équipe':'Solo'}</div>
+        <div style="display:flex;align-items:center;gap:7px;margin-left:auto">
+          <label class="tiny muted" style="margin:0">Vue</label>
+          <select class="select" style="width:auto" onchange="state.vueRole=this.value;renderTab()">${roleOptions(vue)}</select>
+        </div>
+      </div>
+      ${vue!==state.myRole ? `<div class="tiny muted" style="margin-top:6px">Aperçu de la vue ${escapeHtml(roleLabel(vue))} — ton rôle réel reste ${escapeHtml(roleLabel(state.myRole))}.</div>` : ''}
+    </div>
+
+    ${renderKpiRole(vue, k, acc)}
+    ${vue==='gerant' ? renderFunnel(acc) : ''}
+    ${renderPriorites(vue, k, acc)}
+
+    <div class="section">
+      <div class="treeTitle" style="font-size:19px">Accès rapide</div>
+      <div class="toolbar">
+        <a class="actionBtn" href="${estUrl('devis-interne.html')}">Devis →</a>
+        <a class="actionBtn" href="${estUrl('stock-atelier.html')}">Stock &amp; commandes →</a>
+        <a class="actionBtn" href="${estUrl('client-projet.html')}">Client / Projet →</a>
+      </div>
+    </div>
+
+    ${renderInterrupteurEstimation()}
+  `);
+}
+function renderEquipe(){
+  const est = state.establishment;
+  const gerant = isGerant(state.myRole);
+  shell(`
+    <div class="section">
+      <div class="treeTitle">${escapeHtml(est?est.name:'Atelier')}</div>
+      <div class="sectionSub">Mode : ${est&&est.mode==='diagplus'?'Équipe':'Solo'} · Ton rôle : ${escapeHtml(roleLabel(state.myRole))}</div>
+    </div>
+    <div class="section">
+      <div class="treeTitle" style="font-size:19px">Fiche entreprise</div>
+      ${gerant ? `
+      <div class="grid2" style="margin-bottom:10px">
+        <div><div class="tiny muted" style="margin-bottom:4px">Nom de l'atelier</div><input id="entNom" class="input" value="${escapeHtml(est?.name||'')}"></div>
+        <div><div class="tiny muted" style="margin-bottom:4px">SIRET</div><input id="entSiret" class="input" placeholder="14 chiffres — remplit nom et adresse tout seul" value="${escapeHtml(est?.siret||'')}" oninput="chercherSiretEntreprise(this.value)"></div>
+      </div>
+      <div class="grid2" style="margin-bottom:10px">
+        <div><div class="tiny muted" style="margin-bottom:4px">Téléphone</div><input id="entTelephone" class="input" value="${escapeHtml(est?.telephone||'')}"></div>
+        <div><div class="tiny muted" style="margin-bottom:4px">Email de contact</div><input id="entEmailContact" class="input" value="${escapeHtml(est?.email_contact||'')}"></div>
+      </div>
+      <div class="fieldAuto" style="margin-bottom:10px"><div class="tiny muted" style="margin-bottom:4px">Adresse</div><input id="entAdresse" class="input" autocomplete="off" placeholder="N°, rue, code postal, ville — ça se complète tout seul" value="${escapeHtml(est?.adresse||'')}" oninput="chercherAdresseEntreprise(this.value)"><div class="sugBox" id="sugAdresseEntreprise"></div></div>
+      <div class="tiny muted" style="margin:16px 0 4px 0;font-weight:700">Devis imprimés / PDF</div>
+      <div style="margin-bottom:10px">
+        <div class="tiny muted" style="margin-bottom:4px">Logo (en-tête du devis)</div>
+        ${(logoDataUrlEnAttente!==undefined ? logoDataUrlEnAttente : est?.logo_data_url) ? `<img id="entLogoPreview" src="${logoDataUrlEnAttente!==undefined ? logoDataUrlEnAttente : est.logo_data_url}" style="max-height:70px;display:block;margin-bottom:8px;border:1px solid var(--line);border-radius:8px;padding:4px">` : ''}
+        <div class="toolbar" style="margin:0">
+          <input type="file" accept="image/*" onchange="handleLogoFileChange(event)">
+          ${(logoDataUrlEnAttente!==undefined ? logoDataUrlEnAttente : est?.logo_data_url) ? `<button class="ghostBtn" onclick="handleLogoFileChange(null)">Retirer le logo</button>` : ''}
+        </div>
+      </div>
+      <div style="margin-bottom:10px"><div class="tiny muted" style="margin-bottom:4px">Pied de page du devis (texte libre — mentions légales, SIRET, RCS, capital social, TVA...)</div><textarea id="entPiedDePage" class="textarea" rows="3">${escapeHtml(est?.pied_de_page_devis||'')}</textarea></div>
+      <div style="margin-bottom:10px"><div class="tiny muted" style="margin-bottom:4px">Coordonnées bancaires (texte libre — affichées dans un encart à part sur le devis ; laisse vide pour ne rien afficher)</div><textarea id="entCoordBancaires" class="textarea" rows="3" placeholder="Nom : ...&#10;IBAN : ...&#10;BIC : ...">${escapeHtml(est?.coordonnees_bancaires||'')}</textarea></div>
+      <button class="actionBtn" onclick="handleSaveEntreprise()">Enregistrer</button>
+      <div id="entMsg" class="tiny" style="margin-top:10px"></div>
+      ` : `
+      <div class="portalList">
+        <div class="portalItem"><div class="portalMeta">SIRET : ${escapeHtml(est?.siret||'—')}</div></div>
+        <div class="portalItem"><div class="portalMeta">Téléphone : ${escapeHtml(est?.telephone||'—')}</div></div>
+        <div class="portalItem"><div class="portalMeta">Email de contact : ${escapeHtml(est?.email_contact||'—')}</div></div>
+        <div class="portalItem"><div class="portalMeta">Adresse : ${escapeHtml(est?.adresse||'—')}</div></div>
+      </div>
+      <div class="tiny muted" style="margin-top:6px">Modifiable uniquement par le gérant.</div>
+      `}
+    </div>
+    <div class="section">
+      <div class="treeTitle" style="font-size:19px">Équipe</div>
+      <div class="portalList" style="margin-bottom:14px">
+        ${state.team.members.length ? state.team.members.map(mm=>`
+          <div class="portalItem">
+            <div class="portalTitle" style="font-size:17px">${escapeHtml(mm.email||'(email non renseigné)')}</div>
+            <div class="portalMeta"><span class="chip blue">${escapeHtml(roleLabel(mm.role))}</span>${mm.poste_type_id?` <span class="chip">${escapeHtml(posteTypeLabel(mm.poste_type_id))}</span>`:''}${renderBadgePositionnement(state.team.positionnements[mm.id])}</div>
+            ${gerant?`
+            <div class="toolbar" style="margin-top:6px;align-items:center">
+              <select class="select" style="max-width:220px" onchange="ouvrirRattachement('${mm.id}', this.value)">${posteTypeOptions(mm.poste_type_id)}</select>
+              <button class="ghostBtn" onclick="ouvrirQuiFaitQuoi('${mm.id}')">${state.qfq.ouvertPour===mm.id?'Fermer':'Ajuster les situations'}</button>
+              ${state.team.positionnements[mm.id] && state.team.positionnements[mm.id].statut==='en_validation' ? `<a class="actionBtn" style="text-decoration:none" href="positionnement.html?est=${encodeURIComponent(state.estId)}&valider=${mm.id}">Valider son positionnement</a>` : ''}
+              <button class="ghostBtn" onclick="ouvrirHistoriquePostes('${mm.id}')">${state.historique.ouvertPour===mm.id?'Fermer':'Historique des postes'}</button>
+            </div>`:''}
+            ${gerant && state.qfq.ouvertPour===mm.id ? renderQuiFaitQuoi(mm.id) : ''}
+            ${gerant && state.historique.ouvertPour===mm.id ? renderHistoriquePostes() : ''}
+          </div>`).join('') : '<div class="sectionSub">Personne d’autre pour l’instant.</div>'}
+      </div>
+      ${state.team.invites.length ? `
+      <div class="tiny muted" style="margin-bottom:6px">Invitations en attente</div>
+      <div class="portalList" style="margin-bottom:14px">
+        ${state.team.invites.map(inv=>`
+          <div class="portalItem">
+            <div class="portalTitle" style="font-size:16px">Invitation envoyée</div>
+            <div class="portalMeta"><span class="chip amber">${escapeHtml(roleLabel(inv.role))} · en attente</span></div>
+            ${gerant?`<div class="toolbar" style="margin-top:6px"><button class="ghostBtn" onclick="handleCancelInvitation('${inv.id}')">Annuler</button></div>`:''}
+          </div>`).join('')}
+      </div>` : ''}
+      ${gerant ? `
+      <div class="grid3">
+        <input id="inviteNumero" class="input" placeholder="Numéro Fédération (ex : FPL-7K2M9X)">
+        <select id="inviteRole" class="select">${roleOptions('peintre')}</select>
+        <button class="actionBtn" onclick="handleInvite()">Inviter</button>
+      </div>
+      <div class="tiny muted" style="margin-top:8px">Demande à la personne son numéro Fédération — il lui a été donné à la création de son compte, sur la page d'accueil de la Fédération.</div>
+      <div id="inviteMsg" class="tiny" style="margin-top:10px"></div>` : ''}
+    </div>
+  `);
+}
+/* Autocomplétion adresse (API Adresse gouv.fr) + remplissage nom/adresse depuis le SIRET
+   (API Recherche d'entreprises gouv.fr) — deux API publiques françaises, gratuites, sans
+   clé. Best-effort : une erreur réseau laisse simplement les champs tels quels. */
+let adresseSuggestionsEnt = [];
+let adresseTimerEnt = null;
+function chercherAdresseEntreprise(valeur){
+  clearTimeout(adresseTimerEnt);
+  if(valeur.trim().length < 4){ adresseSuggestionsEnt = []; renderSugAdresseEnt(); return; }
+  adresseTimerEnt = setTimeout(async ()=>{
+    try{
+      const r = await fetch('https://api-adresse.data.gouv.fr/search/?q='+encodeURIComponent(valeur)+'&limit=5');
+      const data = await r.json();
+      adresseSuggestionsEnt = (data.features||[]).map(f=>f.properties.label);
+    }catch(e){ adresseSuggestionsEnt = []; }
+    renderSugAdresseEnt();
+  }, 300);
+}
+function choisirAdresseEnt(i){
+  const label = adresseSuggestionsEnt[i]; if(!label) return;
+  document.getElementById('entAdresse').value = label;
+  adresseSuggestionsEnt = []; renderSugAdresseEnt();
+}
+function renderSugAdresseEnt(){
+  const el = document.getElementById('sugAdresseEntreprise'); if(!el) return;
+  el.innerHTML = adresseSuggestionsEnt.map((label,i)=>`<div class="sugItem" onclick="choisirAdresseEnt(${i})">${escapeHtml(label)}</div>`).join('');
+}
+let siretTimerEnt = null;
+function chercherSiretEntreprise(valeur){
+  clearTimeout(siretTimerEnt);
+  const chiffres = valeur.replace(/\D/g,'');
+  if(chiffres.length !== 14) return;
+  siretTimerEnt = setTimeout(async ()=>{
+    try{
+      const r = await fetch('https://recherche-entreprises.api.gouv.fr/search?q='+chiffres);
+      const data = await r.json();
+      const res = (data.results||[])[0]; if(!res) return;
+      const nomEl = document.getElementById('entNom'), adrEl = document.getElementById('entAdresse');
+      if(nomEl && !nomEl.value.trim()) nomEl.value = res.nom_complet || res.nom_raison_sociale || '';
+      if(adrEl && !adrEl.value.trim() && res.siege && res.siege.adresse) adrEl.value = res.siege.adresse;
+    }catch(e){ /* recherche best-effort */ }
+  }, 400);
+}
+async function handleSaveEntreprise(){
+  const patch = {
+    name: document.getElementById('entNom').value.trim() || 'Atelier',
+    siret: document.getElementById('entSiret').value.trim() || null,
+    telephone: document.getElementById('entTelephone').value.trim() || null,
+    email_contact: document.getElementById('entEmailContact').value.trim() || null,
+    adresse: document.getElementById('entAdresse').value.trim() || null,
+    pied_de_page_devis: document.getElementById('entPiedDePage').value.trim() || null,
+    coordonnees_bancaires: document.getElementById('entCoordBancaires').value.trim() || null,
+  };
+  if(logoDataUrlEnAttente !== undefined) patch.logo_data_url = logoDataUrlEnAttente;
+  const msgEl = document.getElementById('entMsg'); msgEl.textContent = 'Enregistrement…';
+  const { data, error } = await sb.from('establishments').update(patch).eq('id', state.estId).select('id');
+  if(error){ msgEl.textContent = 'Erreur : '+error.message; return; }
+  if(!data || !data.length){ msgEl.textContent = 'Écriture refusée — droits insuffisants (seul le gérant peut modifier la fiche entreprise).'; return; }
+  state.establishment = { ...state.establishment, ...patch };
+  logoDataUrlEnAttente = undefined;
+  msgEl.textContent = 'Enregistré.';
+}
+async function handleInvite(){
+  const numero=document.getElementById('inviteNumero').value.trim();
+  const role=document.getElementById('inviteRole').value;
+  if(!numero) return alert('Numéro Fédération obligatoire.');
+  const msgEl=document.getElementById('inviteMsg'); msgEl.textContent='Envoi…';
+  try{
+    await inviteByNumero(state.estId, numero, role);
+    await loadTeam(state.estId);
+    renderEquipe();
+  }catch(err){
+    msgEl.textContent="Erreur : "+(err.message||err);
+  }
+}
+async function handleCancelInvitation(id){
+  if(!await confirmer('Annuler cette invitation ?')) return;
+  try{
+    await cancelInvitation(id);
+    await loadTeam(state.estId);
+    renderEquipe();
+  }catch(err){ alert('Erreur : '+(err.message||err)); }
+}
+
+async function chargerReferentielSituations(){
+  if(state.situationsRef) return state.situationsRef;
+  const { data: procs, error: e1 } = await sb.from('referentiel_processus').select('nom,categorie');
+  if(e1) throw e1;
+  const catParProcessus = {};
+  for(const p of (procs||[])) catParProcessus[p.nom] = p.categorie;
+  const { data: situs, error: e2 } = await sb.from('referentiel_situations')
+    .select('situation_uid,processus,sous_processus,situation')
+    .eq('niveau','Niveau 1 débutant')
+    .order('processus').order('sous_processus').order('situation');
+  if(e2) throw e2;
+  state.situationsRef = (situs||[]).map(s=>({ ...s, categorie: catParProcessus[s.processus] || 'Autre' }));
+  return state.situationsRef;
+}
+// Rattachement Phase 6 (écran 1) : choisir un profil ouvre un aperçu — toutes ses situations
+// déjà cochées, plus celles déjà couvertes par le membre — que le régisseur ajuste avant de
+// valider d'un seul geste. Rien n'est écrit en base avant "Valider le rattachement" : le
+// panneau est le même que "Qui fait quoi ?", en mode brouillon (voir toggleSituationMembre).
+async function ouvrirRattachement(memberId, posteTypeId){
+  if(!posteTypeId) return; // détacher un profil n'est pas géré ici, seulement en rattacher un
+  const mm = state.team.members.find(m=>m.id===memberId);
+  if(mm && mm.poste_type_id===posteTypeId){ return; } // déjà ce profil, rien à faire
+  state.qfq = { ouvertPour: memberId, chargement: true, assignations: new Set() };
+  state.rattachement = { memberId, posteTypeId, enCours:false };
+  renderEquipe();
+  try{
+    await chargerReferentielSituations();
+    const [{ data: requis, error: eR }, { data: existants, error: eE }] = await Promise.all([
+      sb.from('poste_type_situations').select('situation_id').eq('poste_type_id', posteTypeId),
+      sb.from('membre_situations').select('situation_uid').eq('member_id', memberId),
+    ]);
+    if(eR) throw eR; if(eE) throw eE;
+    state.rattachement.requisOriginal = new Set((requis||[]).map(r=>r.situation_id));
+    state.qfq.assignations = new Set([...(existants||[]).map(r=>r.situation_uid), ...state.rattachement.requisOriginal]);
+  }catch(err){
+    alert('Erreur : '+(err.message||err));
+    state.qfq.ouvertPour = null; state.rattachement = null;
+  }
+  state.qfq.chargement = false;
+  renderEquipe();
+}
+function annulerRattachement(){ state.rattachement = null; state.qfq.ouvertPour = null; renderEquipe(); }
+async function validerRattachement(){
+  const r = state.rattachement; if(!r || r.enCours) return;
+  r.enCours = true; renderEquipe();
+  try{
+    const memberId = r.memberId, posteTypeId = r.posteTypeId;
+    const checked = state.qfq.assignations;
+    const { data: existants, error: eE } = await sb.from('membre_situations').select('situation_uid').eq('member_id', memberId);
+    if(eE) throw eE;
+    const deja = new Set((existants||[]).map(x=>x.situation_uid));
+    const aAjouter = [...checked].filter(uid=>!deja.has(uid));
+    const aRetirer = [...deja].filter(uid=>!checked.has(uid) && r.requisOriginal.has(uid));
+    if(aAjouter.length){ const { error } = await sb.from('membre_situations').insert(aAjouter.map(situation_uid=>({ member_id: memberId, situation_uid }))); if(error) throw error; }
+    for(const uid of aRetirer){ const { error } = await sb.from('membre_situations').delete().eq('member_id', memberId).eq('situation_uid', uid); if(error) throw error; }
+
+    const mm = state.team.members.find(m=>m.id===memberId);
+    const ancienPosteTypeId = mm ? mm.poste_type_id : null;
+    const { error: eUpd } = await sb.from('members').update({ poste_type_id: posteTypeId }).eq('id', memberId);
+    if(eUpd) throw eUpd;
+    if(mm) mm.poste_type_id = posteTypeId;
+
+    await sb.from('historique_postes').insert({ member_id: memberId, ancien_poste_type_id: ancienPosteTypeId||null, nouveau_poste_type_id: posteTypeId, valide_par: currentUser.id });
+
+    // Type du positionnement (point 7/9) : premier poste ici + personne déjà connue ailleurs
+    // (federation_members existe et a déjà un instantané) => changement d'atelier (accusé de
+    // réception seulement) ; premier poste et personne jamais positionnée => intégration
+    // complète (blocage total) ; déjà un poste ici avant => évolution de poste, jamais bloquant.
+    let type = 'poste_change';
+    let situationsEpisode = [];
+    if(!ancienPosteTypeId){
+      const { data: mrow } = await sb.from('members').select('user_id').eq('id', memberId).single();
+      const { data: instantane } = await sb.from('positionnement_instantanes').select('situations').eq('user_id', mrow.user_id).maybeSingle();
+      const connues = new Set((instantane && instantane.situations) || []);
+      const nouvelles = [...checked].filter(uid=>!connues.has(uid));
+      if(!instantane || connues.size===0){ type = 'integration'; situationsEpisode = [...checked]; }
+      else { type = 'changement_atelier'; situationsEpisode = nouvelles; }
+    }
+    if(type!=='poste_change'){
+      const { error: eIns } = await sb.from('positionnements').insert({
+        member_id: memberId, poste_type_id: posteTypeId, type, statut:'en_cours', situations: situationsEpisode,
+      });
+      if(eIns) throw eIns;
+    }
+    state.rattachement = null; state.qfq.ouvertPour = null;
+    alert(type==='poste_change'
+      ? "Rattachement enregistré. Évolution de poste : aucun blocage, la personne continue d'accéder normalement à Maurice."
+      : "Rattachement enregistré. Le positionnement est maintenant obligatoire pour cette personne avant qu'elle puisse continuer à utiliser Maurice.");
+  }catch(err){
+    alert('Erreur : '+(err.message||err));
+    r.enCours = false;
+  }
+  renderEquipe();
+}
+// Point 9 — historique des postes : une ligne par changement, jamais une valeur écrasée.
+async function ouvrirHistoriquePostes(memberId){
+  if(state.historique.ouvertPour===memberId){ state.historique.ouvertPour=null; renderEquipe(); return; }
+  state.historique = { ouvertPour: memberId, lignes: [] };
+  renderEquipe();
+  try{
+    const { data, error } = await sb.from('historique_postes').select('id,ancien_poste_type_id,nouveau_poste_type_id,date_changement').eq('member_id', memberId).order('date_changement', { ascending:false });
+    if(error) throw error;
+    state.historique.lignes = data || [];
+  }catch(err){ /* table Phase 6 pas encore migrée */ }
+  renderEquipe();
+}
+function renderHistoriquePostes(){
+  const lignes = state.historique.lignes;
+  return `
+  <div style="border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-top:8px;background:var(--soft)">
+    ${lignes.length ? lignes.map(l=>`
+      <div style="padding:6px 0;border-bottom:1px solid var(--line);font-size:13px">
+        <b>${new Date(l.date_changement).toLocaleDateString('fr-FR')}</b> —
+        ${l.ancien_poste_type_id ? escapeHtml(posteTypeLabel(l.ancien_poste_type_id)) : 'aucun profil'} → ${escapeHtml(posteTypeLabel(l.nouveau_poste_type_id))}
+      </div>`).join('') : `<div class="tiny muted">Aucun changement de poste enregistré.</div>`}
+  </div>`;
+}
+async function ouvrirQuiFaitQuoi(memberId){
+  if(state.qfq.ouvertPour===memberId){ state.qfq.ouvertPour=null; state.rattachement=null; renderEquipe(); return; }
+  state.rattachement = null;
+  state.qfq = { ouvertPour: memberId, chargement: true, assignations: new Set() };
+  renderEquipe();
+  try{
+    await chargerReferentielSituations();
+    const { data, error } = await sb.from('membre_situations').select('situation_uid').eq('member_id', memberId);
+    if(error) throw error;
+    state.qfq.assignations = new Set((data||[]).map(r=>r.situation_uid));
+  }catch(err){
+    alert('Erreur : '+(err.message||err));
+    state.qfq.ouvertPour = null;
+  }
+  state.qfq.chargement = false;
+  renderEquipe();
+}
+async function toggleSituationMembre(memberId, situationUid, checked){
+  const brouillon = state.rattachement && state.rattachement.memberId===memberId;
+  if(brouillon){
+    if(checked) state.qfq.assignations.add(situationUid); else state.qfq.assignations.delete(situationUid);
+    renderEquipe();
+    return;
+  }
+  try{
+    if(checked){
+      const { error } = await sb.from('membre_situations').insert({ member_id: memberId, situation_uid: situationUid });
+      if(error) throw error;
+      state.qfq.assignations.add(situationUid);
+    } else {
+      const { error } = await sb.from('membre_situations').delete().eq('member_id', memberId).eq('situation_uid', situationUid);
+      if(error) throw error;
+      state.qfq.assignations.delete(situationUid);
+    }
+  }catch(err){ alert('Erreur : '+(err.message||err)); }
+  renderEquipe();
+}
+function renderQuiFaitQuoi(memberId){
+  if(state.qfq.chargement) return `<div class="tiny muted" style="padding:10px 0">Chargement…</div>`;
+  const situs = state.situationsRef || [];
+  const parCategorie = {};
+  for(const s of situs){ (parCategorie[s.categorie] ||= []).push(s); }
+  const assign = state.qfq.assignations;
+  const brouillon = state.rattachement && state.rattachement.memberId===memberId ? state.rattachement : null;
+  return `
+  <div style="border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-top:8px;background:var(--soft)">
+    ${brouillon ? `
+    <div class="tiny" style="margin-bottom:10px;font-weight:600">Aperçu du rattachement à « ${escapeHtml(posteTypeLabel(brouillon.posteTypeId))} » — décoche ce qui ne s'applique pas à ce poste précis, ou coche une situation en plus. Rien n'est encore enregistré.</div>
+    <div class="toolbar" style="margin-bottom:10px">
+      <button class="actionBtn" ${brouillon.enCours?'disabled':''} onclick="validerRattachement()">${brouillon.enCours?'Enregistrement…':'Valider le rattachement'}</button>
+      <button class="ghostBtn" ${brouillon.enCours?'disabled':''} onclick="annulerRattachement()">Annuler</button>
+    </div>` : `
+    <div class="tiny muted" style="margin-bottom:8px">${assign.size} situation(s) cochée(s) — coche celles dont cette personne est réellement responsable. Le profil de poste rattaché ci-dessus précoche les siennes automatiquement ; ajuste ici au cas par cas. Ça aide aussi Thérèse à cibler, pour chaque membre, les situations sur lesquelles proposer une progression.</div>`}
+    ${Object.keys(parCategorie).map(cat=>{
+      const parProcessus = {};
+      for(const s of parCategorie[cat]){ (parProcessus[s.processus] ||= []).push(s); }
+      return `
+      <div style="margin-bottom:10px">
+        <div style="font-weight:700;font-size:14px;margin-bottom:4px">${escapeHtml(cat)}</div>
+        ${Object.keys(parProcessus).map(proc=>`
+          <div style="margin:4px 0 8px 10px">
+            <div class="tiny muted" style="margin-bottom:3px">${escapeHtml(proc)}</div>
+            ${parProcessus[proc].map(s=>`
+              <label style="display:flex;gap:8px;align-items:flex-start;padding:3px 0;font-size:13.5px;cursor:pointer">
+                <input type="checkbox" style="margin-top:3px" ${assign.has(s.situation_uid)?'checked':''} onchange="toggleSituationMembre('${memberId}','${s.situation_uid}',this.checked)">
+                <span>${escapeHtml(s.situation)}<span class="tiny muted"> — ${escapeHtml(s.sous_processus||'')}</span></span>
+              </label>`).join('')}
+          </div>`).join('')}
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+async function initApp(){
+  try{
+    const {data:{session}, error} = await sb.auth.getSession();
+    if(error) throw error;
+    if(!session){ goToFederation(); return; }
+    currentUser = session.user;
+    const estId = getCurrentEstId();
+    if(!estId){ goToFederation(); return; }
+    setCurrentEstId(estId);
+    document.querySelector('.app').innerHTML = `<div style="padding:24px" class="tiny">Chargement…</div>`;
+    const [ok] = await Promise.all([loadAtelier(estId), chargerRoles(), chargerPostesTypes()]);
+    const tabDemande = new URLSearchParams(window.location.search).get('tab');
+    if(tabDemande==='equipe' || tabDemande==='temps') state.tab = tabDemande;
+    if(ok) renderTab();
+  }catch(e){
+    console.error(e);
+    document.body.innerHTML = `<div class="errBox">Impossible de charger l'atelier : ${escapeHtml(e.message||String(e))}\n\nRecharge la page.</div>`;
+  }
+  sb.auth.onAuthStateChange(async (event, session)=>{
+    if(!session){ goToFederation(); }
+  });
+}
+initApp();
+</script>
+<script src="therese-widget.js"></script>
+</body>
+</html>

@@ -1,0 +1,3058 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <script src="boite-message.js"></script>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Guide — Production (carte mentale)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="federation-nav.js"></script>
+<style>
+  /* V0 — même système typo/couleurs que tout le projet, voir atelier-compte.html. */
+  :root {
+    --ink: #1c1a17; --muted: #55504a; --line: #e4e0d9; --lineSoft: #efece6; --bg: #ffffff;
+    --navBg: #1c1a17;
+    --accent: #a8461f; --accentBg: var(--soft, #f7f5f2); --accentLine: var(--line);
+  }
+  .coeurMetierBox{border:1px solid var(--accentLine);background:var(--accentBg);border-radius:12px;padding:6px 14px 2px 14px;margin-bottom:10px}
+  .coeurMetierBox .titre-racine{color:var(--ink);font-weight:700}
+  .coeurMetierTag{display:inline-block;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;font-weight:700;color:var(--ink);background:#fff;border:1px solid var(--accentLine);border-radius:5px;padding:2px 7px;margin-left:8px;vertical-align:middle}
+  * { box-sizing: border-box; }
+  html, body { font-family: Inter, system-ui, sans-serif; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-size:16px; font-variant-numeric:tabular-nums; }
+  h1, h2, .treeTitle { font-family: Fraunces, Georgia, serif; font-weight: 600; }
+
+  /* ---- Nav horizontale, jamais latérale — hover révèle le sous-menu ---- */
+  nav.topnav { background: var(--navBg); color: #fff; display: flex; align-items: center; gap: 4px; padding: 0 20px; height: 52px; font-size: 14px; }
+  nav.topnav a.brand { color: #fff; text-decoration: none; font-weight: 600; margin-right: 24px; font-size: 15px; }
+  nav.topnav .menuItem { position: relative; height: 100%; display: flex; align-items: center; }
+  nav.topnav .menuItem > span { padding: 0 14px; cursor: default; color: #d7dbe4; }
+  nav.topnav .menuItem:hover > span { color: #fff; }
+  nav.topnav .dropdown { display: none; position: absolute; top: 100%; left: 0; background: #fff; color: var(--ink); min-width: 220px; box-shadow: 0 8px 24px rgba(0,0,0,.18); border-radius: 0 0 10px 10px; overflow: hidden; z-index: 50; }
+  nav.topnav .menuItem:hover .dropdown { display: block; }
+  nav.topnav .dropdown a { display: block; padding: 10px 16px; color: var(--ink); text-decoration: none; font-size: 13.5px; border-bottom: 1px solid var(--lineSoft); }
+  nav.topnav .dropdown a:last-child { border-bottom: none; }
+  nav.topnav .dropdown a:hover { background: #f5f4ef; }
+  .navToggle { display: none; background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; padding: 4px 10px; margin-left: auto; }
+  @media (max-width: 720px) {
+    nav.topnav { flex-wrap: wrap; height: auto; padding: 10px 16px; }
+    .navToggle { display: block; }
+    nav.topnav .menuItem { display: none; width: 100%; height: auto; flex-direction: column; align-items: stretch; }
+    nav.topnav.navOpen .menuItem { display: flex; }
+    nav.topnav .menuItem > span { padding: 12px 0 4px; cursor: pointer; }
+    nav.topnav .dropdown { position: static; box-shadow: none; border-radius: 0; background: transparent; min-width: 0; }
+    nav.topnav .menuItem.open .dropdown { display: block; }
+    nav.topnav .dropdown a { color: #fff; padding: 10px 0 10px 14px; border-bottom: 1px solid rgba(255,255,255,.12); }
+    nav.topnav .dropdown a:hover { background: rgba(255,255,255,.06); }
+  }
+
+  .wrap { max-width: 900px; margin: 0 auto; padding: 40px 48px 80px 48px; }
+  h1 { font-size: 26px; font-weight: 600; margin: 0 0 6px; letter-spacing: 0.01em; }
+  .sub { color: var(--muted); font-size: 14.5px; margin: 0 0 28px; line-height: 1.5; }
+  .chargement, .errBox { font-size: 14px; color: var(--muted); padding: 20px 0; }
+  .errBox { color: var(--ink); font-weight:600; font-family: monospace; white-space: pre-wrap; }
+
+  .noeud { position: relative; padding-left: 26px; }
+  .noeud::before { content: ""; position: absolute; left: 8px; top: 0; bottom: 0; width: 1px; background: var(--lineSoft); }
+  .racine { padding-left: 0; }
+  .racine::before { display: none; }
+
+  details { margin: 2px 0; }
+  details > summary { list-style: none; cursor: pointer; }
+  details > summary::-webkit-details-marker { display: none; }
+
+  .ligne { display: flex; align-items: baseline; gap: 10px; padding: 7px 0; position: relative; flex-wrap: wrap; }
+  .ligne::before { content: ""; position: absolute; left: -18px; top: 50%; width: 14px; height: 1px; background: var(--lineSoft); }
+  .racine > details > summary > .ligne::before, .racine > .ligne::before { display: none; }
+
+  .zoom { width: 18px; height: 18px; flex: 0 0 18px; border: 1px solid var(--line); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--muted); user-select: none; }
+  details[open] > summary .zoom::after { content: "\2212"; }
+  details:not([open]) > summary .zoom::after { content: "+"; }
+
+  .titre-categorie { font-size: 22px; font-weight: 700; letter-spacing: 0.02em; }
+  .titre-racine { font-size: 19px; font-weight: 600; }
+  .titre-sp { font-size: 16px; font-weight: 600; }
+  .titre-act { font-size: 14.5px; font-style: italic; }
+  .categorie > details > summary { border-bottom: 2px solid var(--line); padding-bottom: 6px; margin-bottom: 4px; }
+
+  .kpi { color: var(--muted); font-size: 12.5px; }
+  .kpi::before { content: "\2014 "; }
+
+  .niveaux { padding-left: 26px; margin-top: 4px; }
+  .niveau-ligne { display: flex; gap: 12px; padding: 4px 0 4px 18px; font-size: 12.5px; position: relative; }
+  .niveau-ligne::before { content: ""; position: absolute; left: 0; top: 50%; width: 12px; height: 1px; background: var(--lineSoft); }
+  .niveau-tag { flex: 0 0 84px; color: var(--ink); font-style: italic; }
+  .niveau-obs { color: var(--muted); }
+
+  .source-rome { font-size: 10.5px; color: var(--muted); }
+  .source-rome b { color: var(--ink); }
+  .source-manque { font-size: 10.5px; color: var(--muted); }
+
+  .legende { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--lineSoft); font-size: 12.5px; color: var(--muted); line-height: 1.6; }
+
+  .kpiHover { position: relative; display: inline-flex; align-items: center; cursor: help; color: var(--muted); font-size: 12px; margin-left: 2px; }
+  .kpiTooltip { display: none; position: absolute; top: 100%; left: 0; margin-top: 6px; background: var(--ink); color: #fff; padding: 9px 12px; border-radius: 8px; font-size: 12px; line-height: 1.55; white-space: normal; width: max-content; max-width: 320px; z-index: 200; box-shadow: 0 8px 24px rgba(0,0,0,.16); }
+  .kpiHover:hover .kpiTooltip { display: block; }
+  .kpiTooltip .kpiLigne { padding: 1px 0; }
+  .kpiTooltip .kpiLigne::before { content: "\2014 "; opacity: .55; }
+  .legende b { color: var(--ink); }
+
+  .toggleBar { display: flex; gap: 8px; margin-bottom: 12px; }
+  .pilotageActif { background: var(--soft); border: 1px solid var(--line); color: var(--ink); font-size: 13px; padding: 10px 14px; border-radius: 8px; margin-bottom: 24px; }
+  .pilotageRefuse { background: var(--soft); border-color: var(--line); color: var(--muted); }
+
+  .btnDanger { background: var(--soft); color: var(--ink); font-weight:600; border: 1px solid var(--line); border-radius: 6px; padding: 3px 10px; font-size: 12px; font-family: inherit; cursor: pointer; }
+  .btnDanger:hover { background: var(--line); }
+  .toggleBtn { padding: 8px 16px; border-radius: 9px; border: 1px solid var(--line); background: #fff; font-size: 13.5px; font-family: inherit; cursor: pointer; color: var(--ink); }
+  .toggleBtn.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .addBtn { font-size: 11.5px; border: 1px solid var(--ink); color: var(--ink); background: #fff; border-radius: 999px; padding: 2px 10px; margin-left: 8px; cursor: pointer; font-family: inherit; }
+  .editBtn { font-size: 10.5px; border: 1px solid var(--line); color: var(--muted); background: #fff; border-radius: 999px; padding: 1px 8px; margin-left: 6px; cursor: pointer; font-family: inherit; }
+  .etapeChip { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; background: var(--soft, #f7f7f7); border: 1px solid var(--line); border-radius: 999px; padding: 2px 9px; margin: 2px 3px 2px 0; }
+  .etapeChip button { border: none; background: none; color: var(--muted); cursor: pointer; font-size: 11px; font-family: inherit; padding: 0; }
+  .blocFormation { padding: 6px 0 4px 18px; }
+  .blocFormation .titreFormation { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; margin-bottom: 4px; }
+
+  .overlay { position: fixed; inset: 0; background: rgba(11,18,32,.45); display: flex; align-items: flex-start; justify-content: center; padding: 40px 16px; overflow-y: auto; z-index: 100; }
+  .modal { background: #fff; border-radius: 14px; max-width: 560px; width: 100%; padding: 24px 26px 28px 26px; }
+  .modal h3 { margin: 0 0 4px 0; font-size: 19px; }
+  .modal .ctx { font-size: 12.5px; color: var(--muted); margin-bottom: 18px; }
+  .champ { margin-bottom: 14px; }
+  .champ label { display: block; font-size: 12.5px; color: var(--muted); margin-bottom: 5px; }
+  .champ input, .champ textarea { width: 100%; border: 1px solid var(--line); border-radius: 10px; padding: 8px 11px; font-family: inherit; font-size: 14px; background: #fff; color: var(--ink); }
+  .champ textarea { resize: vertical; }
+  .romeResultats { border: 1px solid var(--line); border-radius: 10px; margin-top: 4px; max-height: 200px; overflow-y: auto; }
+  .romeItem { padding: 8px 11px; font-size: 13px; cursor: pointer; border-bottom: 1px solid var(--lineSoft); }
+  .romeItem:last-child { border-bottom: none; }
+  .romeItem:hover { background: #f5f4ef; }
+  .romeItem .t { font-size: 9.5px; text-transform: uppercase; letter-spacing: .03em; color: var(--muted); font-weight: 700; }
+  .romeChoisi { border: 1px solid var(--line); background: var(--soft); border-radius: 10px; padding: 9px 12px; font-size: 13px; margin-top: 6px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .romeChoisi button { font-size: 11px; color: var(--ink); background: none; border: none; cursor: pointer; text-decoration: underline; font-family: inherit; }
+  .horsRome { font-size: 12px; color: var(--muted); margin-top: 6px; }
+  .modalActions { display: flex; gap: 10px; margin-top: 20px; }
+  .btnPrimaire { background: var(--ink); color: #fff; border: none; border-radius: 999px; padding: 10px 20px; font-size: 14px; cursor: pointer; font-family: inherit; }
+  .btnSecondaire { background: #fff; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 10px 18px; font-size: 14px; cursor: pointer; font-family: inherit; }
+  .modalErr { color: var(--ink); font-weight:600; font-size: 12.5px; margin-top: 10px; }
+</style>
+<script src="acces-entreprise.js" defer></script>
+</head>
+<body>
+<nav class="topnav">
+  <a class="brand" href="federation-accueil.html">Maurice</a>
+  <button class="navToggle" onclick="toggleNav()" aria-label="Menu">☰</button>
+  <div class="menuItem"><span onclick="toggleMenuItem(this)">Mon Atelier</span>
+    <div class="dropdown">
+      <a href="atelier-compte.html">Accueil atelier</a>
+      <a href="devis-interne.html">Devis</a>
+      <a href="stock-atelier.html">Stock</a>
+      <a href="client-projet.html">Client / Projet</a>
+    </div>
+  </div>
+  <div class="menuItem"><span onclick="toggleMenuItem(this)">Ma Fédération</span>
+    <div class="dropdown">
+      <a href="federation-accueil.html">Accueil Fédération</a>
+      <a href="federation-accueil.html?tab=peintres">Nos peintres</a>
+      <a href="guide-production-mindmap.html">Guide comment on travaille</a>
+      <a href="guide-production-mindmap.html?guide=peindre">Guide comment on peint</a>
+      <a href="federation-accueil.html?tab=devenir">Nous rejoindre (Constellation &amp; Reconversion)</a>
+      <a href="therese.html" id="lienTherese" style="display:none">Thérèse</a>
+      <a href="federation-editos.html" id="lienEditos" style="display:none">Éditos du site public</a>
+      <a href="admin-metiers.html" id="lienAdminMetiers" style="display:none">Admin métiers</a>
+      <a href="deploiement-referentiel-formation.html" id="lienDeploiementFormation" style="display:none">Déploiement référentiel-formation</a>
+    </div>
+  </div>
+</nav>
+<div class="wrap" id="app">
+  <div class="chargement">Chargement du référentiel...</div>
+</div>
+<div id="modalRoot"></div>
+<script src="module-lecteur.js"></script>
+
+<script>
+const SUPABASE_URL = 'https://uuuigousvpijskbdhcal.supabase.co';
+const SUPABASE_KEY = 'sb_publishable__YuNj5XCo5YF8lwhwTu5OQ_RDM1Eesp';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+function escapeHtml(s){ return String(s??'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])) }
+function toggleNav(){ document.querySelector('nav.topnav').classList.toggle('navOpen'); }
+function toggleMenuItem(el){ el.parentElement.classList.toggle('open'); }
+// Infobulle KPI au survol — jamais sur la catégorie racine (Pilotage/Production/Support/Lettrage
+// peint), qui n'a pas de KPI propre. Un même champ kpi peut contenir plusieurs lignes (séparées par
+// un retour à la ligne) : plus on descend vers une situation, plus c'est opérationnel ; plus on
+// remonte vers un sous-processus, plus c'est synthétisé.
+function kpiTooltip(kpiText){
+  if(!kpiText) return '';
+  const lignes = String(kpiText).split(/\n+/).map(l=>l.trim()).filter(Boolean);
+  if(!lignes.length) return '';
+  return `<span class="kpiHover" onclick="event.preventDefault()">🛈<span class="kpiTooltip">${lignes.map(l=>`<div class="kpiLigne">${escapeHtml(l)}</div>`).join('')}</span></span>`;
+}
+function dateFr(iso){ if(!iso) return ''; const d=new Date(iso+'T00:00:00'); return isNaN(d)?iso:d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'}); }
+
+// Deux guides distincts partagent le même moteur (arbre, Piloter, ROME, modules, progressions,
+// recommandations) — seule la liste de catégories affichées change. Ajouter un 3e guide un jour
+// ne demande qu'une entrée ici, pas une nouvelle page (charte point 7 : structurer une fois).
+const GUIDES = {
+  travailler: { categories: ['Pilotage','Production','Support'], titre: 'Guide du comment on travaille — Pilotage / Production / Support', sousTitre: 'Carte mentale : cliquez + / − pour dérouler. Contenu réel du référentiel, chaque situation de travail déroule ses 4 niveaux de pratique et sa source ROME vérifiée — ou "Fédération — hors ROME" quand aucune correspondance n\'existe encore.' },
+  peindre: { categories: ['Lettrage peint'], titre: 'Guide du comment on peint — Réalisation du lettrage peint (7 axes)', sousTitre: 'Carte mentale du geste de peintre en lettres : tracé, préparation et application de la peinture, dorure, effets décoratifs, adaptation aux supports, restauration, finitions. Chaque situation déroule ses 4 niveaux de pratique et sa source ROME vérifiée.' },
+};
+// Chargée depuis referentiel_processus.categorie (voir plus bas) — plus aucune
+// catégorie de métier codée en dur, pour rester utilisable par n'importe quel
+// métier de la Fédération (charte point 8).
+let TOUTES_CATEGORIES = [];
+let guideActif = 'travailler';
+function categoriesActives(){ return GUIDES[guideActif].categories; }
+function changerGuide(g){
+  if(!GUIDES[g] || g===guideActif) return;
+  guideActif = g; vueModules=false; vueRecommandations=false;
+  try{
+    const params = new URLSearchParams(location.search); params.set('guide', g);
+    history.replaceState(null, '', '?'+params.toString());
+  }catch(e){ /* contexte sans origine réelle (aperçu local) — sans conséquence, l'URL ne se met juste pas à jour */ }
+  render();
+}
+const NIVEAUX = ['Niveau 1 débutant','Niveau 2 apprenti opérationnel','Niveau 3 compagnon','Niveau 4 maître'];
+const ORDRE_NIVEAU = { 'Niveau 1 débutant':1, 'Niveau 2 apprenti opérationnel':2, 'Niveau 3 compagnon':3, 'Niveau 4 maître':4 };
+// Les 3 transitions possibles entre niveaux consécutifs — le référentiel formation (parcours
+// prescrit) s'accroche à l'une de ces 3 paires, jamais à un couple de niveaux non consécutifs.
+const TRANSITIONS_NIVEAUX = [[NIVEAUX[0],NIVEAUX[1]], [NIVEAUX[1],NIVEAUX[2]], [NIVEAUX[2],NIVEAUX[3]]];
+function cleTransition(depart, arrivee){ return depart+SEPARATEUR_CLE+arrivee; }
+const COMITE_EMAIL = COMITE_EMAIL_FEDERATION; // source unique : federation-nav.js
+
+let arbreGlobal = null;
+let METIER_ACTUEL_ID = null; // un seul métier actif pour l'instant (générique dès la base)
+let MODALITES_FORMATION = []; // référentiel des modalités (tuto/AFEST/...), jamais codé en dur
+let MODULES_FORMATION = []; // modules de formation réutilisables (charte point 7)
+let NB_SITUATIONS_PAR_MODULE = {};
+let NB_SITUATIONS_PAR_TERME = {};
+let session = null;
+let mode = 'consulter'; // 'consulter' | 'piloter'
+let vueModules = false; // écran de gestion des modules (comité), remplace l'arbre
+let vueContenuModule = null; // {id,nom} | null — écran des étapes d'un module (module_etapes)
+let etapesModuleCourant = [];
+let formulaireEtape = null; // {id|null, moduleId, ordre, titre, typeContenu, contenu, dureeMin, quizQuestions, erreur, enCours}
+const TYPES_ETAPE = [
+  { valeur:'pdf', label:'PDF' }, { valeur:'video', label:'Vidéo' }, { valeur:'audio', label:'Audio' },
+  { valeur:'quiz', label:'Quiz' }, { valeur:'activite_pratique', label:'Activité pratique' },
+];
+let moduleEnEdition = null; // { id, nom } quand on coche en masse les situations couvertes par un module
+let termeEnEdition = null; // { id, terme } quand on coche en masse les situations couvertes par un terme du lexique
+let vueLexique = false; // écran du lexique, atteint depuis Référentiel formation (une ligne parmi les modules)
+let vueCarteFormation = false; // écran "Référentiel formation" (arbre B0-B9, modules+épreuves+lexique), ouvert à tous
+let ficheModuleOuverte = null; // module en cours de consultation/édition en fiche détail
+let ongletFicheModule = 'infos'; // 'infos' | 'situations' | 'contenu'
+let ficheTermeOuvert = null; // terme en cours de consultation en fiche détail
+let rechercheLexique = ''; let triLexique = { col:'terme', dir:1 }; let filtreCategorieLexique = '';
+let EPREUVES_TRANSITION = []; let NB_SITUATIONS_PAR_EPREUVE = {};
+let ficheEpreuveOuverte = null; // épreuve en cours de consultation/édition en fiche détail
+let ongletFicheEpreuve = 'infos'; // 'infos' | 'situations'
+let epreuveEnEdition = null; // { id, nom } quand on coche en masse les transitions couvertes par une épreuve
+const TYPES_EPREUVE = [
+  { valeur:'quiz', label:'Quiz' }, { valeur:'pratique', label:'Épreuve pratique' },
+  { valeur:'soutenance', label:'Soutenance' }, { valeur:'autre', label:'Autre' },
+];
+let FORMATEURS_QUALIFIES = [];
+const MODALITES_HUMAINES = ['afest','intra','inter','mentorat'];
+let LEXIQUE_TERMES = [];
+let formulaireTerme = null; // { id|null, terme, variante, definition, categorie, remarque, erreur, enCours }
+const CATEGORIES_LEXIQUE = ['Anatomie de la lettre (typographie)',"Styles d'écriture & classifications",'Techniques & gestes de mise en peinture','Dorure & sous-verre','Outils, pinceaux & matériaux','Supports & types de réalisations','Métier, formation & expressions courantes','Conception graphique'];
+let formulaireModule = null; // { id|null, nom, modaliteId, description, erreur, enCours }
+let vueRecommandations = false; // écran des recommandations Thérèse (comité), remplace l'arbre
+let RECOMMANDATIONS = [];
+let vueRattachementRome = false; // écran de rattachement ROME via l'API ROMEO (comité), remplace l'arbre
+let RATTACHEMENT_RESULTATS = null; // null = pas encore lancé ; sinon [{situationUid,situation,processus,sousProcessus,propositions,exclu}]
+let rattachementEnCours = false;
+let rattachementErreur = '';
+let vueParcours = false; // écran des parcours de formation (comité), remplace l'arbre
+let PARCOURS_FORMATION = [];
+let formulaireParcours = null; // { id|null, titre, situationsVisees:[], modules:[{id,ordre,prerequis}], erreur, enCours }
+// Phase 6 — Profils de poste-type : une ligne par couple poste-type × situation, définissant
+// le niveau minimum attendu. Remplie par le comité seulement, jamais déduite automatiquement.
+let vuePostesTypes = false; // écran de gestion des profils de poste-type (comité), remplace l'arbre
+let POSTES_TYPES = [];
+let NB_SITUATIONS_PAR_POSTE = {};
+let NIVEAU_MIN_PAR_POSTE_SITUATION = {}; // clé `${posteTypeId}|${situationUid}` -> niveau_min
+let ficheProfilOuvert = null; // { id|null, nom, description, erreur, enCours }
+let posteTypeEnEdition = null; // { id, nom } quand on assigne un niveau minimum en masse sur les situations
+let rechercheProfils = ''; let triProfils = { col:'nom', dir:1 };
+const ROMEO_FUNCTION_URL = 'https://uuuigousvpijskbdhcal.supabase.co/functions/v1/romeo-competences';
+let SITUATIONS_PAR_UID = {}; // index plat situation_uid -> { situation, processus, sousProcessus } pour affichage
+let formulaire = null;  // { processus, sousProcessus, situationOriginale, ids:{N1..}, nom, niveaux:{N1..}, rechercheRome, resultatsRome, romeChoisi, erreur, enCours }
+let formulaireTransition = null; // { situationUid, niveauDepart, niveauArrivee, ordre, choix:'nouveau'|'existant', nom, modaliteId, description, moduleExistantId, erreur, enCours }
+let rechercheRomeTimer = null;
+
+// Vocabulaire utilisateur (structure "définitivement fixée") : la catégorie Pilotage/Production/
+// Support = "Processus" (non modifiable), une ligne referentiel_processus = "Sous-processus", une
+// ligne referentiel_sous_processus = "Sous-sous-processus". Noms de tables internes inchangés.
+const LABEL_NOEUD = { processus: 'sous-processus', sous_processus: 'sous-sous-processus', niveau4: 'sous-sous-sous-processus' };
+const SEPARATEUR_CLE = '###';
+function combineKey(a,b){ return a+SEPARATEUR_CLE+b; }
+function splitKey(k){ return k.split(SEPARATEUR_CLE); }
+let formulaireNoeud = null; // { niveau:'processus'|'sous_processus', parentKey, nomOriginal, nom, kpi, erreur, enCours }
+
+async function initApp(){
+  const paramsInit = new URLSearchParams(location.search);
+  if(GUIDES[paramsInit.get('guide')]) guideActif = paramsInit.get('guide');
+  const { data } = await sb.auth.getSession();
+  session = data.session || null;
+  if(!session){
+    const brand = document.querySelector('nav.topnav a.brand');
+    if(brand) brand.textContent = 'Fédération de peintres en lettres';
+  }
+  if(session) appliquerLiensComite(session, ['lienEditos','lienAdminMetiers','lienDeploiementFormation']);
+  if(session){
+    const { data: fm } = await sb.from('federation_members').select('therese_actif').eq('user_id', session.user.id).maybeSingle();
+    if(fm && fm.therese_actif){
+      const lienT = document.getElementById('lienTherese');
+      if(lienT) lienT.style.display = '';
+    }
+  }
+  await charger();
+  const modeDemande = new URLSearchParams(location.search).get('mode');
+  if(modeDemande) setMode(modeDemande);
+}
+
+async function charger(){
+  const app = document.getElementById('app');
+  try{
+    const { data: metiers, error: eM } = await sb.from('metiers').select('id,nom').order('ordre').limit(1);
+    if(eM) throw eM;
+    METIER_ACTUEL_ID = metiers && metiers[0] ? metiers[0].id : null;
+    await chargerRoles();
+    await chargerAxes();
+
+    const { data: modalites, error: eMod } = await sb.from('modalites_formation').select('id,code,label,ordre').order('ordre');
+    if(eMod) throw eMod;
+    MODALITES_FORMATION = modalites || [];
+
+    // Un seul métier à la fois : sans ce filtre, les processus d'un autre métier visible (par exemple un référentiel
+    // personnel) se mélangeaient à ceux du collectif dans le même arbre.
+    const { data: registreProcessus, error: eP } = await sb.from('referentiel_processus')
+      .select('nom,categorie,kpi,ordre').eq('metier_id', METIER_ACTUEL_ID).order('ordre');
+    if(eP) throw eP;
+    const { data: registreSousProcessus, error: eSP } = await sb.from('referentiel_sous_processus')
+      .select('processus_nom,nom,kpi,ordre').order('ordre');
+    if(eSP) throw eSP;
+    const { data: registreNiveau4, error: eN4 } = await sb.from('referentiel_niveau4')
+      .select('processus_nom,sous_processus_nom,nom,kpi,ordre').order('ordre');
+    if(eN4) throw eN4;
+
+    const { data: situations, error: e1 } = await sb.from('referentiel_situations')
+      .select('id,processus,sous_processus,niveau4,situation,niveau,verbalisation,kpi,role,situation_uid')
+      .or('metier_id.is.null,metier_id.eq.' + METIER_ACTUEL_ID)   // les situations du collectif (sans métier précis) et celles de ce métier seulement
+      .order('processus').order('sous_processus').order('situation').order('niveau');
+    if(e1) throw e1;
+
+    // Correspondance ROME : une seule table (correspondances_rome), une ligne par situation
+    // (clé = situation_uid, partagé par les 4 lignes niveau) — plus aucun lien codé en dur.
+    const uids = [...new Set(situations.map(s=>s.situation_uid).filter(Boolean))];
+    let correspondances = [];
+    const TAILLE_LOT = 150; // au-delà, l'URL .in(...) dépasse une limite de taille côté serveur
+    for(let i=0; i<uids.length; i+=TAILLE_LOT){
+      const lot = uids.slice(i, i+TAILLE_LOT);
+      const { data, error: e2 } = await sb.from('correspondances_rome')
+        .select('situation_id,code_rome,statut,commentaire').in('situation_id', lot);
+      if(e2) throw e2;
+      correspondances = correspondances.concat(data || []);
+    }
+    const codesRome = [...new Set(correspondances.map(c=>c.code_rome).filter(Boolean))];
+    let libellesParCode = {};
+    for(let i=0; i<codesRome.length; i+=TAILLE_LOT){
+      const lot = codesRome.slice(i, i+TAILLE_LOT);
+      const { data, error: e3 } = await sb.from('rome_referentiel_competences').select('code,type,libelle').in('code', lot);
+      if(e3) throw e3;
+      for(const r of (data||[])) libellesParCode[r.code] = { type:r.type, libelle:r.libelle };
+    }
+    const romeParSituationUid = {};
+    for(const c of correspondances){
+      const infoCode = c.code_rome ? libellesParCode[c.code_rome] : null;
+      romeParSituationUid[c.situation_id] = { statut:c.statut, codeRome:c.code_rome, libelle: infoCode?infoCode.libelle:null, type: infoCode?infoCode.type:null, commentaire:c.commentaire };
+    }
+
+    // Référentiel formation : un module (nom + modalité + description) peut couvrir plusieurs
+    // situations/transitions à la fois (module_situations, plusieurs-à-plusieurs) — charte de
+    // cohérence point 7. Une transition peut avoir plusieurs modules en séquence (ex: tuto puis AFEST).
+    const modaliteParId = {}; for(const m of MODALITES_FORMATION) modaliteParId[m.id] = m;
+    const { data: modules, error: eMF } = await sb.from('modules_apprentissage')
+      .select('id,nom,modalite_id,description,lien_ressource,autoformation,statut,updated_at,contenu_humain,supports,esg,temps_pratique_recommande_min,axe_formation,sous_chapitre,sous_sous_chapitre').order('created_at');
+    if(eMF) throw eMF;
+    MODULES_FORMATION = (modules||[]).map(m=>({ ...m, modaliteId:m.modalite_id, modaliteLabel:(modaliteParId[m.modalite_id]||{}).label||'?', modaliteCode:(modaliteParId[m.modalite_id]||{}).code||'' }));
+    const moduleParId = {}; for(const m of MODULES_FORMATION) moduleParId[m.id] = m;
+
+    let moduleSituations = [];
+    for(let i=0; i<uids.length; i+=TAILLE_LOT){
+      const lot = uids.slice(i, i+TAILLE_LOT);
+      const { data, error: eMS } = await sb.from('module_situations')
+        .select('id,module_id,situation_id,niveau_depart,niveau_arrivee,ordre').in('situation_id', lot).order('ordre');
+      if(eMS) throw eMS;
+      moduleSituations = moduleSituations.concat(data || []);
+    }
+    // Vocabulaire à connaître (lexique_situations/lexique_termes) — système à part, jamais un
+    // module de formation, mais rattaché aux mêmes situations : affiché ici pour qu'on puisse
+    // enfin voir le lien, pas juste le déduire d'une conversation avec Thérèse.
+    let vocabLiens = [];
+    for(let i=0; i<uids.length; i+=TAILLE_LOT){
+      const lot = uids.slice(i, i+TAILLE_LOT);
+      const { data, error: eVoc } = await sb.from('lexique_situations')
+        .select('situation_id, lexique_termes(id,terme,variante,definition,remarque)').in('situation_id', lot);
+      if(eVoc) throw eVoc;
+      vocabLiens = vocabLiens.concat(data || []);
+    }
+    const vocabParSituationUid = {};
+    NB_SITUATIONS_PAR_TERME = {};
+    for(const v of vocabLiens){
+      if(!v.lexique_termes) continue;
+      (vocabParSituationUid[v.situation_id] = vocabParSituationUid[v.situation_id] || []).push(v.lexique_termes);
+      NB_SITUATIONS_PAR_TERME[v.lexique_termes.id] = (NB_SITUATIONS_PAR_TERME[v.lexique_termes.id]||0) + 1;
+    }
+
+    const transitionsParSituationUid = {};
+    NB_SITUATIONS_PAR_MODULE = {};
+    for(const ms of moduleSituations){
+      const bucket = (transitionsParSituationUid[ms.situation_id] = transitionsParSituationUid[ms.situation_id] || {});
+      const cle = cleTransition(ms.niveau_depart, ms.niveau_arrivee);
+      const mod = moduleParId[ms.module_id] || {};
+      (bucket[cle] = bucket[cle] || []).push({ liaisonId:ms.id, moduleId:ms.module_id, moduleNom:mod.nom||'?', modaliteLabel:mod.modaliteLabel||'?', ordre:ms.ordre, description:mod.description, lienRessource:mod.lien_ressource||null, statut:mod.statut||'brouillon' });
+      NB_SITUATIONS_PAR_MODULE[ms.module_id] = (NB_SITUATIONS_PAR_MODULE[ms.module_id]||0) + 1;
+    }
+
+    // Épreuves de transition (epreuves_transition) — toujours frères des modules, jamais
+    // enfants (charte de cohérence), toujours attachées à une transition (jamais un seul
+    // niveau) : rendues à part dans le même bloc que les modules de transition.
+    const { data: epreuves, error: eET } = await sb.from('epreuves_transition')
+      .select('id,nom,type_epreuve,description,duree_min,statut,updated_at,axe_formation,sous_chapitre,sous_sous_chapitre').order('created_at');
+    if(eET) throw eET;
+    EPREUVES_TRANSITION = epreuves || [];
+    const epreuveParId = {}; for(const e of EPREUVES_TRANSITION) epreuveParId[e.id] = e;
+
+    let epreuveSituations = [];
+    for(let i=0; i<uids.length; i+=TAILLE_LOT){
+      const lot = uids.slice(i, i+TAILLE_LOT);
+      const { data, error: eES } = await sb.from('epreuve_situations')
+        .select('id,epreuve_id,situation_id,niveau_depart,niveau_arrivee,ordre').in('situation_id', lot).order('ordre');
+      if(eES) throw eES;
+      epreuveSituations = epreuveSituations.concat(data || []);
+    }
+    const transitionsEpreuvesParSituationUid = {};
+    NB_SITUATIONS_PAR_EPREUVE = {};
+    for(const es of epreuveSituations){
+      const bucket = (transitionsEpreuvesParSituationUid[es.situation_id] = transitionsEpreuvesParSituationUid[es.situation_id] || {});
+      const cle = cleTransition(es.niveau_depart, es.niveau_arrivee);
+      const ep = epreuveParId[es.epreuve_id] || {};
+      (bucket[cle] = bucket[cle] || []).push({ liaisonId:es.id, epreuveId:es.epreuve_id, epreuveNom:ep.nom||'?', typeEpreuve:ep.type_epreuve||'?', ordre:es.ordre, statut:ep.statut||'brouillon' });
+      NB_SITUATIONS_PAR_EPREUVE[es.epreuve_id] = (NB_SITUATIONS_PAR_EPREUVE[es.epreuve_id]||0) + 1;
+    }
+
+    // Profils de poste-type (Phase 6) — niveau minimum attendu par situation, un poste-type
+    // pouvant couvrir des situations sans lien avec les modules/épreuves déjà chargés.
+    const { data: profils, error: ePT } = await sb.from('postes_types')
+      .select('id,nom,description,updated_at').order('nom');
+    if(ePT) throw ePT;
+    POSTES_TYPES = profils || [];
+
+    let posteSituations = [];
+    for(let i=0; i<uids.length; i+=TAILLE_LOT){
+      const lot = uids.slice(i, i+TAILLE_LOT);
+      const { data, error: ePS } = await sb.from('poste_type_situations')
+        .select('id,poste_type_id,situation_id,niveau_min').in('situation_id', lot);
+      if(ePS) throw ePS;
+      posteSituations = posteSituations.concat(data || []);
+    }
+    NB_SITUATIONS_PAR_POSTE = {};
+    NIVEAU_MIN_PAR_POSTE_SITUATION = {};
+    for(const ps of posteSituations){
+      NB_SITUATIONS_PAR_POSTE[ps.poste_type_id] = (NB_SITUATIONS_PAR_POSTE[ps.poste_type_id]||0) + 1;
+      NIVEAU_MIN_PAR_POSTE_SITUATION[ps.poste_type_id+'|'+ps.situation_id] = ps.niveau_min;
+    }
+
+    // Ma progression réelle sur ces transitions (mes propres lignes seulement — la RLS ne
+    // laisserait de toute façon voir que ça, sauf pour le comité).
+    const mesProgressionsParCle = {};
+    if(session){
+      const { data: progressions, error: ePF } = await sb.from('progressions_formation')
+        .select('id,situation_id,niveau_depart,niveau_arrivee,statut,echeance,nombre_prolongations').eq('user_id', session.user.id)
+        .in('statut', ['en_cours','bloque']);
+      if(ePF) throw ePF;
+      for(const p of (progressions||[])){
+        (mesProgressionsParCle[p.situation_id] = mesProgressionsParCle[p.situation_id] || {})[cleTransition(p.niveau_depart, p.niveau_arrivee)] = p;
+      }
+    }
+
+    // Recommandations Thérèse : réservé au comité (RLS l'impose déjà, mais on évite l'appel inutile).
+    if(session && session.user.email===COMITE_EMAIL){
+      const { data: recos, error: eR } = await sb.from('recommandations_therese').select('*').order('date', { ascending:false });
+      if(eR) throw eR;
+      RECOMMANDATIONS = recos || [];
+    } else {
+      RECOMMANDATIONS = [];
+    }
+
+    const categorieParProcessus = {};
+    const kpiParProcessus = {};
+    for(const p of registreProcessus) { categorieParProcessus[p.nom] = p.categorie; kpiParProcessus[p.nom] = p.kpi; }
+    const kpiParSousProcessus = {};
+    for(const sp of registreSousProcessus) (kpiParSousProcessus[sp.processus_nom] = kpiParSousProcessus[sp.processus_nom] || {})[sp.nom] = sp.kpi;
+
+    TOUTES_CATEGORIES = [...new Set(registreProcessus.map(p=>p.categorie))];
+    // Arbre : categorie -> processus -> sous_processus -> situation -> { niveaux:{N1..}, ids:{N1..}, situationUid, rome:{statut,codeRome,libelle}|null, kpi }
+    const arbre = {}; for(const c of TOUTES_CATEGORIES) arbre[c] = { processus:{}, ordre:[] };
+    for(const p of registreProcessus){
+      const cat = arbre[p.categorie];
+      if(!cat) continue;
+      if(!cat.processus[p.nom]){ cat.processus[p.nom] = { sousProcessus:{}, ordre:[], kpi:p.kpi }; cat.ordre.push(p.nom); }
+    }
+    // Peuple aussi les sous-processus vides (0 situation) directement depuis le registre — sinon un
+    // sous-processus tout juste créé resterait invisible tant qu'aucune situation ne lui est rattachée.
+    for(const sp of registreSousProcessus){
+      const categorie = categorieParProcessus[sp.processus_nom];
+      const cat = categorie ? arbre[categorie] : null;
+      const p = cat ? cat.processus[sp.processus_nom] : null;
+      if(!p) continue;
+      if(!p.sousProcessus[sp.nom]){ p.sousProcessus[sp.nom] = { situations:{}, ordre:[], kpi:sp.kpi, niveau4:{}, ordreNiveau4:[] }; p.ordre.push(sp.nom); }
+    }
+    // Même chose pour le 4e étage optionnel (sous-sous-sous-processus) : peuplé même sans situation.
+    for(const n4 of registreNiveau4){
+      const categorie = categorieParProcessus[n4.processus_nom];
+      const cat = categorie ? arbre[categorie] : null;
+      const p = cat ? cat.processus[n4.processus_nom] : null;
+      const sp = p ? p.sousProcessus[n4.sous_processus_nom] : null;
+      if(!sp) continue;
+      if(!sp.niveau4[n4.nom]){ sp.niveau4[n4.nom] = { situations:{}, ordre:[], kpi:n4.kpi }; sp.ordreNiveau4.push(n4.nom); }
+    }
+    SITUATIONS_PAR_UID = {};
+    for(const s of situations){
+      if(s.situation_uid) SITUATIONS_PAR_UID[s.situation_uid] = { situation: s.situation, processus: s.processus, sousProcessus: s.sous_processus, kpi: s.kpi };
+      const categorie = categorieParProcessus[s.processus];
+      const cat = categorie ? arbre[categorie] : null;
+      if(!cat) continue; // processus absent du registre (ne devrait plus arriver après la restructuration)
+      if(!cat.processus[s.processus]){ cat.processus[s.processus] = { sousProcessus:{}, ordre:[], kpi:kpiParProcessus[s.processus]||null }; cat.ordre.push(s.processus); }
+      const p = cat.processus[s.processus];
+      if(!p.sousProcessus[s.sous_processus]){
+        const kpiSP = (kpiParSousProcessus[s.processus]||{})[s.sous_processus] || null;
+        p.sousProcessus[s.sous_processus] = { situations:{}, ordre:[], kpi:kpiSP, niveau4:{}, ordreNiveau4:[] };
+        p.ordre.push(s.sous_processus);
+      }
+      const sp = p.sousProcessus[s.sous_processus];
+      // Étage optionnel : si la situation porte un niveau4, elle se range dans ce sous-groupe plutôt
+      // que directement sous le sous-sous-processus — une branche peut choisir sa propre profondeur.
+      let bucket = sp;
+      if(s.niveau4){
+        if(!sp.niveau4[s.niveau4]){ sp.niveau4[s.niveau4] = { situations:{}, ordre:[], kpi:null }; sp.ordreNiveau4.push(s.niveau4); }
+        bucket = sp.niveau4[s.niveau4];
+      }
+      if(!bucket.situations[s.situation]){ bucket.situations[s.situation] = { niveaux:{}, ids:{}, situationUid:s.situation_uid, rome:romeParSituationUid[s.situation_uid]||null, formation:transitionsParSituationUid[s.situation_uid]||{}, epreuves:transitionsEpreuvesParSituationUid[s.situation_uid]||{}, vocabulaire:vocabParSituationUid[s.situation_uid]||[], mesProgressions:mesProgressionsParCle[s.situation_uid]||{}, kpi:s.kpi||null, role:s.role||null }; bucket.ordre.push(s.situation); }
+      bucket.situations[s.situation].niveaux[s.niveau] = s.verbalisation;
+      bucket.situations[s.situation].ids[s.niveau] = s.id;
+    }
+
+    arbreGlobal = arbre;
+    // Lexique et formateurs qualifiés : petites tables, chargées systématiquement plutôt que
+    // paresseusement — évite un oubli de chargement quand on ouvre une fiche module/terme
+    // depuis n'importe quel point d'entrée (arbre principal, Référentiel formation).
+    await Promise.all([chargerLexiqueTermes(), chargerFormateursQualifies()]);
+    render();
+  }catch(err){
+    app.innerHTML = `<div class="errBox">${escapeHtml(err.message||String(err))}</div>`;
+  }
+}
+
+function render(){
+  document.getElementById('app').innerHTML = vueCarteFormation ? renderCarteFormation() : vueRecommandations ? renderRecommandations() : vueRattachementRome ? renderRattachementRome() : vueParcours ? renderParcours() : vuePostesTypes ? renderPostesTypes() : renderArbre(arbreGlobal);
+  renderModal();
+}
+
+function setMode(m){
+  if(m==='piloter' && (!session || session.user.email!==COMITE_EMAIL)) return;
+  mode = m;
+  render();
+}
+
+// Affichage seulement — la valeur "Production" reste inchangée en base (categorie de
+// referentiel_processus, utilisée ailleurs pour écrire/regrouper) ; seul le texte visible change.
+function labelCategorie(c){ return c==='Production' ? 'Cœur de métier' : c; }
+
+function renderArbre(arbre){
+  const authed = session && session.user.email===COMITE_EMAIL;
+  let html = `
+  <h1>${escapeHtml(GUIDES[guideActif].titre)}</h1>
+  <p class="sub">${escapeHtml(GUIDES[guideActif].sousTitre)}</p>
+  <div class="toggleBar">
+    <button class="toggleBtn ${guideActif==='travailler'?'active':''}" onclick="changerGuide('travailler')">Guide comment on travaille</button>
+    <button class="toggleBtn ${guideActif==='peindre'?'active':''}" onclick="changerGuide('peindre')">Guide comment on peint</button>
+  </div>
+  <div class="toggleBar">
+    <button class="toggleBtn" onclick="toutOuvrir()">+ Tout ouvrir</button>
+    <button class="toggleBtn" onclick="toutFermer()">− Tout fermer</button>
+    <button class="toggleBtn" onclick="vueCarteFormation=true;render()">Référentiel formation</button>
+  </div>
+  ${authed ? `
+  <div class="toggleBar">
+    <button class="toggleBtn ${mode==='consulter'?'active':''}" onclick="setMode('consulter')">Consulter</button>
+    <button class="toggleBtn ${mode==='piloter'?'active':''}" onclick="setMode('piloter')">Piloter (comité référentiel)</button>
+    <button class="toggleBtn" onclick="ouvrirParcours()">Parcours de formation</button>
+    <button class="toggleBtn" onclick="vueRecommandations=true;render()">Recommandations Thérèse${RECOMMANDATIONS.filter(r=>r.statut==='proposée').length?' ('+RECOMMANDATIONS.filter(r=>r.statut==='proposée').length+')':''}</button>
+    <button class="toggleBtn" onclick="vueRattachementRome=true;render()">Rattachement ROME</button>
+    <button class="toggleBtn" onclick="vuePostesTypes=true;mode='piloter';render()">Profils de poste-type</button>
+  </div>
+  ${mode==='piloter' && moduleEnEdition ? `<div class="pilotageActif">Sélection en cours pour le module « ${escapeHtml(moduleEnEdition.nom)} » — coche toutes les situations/transitions qu'il couvre. <button class="toggleBtn" onclick="retourFicheModuleApresSituations()">← Retour à la fiche du module</button></div>`
+    : mode==='piloter' && epreuveEnEdition ? `<div class="pilotageActif">Sélection en cours pour l'épreuve « ${escapeHtml(epreuveEnEdition.nom)} » — coche toutes les transitions qu'elle évalue. <button class="toggleBtn" onclick="retourFicheEpreuveApresSituations()">← Retour à la fiche de l'épreuve</button></div>`
+    : mode==='piloter' && termeEnEdition ? `<div class="pilotageActif">Sélection en cours pour le terme « ${escapeHtml(termeEnEdition.terme)} » — coche toutes les situations où il s'applique. <button class="toggleBtn" onclick="retourFicheTermeApresSituations()">← Retour à la fiche du terme</button></div>`
+    : mode==='piloter' && posteTypeEnEdition ? `<div class="pilotageActif">Sélection en cours pour le profil « ${escapeHtml(posteTypeEnEdition.nom)} » — choisis le niveau minimum attendu sur chaque situation concernée (laisse « — non requis — » sinon). <button class="toggleBtn" onclick="retourFicheProfilApresSituations()">← Retour à la fiche du profil</button></div>`
+    : mode==='piloter' ? `<div class="pilotageActif">Mode Piloter actif — déplie un sous-processus pour voir apparaître "+ Ajouter une situation", ou une situation pour voir "Modifier".</div>` : ''}
+  ` : (session ? `<div class="pilotageActif pilotageRefuse">Connecté en tant que ${escapeHtml(session.user.email)} — ce compte n'a pas les droits du comité référentiel, seul le mode Consulter est disponible.</div>` : '')}
+  `;
+  const enPilotage = authed && mode==='piloter';
+  // "Lettrage peint" est un référentiel séparé (Partie 1 — Cœur de métier), mais dans le guide
+  // "comment on travaille", on l'intègre visuellement dans Production plutôt que de le montrer
+  // comme une catégorie à part entière — la donnée reste distincte (categorie='Lettrage peint'
+  // en base), seule la présentation change. La vue "comment on peint" continue de l'afficher
+  // normalement pour qui veut le détail complet des 7 axes.
+  const coeurMetier = arbre['Lettrage peint'];
+  for(const categorie of categoriesActives()){
+    if(categorie==='Lettrage peint' && guideActif==='travailler') continue;
+    const cat = arbre[categorie];
+    if(!cat) continue;
+    if(!cat.ordre.length && !enPilotage) continue;
+    if(categorie==='Lettrage peint' && guideActif==='peindre'){
+      // Remonte directement le(s) processus (ex. "Réalisation du lettrage peint") au niveau
+      // catégorie, sans le wrapper "Lettrage peint" redondant : c'est la même donnée que celle
+      // intégrée dans "Comment on travaille" (Production) — pas une catégorie à part entière.
+      html += cat.ordre.map(pn=>{
+        const p = cat.processus[pn];
+        const nbSituP = p.ordre.reduce((n,sp)=>n+p.sousProcessus[sp].ordre.length,0);
+        return `
+        <div class="noeud racine categorie">
+          <details open>
+            <summary><div class="ligne"><span class="zoom"></span><span class="titre-categorie">${escapeHtml(pn)}</span>${kpiTooltip(p.kpi)}<span class="kpi">${p.ordre.length} sous-sous-processus, ${nbSituP} situations</span>${enPilotage?`<button class="editBtn" onclick="event.preventDefault();ouvrirFormulaireNoeud('processus','${esc1(categorie)}','${esc1(pn)}','${esc1(p.kpi||'')}')">✎ Renommer</button><button class="addBtn" onclick="event.preventDefault();ouvrirFormulaireNoeud('sous_processus','${esc1(pn)}',null,'')">+ Ajouter un sous-sous-processus</button>`:''}</div></summary>
+            <div class="noeud">
+              ${p.ordre.map(sousP=>renderSousProcessus(pn, sousP, p.sousProcessus[sousP])).join('')}
+            </div>
+          </details>
+        </div>`;
+      }).join('');
+      continue;
+    }
+    const nbSitu = cat.ordre.reduce((n,pn)=>n+cat.processus[pn].ordre.reduce((m,sp)=>m+cat.processus[pn].sousProcessus[sp].ordre.length,0),0);
+    html += `
+    <div class="noeud racine categorie">
+      <details open>
+        <summary><div class="ligne"><span class="zoom"></span><span class="titre-categorie">${escapeHtml(labelCategorie(categorie))}</span><span class="kpi">${cat.ordre.length} sous-processus, ${nbSitu} situations de travail</span>${enPilotage?`<button class="addBtn" onclick="event.preventDefault();ouvrirFormulaireNoeud('processus','${esc1(categorie)}',null,'')">+ Ajouter un sous-processus</button>`:''}</div></summary>
+        <div class="noeud">
+          ${categorie==='Production' && guideActif==='travailler' && coeurMetier
+            ? renderProcessusAvecCoeurMetier(categorie, cat, coeurMetier)
+            : cat.ordre.map(pn=>renderProcessus(categorie, pn, cat.processus[pn])).join('')}
+        </div>
+      </details>
+    </div>`;
+  }
+  html += `
+  <div class="legende">
+    <b>Comment lire cette carte :</b> le "+" ouvre un niveau, le "−" le referme. Chaque situation de travail (en italique) déroule ses 4 niveaux de pratique tels qu'écrits dans le référentiel, puis sa source réelle.
+    <br><br>
+    <b>Source ROME</b> : quand une correspondance existe déjà, le code et le libellé ROME exacts sont affichés. <b>Fédération — hors ROME</b> : aucune correspondance trouvée pour l'instant — un vrai trou à combler, pas une situation inventée.
+    ${session ? '' : `<br><br>Connecte-toi depuis <a href="federation-accueil.html">Ma Fédération</a> pour accéder au mode Piloter, si tu y as droit.`}
+  </div>`;
+  return html;
+}
+
+// Insère le bloc "Cœur de métier" à sa vraie place dans l'ordre du chantier — après la
+// préparation, avant la clôture — plutôt qu'en tête de liste. Si "Clôture chantier" venait à
+// disparaître ou changer de nom, on ne perd pas le bloc : il s'ajoute simplement à la fin.
+function renderProcessusAvecCoeurMetier(categorie, cat, coeurMetier){
+  const blocCoeurMetier = coeurMetier.ordre.map(pn=>renderProcessus('Lettrage peint', pn, coeurMetier.processus[pn], true)).join('');
+  const iCloture = cat.ordre.indexOf('Clôture chantier');
+  const parts = [];
+  cat.ordre.forEach((pn, i)=>{
+    if(i===iCloture) parts.push(blocCoeurMetier);
+    parts.push(renderProcessus(categorie, pn, cat.processus[pn]));
+  });
+  if(iCloture===-1) parts.push(blocCoeurMetier);
+  return parts.join('');
+}
+
+function renderProcessus(categorie, nom, p, highlight){
+  const enPiloter = mode==='piloter';
+  const nbSitu = p.ordre.reduce((n,sp)=>n+p.sousProcessus[sp].ordre.length,0);
+  const contenu = `
+    <details ${highlight?'open':''}>
+      <summary><div class="ligne"><span class="zoom"></span><span class="titre-racine">${escapeHtml(nom)}</span>${highlight?'<span class="coeurMetierTag">Cadre d\'excellence</span>':''}${kpiTooltip(p.kpi)}<span class="kpi">${p.ordre.length} sous-sous-processus, ${nbSitu} situations</span>${enPiloter?`<button class="editBtn" onclick="event.preventDefault();ouvrirFormulaireNoeud('processus','${esc1(categorie)}','${esc1(nom)}','${esc1(p.kpi||'')}')">✎ Renommer</button><button class="addBtn" onclick="event.preventDefault();ouvrirFormulaireNoeud('sous_processus','${esc1(nom)}',null,'')">+ Ajouter un sous-sous-processus</button>`:''}</div></summary>
+      <div class="noeud">
+        ${p.ordre.map(sousP=>renderSousProcessus(nom, sousP, p.sousProcessus[sousP])).join('')}
+      </div>
+    </details>`;
+  return highlight
+    ? `<div class="noeud coeurMetierBox">${contenu}</div>`
+    : `<div class="noeud">${contenu}</div>`;
+}
+
+function renderSousProcessus(processus, nom, sp){
+  const enPiloter = mode==='piloter';
+  const nbSituN4 = sp.ordreNiveau4.reduce((n,n4)=>n+sp.niveau4[n4].ordre.length,0);
+  const nbSitu = sp.ordre.length + nbSituN4;
+  return `
+  <details>
+    <summary><div class="ligne"><span class="zoom"></span><span class="titre-sp">${escapeHtml(nom)}</span>${kpiTooltip(sp.kpi)}<span class="kpi">${sp.ordreNiveau4.length?sp.ordreNiveau4.length+' sous-sous-sous-processus, ':''}${nbSitu} situation${nbSitu>1?'s':''}</span>${enPiloter?`<button class="editBtn" onclick="event.preventDefault();ouvrirFormulaireNoeud('sous_processus','${esc1(processus)}','${esc1(nom)}','${esc1(sp.kpi||'')}')">✎ Renommer</button><button class="addBtn" onclick="event.preventDefault();ouvrirFormulaireNoeud('niveau4','${esc1(combineKey(processus,nom))}',null,'')">+ Ajouter un sous-sous-sous-processus</button><button class="addBtn" onclick="event.preventDefault();ouvrirFormulaire('${esc1(processus)}','${esc1(nom)}',null)">+ Ajouter une situation</button>`:''}</div></summary>
+    <div class="noeud">
+      ${sp.ordreNiveau4.map(n4=>renderNiveau4(processus, nom, n4, sp.niveau4[n4])).join('')}
+      ${sp.ordre.map(situ=>renderActivite(processus, nom, situ, sp.situations[situ], null)).join('')}
+    </div>
+  </details>`;
+}
+function renderNiveau4(processus, sousProcessus, nom, n4){
+  const enPiloter = mode==='piloter';
+  return `
+  <details>
+    <summary><div class="ligne"><span class="zoom"></span><span class="titre-sp">${escapeHtml(nom)}</span>${kpiTooltip(n4.kpi)}<span class="kpi">${n4.ordre.length} situation${n4.ordre.length>1?'s':''}</span>${enPiloter?`<button class="editBtn" onclick="event.preventDefault();ouvrirFormulaireNoeud('niveau4','${esc1(combineKey(processus,sousProcessus))}','${esc1(nom)}','${esc1(n4.kpi||'')}')">✎ Renommer</button><button class="addBtn" onclick="event.preventDefault();ouvrirFormulaire('${esc1(processus)}','${esc1(sousProcessus)}',null,'${esc1(nom)}')">+ Ajouter une situation</button>`:''}</div></summary>
+    <div class="noeud">
+      ${n4.ordre.map(situ=>renderActivite(processus, sousProcessus, situ, n4.situations[situ], nom)).join('')}
+    </div>
+  </details>`;
+}
+function esc1(s){ return String(s).replace(/'/g,"\\'"); }
+function toutOuvrir(){ document.querySelectorAll('#app details').forEach(d=>d.open=true); }
+function toutFermer(){ document.querySelectorAll('#app details').forEach(d=>d.open=false); }
+
+// Suivi réel d'une personne sur une transition — alimente progressions_formation, la seule
+// source qui pourra un jour nourrir l'agrégation de Thérèse (recommandations_therese).
+function blocMaProgression(s, depart, arrivee){
+  if(!session) return '';
+  const cle = cleTransition(depart, arrivee);
+  const prog = s.mesProgressions[cle];
+  if(!prog){
+    return `<button class="addBtn" onclick="event.preventDefault();demarrerProgression('${esc1(s.situationUid)}','${esc1(depart)}','${esc1(arrivee)}')">Je commence cette transition</button>`;
+  }
+  const today = new Date().toISOString().slice(0,10);
+  const echeanceDepassee = prog.statut==='en_cours' && prog.echeance && prog.echeance < today;
+  const alerte = prog.statut==='bloque' || echeanceDepassee;
+  const label = prog.statut==='bloque' ? 'bloqué·e'
+    : echeanceDepassee ? `échéance dépassée (${dateFr(prog.echeance)})`
+    : prog.echeance ? `en cours, à boucler pour le ${dateFr(prog.echeance)}` : 'en cours';
+  return `<span class="tiny" style="margin-left:8px;color:${alerte?'var(--ink)':'var(--muted)'};font-weight:${alerte?'700':'400'}">Ma progression : <b>${label}</b></span>
+    <button class="editBtn" onclick="event.preventDefault();terminerProgression('${prog.id}')">Terminé</button>
+    <button class="editBtn" onclick="event.preventDefault();prolongerProgression('${prog.id}','${prog.echeance||''}')">Prolonger l'échéance</button>
+    ${prog.statut!=='bloque'?`<button class="editBtn" onclick="event.preventDefault();bloquerProgression('${prog.id}')">Je bloque</button>`:''}
+    <button class="editBtn" onclick="event.preventDefault();declarerTempsPratique('${esc1(s.situationUid)}')">+ J'ai pratiqué</button>`;
+}
+async function declarerTempsPratique(situationUid){
+  if(!session) return;
+  const minutes = await demander("Combien de temps as-tu pratiqué ce geste aujourd'hui (en minutes) ? Juste un repère pour toi et pour Thérèse — jamais un contrôle.", "30");
+  if(!minutes) return;
+  const n = Number(minutes);
+  if(!isFinite(n) || n<=0){ alert('Nombre de minutes invalide.'); return; }
+  const { error } = await sb.from('temps_apprentissage').insert({
+    personne_id: session.user.id, situation_id: situationUid, origine:'pratique_declaree', minutes: Math.round(n),
+  });
+  if(error){ alert('Erreur : '+error.message); return; }
+  alert('Temps enregistré, merci.');
+}
+async function demarrerProgression(situationUid, depart, arrivee){
+  if(!session) return;
+  const dansUnMois = new Date(Date.now()+30*24*3600*1000).toISOString().slice(0,10);
+  const echeance = await demander("Pour quelle date penses-tu avoir bouclé cette transition ? Tu pourras prolonger plus tard si besoin.", dansUnMois);
+  if(!echeance) return;
+  const { error } = await sb.from('progressions_formation').insert({
+    user_id: session.user.id, situation_id: situationUid, niveau_depart: depart, niveau_arrivee: arrivee, statut:'en_cours', echeance,
+  });
+  if(error){ alert('Erreur : '+error.message); return; }
+  await charger();
+}
+async function terminerProgression(id){
+  const { error } = await sb.from('progressions_formation').update({ statut:'termine', date_fin: new Date().toISOString().slice(0,10) }).eq('id', id);
+  if(error){ alert('Erreur : '+error.message); return; }
+  await charger();
+}
+async function prolongerProgression(id, echeanceActuelle){
+  const nouvelle = await demander("Nouvelle date d'échéance :", echeanceActuelle || new Date().toISOString().slice(0,10));
+  if(!nouvelle) return;
+  const { data: row } = await sb.from('progressions_formation').select('nombre_prolongations').eq('id', id).maybeSingle();
+  const { error } = await sb.from('progressions_formation').update({ echeance: nouvelle, nombre_prolongations: (row?.nombre_prolongations||0)+1 }).eq('id', id);
+  if(error){ alert('Erreur : '+error.message); return; }
+  await charger();
+}
+async function bloquerProgression(id){
+  const commentaire = await demander("Qu'est-ce qui bloque ? (facultatif, aide le comité à comprendre)");
+  const { error } = await sb.from('progressions_formation').update({ statut:'bloque', commentaire: commentaire||null }).eq('id', id);
+  if(error){ alert('Erreur : '+error.message); return; }
+  await charger();
+}
+
+// Générique par métier (roles_metier, rattaché à METIER_ACTUEL_ID) — plus de rôles codés en dur.
+let ROLE_LABELS = {};
+let ROLES_DISPONIBLES = [];
+async function chargerRoles(){
+  if(!METIER_ACTUEL_ID){ ROLE_LABELS = {}; ROLES_DISPONIBLES = []; return; }
+  const { data } = await sb.from('roles_metier').select('code,label').eq('metier_id', METIER_ACTUEL_ID).order('ordre');
+  ROLES_DISPONIBLES = data || [];
+  ROLE_LABELS = {}; for(const r of ROLES_DISPONIBLES) ROLE_LABELS[r.code] = r.label;
+}
+// Les 7 axes métier (vue transversale, Partie 1 — fiche complète), même principe que les rôles :
+// rattachés à METIER_ACTUEL_ID, jamais codés en dur.
+let AXES_DISPONIBLES = [];
+async function chargerAxes(){
+  if(!METIER_ACTUEL_ID){ AXES_DISPONIBLES = []; return; }
+  const { data } = await sb.from('axes_metier').select('id,code,label').eq('metier_id', METIER_ACTUEL_ID).order('ordre');
+  AXES_DISPONIBLES = data || [];
+}
+
+function renderActivite(processus, sousProcessus, nom, s, niveau4){
+  const niveaux = Object.keys(s.niveaux).sort((a,b)=>ORDRE_NIVEAU[a]-ORDRE_NIVEAU[b]);
+  const enPiloter = mode==='piloter';
+  let ligneSource;
+  if(s.rome && s.rome.statut==='rattaché ROME' && s.rome.codeRome){
+    ligneSource = `<div class="niveau-ligne source-rome"><b>Source :</b> ROME ${escapeHtml(s.rome.codeRome)}${s.rome.libelle?' — '+escapeHtml(s.rome.libelle):''}</div>`;
+  } else {
+    ligneSource = `<div class="niveau-ligne source-manque"><b>Source :</b> Fédération — hors ROME (pas encore rapproché)</div>`;
+  }
+  // Approfondissement : un module qui renforce SUR un niveau, sans faire progresser vers le
+  // suivant — même mécanique que les transitions (module_situations), mais départ = arrivée,
+  // ce qui suffit à distinguer les deux sans dupliquer la structure.
+  const authedPourBloc = session && session.user.email===COMITE_EMAIL;
+  function chipModule(e){
+    return `<span class="etapeChip"><a href="#" onclick="event.preventDefault();ouvrirLecteurModule('${e.moduleId}',sb,'${esc1(s.situationUid)}')" style="color:inherit;text-decoration:none">▶ ${escapeHtml(e.moduleNom)}</a> — ${escapeHtml(e.modaliteLabel)}${enPiloter?`<button onclick="event.preventDefault();retirerModuleDeSituation('${e.liaisonId}')">✕</button>`:''}</span>`;
+  }
+  const blocApprofondissement = NIVEAUX.map(niveau=>{
+    const cle = cleTransition(niveau, niveau);
+    const etapesToutes = (s.formation[cle] || []).slice().sort((a,b)=>a.ordre-b.ordre);
+    const etapes = authedPourBloc ? etapesToutes : etapesToutes.filter(e=>e.statut==='publie');
+    if(moduleEnEdition){
+      const dejaCouvert = etapesToutes.some(e=>e.moduleId===moduleEnEdition.id);
+      return `
+      <div class="niveau-ligne">
+        <label style="cursor:pointer;display:flex;align-items:center;gap:6px">
+          <input type="checkbox" ${dejaCouvert?'checked':''} onchange="toggleModuleSituation(this.checked,'${esc1(s.situationUid)}','${esc1(niveau)}','${esc1(niveau)}')">
+          ${escapeHtml(niveau)}
+        </label>
+      </div>`;
+    }
+    return `
+    <div class="niveau-ligne">
+      <span class="niveau-tag" style="flex:0 0 200px">${escapeHtml(niveau)}</span>
+      <span>
+        ${etapes.length ? etapes.map(chipModule).join(' · ') : '<span class="tiny" style="color:var(--muted)">Aucun module d\'approfondissement</span>'}
+        ${enPiloter?`<button class="addBtn" onclick="event.preventDefault();ouvrirFormulaireTransition('${esc1(s.situationUid)}','${esc1(niveau)}','${esc1(niveau)}',${etapesToutes.length+1})">+ Module</button>`:''}
+      </span>
+    </div>`;
+  }).join('');
+  function chipEpreuve(e){
+    return `<span class="etapeChip"><a href="#" onclick="event.preventDefault();ouvrirLecteurEpreuve('${e.epreuveId}',sb)" style="color:inherit;text-decoration:none">▶ ${escapeHtml(e.epreuveNom)}</a> — ${escapeHtml((TYPES_EPREUVE.find(t=>t.valeur===e.typeEpreuve)||{}).label||e.typeEpreuve)}${enPiloter?`<button onclick="event.preventDefault();retirerEpreuveDeSituation('${e.liaisonId}')">✕</button>`:''}</span>`;
+  }
+  const blocFormation = TRANSITIONS_NIVEAUX.map(([depart,arrivee])=>{
+    const cle = cleTransition(depart, arrivee);
+    const etapesToutes = (s.formation[cle] || []).slice().sort((a,b)=>a.ordre-b.ordre);
+    const etapes = authedPourBloc ? etapesToutes : etapesToutes.filter(e=>e.statut==='publie');
+    const epreuvesToutes = (s.epreuves[cle] || []).slice().sort((a,b)=>a.ordre-b.ordre);
+    const epreuvesVisibles = authedPourBloc ? epreuvesToutes : epreuvesToutes.filter(e=>e.statut==='publie');
+    if(moduleEnEdition){
+      const dejaCouvert = etapesToutes.some(e=>e.moduleId===moduleEnEdition.id);
+      return `
+      <div class="niveau-ligne">
+        <label style="cursor:pointer;display:flex;align-items:center;gap:6px">
+          <input type="checkbox" ${dejaCouvert?'checked':''} onchange="toggleModuleSituation(this.checked,'${esc1(s.situationUid)}','${esc1(depart)}','${esc1(arrivee)}')">
+          ${escapeHtml(depart)} → ${escapeHtml(arrivee)}
+        </label>
+      </div>`;
+    }
+    if(epreuveEnEdition){
+      const dejaCouvert = epreuvesToutes.some(e=>e.epreuveId===epreuveEnEdition.id);
+      return `
+      <div class="niveau-ligne">
+        <label style="cursor:pointer;display:flex;align-items:center;gap:6px">
+          <input type="checkbox" ${dejaCouvert?'checked':''} onchange="toggleEpreuveSituation(this.checked,'${esc1(s.situationUid)}','${esc1(depart)}','${esc1(arrivee)}')">
+          ${escapeHtml(depart)} → ${escapeHtml(arrivee)}
+        </label>
+      </div>`;
+    }
+    return `
+    <div class="niveau-ligne">
+      <span class="niveau-tag" style="flex:0 0 200px">${escapeHtml(depart)} → ${escapeHtml(arrivee)}</span>
+      <span>
+        ${etapes.length ? etapes.map(chipModule).join(' → ') : '<span class="tiny" style="color:var(--muted)">Aucun parcours défini</span>'}
+        ${epreuvesVisibles.length ? ' · '+epreuvesVisibles.map(chipEpreuve).join(' · ') : ''}
+        ${enPiloter?`<button class="addBtn" onclick="event.preventDefault();ouvrirFormulaireTransition('${esc1(s.situationUid)}','${esc1(depart)}','${esc1(arrivee)}',${etapesToutes.length+1})">Configurer l'épreuve de passage</button>`:''}
+        ${blocMaProgression(s, depart, arrivee)}
+      </span>
+    </div>`;
+  }).join('');
+  return `
+  <details>
+    <summary><div class="ligne"><span class="zoom"></span><span class="titre-act">${escapeHtml(nom)}</span>${kpiTooltip(s.kpi)}<span class="kpi">${escapeHtml(ROLE_LABELS[s.role]||s.role||'tous rôles')}</span>${termeEnEdition?`<label style="cursor:pointer;display:flex;align-items:center;gap:5px" onclick="event.preventDefault()"><input type="checkbox" ${s.vocabulaire.some(v=>v.id===termeEnEdition.id)?'checked':''} onchange="toggleTermeSituation(this.checked,'${esc1(s.situationUid)}')"> Ce terme s'applique ici</label>`:''}${posteTypeEnEdition?`<label style="cursor:pointer;display:flex;align-items:center;gap:5px" onclick="event.preventDefault()">Niveau minimum <select onclick="event.stopPropagation()" onchange="definirNiveauMinPosteType('${esc1(s.situationUid)}', this.value)"><option value="">— non requis —</option>${NIVEAUX.map(n=>`<option value="${esc1(n)}" ${NIVEAU_MIN_PAR_POSTE_SITUATION[posteTypeEnEdition.id+'|'+s.situationUid]===n?'selected':''}>${escapeHtml(n)}</option>`).join('')}</select></label>`:''}${enPiloter&&!termeEnEdition&&!posteTypeEnEdition?`<button class="editBtn" onclick="event.preventDefault();ouvrirFormulaire('${esc1(processus)}','${esc1(sousProcessus)}','${esc1(nom)}','${esc1(niveau4||'')}')">Modifier</button>`:''}</div></summary>
+    <div class="niveaux">
+      ${niveaux.map(n=>`<div class="niveau-ligne"><span class="niveau-tag">${escapeHtml(n)}</span><span class="niveau-obs">${escapeHtml(s.niveaux[n])}</span></div>`).join('')}
+      ${ligneSource}
+      ${s.kpi?`<div class="niveau-ligne"><b>KPI :</b> ${escapeHtml(s.kpi)}</div>`:''}
+      ${s.vocabulaire && s.vocabulaire.length ? `
+      <div class="niveau-ligne" style="flex-direction:column;align-items:flex-start">
+        <b>Vocabulaire à connaître (Niveau 1) :</b>
+        <div style="margin-top:4px">
+          ${s.vocabulaire.map(t=>`<span class="etapeChip" title="${escapeHtml(t.definition)}${t.remarque?' — '+escapeHtml(t.remarque):''}">${escapeHtml(t.terme)}${t.variante?' ('+escapeHtml(t.variante)+')':''}</span>`).join(' ')}
+        </div>
+      </div>` : ''}
+    </div>
+    <div class="blocFormation">
+      <div class="titreFormation">Approfondissement par niveau</div>
+      ${blocApprofondissement}
+      <div class="titreFormation" style="margin-top:10px">Transitions entre niveaux</div>
+      ${blocFormation}
+    </div>
+  </details>`;
+}
+
+/* =========================================================================
+   MODE PILOTER — formulaire d'ajout / modification d'une activité, avec
+   recherche en direct dans le référentiel ROME synchronisé en local.
+   ========================================================================= */
+function trouverProcessus(nomProcessus){
+  for(const cat of TOUTES_CATEGORIES){
+    if(arbreGlobal[cat] && arbreGlobal[cat].processus[nomProcessus]) return arbreGlobal[cat].processus[nomProcessus];
+  }
+  return null;
+}
+
+const FICHE_VIDE = () => ({
+  code:'', auteur:'', valideur:'', dateRevue:'',
+  cadrage:{ finalite:'', declencheur:'', contexte:'', frequence:'', preconditions:'', conditionsSortie:'' },
+  derouleReel:{ etapes:'', decisions:'', ressources:'', outils:'', aleas:'', pointsVigilance:'', dependances:'' },
+  resultat:{ resultatsAttendus:'', criteresReussite:'', risques:'', controleQualite:'', delaiAttendu:'' },
+  typesPreuve: [], axesSelectionnes: [],
+});
+const TYPES_PREUVE_DISPONIBLES = ['photo','maquette','BAT','devis','checklist','document_reception','temps_passe','portfolio','observation','autoevaluation','validation_humaine'];
+
+function ouvrirFormulaire(processus, sousProcessus, situationExistante, niveau4){
+  formulaireNoeud = null; formulaireTransition = null; formulaireModule = null; // une seule modale à la fois
+  niveau4 = niveau4 || null;
+  if(situationExistante){
+    const sp = trouverProcessus(processus).sousProcessus[sousProcessus];
+    const bucket = niveau4 ? sp.niveau4[niveau4] : sp;
+    const s = bucket.situations[situationExistante];
+    formulaire = {
+      processus, sousProcessus, niveau4, situationOriginale: situationExistante, ids: s.ids, situationUid: s.situationUid,
+      nom: situationExistante, role: s.role || (ROLES_DISPONIBLES[0] && ROLES_DISPONIBLES[0].code) || '',
+      niveaux: { 'Niveau 1 débutant':s.niveaux['Niveau 1 débutant']||'', 'Niveau 2 apprenti opérationnel':s.niveaux['Niveau 2 apprenti opérationnel']||'', 'Niveau 3 compagnon':s.niveaux['Niveau 3 compagnon']||'', 'Niveau 4 maître':s.niveaux['Niveau 4 maître']||'' },
+      rechercheRome: '', resultatsRome: [],
+      romeChoisi: (s.rome && s.rome.statut==='rattaché ROME' && s.rome.codeRome) ? { type:s.rome.type, code:s.rome.codeRome, libelle:s.rome.libelle } : null,
+      erreur: '', enCours: false,
+      fiche: FICHE_VIDE(), ficheOuverte:false, ficheChargee:false,
+    };
+    chargerFicheSituation(s.situationUid);
+  } else {
+    formulaire = {
+      processus, sousProcessus, niveau4, situationOriginale: null, ids: null,
+      nom: '', role: (ROLES_DISPONIBLES[0] && ROLES_DISPONIBLES[0].code) || '',
+      niveaux: { 'Niveau 1 débutant':'', 'Niveau 2 apprenti opérationnel':'', 'Niveau 3 compagnon':'', 'Niveau 4 maître':'' },
+      rechercheRome: '', resultatsRome: [], romeChoisi: null,
+      erreur: '', enCours: false,
+      fiche: FICHE_VIDE(), ficheOuverte:false, ficheChargee:true,
+    };
+  }
+  renderModal();
+}
+// La fiche complète (Partie 1) vit dans referentiel_situations_fiche, une ligne par situation_uid
+// — pas chargée avec le reste de l'arbre (charger()) pour ne pas alourdir l'écran principal, donc
+// récupérée à la demande seulement quand on ouvre le formulaire d'édition d'une situation existante.
+async function chargerFicheSituation(situationUid){
+  const [{ data: ficheRow }, { data: axesRows }] = await Promise.all([
+    sb.from('referentiel_situations_fiche').select('*').eq('situation_uid', situationUid).maybeSingle(),
+    sb.from('situation_axes').select('axe_id').eq('situation_uid', situationUid),
+  ]);
+  if(!formulaire || formulaire.situationUid !== situationUid) return; // la modale a changé entre-temps
+  if(ficheRow){
+    formulaire.fiche = {
+      code: ficheRow.code || '', auteur: ficheRow.auteur || '', valideur: ficheRow.valideur || '', dateRevue: ficheRow.date_revue || '',
+      cadrage: { finalite:'', declencheur:'', contexte:'', frequence:'', preconditions:'', conditionsSortie:'', ...(ficheRow.cadrage||{}) },
+      derouleReel: { etapes:'', decisions:'', ressources:'', outils:'', aleas:'', pointsVigilance:'', dependances:'', ...(ficheRow.deroule_reel||{}) },
+      resultat: { resultatsAttendus:'', criteresReussite:'', risques:'', controleQualite:'', delaiAttendu:'', ...(ficheRow.resultat||{}) },
+      typesPreuve: ficheRow.types_preuve_attendus || [],
+      axesSelectionnes: (axesRows||[]).map(a=>a.axe_id),
+    };
+  } else {
+    formulaire.fiche.axesSelectionnes = (axesRows||[]).map(a=>a.axe_id);
+  }
+  formulaire.ficheChargee = true;
+  renderModal();
+}
+function toggleFicheOuverte(){ if(formulaire){ formulaire.ficheOuverte = !formulaire.ficheOuverte; renderModal(); } }
+function onChampFiche(section, champ, v){ if(!formulaire) return; if(section) formulaire.fiche[section][champ] = v; else formulaire.fiche[champ] = v; }
+function toggleTypePreuve(type, checked){
+  if(!formulaire) return;
+  const arr = formulaire.fiche.typesPreuve;
+  const i = arr.indexOf(type);
+  if(checked && i===-1) arr.push(type);
+  if(!checked && i!==-1) arr.splice(i,1);
+}
+function toggleAxe(axeId, checked){
+  if(!formulaire) return;
+  const arr = formulaire.fiche.axesSelectionnes;
+  const i = arr.indexOf(axeId);
+  if(checked && i===-1) arr.push(axeId);
+  if(!checked && i!==-1) arr.splice(i,1);
+}
+function fermerFormulaire(){ formulaire = null; renderModal(); }
+
+function onChampNom(v){ if(formulaire){ formulaire.nom = v; } }
+function onChampRole(v){ if(formulaire){ formulaire.role = v; } }
+function onChampNiveau(niveau, v){ if(formulaire){ formulaire.niveaux[niveau] = v; } }
+
+// Même filtre que dans reconversion.html : ROME range les diplômes/titres/certifications
+// (CAP, BTS, Licence, Certificat de Qualification Professionnelle...) dans les "savoirs", mais la
+// Fédération ne les délivre ni ne les gère — on les exclut de la recherche pour le mode Piloter.
+function estHorsPerimetreFederation(libelle){
+  const l = String(libelle||'').trim();
+  return /^(CAP|BEP|BP|BPJEPS|Bac\s*pro|BTS|BUT|BMA|DMA|DUT|DEUG|Licence|Master|Doctorat|MBA|EMBA|Titre professionnel|CQPI?|Mention complémentaire|MC|Certificat)\b/i.test(l)
+      || /\bDiplôme\b/i.test(l)
+      || /\((BM|CAP|BP|BEP|BTS|BMA|DMA)\)\s*$/i.test(l)
+      || /CACES|habilitation électrique/i.test(l)
+      || /\bR486\b|\bR408\b|\bR457\b/.test(l);
+}
+
+// Une "situation de travail" = un savoir-faire ROME (structure fixée) — on ne cherche donc que
+// dans la famille savoir-faire (compétence détaillée = le geste concret, macro-savoir-faire = la
+// famille large en repli), jamais dans les savoirs (connaissances) ni les savoir-être ici.
+const ORDRE_TYPE_RECHERCHE = { 'competence-detaillee':0, 'macro-savoir-faire':1 };
+
+function onRechercheRome(v){
+  if(!formulaire) return;
+  formulaire.rechercheRome = v;
+  clearTimeout(rechercheRomeTimer);
+  if(v.trim().length<3){ formulaire.resultatsRome=[]; renderModal(); return; }
+  rechercheRomeTimer = setTimeout(async ()=>{
+    const { data, error } = await sb.from('rome_referentiel_competences')
+      .select('type,code,libelle')
+      .in('type', ['competence-detaillee','macro-savoir-faire'])
+      .ilike('libelle', `%${v.trim()}%`)
+      .limit(60);
+    if(!error && formulaire){
+      formulaire.resultatsRome = (data||[])
+        .filter(r=>!estHorsPerimetreFederation(r.libelle))
+        .sort((a,b)=>ORDRE_TYPE_RECHERCHE[a.type]-ORDRE_TYPE_RECHERCHE[b.type])
+        .slice(0,12);
+      renderModal();
+    }
+  }, 400);
+}
+function choisirRome(i){
+  if(!formulaire) return;
+  const item = formulaire.resultatsRome[i];
+  formulaire.romeChoisi = { type:item.type, code:item.code, libelle:item.libelle };
+  formulaire.rechercheRome=''; formulaire.resultatsRome=[];
+  renderModal();
+}
+function retirerRome(){ if(formulaire){ formulaire.romeChoisi=null; renderModal(); } }
+
+// Écrit (ou remplace) l'unique ligne de correspondances_rome pour cette situation — c'est
+// désormais le seul endroit où un lien ROME est posé, jamais sur referentiel_situations.
+async function enregistrerCorrespondanceRome(situationUid, romeChoisi){
+  const payload = {
+    situation_id: situationUid,
+    code_rome: romeChoisi ? romeChoisi.code : null,
+    statut: romeChoisi ? 'rattaché ROME' : 'sans équivalent — Fédération',
+    updated_at: new Date().toISOString(),
+  };
+  const { error } = await sb.from('correspondances_rome').upsert(payload, { onConflict:'situation_id' });
+  if(error) throw error;
+}
+
+// N'écrit dans referentiel_situations_fiche que si la section a vraiment été
+// remplie — sinon chaque simple correction de nom créerait une ligne fiche
+// vide pour rien (Partie 1, "objectif V0 : sans figer trop tôt").
+async function enregistrerFicheSituation(situationUid, fiche){
+  const texteRempli = [fiche.code, fiche.auteur, fiche.valideur, fiche.dateRevue,
+    ...Object.values(fiche.cadrage), ...Object.values(fiche.derouleReel), ...Object.values(fiche.resultat)]
+    .some(v => v && String(v).trim());
+  const aDuContenu = texteRempli || fiche.typesPreuve.length || fiche.axesSelectionnes.length;
+  if(!aDuContenu) return;
+  const { error } = await sb.from('referentiel_situations_fiche').upsert({
+    situation_uid: situationUid, code: fiche.code || null, auteur: fiche.auteur || null,
+    valideur: fiche.valideur || null, date_revue: fiche.dateRevue || null,
+    cadrage: fiche.cadrage, deroule_reel: fiche.derouleReel, resultat: fiche.resultat,
+    types_preuve_attendus: fiche.typesPreuve,
+  }, { onConflict:'situation_uid' });
+  if(error) throw error;
+  // Axes : on resynchronise entièrement (retire tout, remet la sélection actuelle) — plus simple
+  // et plus sûr qu'un diff, le volume par situation est faible (7 axes possibles au maximum).
+  const { error: eDel } = await sb.from('situation_axes').delete().eq('situation_uid', situationUid);
+  if(eDel) throw eDel;
+  if(fiche.axesSelectionnes.length){
+    const { error: eIns } = await sb.from('situation_axes').insert(
+      fiche.axesSelectionnes.map(axeId => ({ situation_uid: situationUid, axe_id: axeId }))
+    );
+    if(eIns) throw eIns;
+  }
+}
+
+async function enregistrerActivite(){
+  if(!formulaire) return;
+  const nom = formulaire.nom.trim();
+  if(!nom) { formulaire.erreur = 'Le nom de l\'activité est obligatoire.'; renderModal(); return; }
+  formulaire.enCours = true; formulaire.erreur=''; renderModal();
+  try{
+    if(formulaire.ids){
+      // Modification : on met à jour les 4 lignes existantes (une par niveau). Important : un
+      // UPDATE bloqué par une politique RLS ne renvoie PAS d'erreur, il filtre juste la ligne
+      // (0 ligne affectée, succès silencieux côté Postgres) — on doit donc vérifier data.length
+      // nous-mêmes, sinon un enregistrement refusé aurait l'air d'avoir réussi.
+      for(const niveau of NIVEAUX){
+        const id = formulaire.ids[niveau];
+        if(!id) continue;
+        const { data, error } = await sb.from('referentiel_situations').update({
+          situation: nom, verbalisation: formulaire.niveaux[niveau], role: formulaire.role || null,
+        }).eq('id', id).select('id');
+        if(error) throw error;
+        if(!data || !data.length) throw new Error("Écriture refusée — droits insuffisants pour modifier le référentiel (seul le comité référentiel connecté peut écrire).");
+      }
+      await enregistrerCorrespondanceRome(formulaire.situationUid, formulaire.romeChoisi);
+      await enregistrerFicheSituation(formulaire.situationUid, formulaire.fiche);
+    } else {
+      // Création : 4 nouvelles lignes, une par niveau, partageant un même situation_uid — c'est
+      // cette clé, pas l'id de chaque ligne, qui identifie "la situation" pour la correspondance ROME.
+      const situationUid = crypto.randomUUID();
+      const lignes = NIVEAUX.map(niveau => ({
+        processus: formulaire.processus, sous_processus: formulaire.sousProcessus, niveau4: formulaire.niveau4 || null, role: formulaire.role || null,
+        situation: nom, niveau, verbalisation: formulaire.niveaux[niveau] || '', situation_uid: situationUid,
+      }));
+      const { data, error } = await sb.from('referentiel_situations').insert(lignes).select('id');
+      if(error) throw error;
+      if(!data || data.length !== lignes.length) throw new Error("Écriture refusée — droits insuffisants pour créer une activité (seul le comité référentiel connecté peut écrire).");
+      await enregistrerCorrespondanceRome(situationUid, formulaire.romeChoisi);
+      await enregistrerFicheSituation(situationUid, formulaire.fiche);
+    }
+    formulaire = null;
+    await charger();
+  }catch(err){
+    formulaire.enCours = false;
+    formulaire.erreur = err.message || String(err);
+    renderModal();
+  }
+}
+
+async function supprimerActivite(){
+  const f = formulaire;
+  if(!f || !f.ids) return;
+  if(!await confirmer(`Supprimer définitivement la situation "${f.situationOriginale}" (ses 4 niveaux) ? Cette action est irréversible.`)) return;
+  f.enCours = true; f.erreur=''; renderModal();
+  try{
+    const idsASupprimer = Object.values(f.ids).filter(Boolean);
+    const { error } = await sb.from('referentiel_situations').delete().in('id', idsASupprimer);
+    if(error) throw error;
+    if(f.situationUid){
+      const { error: e2 } = await sb.from('correspondances_rome').delete().eq('situation_id', f.situationUid);
+      if(e2) console.error('Suppression de la correspondance ROME échouée :', e2.message);
+    }
+    formulaire = null;
+    await charger();
+  }catch(err){
+    f.enCours = false;
+    f.erreur = err.message || String(err);
+    renderModal();
+  }
+}
+
+/* =========================================================================
+   MODE PILOTER — CRUD des sous-processus et sous-sous-processus (tables
+   internes referentiel_processus / referentiel_sous_processus). Le niveau
+   "Processus" (Pilotage/Production/Support) n'est jamais modifiable ici.
+   ========================================================================= */
+function ouvrirFormulaireNoeud(niveau, parentKey, nomExistant, kpiExistant){
+  formulaire = null; formulaireTransition = null; formulaireModule = null; // une seule modale à la fois
+  formulaireNoeud = { niveau, parentKey, nomOriginal: nomExistant||null, nom: nomExistant||'', kpi: kpiExistant||'', erreur:'', enCours:false };
+  renderModal();
+}
+function fermerFormulaireNoeud(){ formulaireNoeud = null; renderModal(); }
+function onChampNoeudNom(v){ if(formulaireNoeud) formulaireNoeud.nom = v; }
+function onChampNoeudKpi(v){ if(formulaireNoeud) formulaireNoeud.kpi = v; }
+
+async function enregistrerNoeud(){
+  const f = formulaireNoeud;
+  if(!f) return;
+  const nom = f.nom.trim();
+  if(!nom){ f.erreur = 'Le nom est obligatoire.'; renderModal(); return; }
+  f.enCours = true; f.erreur=''; renderModal();
+  try{
+    const table = f.niveau==='processus' ? 'referentiel_processus' : f.niveau==='sous_processus' ? 'referentiel_sous_processus' : 'referentiel_niveau4';
+    if(f.nomOriginal){
+      // Renommage : on met à jour la ligne du registre, puis on répercute le nouveau nom sur les
+      // lignes filles (même contrainte RLS-silencieuse que pour les situations : vérifier data.length).
+      let requete;
+      if(f.niveau==='processus') requete = sb.from(table).update({ nom, kpi: f.kpi||null }).eq('nom', f.nomOriginal);
+      else if(f.niveau==='sous_processus') requete = sb.from(table).update({ nom, kpi: f.kpi||null }).eq('processus_nom', f.parentKey).eq('nom', f.nomOriginal);
+      else { const [proc, sousProc] = splitKey(f.parentKey); requete = sb.from(table).update({ nom, kpi: f.kpi||null }).eq('processus_nom', proc).eq('sous_processus_nom', sousProc).eq('nom', f.nomOriginal); }
+      const { data, error } = await requete.select('nom');
+      if(error) throw error;
+      if(!data || !data.length) throw new Error("Écriture refusée — droits insuffisants pour modifier le référentiel (seul le comité référentiel connecté peut écrire).");
+      if(nom !== f.nomOriginal){
+        if(f.niveau==='processus'){
+          const { error: e2 } = await sb.from('referentiel_sous_processus').update({ processus_nom: nom }).eq('processus_nom', f.nomOriginal);
+          if(e2) throw e2;
+          const { error: e3 } = await sb.from('referentiel_situations').update({ processus: nom }).eq('processus', f.nomOriginal);
+          if(e3) throw e3;
+        } else if(f.niveau==='sous_processus'){
+          const { error: e3 } = await sb.from('referentiel_situations').update({ sous_processus: nom }).eq('processus', f.parentKey).eq('sous_processus', f.nomOriginal);
+          if(e3) throw e3;
+        } else {
+          const [proc, sousProc] = splitKey(f.parentKey);
+          const { error: e3 } = await sb.from('referentiel_situations').update({ niveau4: nom }).eq('processus', proc).eq('sous_processus', sousProc).eq('niveau4', f.nomOriginal);
+          if(e3) throw e3;
+        }
+      }
+    } else {
+      // Création : ordre = dernier ordre existant + 1 dans le même parent.
+      let requeteOrdre, ligne;
+      if(f.niveau==='processus'){
+        requeteOrdre = sb.from(table).select('ordre').eq('categorie', f.parentKey).order('ordre',{ascending:false}).limit(1);
+      } else if(f.niveau==='sous_processus'){
+        requeteOrdre = sb.from(table).select('ordre').eq('processus_nom', f.parentKey).order('ordre',{ascending:false}).limit(1);
+      } else {
+        const [proc, sousProc] = splitKey(f.parentKey);
+        requeteOrdre = sb.from(table).select('ordre').eq('processus_nom', proc).eq('sous_processus_nom', sousProc).order('ordre',{ascending:false}).limit(1);
+      }
+      const { data: existants } = await requeteOrdre;
+      const ordre = (existants && existants[0] ? existants[0].ordre : 0) + 1;
+      if(f.niveau==='processus') ligne = { nom, categorie: f.parentKey, kpi: f.kpi||null, ordre, metier_id: METIER_ACTUEL_ID };
+      else if(f.niveau==='sous_processus') ligne = { nom, processus_nom: f.parentKey, kpi: f.kpi||null, ordre };
+      else { const [proc, sousProc] = splitKey(f.parentKey); ligne = { nom, processus_nom: proc, sous_processus_nom: sousProc, kpi: f.kpi||null, ordre }; }
+      const { data, error } = await sb.from(table).insert(ligne).select('nom');
+      if(error) throw error;
+      if(!data || !data.length) throw new Error(`Écriture refusée — droits insuffisants pour créer un ${LABEL_NOEUD[f.niveau]}.`);
+    }
+    formulaireNoeud = null;
+    await charger();
+  }catch(err){
+    f.enCours = false;
+    f.erreur = err.message || String(err);
+    renderModal();
+  }
+}
+
+async function supprimerNoeud(){
+  const f = formulaireNoeud;
+  if(!f || !f.nomOriginal) return;
+  try{
+    if(f.niveau==='processus'){
+      const { count, error: eC } = await sb.from('referentiel_sous_processus').select('nom', {count:'exact', head:true}).eq('processus_nom', f.nomOriginal);
+      if(eC) throw eC;
+      if(count>0){ f.erreur = `Impossible : ce sous-processus contient encore ${count} sous-sous-processus. Déplace-les ou supprime-les d'abord.`; renderModal(); return; }
+      if(!await confirmer(`Supprimer définitivement le sous-processus "${f.nomOriginal}" ? Cette action est irréversible.`)) return;
+      const { error } = await sb.from('referentiel_processus').delete().eq('nom', f.nomOriginal);
+      if(error) throw error;
+    } else if(f.niveau==='sous_processus'){
+      const { count: countN4, error: eN4 } = await sb.from('referentiel_niveau4').select('nom', {count:'exact', head:true}).eq('processus_nom', f.parentKey).eq('sous_processus_nom', f.nomOriginal);
+      if(eN4) throw eN4;
+      if(countN4>0){ f.erreur = `Impossible : ce sous-sous-processus contient encore ${countN4} sous-sous-sous-processus. Déplace-les ou supprime-les d'abord.`; renderModal(); return; }
+      const { count, error: eC } = await sb.from('referentiel_situations').select('id', {count:'exact', head:true}).eq('processus', f.parentKey).eq('sous_processus', f.nomOriginal);
+      if(eC) throw eC;
+      if(count>0){ f.erreur = `Impossible : ce sous-sous-processus contient encore ${count} lignes de situations. Déplace-les ou supprime-les d'abord.`; renderModal(); return; }
+      if(!await confirmer(`Supprimer définitivement le sous-sous-processus "${f.nomOriginal}" ? Cette action est irréversible.`)) return;
+      const { error } = await sb.from('referentiel_sous_processus').delete().eq('processus_nom', f.parentKey).eq('nom', f.nomOriginal);
+      if(error) throw error;
+    } else {
+      const [proc, sousProc] = splitKey(f.parentKey);
+      const { count, error: eC } = await sb.from('referentiel_situations').select('id', {count:'exact', head:true}).eq('processus', proc).eq('sous_processus', sousProc).eq('niveau4', f.nomOriginal);
+      if(eC) throw eC;
+      if(count>0){ f.erreur = `Impossible : ce sous-sous-sous-processus contient encore ${count} lignes de situations. Déplace-les ou supprime-les d'abord.`; renderModal(); return; }
+      if(!await confirmer(`Supprimer définitivement le sous-sous-sous-processus "${f.nomOriginal}" ? Cette action est irréversible.`)) return;
+      const { error } = await sb.from('referentiel_niveau4').delete().eq('processus_nom', proc).eq('sous_processus_nom', sousProc).eq('nom', f.nomOriginal);
+      if(error) throw error;
+    }
+    formulaireNoeud = null;
+    await charger();
+  }catch(err){
+    f.erreur = err.message || String(err);
+    renderModal();
+  }
+}
+
+function renderModal(){
+  const root = document.getElementById('modalRoot');
+  if(formulaire) return renderModalActivite(root);
+  if(formulaireNoeud) return renderModalNoeud(root);
+  if(formulaireTransition) return renderModalTransition(root);
+  if(formulaireParcours) return renderModalParcours(root);
+  root.innerHTML = '';
+}
+
+/* =========================================================================
+   RÉFÉRENTIEL FORMATION — un module (nom + modalité + description) peut être
+   rattaché à plusieurs situations/transitions (charte point 7 : opérations de
+   masse). Depuis une situation, on crée un module ici, ou on rattache un
+   module déjà conçu ailleurs — jamais une ressaisie systématique.
+   ========================================================================= */
+function ouvrirFormulaireTransition(situationUid, niveauDepart, niveauArrivee, ordreSuivant){
+  formulaire = null; formulaireNoeud = null; formulaireModule = null;
+  const estApprofondissement = niveauDepart === niveauArrivee;
+  formulaireTransition = {
+    situationUid, niveauDepart, niveauArrivee, ordre: ordreSuivant, estApprofondissement,
+    choix: estApprofondissement
+      ? (MODULES_FORMATION.length ? 'existant' : 'nouveau')
+      : (EPREUVES_TRANSITION.length ? 'existant' : 'nouveau'),
+    nom: '', modaliteId: (MODALITES_FORMATION[0]||{}).id||'', description: '',
+    moduleExistantId: (MODULES_FORMATION[0]||{}).id||'',
+    typeEpreuve: TYPES_EPREUVE[0].valeur, epreuveExistantId: (EPREUVES_TRANSITION[0]||{}).id||'',
+    erreur:'', enCours:false,
+  };
+  renderModal();
+}
+function fermerFormulaireTransition(){ formulaireTransition = null; renderModal(); }
+function onChampTransitionChoix(v){ if(formulaireTransition){ formulaireTransition.choix = v; renderModal(); } }
+function onChampTransitionNom(v){ if(formulaireTransition) formulaireTransition.nom = v; }
+function onChampTransitionModalite(v){ if(formulaireTransition) formulaireTransition.modaliteId = v; }
+function onChampTransitionDescription(v){ if(formulaireTransition) formulaireTransition.description = v; }
+function onChampTransitionModuleExistant(v){ if(formulaireTransition) formulaireTransition.moduleExistantId = v; }
+function onChampTransitionTypeEpreuve(v){ if(formulaireTransition) formulaireTransition.typeEpreuve = v; }
+function onChampTransitionEpreuveExistant(v){ if(formulaireTransition) formulaireTransition.epreuveExistantId = v; }
+
+async function enregistrerTransition(){
+  const f = formulaireTransition;
+  if(!f) return;
+  f.enCours = true; f.erreur=''; renderModal();
+  try{
+    if(f.estApprofondissement){
+      let moduleId;
+      if(f.choix==='nouveau'){
+        if(!f.nom.trim()){ throw new Error('Donne un nom au module.'); }
+        if(!f.modaliteId){ throw new Error('Choisis une modalité.'); }
+        const { data, error } = await sb.from('modules_apprentissage').insert({
+          nom: f.nom.trim(), modalite_id: f.modaliteId, description: f.description||null, metier_id: METIER_ACTUEL_ID,
+        }).select('id');
+        if(error) throw error;
+        if(!data || !data.length) throw new Error("Écriture refusée — droits insuffisants (seul le comité référentiel connecté peut écrire).");
+        moduleId = data[0].id;
+      } else {
+        if(!f.moduleExistantId){ throw new Error('Choisis un module existant.'); }
+        moduleId = f.moduleExistantId;
+      }
+      const { data: d2, error: e2 } = await sb.from('module_situations').insert({
+        module_id: moduleId, situation_id: f.situationUid, niveau_depart: f.niveauDepart, niveau_arrivee: f.niveauArrivee, ordre: f.ordre,
+        type: 'approfondissement',
+      }).select('id');
+      if(e2) throw e2;
+      if(!d2 || !d2.length) throw new Error("Écriture refusée — droits insuffisants (seul le comité référentiel connecté peut écrire).");
+    } else {
+      let epreuveId;
+      if(f.choix==='nouveau'){
+        if(!f.nom.trim()){ throw new Error('Donne un nom à l\'épreuve.'); }
+        const { data, error } = await sb.from('epreuves_transition').insert({
+          nom: f.nom.trim(), type_epreuve: f.typeEpreuve, description: f.description||null, metier_id: METIER_ACTUEL_ID,
+        }).select('id');
+        if(error) throw error;
+        if(!data || !data.length) throw new Error("Écriture refusée — droits insuffisants (seul le comité référentiel connecté peut écrire).");
+        epreuveId = data[0].id;
+      } else {
+        if(!f.epreuveExistantId){ throw new Error('Choisis une épreuve existante.'); }
+        epreuveId = f.epreuveExistantId;
+      }
+      const { data: d2, error: e2 } = await sb.from('epreuve_situations').insert({
+        epreuve_id: epreuveId, situation_id: f.situationUid, niveau_depart: f.niveauDepart, niveau_arrivee: f.niveauArrivee, ordre: f.ordre,
+      }).select('id');
+      if(e2) throw e2;
+      if(!d2 || !d2.length) throw new Error("Écriture refusée — droits insuffisants (seul le comité référentiel connecté peut écrire).");
+    }
+    formulaireTransition = null;
+    await charger();
+  }catch(err){
+    f.enCours = false;
+    f.erreur = err.message || String(err);
+    renderModal();
+  }
+}
+async function retirerModuleDeSituation(liaisonId){
+  if(!await confirmer("Retirer ce module de cette transition ? (le module reste disponible pour les autres situations qu'il couvre)")) return;
+  const { error } = await sb.from('module_situations').delete().eq('id', liaisonId);
+  if(error){ alert('Erreur : '+error.message); return; }
+  await charger();
+}
+async function retirerEpreuveDeSituation(liaisonId){
+  if(!await confirmer("Retirer cette épreuve de cette transition ? (elle reste disponible pour les autres situations qu'elle couvre)")) return;
+  const { error } = await sb.from('epreuve_situations').delete().eq('id', liaisonId);
+  if(error){ alert('Erreur : '+error.message); return; }
+  await charger();
+}
+async function toggleModuleSituation(checked, situationUid, depart, arrivee){
+  if(!moduleEnEdition) return;
+  if(checked){
+    const { error } = await sb.from('module_situations').insert({
+      module_id: moduleEnEdition.id, situation_id: situationUid, niveau_depart: depart, niveau_arrivee: arrivee, ordre: 1,
+      type: depart===arrivee ? 'approfondissement' : 'transition',
+    });
+    if(error){ alert('Erreur : '+error.message); return; }
+  } else {
+    const { error } = await sb.from('module_situations').delete()
+      .eq('module_id', moduleEnEdition.id).eq('situation_id', situationUid).eq('niveau_depart', depart).eq('niveau_arrivee', arrivee);
+    if(error){ alert('Erreur : '+error.message); return; }
+  }
+  await charger();
+}
+async function toggleEpreuveSituation(checked, situationUid, depart, arrivee){
+  if(!epreuveEnEdition) return;
+  if(checked){
+    const { error } = await sb.from('epreuve_situations').insert({
+      epreuve_id: epreuveEnEdition.id, situation_id: situationUid, niveau_depart: depart, niveau_arrivee: arrivee, ordre: 1,
+    });
+    if(error){ alert('Erreur : '+error.message); return; }
+  } else {
+    const { error } = await sb.from('epreuve_situations').delete()
+      .eq('epreuve_id', epreuveEnEdition.id).eq('situation_id', situationUid).eq('niveau_depart', depart).eq('niveau_arrivee', arrivee);
+    if(error){ alert('Erreur : '+error.message); return; }
+  }
+  await charger();
+}
+function renderModalTransition(root){
+  const f = formulaireTransition;
+  root.innerHTML = `
+  <div class="overlay" onclick="if(event.target===event.currentTarget) fermerFormulaireTransition()">
+    <div class="modal">
+      <h3>${f.estApprofondissement ? 'Ajouter un module d\'approfondissement' : 'Configurer l\'épreuve de passage'}</h3>
+      <div class="ctx">${escapeHtml(f.niveauDepart)} → ${escapeHtml(f.niveauArrivee)}${f.ordre>1?' — étape '+f.ordre:''}</div>
+      ${f.estApprofondissement ? `
+      <div class="champ" style="display:flex;gap:8px">
+        <button class="${f.choix==='nouveau'?'btnPrimaire':'btnSecondaire'}" onclick="onChampTransitionChoix('nouveau')">Nouveau module</button>
+        <button class="${f.choix==='existant'?'btnPrimaire':'btnSecondaire'}" onclick="onChampTransitionChoix('existant')" ${MODULES_FORMATION.length?'':'disabled'}>Module existant${MODULES_FORMATION.length?'':' (aucun pour l\'instant)'}</button>
+      </div>
+      ${f.choix==='nouveau' ? `
+        <div class="champ">
+          <label>Nom du module</label>
+          <input value="${escapeHtml(f.nom)}" oninput="onChampTransitionNom(this.value)" placeholder="ex : Mentorat aléas chantier">
+        </div>
+        <div class="champ">
+          <label>Modalité</label>
+          <select onchange="onChampTransitionModalite(this.value)">
+            ${MODALITES_FORMATION.map(m=>`<option value="${m.id}" ${m.id===f.modaliteId?'selected':''}>${escapeHtml(m.label)}</option>`).join('')}
+          </select>
+        </div>
+        <div class="champ">
+          <label>Description (facultatif)</label>
+          <textarea rows="2" oninput="onChampTransitionDescription(this.value)">${escapeHtml(f.description)}</textarea>
+        </div>
+      ` : `
+        <div class="champ">
+          <label>Module existant</label>
+          <select onchange="onChampTransitionModuleExistant(this.value)">
+            ${MODULES_FORMATION.map(m=>`<option value="${m.id}" ${m.id===f.moduleExistantId?'selected':''}>${escapeHtml(m.nom)} (${escapeHtml(m.modaliteLabel||'')})</option>`).join('')}
+          </select>
+        </div>
+      `}
+      ` : `
+      <div class="champ" style="display:flex;gap:8px">
+        <button class="${f.choix==='nouveau'?'btnPrimaire':'btnSecondaire'}" onclick="onChampTransitionChoix('nouveau')">Nouvelle épreuve</button>
+        <button class="${f.choix==='existant'?'btnPrimaire':'btnSecondaire'}" onclick="onChampTransitionChoix('existant')" ${EPREUVES_TRANSITION.length?'':'disabled'}>Épreuve existante${EPREUVES_TRANSITION.length?'':' (aucune pour l\'instant)'}</button>
+      </div>
+      ${f.choix==='nouveau' ? `
+        <div class="champ">
+          <label>Nom de l'épreuve</label>
+          <input value="${escapeHtml(f.nom)}" oninput="onChampTransitionNom(this.value)" placeholder="ex : Quiz implantation et proportions">
+        </div>
+        <div class="champ">
+          <label>Type d'épreuve</label>
+          <select onchange="onChampTransitionTypeEpreuve(this.value)">
+            ${TYPES_EPREUVE.map(t=>`<option value="${t.valeur}" ${t.valeur===f.typeEpreuve?'selected':''}>${t.label}</option>`).join('')}
+          </select>
+        </div>
+        <div class="champ">
+          <label>Description / consignes (facultatif)</label>
+          <textarea rows="2" oninput="onChampTransitionDescription(this.value)">${escapeHtml(f.description)}</textarea>
+        </div>
+      ` : `
+        <div class="champ">
+          <label>Épreuve existante</label>
+          <select onchange="onChampTransitionEpreuveExistant(this.value)">
+            ${EPREUVES_TRANSITION.map(e=>`<option value="${e.id}" ${e.id===f.epreuveExistantId?'selected':''}>${escapeHtml(e.nom)}</option>`).join('')}
+          </select>
+        </div>
+      `}
+      `}
+      ${f.erreur ? `<div class="modalErr">${escapeHtml(f.erreur)}</div>` : ''}
+      <div class="modalActions">
+        <button class="btnPrimaire" ${f.enCours?'disabled':''} onclick="enregistrerTransition()">${f.enCours?'Enregistrement…':'Enregistrer'}</button>
+        <button class="btnSecondaire" onclick="fermerFormulaireTransition()">Annuler</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* =========================================================================
+   ÉCRAN MODULES — charte point 7 : concevoir un scénario pédagogique une
+   fois, puis cocher en masse toutes les situations/transitions qu'il couvre
+   (voir moduleEnEdition, qui bascule l'arbre en mode case-à-cocher).
+   ========================================================================= */
+/* =========================================================================
+   LEXIQUE — une ligne parmi les modules du référentiel formation (intégré à
+   l'arbre "Référentiel formation", pas un écran séparé), mais garde ses
+   propres catégories (dictionnaire), jamais réorganisé selon les axes B0-B9.
+   ========================================================================= */
+function ouvrirLexique(){ vueLexique = true; ficheTermeOuvert = null; render(); }
+function fermerLexique(){ vueLexique = false; ficheTermeOuvert = null; render(); }
+async function chargerLexiqueTermes(){
+  const { data, error } = await sb.from('lexique_termes').select('*').eq('metier_id', METIER_ACTUEL_ID).order('categorie').order('terme');
+  if(error){ alert('Erreur : '+error.message); LEXIQUE_TERMES = []; return; }
+  LEXIQUE_TERMES = data || [];
+}
+async function chargerFormateursQualifies(){
+  const { data: form } = await sb.from('formateurs_qualifies').select('id,personne_id,type_qualification,domaine_competence');
+  const ids = [...new Set((form||[]).map(f=>f.personne_id))];
+  let noms = {};
+  if(ids.length){
+    const { data: fm } = await sb.from('federation_members').select('user_id,nom,prenom').in('user_id', ids);
+    for(const f of (fm||[])) noms[f.user_id] = `${f.prenom||''} ${f.nom||''}`.trim();
+  }
+  FORMATEURS_QUALIFIES = (form||[]).map(f=>({ ...f, nomAffiche: noms[f.personne_id] || f.personne_id.slice(0,8) }));
+}
+function triCliqueTableau(objetTri, colonne){
+  if(objetTri.col===colonne) objetTri.dir *= -1; else { objetTri.col = colonne; objetTri.dir = 1; }
+  render();
+}
+function fleche(objetTri, colonne){ return objetTri.col===colonne ? (objetTri.dir===1?' ▲':' ▼') : ''; }
+
+/* =========================================================================
+   CARTE DU RÉFÉRENTIEL FORMATION — même mécanique d'expand/collapse que la
+   carte du référentiel métier, mais racines différentes : les axes B0-B9
+   (déduits de axe_formation/sous_chapitre/sous_sous_chapitre sur les modules
+   et épreuves), jamais Pilotage/Cœur de métier/Support. La branche A
+   (467 tutos Skolantreuz) n'a pas de donnée individuelle en base — affichée
+   en résumé non cliquable, pas comme un faux niveau de la carte.
+   ========================================================================= */
+const AXES_FORMATION_LABELS = {
+  B0: 'B0 — Socle transverse du métier', B1: 'B1 — Axe 1 · Tracé & lettrage',
+  B2: 'B2 — Axe 2 · Préparation & application de la peinture', B3: 'B3 — Axe 3 · Dorure & effets métalliques',
+  B4: 'B4 — Axe 4 · Effets décoratifs & ornementation', B5: 'B5 — Axe 5 · Adaptation aux supports & matériaux',
+  B6: 'B6 — Axe 6 · Restauration & conservation', B7: 'B7 — Axe 7 · Finitions & protection',
+  B8: 'B8 — Épreuves intégratives multi-axes', B9: 'B9 — Cycle client & chantier',
+};
+const ORDRE_AXES_FORMATION = ['B0','B1','B2','B3','B4','B5','B6','B7','B8','B9'];
+// Branche A organisée par cadran (les 4 mêmes cadrans que Thérèse/Skolantreuz), pas par
+// simple liste de chapitres — A0 est hors cadran (socle méta, avant tout accès à Maurice).
+const A0_SOCLE_BRANCHE_A = ['A0 — Socle, boussole et intention (méta)', 16];
+const CADRANS_BRANCHE_A = [
+  { cadran: 'Nord-Est — pourquoi, quand, qui faire', chapitres: [['A1 — Intelligence organisationnelle', 113]] },
+  { cadran: 'Nord-Ouest — ce que je fais', chapitres: [['A2 — Philosophie pédagogique et esprit Thérèse (méta)', 74], ['A3 — Cycle de vie du collaborateur (appliqué)', 43]] },
+  { cadran: 'Sud-Ouest — ce que je vis', chapitres: [['A4 — Intelligence émotionnelle', 123]] },
+  { cadran: 'Sud-Est — ce que je vis avec les autres', chapitres: [['A5 — Intelligence collective', 98]] },
+];
+
+function renderCarteFormation(){
+  const authed = session && session.user.email===COMITE_EMAIL;
+  if(ficheModuleOuverte) return renderFicheModule();
+  if(ficheEpreuveOuverte) return renderFicheEpreuve();
+  if(vueLexique) return renderEcranLexique();
+  const enPiloter = authed && mode==='piloter';
+  const items = [
+    ...MODULES_FORMATION.filter(m=>m.axe_formation && (authed || m.statut==='publie')).map(m=>({ ...m, estEpreuve:false })),
+    ...EPREUVES_TRANSITION.filter(e=>e.axe_formation && (authed || e.statut==='publie')).map(e=>({ ...e, estEpreuve:true })),
+    // Le lexique technique est une ligne parmi les modules (là où il se range naturellement,
+    // B0.2 Vocabulaire), pas un écran séparé — toujours visible, comité ou pas.
+    { id:'__lexique__', estLexique:true, nom:'Lexique technique (vocabulaire métier)', statut:'publie',
+      axe_formation:'B0', sous_chapitre:'B0.2 Vocabulaire, culture et déontologie', sous_sous_chapitre:'B0.2.1 Vocabulaire du métier et lecture d\'une enseigne' },
+  ];
+  const parAxe = {};
+  for(const it of items){
+    const axe = (parAxe[it.axe_formation] = parAxe[it.axe_formation] || { sousChapitres:{}, ordre:[] });
+    if(!axe.sousChapitres[it.sous_chapitre]) { axe.sousChapitres[it.sous_chapitre] = { sousSousChapitres:{}, ordre:[] }; axe.ordre.push(it.sous_chapitre); }
+    const sc = axe.sousChapitres[it.sous_chapitre];
+    const cle = it.sous_sous_chapitre || '(général)';
+    if(!sc.sousSousChapitres[cle]) { sc.sousSousChapitres[cle] = []; sc.ordre.push(cle); }
+    sc.sousSousChapitres[cle].push(it);
+  }
+  function chipItem(it){
+    if(it.estLexique){
+      return `<div class="etapeChip" style="display:block;margin-bottom:4px"><a href="#" onclick="event.preventDefault();ouvrirLexique()" style="color:inherit;text-decoration:none">▶ ${escapeHtml(it.nom)}</a> — Référence</div>`;
+    }
+    const ouverture = enPiloter
+      ? (it.estEpreuve ? `ouvrirFicheEpreuve('${it.id}')` : `ouvrirFicheModule('${it.id}')`)
+      : (it.estEpreuve ? `ouvrirLecteurEpreuve('${it.id}',sb)` : `ouvrirLecteurModule('${it.id}',sb)`);
+    const label = it.estEpreuve ? (TYPES_EPREUVE.find(t=>t.valeur===it.type_epreuve)||{}).label||it.type_epreuve : it.modaliteLabel;
+    const statutTag = it.statut!=='publie' ? ` <span class="tiny" style="color:var(--muted)">(brouillon)</span>` : '';
+    return `<div class="etapeChip" style="display:block;margin-bottom:4px"><a href="#" onclick="event.preventDefault();${ouverture}" style="color:inherit;text-decoration:none">▶ ${escapeHtml(it.nom)}</a> — ${escapeHtml(label||'?')}${statutTag}</div>`;
+  }
+  const corpsAxesListe = ORDRE_AXES_FORMATION.filter(a=>parAxe[a]).map(axeCode=>{
+    const axe = parAxe[axeCode];
+    const total = Object.values(axe.sousChapitres).reduce((s,sc)=>s+Object.values(sc.sousSousChapitres).reduce((s2,l)=>s2+l.length,0),0);
+    return `
+    <details>
+      <summary><div class="ligne"><span class="zoom"></span><span class="titre-racine">${escapeHtml(AXES_FORMATION_LABELS[axeCode]||axeCode)}</span><span class="kpi">${total} élément${total>1?'s':''}</span></div></summary>
+      <div class="noeud">
+        ${axe.ordre.map(sc=>`
+        <details>
+          <summary><div class="ligne"><span class="zoom"></span><span class="titre-sp">${escapeHtml(sc)}</span></div></summary>
+          <div class="noeud">
+            ${axe.sousChapitres[sc].ordre.map(ssc=>`
+              <details>
+                <summary><div class="ligne"><span class="zoom"></span><span class="titre-act">${escapeHtml(ssc)}</span></div></summary>
+                <div class="niveaux">${axe.sousChapitres[sc].sousSousChapitres[ssc].map(chipItem).join('')}</div>
+              </details>`).join('')}
+          </div>
+        </details>`).join('')}
+      </div>
+    </details>`;
+  }).join('');
+  const totalBrancheB = Object.values(parAxe).reduce((s,axe)=>s+Object.values(axe.sousChapitres).reduce((s2,sc)=>s2+Object.values(sc.sousSousChapitres).reduce((s3,l)=>s3+l.length,0),0),0);
+  const corpsAxes = corpsAxesListe ? `
+    <details open>
+      <summary><div class="ligne"><span class="zoom"></span><span class="titre-racine">Branche Excellence métier</span><span class="kpi">${totalBrancheB} élément${totalBrancheB>1?'s':''}</span></div></summary>
+      <div class="noeud">${corpsAxesListe}</div>
+    </details>` : '';
+  const corpsBrancheA = `
+    <details>
+      <summary><div class="ligne"><span class="zoom"></span><span class="titre-racine">Branche Skolantreuz</span><span class="kpi">467 tutos, résumé par chapitre</span></div></summary>
+      <div class="noeud">
+        <p class="tiny" style="color:var(--muted);margin:4px 0 10px 0">Pas encore repris individuellement dans Maurice — liste nominative des 467 tutos pas encore fournie. Organisée par cadran, comme les 4 cadrans de Thérèse.</p>
+        <div class="niveau-ligne"><span class="niveau-tag" style="flex:0 0 320px">${escapeHtml(A0_SOCLE_BRANCHE_A[0])}</span><span class="tiny muted">${A0_SOCLE_BRANCHE_A[1]} tutos — hors cadran, avant tout accès à Maurice</span></div>
+        ${CADRANS_BRANCHE_A.map(c=>`
+        <details>
+          <summary><div class="ligne"><span class="zoom"></span><span class="titre-sp">${escapeHtml(c.cadran)}</span></div></summary>
+          <div class="noeud">
+            ${c.chapitres.map(([label,n])=>`<div class="niveau-ligne"><span class="niveau-tag" style="flex:0 0 320px">${escapeHtml(label)}</span><span class="tiny muted">${n} tutos</span></div>`).join('')}
+          </div>
+        </details>`).join('')}
+      </div>
+    </details>`;
+  return `
+  <h1>Référentiel formation</h1>
+  <p class="sub">Modules et épreuves de la Fédération, organisés par axe (B0-B9) — carte mentale : cliquez "+"/"−" pour déplier. Distinct du référentiel métier (Pilotage/Cœur de métier/Support) : deux logiques différentes.</p>
+  <div class="toggleBar">
+    <button class="toggleBtn" onclick="vueCarteFormation=false;render()">← Retour au référentiel</button>
+    <button class="toggleBtn" onclick="toutOuvrir()">+ Tout ouvrir</button>
+    <button class="toggleBtn" onclick="toutFermer()">− Tout fermer</button>
+    ${enPiloter ? `<button class="toggleBtn" onclick="ouvrirFicheModule(null)">+ Nouveau module</button><button class="toggleBtn" onclick="ouvrirFicheEpreuve(null)">+ Nouvelle épreuve</button>` : ''}
+  </div>
+  ${corpsBrancheA}
+  ${corpsAxes || '<div class="tiny" style="color:var(--muted)">Aucun contenu encore positionné dans la hiérarchie B0-B9.</div>'}
+  `;
+}
+function renderEcranLexique(){
+  if(ficheTermeOuvert) return renderFicheTerme();
+  return `
+  <h1>Lexique technique</h1>
+  <p class="sub">Vocabulaire métier — matière pour Thérèse, pas un catalogue membre.</p>
+  <div class="toggleBar"><button class="toggleBtn" onclick="fermerLexique()">← Retour au référentiel formation</button></div>
+  ${renderTableLexique()}
+  `;
+}
+
+function renderTableLexique(){
+  let lignes = LEXIQUE_TERMES.filter(t=>
+    (!rechercheLexique || t.terme.toLowerCase().includes(rechercheLexique.toLowerCase())) &&
+    (!filtreCategorieLexique || t.categorie===filtreCategorieLexique)
+  );
+  const col = triLexique.col;
+  lignes = lignes.slice().sort((a,b)=>{
+    const va = col==='categorie' ? a.categorie : a.terme, vb = col==='categorie' ? b.categorie : b.terme;
+    return va<vb ? -triLexique.dir : va>vb ? triLexique.dir : 0;
+  });
+  return `
+  <div class="toolbar" style="margin:14px 0;gap:10px">
+    <input class="input" style="max-width:240px" placeholder="Rechercher un terme…" value="${escapeHtml(rechercheLexique)}" oninput="rechercheLexique=this.value;render()">
+    <select onchange="filtreCategorieLexique=this.value;render()">
+      <option value="">Toutes catégories</option>
+      ${CATEGORIES_LEXIQUE.map(c=>`<option value="${escapeHtml(c)}" ${c===filtreCategorieLexique?'selected':''}>${escapeHtml(c)}</option>`).join('')}
+    </select>
+    <button class="toggleBtn" onclick="ouvrirFicheTerme(null)">+ Nouveau terme</button>
+  </div>
+  <div style="overflow-x:auto">
+  <table style="width:100%;border-collapse:collapse;font-size:14px">
+    <thead><tr style="text-align:left;border-bottom:2px solid var(--line,#ddd)">
+      <th style="cursor:pointer;padding:8px" onclick="triCliqueTableau(triLexique,'terme')">Terme${fleche(triLexique,'terme')}</th>
+      <th style="cursor:pointer;padding:8px" onclick="triCliqueTableau(triLexique,'categorie')">Catégorie${fleche(triLexique,'categorie')}</th>
+    </tr></thead>
+    <tbody>
+      ${lignes.map(t=>`
+        <tr style="cursor:pointer;border-bottom:1px solid var(--line,#eee)" onclick='ouvrirFicheTerme(${JSON.stringify(t).replace(/'/g,"&apos;")})'>
+          <td style="padding:8px">${escapeHtml(t.terme)}${t.variante?' <span class="tiny" style="color:var(--muted)">('+escapeHtml(t.variante)+')</span>':''}</td>
+          <td style="padding:8px" class="tiny">${escapeHtml(t.categorie)}</td>
+        </tr>`).join('') || `<tr><td colspan="2" class="tiny" style="padding:14px">Aucun terme ne correspond.</td></tr>`}
+    </tbody>
+  </table>
+  </div>`;
+}
+
+function gererSituationsModule(id, nom){
+  moduleEnEdition = { id, nom };
+  vueCarteFormation = false;
+  mode = 'piloter';
+  render();
+}
+async function retourFicheModuleApresSituations(){
+  const id = moduleEnEdition.id;
+  moduleEnEdition = null;
+  await charger();
+  vueCarteFormation = true;
+  ficheModuleOuverte = MODULES_FORMATION.find(m=>m.id===id) || null;
+  ongletFicheModule = 'situations';
+  render();
+}
+
+function gererSituationsEpreuve(id, nom){
+  epreuveEnEdition = { id, nom };
+  vueCarteFormation = false;
+  mode = 'piloter';
+  render();
+}
+async function retourFicheEpreuveApresSituations(){
+  const id = epreuveEnEdition.id;
+  epreuveEnEdition = null;
+  await charger();
+  vueCarteFormation = true;
+  ficheEpreuveOuverte = EPREUVES_TRANSITION.find(e=>e.id===id) || null;
+  ongletFicheEpreuve = 'situations';
+  render();
+}
+
+/* =========================================================================
+   FICHE DÉTAIL D'UNE ÉPREUVE DE TRANSITION — objet frère d'un module, jamais
+   son enfant. Toujours attachée à une transition entre deux niveaux (jamais
+   un approfondissement sur un seul niveau).
+   ========================================================================= */
+function ouvrirFicheEpreuve(id){
+  if(!id){
+    ficheEpreuveOuverte = { id:null, nom:'', type_epreuve:TYPES_EPREUVE[0].valeur, description:'', duree_min:null, statut:'brouillon', updated_at:null, axe_formation:null, sous_chapitre:null, sous_sous_chapitre:null };
+    ongletFicheEpreuve = 'infos';
+    render();
+    return;
+  }
+  ficheEpreuveOuverte = { ...EPREUVES_TRANSITION.find(e=>e.id===id) };
+  ongletFicheEpreuve = 'infos';
+  render();
+}
+function fermerFicheEpreuve(){ ficheEpreuveOuverte = null; render(); }
+function onChampFicheEpreuve(champ, v){ if(ficheEpreuveOuverte) ficheEpreuveOuverte[champ] = v; }
+async function enregistrerFicheEpreuve(){
+  const e = ficheEpreuveOuverte;
+  if(!e.nom || !e.nom.trim()){ alert('Donne un nom à l\'épreuve.'); return; }
+  const payload = {
+    nom: e.nom.trim(), type_epreuve: e.type_epreuve, description: e.description||null,
+    duree_min: e.duree_min || null, statut: e.statut||'brouillon', metier_id: METIER_ACTUEL_ID,
+    axe_formation: e.axe_formation||null, sous_chapitre: e.sous_chapitre||null, sous_sous_chapitre: e.sous_sous_chapitre||null,
+  };
+  let error, data;
+  if(e.id){ ({ error } = await sb.from('epreuves_transition').update(payload).eq('id', e.id)); }
+  else { ({ data, error } = await sb.from('epreuves_transition').insert(payload).select('id').single()); }
+  if(error){ alert('Erreur : '+error.message); return; }
+  await charger();
+  ficheEpreuveOuverte = EPREUVES_TRANSITION.find(e2=>e2.id===(e.id||data.id)) || null;
+  render();
+}
+async function supprimerFicheEpreuve(){
+  if(!ficheEpreuveOuverte.id) return;
+  if(!await confirmer('Supprimer cette épreuve ? Elle sera retirée de toutes les transitions où elle était rattachée.')) return;
+  const { error } = await sb.from('epreuves_transition').delete().eq('id', ficheEpreuveOuverte.id);
+  if(error){ alert('Erreur : '+error.message); return; }
+  ficheEpreuveOuverte = null;
+  await charger();
+  render();
+}
+function renderFicheEpreuve(){
+  const e = ficheEpreuveOuverte;
+  return `
+  <h1>${e.id ? escapeHtml(e.nom) : 'Nouvelle épreuve'}</h1>
+  <div class="toggleBar">
+    <button class="toggleBtn" onclick="fermerFicheEpreuve()">← Retour aux épreuves</button>
+    ${e.id ? `
+      <button class="toggleBtn" style="${ongletFicheEpreuve==='infos'?'font-weight:700':''}" onclick="ongletFicheEpreuve='infos';render()">Infos générales</button>
+      <button class="toggleBtn" style="${ongletFicheEpreuve==='situations'?'font-weight:700':''}" onclick="ongletFicheEpreuve='situations';render()">Transitions couvertes (${NB_SITUATIONS_PAR_EPREUVE[e.id]||0})</button>
+    ` : ''}
+  </div>
+  ${!e.id || ongletFicheEpreuve==='infos' ? renderOngletInfosEpreuve(e) : renderOngletSituationsEpreuve(e)}
+  `;
+}
+function renderOngletInfosEpreuve(e){
+  return `
+  <div class="champ"><label>Titre</label><input class="input" value="${escapeHtml(e.nom)}" oninput="onChampFicheEpreuve('nom',this.value)"></div>
+  <div class="champ" style="margin-top:8px"><label>Type d'épreuve</label>
+    <select onchange="onChampFicheEpreuve('type_epreuve',this.value)">
+      ${TYPES_EPREUVE.map(t=>`<option value="${t.valeur}" ${t.valeur===e.type_epreuve?'selected':''}>${t.label}</option>`).join('')}
+    </select>
+  </div>
+  <div class="champ" style="margin-top:8px"><label>Description / consignes</label><textarea class="input" rows="4" oninput="onChampFicheEpreuve('description',this.value)">${escapeHtml(e.description||'')}</textarea></div>
+  <div class="champ" style="margin-top:8px"><label>Place dans le référentiel formation (axe B0-B9)</label>
+    <select onchange="onChampFicheEpreuve('axe_formation',this.value||null)">
+      <option value="">— non classé —</option>
+      ${ORDRE_AXES_FORMATION.map(a=>`<option value="${a}" ${a===e.axe_formation?'selected':''}>${escapeHtml(AXES_FORMATION_LABELS[a])}</option>`).join('')}
+    </select>
+  </div>
+  <div class="grid2" style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+    <div class="champ"><label>Sous-chapitre</label><input class="input" value="${escapeHtml(e.sous_chapitre||'')}" oninput="onChampFicheEpreuve('sous_chapitre',this.value||null)"></div>
+    <div class="champ"><label>Sous-sous-chapitre (optionnel)</label><input class="input" value="${escapeHtml(e.sous_sous_chapitre||'')}" oninput="onChampFicheEpreuve('sous_sous_chapitre',this.value||null)"></div>
+  </div>
+  <div class="champ" style="margin-top:8px"><label>Durée indicative (minutes, optionnel)</label><input class="input" type="number" min="0" value="${escapeHtml(e.duree_min==null?'':String(e.duree_min))}" oninput="onChampFicheEpreuve('duree_min',this.value?Number(this.value):null)"></div>
+  <div class="champ" style="margin-top:8px"><label>Statut</label>
+    <select onchange="onChampFicheEpreuve('statut',this.value)">
+      <option value="brouillon" ${e.statut==='brouillon'?'selected':''}>Brouillon (invisible du catalogue membre)</option>
+      <option value="publie" ${e.statut==='publie'?'selected':''}>Publié</option>
+    </select>
+  </div>
+  <button class="btnPrimaire" style="margin-top:14px" onclick="enregistrerFicheEpreuve()">Enregistrer</button>
+  ${e.id?`<button class="btnSecondaire" style="margin-top:14px;margin-left:8px" onclick="supprimerFicheEpreuve()">Supprimer l'épreuve</button>`:''}
+  `;
+}
+function renderOngletSituationsEpreuve(e){
+  return `
+  <p class="sub">${NB_SITUATIONS_PAR_EPREUVE[e.id]||0} transition${(NB_SITUATIONS_PAR_EPREUVE[e.id]||0)>1?'s':''} évaluée${(NB_SITUATIONS_PAR_EPREUVE[e.id]||0)>1?'s':''} par cette épreuve.</p>
+  <button class="toggleBtn" onclick="gererSituationsEpreuve('${e.id}','${esc1(e.nom)}')">Gérer les transitions couvertes</button>
+  `;
+}
+
+/* =========================================================================
+   FICHE DÉTAIL D'UN MODULE — onglets Infos générales / Situations couvertes /
+   Contenu. Le contenu s'adapte à la modalité : Tuto garde les étapes
+   (module_etapes, PDF/vidéo/audio en lien externe, quiz, activité pratique) ;
+   AFEST/Mentorat/Intra/Inter (modalités humaines) affichent un déroulé
+   structuré avec accompagnant, jamais un champ d'upload.
+   ========================================================================= */
+function ouvrirFicheModule(id){
+  if(!id){
+    ficheModuleOuverte = { id:null, nom:'', description:'', modaliteId:(MODALITES_FORMATION[0]||{}).id||'', modaliteCode:(MODALITES_FORMATION[0]||{}).code||'', statut:'brouillon', autoformation:false, contenu_humain:null, updated_at:null, supports:[], esg:false, axe_formation:null, sous_chapitre:null, sous_sous_chapitre:null };
+    ongletFicheModule = 'infos';
+    render();
+    return;
+  }
+  ficheModuleOuverte = { ...MODULES_FORMATION.find(m=>m.id===id) };
+  ongletFicheModule = 'infos';
+  etapesModuleCourant = [];
+  if(MODALITES_HUMAINES.includes(ficheModuleOuverte.modaliteCode)){ render(); }
+  else { chargerEtapesModule(id).then(render); render(); }
+}
+function fermerFicheModule(){ ficheModuleOuverte = null; render(); }
+function onChampFicheModule(champ, v){ if(ficheModuleOuverte) ficheModuleOuverte[champ] = v; }
+async function enregistrerFicheModule(){
+  const m = ficheModuleOuverte;
+  if(!m.nom || !m.nom.trim()){ alert('Donne un nom au module.'); return; }
+  const payload = {
+    nom: m.nom.trim(), description: m.description||null, modalite_id: m.modaliteId||null,
+    autoformation: !!m.autoformation, statut: m.statut||'brouillon', metier_id: METIER_ACTUEL_ID,
+    supports: m.supports||[], esg: !!m.esg, temps_pratique_recommande_min: m.temps_pratique_recommande_min ?? null,
+    axe_formation: m.axe_formation||null, sous_chapitre: m.sous_chapitre||null, sous_sous_chapitre: m.sous_sous_chapitre||null,
+  };
+  let error, data;
+  if(m.id){ ({ error } = await sb.from('modules_apprentissage').update(payload).eq('id', m.id)); }
+  else { ({ data, error } = await sb.from('modules_apprentissage').insert(payload).select('id').single()); }
+  if(error){ alert('Erreur : '+error.message); return; }
+  await charger();
+  ficheModuleOuverte = MODULES_FORMATION.find(m2=>m2.id===(m.id||data.id)) || null;
+  render();
+}
+async function supprimerFicheModule(){
+  if(!ficheModuleOuverte.id) return;
+  if(!await confirmer('Supprimer ce module ? Il sera retiré de toutes les situations où il était rattaché.')) return;
+  const { error } = await sb.from('modules_apprentissage').delete().eq('id', ficheModuleOuverte.id);
+  if(error){ alert('Erreur : '+error.message); return; }
+  ficheModuleOuverte = null;
+  await charger();
+  render();
+}
+async function enregistrerContenuHumain(){
+  const m = ficheModuleOuverte;
+  const { error } = await sb.from('modules_apprentissage').update({ contenu_humain: m.contenu_humain }).eq('id', m.id);
+  if(error){ alert('Erreur : '+error.message); return; }
+  await charger();
+  ficheModuleOuverte = MODULES_FORMATION.find(m2=>m2.id===m.id) || null;
+  render();
+}
+function onChampContenuHumain(champ, v){
+  if(!ficheModuleOuverte) return;
+  ficheModuleOuverte.contenu_humain = { ...(ficheModuleOuverte.contenu_humain||{}), [champ]: v };
+}
+
+function renderFicheModule(){
+  const m = ficheModuleOuverte;
+  const estHumaine = MODALITES_HUMAINES.includes(m.modaliteCode);
+  return `
+  <h1>${m.id ? escapeHtml(m.nom) : 'Nouveau module'}</h1>
+  <div class="toggleBar">
+    <button class="toggleBtn" onclick="fermerFicheModule()">← Retour aux modules</button>
+    ${m.id ? `
+      <button class="toggleBtn" style="${ongletFicheModule==='infos'?'font-weight:700':''}" onclick="ongletFicheModule='infos';render()">Infos générales</button>
+      <button class="toggleBtn" style="${ongletFicheModule==='situations'?'font-weight:700':''}" onclick="ongletFicheModule='situations';render()">Situations couvertes (${NB_SITUATIONS_PAR_MODULE[m.id]||0})</button>
+      <button class="toggleBtn" style="${ongletFicheModule==='contenu'?'font-weight:700':''}" onclick="ongletFicheModule='contenu';render()">Contenu</button>
+    ` : ''}
+  </div>
+  ${!m.id || ongletFicheModule==='infos' ? renderOngletInfosModule(m)
+    : ongletFicheModule==='situations' ? renderOngletSituationsModule(m)
+    : estHumaine ? renderOngletContenuHumain(m) : renderOngletContenuEtapes(m)}
+  `;
+}
+function dureeNoyauSuggestion(m){
+  if(!m || m.modaliteCode!=='tuto' || !etapesModuleCourant.length) return null;
+  const total = etapesModuleCourant.reduce((s,e)=>s+(e.duree_estimee_min||0), 0);
+  return total>0 ? total*9 : null;
+}
+function renderOngletInfosModule(m){
+  return `
+  <div class="champ"><label>Titre</label><input class="input" value="${escapeHtml(m.nom)}" oninput="onChampFicheModule('nom',this.value)"></div>
+  <div class="champ" style="margin-top:8px"><label>Description</label><textarea class="input" rows="3" oninput="onChampFicheModule('description',this.value)">${escapeHtml(m.description||'')}</textarea></div>
+  <div class="champ" style="margin-top:8px"><label>Place dans le référentiel formation (axe B0-B9)</label>
+    <select onchange="onChampFicheModule('axe_formation',this.value||null)">
+      <option value="">— non classé —</option>
+      ${ORDRE_AXES_FORMATION.map(a=>`<option value="${a}" ${a===m.axe_formation?'selected':''}>${escapeHtml(AXES_FORMATION_LABELS[a])}</option>`).join('')}
+    </select>
+  </div>
+  <div class="grid2" style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+    <div class="champ"><label>Sous-chapitre (ex : B0.1 Matières, produits et outillage)</label><input class="input" value="${escapeHtml(m.sous_chapitre||'')}" oninput="onChampFicheModule('sous_chapitre',this.value||null)"></div>
+    <div class="champ"><label>Sous-sous-chapitre (optionnel)</label><input class="input" value="${escapeHtml(m.sous_sous_chapitre||'')}" oninput="onChampFicheModule('sous_sous_chapitre',this.value||null)"></div>
+  </div>
+  <div class="champ" style="margin-top:8px"><label>Modalité</label>
+    <select onchange="onChampFicheModule('modaliteId',this.value);onChampFicheModule('modaliteCode',(${JSON.stringify(MODALITES_FORMATION)}.find(x=>x.id===this.value)||{}).code||'');render()">
+      ${MODALITES_FORMATION.map(mo=>`<option value="${mo.id}" ${mo.id===m.modaliteId?'selected':''}>${escapeHtml(mo.label)}</option>`).join('')}
+    </select>
+  </div>
+  <div class="champ" style="margin-top:8px"><label>Statut</label>
+    <select onchange="onChampFicheModule('statut',this.value)">
+      <option value="brouillon" ${m.statut==='brouillon'?'selected':''}>Brouillon (invisible du catalogue membre)</option>
+      <option value="publie" ${m.statut==='publie'?'selected':''}>Publié</option>
+    </select>
+  </div>
+  <label style="display:flex;align-items:center;gap:6px;margin-top:8px;cursor:pointer">
+    <input type="checkbox" ${m.autoformation?'checked':''} onchange="onChampFicheModule('autoformation',this.checked)"> Autoformation (pas besoin d'un tuteur pour le suivre)
+  </label>
+  <div class="champ" style="margin-top:8px"><label>Supports concernés (optionnel — ex : bois, verre, métal, pierre)</label>
+    <input class="input" value="${escapeHtml((m.supports||[]).join(', '))}" oninput="onChampFicheModule('supports',this.value.split(',').map(s=>s.trim()).filter(Boolean))" placeholder="ex : bois, verre">
+  </div>
+  <label style="display:flex;align-items:center;gap:6px;margin-top:8px;cursor:pointer">
+    <input type="checkbox" ${m.esg?'checked':''} onchange="onChampFicheModule('esg',this.checked)"> Lié RSE/QVT (calque transversal)
+  </label>
+  <div class="champ" style="margin-top:8px">
+    <label>Temps de pratique recommandé après ce tuto (minutes)</label>
+    <input class="input" type="number" min="0" value="${escapeHtml(m.temps_pratique_recommande_min==null?'':String(m.temps_pratique_recommande_min))}" oninput="onChampFicheModule('temps_pratique_recommande_min',this.value?Number(this.value):null)" placeholder="${dureeNoyauSuggestion(m)!=null?'suggestion : '+dureeNoyauSuggestion(m)+' (durée du tuto × 9)':'ex : 90'}">
+    <button class="editBtn" style="margin-top:4px" onclick="onChampFicheModule('temps_pratique_recommande_min',dureeNoyauSuggestion(ficheModuleOuverte));render()" ${dureeNoyauSuggestion(m)==null?'disabled':''}>Reprendre la suggestion (× 9)</button>
+    <div class="tiny" style="margin-top:4px;color:var(--muted)">Repère indicatif (règle 70/20/10), jamais un seuil de blocage — l'épreuve de transition reste le seul vrai passage.</div>
+  </div>
+  <button class="btnPrimaire" style="margin-top:14px" onclick="enregistrerFicheModule()">Enregistrer</button>
+  ${m.id?`<button class="btnSecondaire" style="margin-top:14px;margin-left:8px" onclick="supprimerFicheModule()">Supprimer le module</button>`:''}
+  `;
+}
+function renderOngletSituationsModule(m){
+  return `
+  <p class="sub">${NB_SITUATIONS_PAR_MODULE[m.id]||0} situation${(NB_SITUATIONS_PAR_MODULE[m.id]||0)>1?'s':''}/transition${(NB_SITUATIONS_PAR_MODULE[m.id]||0)>1?'s':''} couverte${(NB_SITUATIONS_PAR_MODULE[m.id]||0)>1?'s':''} par ce module.</p>
+  <button class="toggleBtn" onclick="gererSituationsModule('${m.id}','${esc1(m.nom)}')">Gérer les situations couvertes</button>
+  `;
+}
+function renderOngletContenuHumain(m){
+  const c = m.contenu_humain || {};
+  const pieces = c.piecesJointes || [];
+  return `
+  <p class="sub">Modalité humaine (${escapeHtml(m.modaliteLabel)}) — un déroulé structuré, un accompagnant si déjà identifié, et en appui des pièces jointes (présentation, support, vidéo/audio de démonstration) : ça ne remplace pas l'accompagnement, ça le prépare.</p>
+  <div class="champ"><label>Déroulé</label><textarea class="input" rows="4" oninput="onChampContenuHumain('deroule',this.value)">${escapeHtml(c.deroule||'')}</textarea></div>
+  <div class="champ" style="margin-top:8px"><label>Prérequis</label><textarea class="input" rows="2" oninput="onChampContenuHumain('prerequis',this.value)">${escapeHtml(c.prerequis||'')}</textarea></div>
+  <div class="champ" style="margin-top:8px"><label>Durée indicative</label><input class="input" value="${escapeHtml(c.dureeIndicative||'')}" oninput="onChampContenuHumain('dureeIndicative',this.value)" placeholder="ex : 2 jours, 4h..."></div>
+  <div class="champ" style="margin-top:8px"><label>Accompagnant (si déjà identifié)</label>
+    <select onchange="onChampContenuHumain('accompagnantId',this.value)">
+      <option value="">Pas encore identifié</option>
+      ${FORMATEURS_QUALIFIES.map(f=>`<option value="${f.id}" ${f.id===c.accompagnantId?'selected':''}>${escapeHtml(f.nomAffiche)} — ${escapeHtml(f.type_qualification)}</option>`).join('')}
+    </select>
+    ${!FORMATEURS_QUALIFIES.length?'<div class="tiny" style="margin-top:4px;color:var(--muted)">Aucun formateur qualifié enregistré pour l\'instant.</div>':''}
+  </div>
+  <div class="champ" style="margin-top:8px">
+    <label>Pièces jointes (PDF, vidéo, audio — présentation ou support à consulter avant/pendant)</label>
+    ${pieces.length ? pieces.map((p,i)=>`<div class="tiny" style="margin-top:4px"><a href="${escapeHtml(p.url)}" target="_blank" rel="noopener">▶ ${escapeHtml(p.nom)}</a> <button class="editBtn" onclick="supprimerPieceJointeHumain(${i})">✕</button></div>`).join('') : '<div class="tiny" style="color:var(--muted);margin-top:4px">Aucune pièce jointe pour l\'instant.</div>'}
+    <input type="file" style="margin-top:8px" onchange="ajouterPieceJointeHumain(this)">
+    ${c.uploadEnCours?'<div class="tiny" style="margin-top:4px">Envoi en cours…</div>':''}
+  </div>
+  <button class="btnPrimaire" style="margin-top:14px" onclick="enregistrerContenuHumain()">Enregistrer</button>
+  `;
+}
+async function ajouterPieceJointeHumain(input){
+  const file = input.files[0]; if(!file || !ficheModuleOuverte) return;
+  const m = ficheModuleOuverte;
+  m.contenu_humain = { ...(m.contenu_humain||{}), uploadEnCours:true };
+  render();
+  try{
+    const chemin = `${m.id}/${Date.now()}-${file.name}`;
+    const { error } = await sb.storage.from('contenu-pedagogique').upload(chemin, file);
+    if(error) throw error;
+    const { data } = sb.storage.from('contenu-pedagogique').getPublicUrl(chemin);
+    const pieces = [...(m.contenu_humain.piecesJointes||[]), { nom:file.name, url:data.publicUrl }];
+    m.contenu_humain = { ...m.contenu_humain, piecesJointes:pieces, uploadEnCours:false };
+    await enregistrerContenuHumain();
+  }catch(err){
+    alert('Erreur d\'envoi : '+(err.message||err));
+    m.contenu_humain = { ...m.contenu_humain, uploadEnCours:false };
+    render();
+  }
+}
+function supprimerPieceJointeHumain(index){
+  if(!ficheModuleOuverte) return;
+  const m = ficheModuleOuverte;
+  const pieces = (m.contenu_humain.piecesJointes||[]).filter((_,i)=>i!==index);
+  m.contenu_humain = { ...m.contenu_humain, piecesJointes:pieces };
+  enregistrerContenuHumain();
+}
+function renderOngletContenuEtapes(m){
+  const f = formulaireEtape;
+  return `
+  <p class="sub">Les étapes de ce module, dans l'ordre où la personne les suit.</p>
+  <button class="toggleBtn" onclick="ouvrirFormulaireEtape(null)">+ Nouvelle étape</button>
+  <div style="margin-top:12px">
+  ${etapesModuleCourant.length ? etapesModuleCourant.map((e,i)=>`
+    <div class="noeud" style="padding:12px 16px;margin-bottom:8px">
+      <div class="ligne">
+        <span class="titre-act">${i+1}. ${escapeHtml(e.titre)}</span>
+        <span class="kpi">${escapeHtml((TYPES_ETAPE.find(t=>t.valeur===e.type_contenu)||{}).label||e.type_contenu)}${e.duree_estimee_min?' · ~'+e.duree_estimee_min+' min':''}</span>
+        <button class="editBtn" onclick="deplacerEtape(${i},-1)" ${i===0?'disabled':''}>↑</button>
+        <button class="editBtn" onclick="deplacerEtape(${i},1)" ${i===etapesModuleCourant.length-1?'disabled':''}>↓</button>
+        <button class="editBtn" onclick='ouvrirFormulaireEtape(${JSON.stringify(e).replace(/'/g,"&apos;")})'>✎ Modifier</button>
+        <button class="editBtn" onclick="supprimerEtape('${e.id}')">Supprimer</button>
+      </div>
+      ${e.type_contenu==='quiz' ? `<div class="tiny" style="margin-top:4px;color:var(--muted)">${(JSON.parse(e.contenu||'[]')).length} question(s)</div>`
+        : e.type_contenu==='activite_pratique' ? `<div class="tiny" style="margin-top:4px;color:var(--muted)">${escapeHtml(e.contenu||'')}</div>`
+        : `<div class="tiny" style="margin-top:4px">${escapeHtml(e.contenu||'')}</div>`}
+    </div>`).join('') : '<div class="tiny" style="color:var(--muted)">Aucune étape pour l\'instant.</div>'}
+  </div>
+
+  ${f ? `
+  <div class="overlay" onclick="if(event.target===event.currentTarget) fermerFormulaireEtape()">
+    <div class="modal" style="max-width:520px;max-height:85vh;overflow-y:auto">
+      <div style="font-weight:700;margin-bottom:10px">${f.id?"Modifier l'étape":'Nouvelle étape'}</div>
+      <label class="tiny">Titre</label>
+      <input class="input" value="${escapeHtml(f.titre)}" oninput="onChampEtape('titre',this.value)">
+      <label class="tiny" style="margin-top:8px;display:block">Type de contenu</label>
+      <select onchange="onChampEtape('typeContenu',this.value);render()">
+        ${TYPES_ETAPE.map(t=>`<option value="${t.valeur}" ${t.valeur===f.typeContenu?'selected':''}>${t.label}</option>`).join('')}
+      </select>
+
+      ${f.typeContenu==='quiz' ? `
+        <div style="margin-top:10px">
+          ${f.quizQuestions.map((q,i)=>`
+            <div style="border:1px solid var(--line,#ddd);border-radius:10px;padding:10px;margin-top:8px">
+              <input class="input" placeholder="Question" value="${escapeHtml(q.question)}" oninput="onChampQuestionQuiz(${i},this.value)">
+              ${q.options.map((o,j)=>`
+                <div style="display:flex;align-items:center;gap:6px;margin-top:6px">
+                  <input type="radio" name="bonneReponse${i}" ${q.bonneReponse===j?'checked':''} onchange="onBonneReponseQuiz(${i},${j})">
+                  <input class="input" style="flex:1" placeholder="Option" value="${escapeHtml(o)}" oninput="onChampOptionQuiz(${i},${j},this.value)">
+                </div>`).join('')}
+              <button class="editBtn" style="margin-top:6px" onclick="ajouterOptionQuiz(${i})">+ Option</button>
+              <button class="editBtn" onclick="supprimerQuestionQuiz(${i})">Supprimer la question</button>
+            </div>`).join('')}
+          <button class="addBtn" style="margin-top:8px" onclick="ajouterQuestionQuiz()">+ Question</button>
+        </div>
+      ` : f.typeContenu==='activite_pratique' ? `
+        <label class="tiny" style="margin-top:8px;display:block">Consigne</label>
+        <textarea class="input" rows="4" oninput="onChampEtape('contenu',this.value)">${escapeHtml(f.contenu)}</textarea>
+      ` : `
+        <label class="tiny" style="margin-top:8px;display:block">Fichier (PDF/vidéo/audio) ou lien</label>
+        ${renderUploadOuLienEtape(f)}
+      `}
+
+      <label class="tiny" style="margin-top:8px;display:block">Durée estimée (minutes, optionnel)</label>
+      <input class="input" type="number" min="0" value="${escapeHtml(String(f.dureeMin))}" oninput="onChampEtape('dureeMin',this.value)">
+
+      ${f.erreur?`<div class="tiny" style="color:var(--ink);font-weight:600;margin-top:8px">${escapeHtml(f.erreur)}</div>`:''}
+      <div class="modalActions">
+        <button class="btnPrimaire" ${f.enCours?'disabled':''} onclick="enregistrerEtape()">${f.enCours?'Enregistrement…':'Enregistrer'}</button>
+        <button class="btnSecondaire" onclick="fermerFormulaireEtape()">Annuler</button>
+      </div>
+    </div>
+  </div>` : ''}
+  `;
+}
+function renderUploadOuLienEtape(f){
+  return `
+    <input class="input" placeholder="https://… (ou choisis un fichier ci-dessous)" value="${escapeHtml(f.contenu)}" oninput="onChampEtape('contenu',this.value)">
+    <input type="file" id="fichierEtape" accept=".pdf,video/*,audio/*,image/*" style="margin-top:8px" onchange="uploaderFichierEtape(this)">
+    ${f.uploadEnCours?'<div class="tiny" style="margin-top:4px">Envoi en cours…</div>':''}
+  `;
+}
+async function uploaderFichierEtape(input){
+  const file = input.files[0]; if(!file || !formulaireEtape) return;
+  formulaireEtape.uploadEnCours = true; render();
+  try{
+    const chemin = `${formulaireEtape.moduleId}/${Date.now()}-${file.name}`;
+    const { error } = await sb.storage.from('contenu-pedagogique').upload(chemin, file);
+    if(error) throw error;
+    const { data } = sb.storage.from('contenu-pedagogique').getPublicUrl(chemin);
+    formulaireEtape.contenu = data.publicUrl;
+  }catch(err){
+    alert('Erreur d\'envoi : '+(err.message||err));
+  }
+  formulaireEtape.uploadEnCours = false;
+  render();
+}
+
+function ouvrirFormulaireEtape(etape){
+  const moduleId = ficheModuleOuverte.id;
+  if(etape){
+    let quizQuestions = [];
+    if(etape.type_contenu==='quiz'){ try{ quizQuestions = JSON.parse(etape.contenu||'[]'); }catch(e){ quizQuestions = []; } }
+    formulaireEtape = {
+      id: etape.id, moduleId, ordre: etape.ordre, titre: etape.titre||'',
+      typeContenu: etape.type_contenu||'pdf', contenu: etape.type_contenu==='quiz' ? '' : (etape.contenu||''),
+      quizQuestions, dureeMin: etape.duree_estimee_min||'', erreur:'', enCours:false,
+    };
+  } else {
+    formulaireEtape = {
+      id: null, moduleId, ordre: etapesModuleCourant.length+1, titre: '',
+      typeContenu: 'pdf', contenu: '', quizQuestions: [], dureeMin: '', erreur:'', enCours:false,
+    };
+  }
+  render();
+}
+function fermerFormulaireEtape(){ formulaireEtape = null; render(); }
+function onChampEtape(champ, v){ if(formulaireEtape) formulaireEtape[champ] = v; }
+function ajouterQuestionQuiz(){
+  if(!formulaireEtape) return;
+  formulaireEtape.quizQuestions.push({ question:'', options:['',''], bonneReponse:0 });
+  render();
+}
+function supprimerQuestionQuiz(i){ if(formulaireEtape){ formulaireEtape.quizQuestions.splice(i,1); render(); } }
+function onChampQuestionQuiz(i, v){ if(formulaireEtape) formulaireEtape.quizQuestions[i].question = v; }
+function ajouterOptionQuiz(i){ if(formulaireEtape){ formulaireEtape.quizQuestions[i].options.push(''); render(); } }
+function onChampOptionQuiz(i, j, v){ if(formulaireEtape) formulaireEtape.quizQuestions[i].options[j] = v; }
+function onBonneReponseQuiz(i, j){ if(formulaireEtape){ formulaireEtape.quizQuestions[i].bonneReponse = j; render(); } }
+
+async function chargerEtapesModule(moduleId){
+  const { data, error } = await sb.from('module_etapes').select('*').eq('module_id', moduleId).order('ordre');
+  if(error){ console.error('Chargement des étapes du module échoué :', error.message); etapesModuleCourant = []; return; }
+  etapesModuleCourant = data || [];
+}
+async function enregistrerEtape(){
+  const f = formulaireEtape;
+  if(!f) return;
+  if(!f.titre.trim()){ f.erreur = "Donne un titre à l'étape."; render(); return; }
+  if(f.typeContenu==='quiz' && !f.quizQuestions.length){ f.erreur = 'Ajoute au moins une question.'; render(); return; }
+  if(f.typeContenu!=='quiz' && f.typeContenu!=='activite_pratique' && !f.contenu.trim()){ f.erreur = 'Colle un lien vers la ressource (Maurice n\'héberge pas de fichier lui-même).'; render(); return; }
+  f.enCours = true; f.erreur=''; render();
+  try{
+    const contenu = f.typeContenu==='quiz' ? JSON.stringify(f.quizQuestions) : f.contenu.trim();
+    const payload = {
+      module_id: f.moduleId, ordre: f.ordre, titre: f.titre.trim(), type_contenu: f.typeContenu,
+      contenu, duree_estimee_min: f.dureeMin ? Number(f.dureeMin) : null,
+    };
+    let error;
+    if(f.id){ ({ error } = await sb.from('module_etapes').update(payload).eq('id', f.id)); }
+    else { ({ error } = await sb.from('module_etapes').insert(payload)); }
+    if(error) throw error;
+    formulaireEtape = null;
+    await chargerEtapesModule(f.moduleId);
+    render();
+  }catch(err){
+    f.enCours = false; f.erreur = err.message || String(err); render();
+  }
+}
+async function supprimerEtape(id){
+  if(!await confirmer('Supprimer cette étape ?')) return;
+  const { error } = await sb.from('module_etapes').delete().eq('id', id);
+  if(error){ alert('Erreur : '+error.message); return; }
+  await chargerEtapesModule(vueContenuModule.id);
+  render();
+}
+async function deplacerEtape(index, sens){
+  const autre = index + sens;
+  if(autre < 0 || autre >= etapesModuleCourant.length) return;
+  const a = etapesModuleCourant[index], b = etapesModuleCourant[autre];
+  const { error: e1 } = await sb.from('module_etapes').update({ ordre: b.ordre }).eq('id', a.id);
+  const { error: e2 } = await sb.from('module_etapes').update({ ordre: a.ordre }).eq('id', b.id);
+  if(e1 || e2){ alert('Erreur : '+((e1||e2).message)); return; }
+  await chargerEtapesModule(vueContenuModule.id);
+  render();
+}
+
+function renderContenuModule(){
+  const authed = session && session.user.email===COMITE_EMAIL;
+  if(!authed){ vueContenuModule = null; return renderArbre(arbreGlobal); }
+  const f = formulaireEtape;
+  return `
+  <h1>Contenu du module — ${escapeHtml(vueContenuModule.nom)}</h1>
+  <p class="sub">Les étapes de ce module, dans l'ordre où la personne les suit.</p>
+  <div class="toggleBar">
+    <button class="toggleBtn" onclick="fermerContenuModule()">← Retour aux modules</button>
+    <button class="toggleBtn" onclick="ouvrirFormulaireEtape(null)">+ Nouvelle étape</button>
+  </div>
+  ${etapesModuleCourant.length ? etapesModuleCourant.map((e,i)=>`
+    <div class="noeud" style="padding:12px 16px;margin-bottom:8px">
+      <div class="ligne">
+        <span class="titre-act">${i+1}. ${escapeHtml(e.titre)}</span>
+        <span class="kpi">${escapeHtml((TYPES_ETAPE.find(t=>t.valeur===e.type_contenu)||{}).label||e.type_contenu)}${e.duree_estimee_min?' · ~'+e.duree_estimee_min+' min':''}</span>
+        <button class="editBtn" onclick="deplacerEtape(${i},-1)" ${i===0?'disabled':''}>↑</button>
+        <button class="editBtn" onclick="deplacerEtape(${i},1)" ${i===etapesModuleCourant.length-1?'disabled':''}>↓</button>
+        <button class="editBtn" onclick='ouvrirFormulaireEtape(${JSON.stringify(e).replace(/'/g,"&apos;")})'>✎ Modifier</button>
+        <button class="editBtn" onclick="supprimerEtape('${e.id}')">Supprimer</button>
+      </div>
+      ${e.type_contenu==='quiz' ? `<div class="tiny" style="margin-top:4px;color:var(--muted)">${(JSON.parse(e.contenu||'[]')).length} question(s)</div>`
+        : e.type_contenu==='activite_pratique' ? `<div class="tiny" style="margin-top:4px;color:var(--muted)">${escapeHtml(e.contenu||'')}</div>`
+        : `<div class="tiny" style="margin-top:4px"><a href="${escapeHtml(e.contenu)}" target="_blank" rel="noopener">${escapeHtml(e.contenu)}</a></div>`}
+    </div>`).join('') : '<div class="tiny" style="color:var(--muted)">Aucune étape pour l\'instant.</div>'}
+
+  ${f ? `
+  <div class="overlay" onclick="if(event.target===event.currentTarget) fermerFormulaireEtape()">
+    <div class="modal" style="max-width:520px;max-height:85vh;overflow-y:auto">
+      <div style="font-weight:700;margin-bottom:10px">${f.id?"Modifier l'étape":'Nouvelle étape'}</div>
+      <label class="tiny">Titre</label>
+      <input class="input" value="${escapeHtml(f.titre)}" oninput="onChampEtape('titre',this.value)">
+      <label class="tiny" style="margin-top:8px;display:block">Type de contenu</label>
+      <select onchange="onChampEtape('typeContenu',this.value);render()">
+        ${TYPES_ETAPE.map(t=>`<option value="${t.valeur}" ${t.valeur===f.typeContenu?'selected':''}>${t.label}</option>`).join('')}
+      </select>
+
+      ${f.typeContenu==='quiz' ? `
+        <div style="margin-top:10px">
+          ${f.quizQuestions.map((q,i)=>`
+            <div style="border:1px solid var(--line,#ddd);border-radius:10px;padding:10px;margin-top:8px">
+              <input class="input" placeholder="Question" value="${escapeHtml(q.question)}" oninput="onChampQuestionQuiz(${i},this.value)">
+              ${q.options.map((o,j)=>`
+                <div style="display:flex;align-items:center;gap:6px;margin-top:6px">
+                  <input type="radio" name="bonneReponse${i}" ${q.bonneReponse===j?'checked':''} onchange="onBonneReponseQuiz(${i},${j})">
+                  <input class="input" style="flex:1" placeholder="Option" value="${escapeHtml(o)}" oninput="onChampOptionQuiz(${i},${j},this.value)">
+                </div>`).join('')}
+              <button class="editBtn" style="margin-top:6px" onclick="ajouterOptionQuiz(${i})">+ Option</button>
+              <button class="editBtn" onclick="supprimerQuestionQuiz(${i})">Supprimer la question</button>
+            </div>`).join('')}
+          <button class="addBtn" style="margin-top:8px" onclick="ajouterQuestionQuiz()">+ Question</button>
+        </div>
+      ` : f.typeContenu==='activite_pratique' ? `
+        <label class="tiny" style="margin-top:8px;display:block">Consigne</label>
+        <textarea class="input" rows="4" oninput="onChampEtape('contenu',this.value)">${escapeHtml(f.contenu)}</textarea>
+      ` : `
+        <label class="tiny" style="margin-top:8px;display:block">Lien vers la ressource (Maurice n'héberge pas de fichier — colle un lien externe)</label>
+        <input class="input" placeholder="https://…" value="${escapeHtml(f.contenu)}" oninput="onChampEtape('contenu',this.value)">
+      `}
+
+      <label class="tiny" style="margin-top:8px;display:block">Durée estimée (minutes, optionnel)</label>
+      <input class="input" type="number" min="0" value="${escapeHtml(String(f.dureeMin))}" oninput="onChampEtape('dureeMin',this.value)">
+
+      ${f.erreur?`<div class="tiny" style="color:var(--ink);font-weight:600;margin-top:8px">${escapeHtml(f.erreur)}</div>`:''}
+      <div class="modalActions">
+        <button class="btnPrimaire" ${f.enCours?'disabled':''} onclick="enregistrerEtape()">${f.enCours?'Enregistrement…':'Enregistrer'}</button>
+        <button class="btnSecondaire" onclick="fermerFormulaireEtape()">Annuler</button>
+      </div>
+    </div>
+  </div>` : ''}
+  `;
+}
+
+/* =========================================================================
+   FICHE D'UN TERME DU LEXIQUE — refonte LMS. Réutilise le même mécanisme que
+   "Gérer les situations couvertes" des modules (parcourir l'arbre, cocher),
+   mais au niveau de la situation directement (lexique_situations n'a pas de
+   notion de niveau/transition, contrairement à module_situations). Le
+   lexique garde ses propres catégories — jamais réorganisé selon les 7 axes
+   du Cœur de métier (deux logiques différentes).
+   ========================================================================= */
+function gererSituationsTerme(id, terme){
+  termeEnEdition = { id, terme };
+  vueLexique = false;
+  mode = 'piloter';
+  render();
+}
+async function toggleTermeSituation(checked, situationUid){
+  if(!termeEnEdition) return;
+  if(checked){
+    const { error } = await sb.from('lexique_situations').insert({ terme_id: termeEnEdition.id, situation_id: situationUid });
+    if(error){ alert('Erreur : '+error.message); return; }
+  } else {
+    const { error } = await sb.from('lexique_situations').delete().eq('terme_id', termeEnEdition.id).eq('situation_id', situationUid);
+    if(error){ alert('Erreur : '+error.message); return; }
+  }
+  await charger();
+}
+async function retourFicheTermeApresSituations(){
+  const id = termeEnEdition.id;
+  termeEnEdition = null;
+  await chargerLexiqueTermes();
+  vueLexique = true;
+  ficheTermeOuvert = LEXIQUE_TERMES.find(t=>t.id===id) || null;
+  render();
+}
+
+function ouvrirFicheTerme(t){
+  ficheTermeOuvert = t
+    ? { id:t.id, terme:t.terme, variante:t.variante||'', definition:t.definition||'', categorie:t.categorie, remarque:t.remarque||'', erreur:'', enCours:false }
+    : { id:null, terme:'', variante:'', definition:'', categorie:CATEGORIES_LEXIQUE[0], remarque:'', erreur:'', enCours:false };
+  render();
+}
+function fermerFicheTerme(){ ficheTermeOuvert = null; render(); }
+function onChampFicheTerme(champ, v){ if(ficheTermeOuvert) ficheTermeOuvert[champ] = v; }
+async function enregistrerFicheTerme(){
+  const f = ficheTermeOuvert;
+  if(!f) return;
+  if(!f.terme.trim()){ f.erreur = 'Donne un intitulé au terme.'; render(); return; }
+  if(!f.definition.trim()){ f.erreur = 'Donne une définition.'; render(); return; }
+  f.enCours = true; f.erreur=''; render();
+  try{
+    const payload = {
+      terme: f.terme.trim(), variante: f.variante.trim()||null, definition: f.definition.trim(),
+      categorie: f.categorie, remarque: f.remarque.trim()||null,
+    };
+    let error, data;
+    if(f.id){ ({ error } = await sb.from('lexique_termes').update(payload).eq('id', f.id)); }
+    else { ({ data, error } = await sb.from('lexique_termes').insert({ ...payload, metier_id: METIER_ACTUEL_ID }).select('id').single()); }
+    if(error) throw error;
+    await chargerLexiqueTermes();
+    ficheTermeOuvert = LEXIQUE_TERMES.find(t=>t.id===(f.id||data.id)) || null;
+    render();
+  }catch(err){
+    f.enCours = false; f.erreur = err.message || String(err); render();
+  }
+}
+async function supprimerFicheTerme(){
+  if(!ficheTermeOuvert.id) return;
+  if(!await confirmer('Supprimer ce terme du lexique ? Il sera aussi retiré de toutes les situations où il était rattaché.')) return;
+  const { error } = await sb.from('lexique_termes').delete().eq('id', ficheTermeOuvert.id);
+  if(error){ alert('Erreur : '+error.message); return; }
+  ficheTermeOuvert = null;
+  await chargerLexiqueTermes();
+  render();
+}
+function renderFicheTerme(){
+  const f = ficheTermeOuvert;
+  return `
+  <h1>${f.id ? escapeHtml(f.terme) : 'Nouveau terme'}</h1>
+  <div class="toggleBar">
+    <button class="toggleBtn" onclick="fermerFicheTerme()">← Retour au lexique</button>
+  </div>
+  <div class="champ"><label>Intitulé</label><input class="input" value="${escapeHtml(f.terme)}" oninput="onChampFicheTerme('terme',this.value)"></div>
+  <div class="champ" style="margin-top:8px"><label>Variante (optionnel)</label><input class="input" value="${escapeHtml(f.variante)}" oninput="onChampFicheTerme('variante',this.value)"></div>
+  <div class="champ" style="margin-top:8px"><label>Catégorie</label>
+    <select onchange="onChampFicheTerme('categorie',this.value)">
+      ${CATEGORIES_LEXIQUE.map(c=>`<option value="${escapeHtml(c)}" ${c===f.categorie?'selected':''}>${escapeHtml(c)}</option>`).join('')}
+    </select>
+  </div>
+  <div class="champ" style="margin-top:8px"><label>Définition</label><textarea class="input" rows="3" oninput="onChampFicheTerme('definition',this.value)">${escapeHtml(f.definition)}</textarea></div>
+  <div class="champ" style="margin-top:8px"><label>Remarque (optionnel — ex. confusion avec un autre terme)</label><textarea class="input" rows="2" oninput="onChampFicheTerme('remarque',this.value)">${escapeHtml(f.remarque)}</textarea></div>
+  ${f.erreur?`<div class="tiny" style="color:var(--ink);font-weight:600;margin-top:8px">${escapeHtml(f.erreur)}</div>`:''}
+  <button class="btnPrimaire" style="margin-top:14px" ${f.enCours?'disabled':''} onclick="enregistrerFicheTerme()">${f.enCours?'Enregistrement…':'Enregistrer'}</button>
+  ${f.id?`<button class="btnSecondaire" style="margin-top:14px;margin-left:8px" onclick="supprimerFicheTerme()">Supprimer</button>
+  <div style="margin-top:14px">Situations couvertes : ${NB_SITUATIONS_PAR_TERME[f.id]||0} — <button class="toggleBtn" onclick="gererSituationsTerme('${f.id}','${esc1(f.terme)}')">Gérer les situations couvertes</button></div>`:''}
+  `;
+}
+
+/* =========================================================================
+   RECOMMANDATIONS THÉRÈSE — moteur d'analyse déclenché par le comité (charte
+   point 3 : jamais d'édition automatique, Thérèse propose seulement).
+   Signal retenu (charte point 1, triangle des 3 sources) : le contexte réel
+   (progressions_formation, "bloqué"/échéance dépassée/prolongations répétées)
+   croisé avec la méthode prescrite (module_situations). Seuil de personnes
+   indépendantes : 3 (charte point 4, jamais un cas isolé).
+   ========================================================================= */
+const SEUIL_PERSONNES_RECOMMANDATION = 3;
+let candidatsMethode = null; // null = pas encore lancé ; sinon [{situationUid,situation,processus,sousProcessus,kpi,verbatims,cibleChangement,transferabilite,liberteCognitive,traite}]
+let detectionMethodeEnCours = false;
+
+function renderRecommandations(){
+  const authed = session && session.user.email===COMITE_EMAIL;
+  if(!authed){
+    vueRecommandations = false;
+    return renderArbre(arbreGlobal);
+  }
+  return `
+  <h1>Recommandations de Thérèse</h1>
+  <p class="sub">Propositions issues de l'agrégation des progressions de formation réelles — jamais un cas individuel identifiable, jamais une modification automatique du référentiel. À toi de valider, ajuster ailleurs, ou rejeter.</p>
+  <div class="toggleBar">
+    <button class="toggleBtn" onclick="vueRecommandations=false;render()">← Retour au référentiel</button>
+    <button class="toggleBtn" onclick="lancerAnalyseRecommandations()">Lancer l'analyse (apprentissage)</button>
+    <button class="toggleBtn" ${detectionMethodeEnCours?'disabled':''} onclick="lancerDetectionMethodes()">${detectionMethodeEnCours?'Détection…':'Détecter des méthodes divergentes'}</button>
+  </div>
+  ${RECOMMANDATIONS.length ? RECOMMANDATIONS.map(r=>{
+    const situ = SITUATIONS_PAR_UID[r.situation_id] || {};
+    const chipClasse = r.statut==='acceptée' ? 'source-rome' : r.statut==='rejetée' ? 'source-manque' : '';
+    return `
+    <div class="noeud" style="padding:12px 16px;margin-bottom:8px">
+      <div class="ligne">
+        <span class="titre-act">${escapeHtml(situ.situation||'Situation inconnue')}${r.transition_concernee?' — '+escapeHtml(r.transition_concernee):''}</span>
+        <span class="kpi">${r.type==='métier'?'Méthode':'Apprentissage'} · ${r.statut==='proposée'?'Proposée':r.statut==='acceptée'?'Acceptée':'Rejetée'} · ${r.nombre_occurrences} personnes</span>
+      </div>
+      ${situ.processus?`<div class="tiny" style="color:var(--muted)">${escapeHtml(situ.processus)} → ${escapeHtml(situ.sousProcessus||'')}</div>`:''}
+      ${r.type==='métier' ? `<div class="tiny" style="margin-top:4px">Cible : ${escapeHtml(r.cible_changement||'—')} · Transférabilité : ${escapeHtml(r.transferabilite||'—')} · Liberté cognitive : ${escapeHtml(r.liberte_cognitive||'—')}</div>` : ''}
+      <div class="tiny" style="margin-top:6px;white-space:pre-wrap">${escapeHtml(r.preuve_agregee)}</div>
+      ${r.statut==='proposée' ? `
+      <div style="margin-top:8px">
+        <button class="editBtn" onclick="deciderRecommandation('${r.id}','acceptée')">Accepter</button>
+        <button class="editBtn" onclick="deciderRecommandation('${r.id}','rejetée')">Rejeter</button>
+      </div>` : ''}
+    </div>`;
+  }).join('') : '<div class="tiny" style="color:var(--muted)">Aucune recommandation pour l\'instant — lance l\'analyse pour voir si un pattern répété se dégage.</div>'}
+
+  ${candidatsMethode!==null ? `
+  <div class="section" style="margin-top:24px;padding-top:16px;border-top:1px solid var(--lineSoft)">
+    <div class="titre-racine" style="margin-bottom:6px">Méthodes divergentes détectées (${candidatsMethode.filter(c=>!c.traite).length})</div>
+    <p class="tiny" style="color:var(--muted);margin-bottom:12px">Chaque groupe = au moins ${SEUIL_PERSONNES_RECOMMANDATION} personnes indépendantes dont le verbatim de clôture porte sur la même situation. À toi de juger si ça décrit vraiment une méthode différente du chemin prescrit, avec un résultat conforme ou meilleur (regarde le KPI de la situation) — puis de qualifier sur les 3 axes avant de proposer.</p>
+    ${!candidatsMethode.length ? '<div class="tiny" style="color:var(--muted)">Aucun groupe au-dessus du seuil pour l\'instant.</div>' : candidatsMethode.map((c,i)=>c.traite ? '' : `
+      <div class="noeud" style="padding:12px 16px;margin-bottom:10px">
+        <div class="ligne"><span class="titre-act">${escapeHtml(c.situation)}</span><span class="kpi">${c.verbatims.length} personnes</span></div>
+        <div class="tiny" style="color:var(--muted)">${escapeHtml(c.processus)} → ${escapeHtml(c.sousProcessus||'')} · KPI : ${escapeHtml(c.kpi||'non renseigné')}</div>
+        <div style="margin:8px 0">${c.verbatims.map(v=>`<div class="tiny" style="margin-bottom:6px;padding:6px 8px;background:var(--soft,#f7f7f7);border-radius:8px"><b>${escapeHtml(v.label)}</b> — ${escapeHtml(v.texte)}</div>`).join('')}</div>
+        <div class="champ">
+          <label>Cible du changement</label>
+          <select onchange="onChampCandidatMethode(${i},'cibleChangement',this.value)">
+            <option value="" ${!c.cibleChangement?'selected':''}>—</option>
+            <option value="technique" ${c.cibleChangement==='technique'?'selected':''}>Technique</option>
+            <option value="process" ${c.cibleChangement==='process'?'selected':''}>Process</option>
+            <option value="relationnel" ${c.cibleChangement==='relationnel'?'selected':''}>Relationnel</option>
+          </select>
+        </div>
+        <div class="champ"><label>Transférabilité (récurrence sur d'autres situations ?)</label><input value="${escapeHtml(c.transferabilite)}" oninput="onChampCandidatMethode(${i},'transferabilite',this.value)" placeholder="ex : déjà vu sur 2 autres situations similaires"></div>
+        <div class="champ"><label>Liberté cognitive (qui porte l'action dans la phrase ?)</label><input value="${escapeHtml(c.liberteCognitive)}" oninput="onChampCandidatMethode(${i},'liberteCognitive',this.value)" placeholder="ex : la personne propose/ajuste d'elle-même, pas juste suit"></div>
+        <div class="modalActions" style="margin-top:8px">
+          <button class="btnPrimaire" onclick="proposerMethode(${i})">Proposer cette recommandation</button>
+          <button class="btnSecondaire" onclick="ignorerCandidatMethode(${i})">Ignorer</button>
+        </div>
+      </div>`).join('')}
+  </div>` : ''}
+  `;
+}
+
+async function deciderRecommandation(id, statut){
+  const { error } = await sb.from('recommandations_therese').update({ statut }).eq('id', id);
+  if(error){ alert('Erreur : '+error.message); return; }
+  await charger();
+}
+
+/* =========================================================================
+   CANAL "MÉTHODE" — détection de bonnes pratiques divergentes du chemin
+   prescrit. Détection = pur regroupement (≥ SEUIL_PERSONNES_RECOMMANDATION
+   personnes indépendantes, verbatim de clôture sur la même situation) ;
+   tout le jugement (méthode vraiment différente ? résultat conforme ou
+   meilleur ? 3 axes) reste au comité, jamais automatique — charte points 3
+   et 4. Verbatims anonymisés ("Personne A/B/C"), jamais nominatifs à ce
+   stade de revue non plus.
+   ========================================================================= */
+async function lancerDetectionMethodes(){
+  detectionMethodeEnCours = true; render();
+  try{
+    const { data: validations, error } = await sb.from('validations_competence')
+      .select('user_id,situation_id,situation_texte,verbatim,created_at').eq('enjeu','pedagogique');
+    if(error) throw error;
+    const parSituation = {};
+    for(const v of (validations||[])){
+      if(!v.situation_id) continue;
+      (parSituation[v.situation_id] = parSituation[v.situation_id] || []).push(v);
+    }
+    const candidats = [];
+    for(const situationUid in parSituation){
+      const lignes = parSituation[situationUid];
+      const userIds = [...new Set(lignes.map(l=>l.user_id))];
+      if(userIds.length < SEUIL_PERSONNES_RECOMMANDATION) continue;
+      const lettreParUser = {}; userIds.forEach((u,i)=>lettreParUser[u]=String.fromCharCode(65+i%26));
+      const situ = SITUATIONS_PAR_UID[situationUid] || {};
+      candidats.push({
+        situationUid, situation: situ.situation||'Situation inconnue', processus: situ.processus||'', sousProcessus: situ.sousProcessus||'', kpi: situ.kpi||'',
+        verbatims: lignes.map(l=>({ label:'Personne '+lettreParUser[l.user_id], texte:l.verbatim })),
+        cibleChangement:'', transferabilite:'', liberteCognitive:'', traite:false,
+      });
+    }
+    candidatsMethode = candidats;
+  }catch(err){
+    alert('Erreur pendant la détection : '+(err.message||err));
+  }
+  detectionMethodeEnCours = false;
+  render();
+}
+function onChampCandidatMethode(i, champ, val){ if(candidatsMethode && candidatsMethode[i]) candidatsMethode[i][champ] = val; }
+function ignorerCandidatMethode(i){ if(candidatsMethode && candidatsMethode[i]){ candidatsMethode[i].traite = true; render(); } }
+async function proposerMethode(i){
+  const c = candidatsMethode[i]; if(!c) return;
+  if(!c.cibleChangement){ alert('Choisis au moins la cible du changement avant de proposer.'); return; }
+  const preuve = c.verbatims.map(v=>`${v.label} : ${v.texte}`).join('\n\n');
+  const { error } = await sb.from('recommandations_therese').insert({
+    type:'métier', situation_id: c.situationUid, preuve_agregee: preuve, nombre_occurrences: c.verbatims.length,
+    statut:'proposée', cible_changement: c.cibleChangement, transferabilite: c.transferabilite||null, liberte_cognitive: c.liberteCognitive||null,
+  });
+  if(error){ alert('Erreur : '+error.message); return; }
+  c.traite = true;
+  await charger();
+}
+
+async function lancerAnalyseRecommandations(){
+  if(!await confirmer("Lancer l'analyse ? Ça relit toutes les progressions de formation et peut créer de nouvelles recommandations si un vrai pattern répété (au moins "+SEUIL_PERSONNES_RECOMMANDATION+" personnes indépendantes) se dégage.")) return;
+  try{
+    const { data: progressions, error } = await sb.from('progressions_formation')
+      .select('user_id,situation_id,niveau_depart,niveau_arrivee,statut,echeance,nombre_prolongations');
+    if(error) throw error;
+    const today = new Date().toISOString().slice(0,10);
+    const groupes = {};
+    for(const p of (progressions||[])){
+      const enSouci = p.statut==='bloque' || (p.statut==='en_cours' && p.echeance && p.echeance<today) || (p.nombre_prolongations||0)>=1;
+      if(!enSouci) continue;
+      const cle = [p.situation_id, p.niveau_depart, p.niveau_arrivee].join(SEPARATEUR_CLE);
+      (groupes[cle] = groupes[cle] || new Set()).add(p.user_id);
+    }
+    const modaliteParId = {}; for(const m of MODALITES_FORMATION) modaliteParId[m.id] = m;
+    let nbCreees = 0, nbIgnorees = 0;
+    for(const cle in groupes){
+      const nb = groupes[cle].size;
+      if(nb < SEUIL_PERSONNES_RECOMMANDATION) continue;
+      const [situationId, depart, arrivee] = cle.split(SEPARATEUR_CLE);
+      const transitionTxt = `${depart} → ${arrivee}`;
+      const { data: existantes, error: eEx } = await sb.from('recommandations_therese').select('id')
+        .eq('situation_id', situationId).eq('type','apprentissage').eq('statut','proposée').eq('transition_concernee', transitionTxt);
+      if(eEx) throw eEx;
+      if(existantes && existantes.length){ nbIgnorees++; continue; }
+      const { data: modSit, error: eMS } = await sb.from('module_situations').select('module_id')
+        .eq('situation_id', situationId).eq('niveau_depart', depart).eq('niveau_arrivee', arrivee);
+      if(eMS) throw eMS;
+      let modaliteTxt = 'sans modalité de formation encore définie pour cette transition';
+      if(modSit && modSit.length){
+        const modIds = [...new Set(modSit.map(m=>m.module_id))];
+        const { data: mods, error: eMod } = await sb.from('modules_apprentissage').select('nom,modalite_id').in('id', modIds);
+        if(eMod) throw eMod;
+        modaliteTxt = 'malgré la modalité prévue : ' + (mods||[]).map(m=>(modaliteParId[m.modalite_id]||{}).label || m.nom).join(', ');
+      }
+      const situ = SITUATIONS_PAR_UID[situationId] || {};
+      const preuve = `${nb} personnes indépendantes bloquent ou dépassent leur échéance sur "${situ.situation||'situation inconnue'}" (${transitionTxt}), ${modaliteTxt}.`;
+      const { error: eIns } = await sb.from('recommandations_therese').insert({
+        type:'apprentissage', situation_id: situationId, transition_concernee: transitionTxt,
+        preuve_agregee: preuve, nombre_occurrences: nb, statut:'proposée',
+      });
+      if(eIns) throw eIns;
+      nbCreees++;
+    }
+    alert(`Analyse terminée : ${nbCreees} nouvelle(s) recommandation(s), ${nbIgnorees} déjà en attente ignorée(s).`);
+    await charger();
+  }catch(err){
+    alert('Erreur pendant l\'analyse : '+(err.message||err));
+  }
+}
+/* =========================================================================
+   RATTACHEMENT ROME — étape 6/6 de la restructuration du référentiel. Appelle
+   l'API ROMEO (France Travail, /predictionCompetences) via la fonction Edge
+   romeo-competences (identifiants jamais côté client). Ne rattache que ce que
+   l'API renvoie réellement au-dessus du seuil de confiance — jamais un lien
+   forcé : sans proposition, la situation reste "sans équivalent — Fédération".
+   Le comité relit et peut exclure une proposition avant d'enregistrer.
+   ========================================================================= */
+const SEUIL_ROMEO = 0.6;
+
+function renderRattachementRome(){
+  const authed = session && session.user.email===COMITE_EMAIL;
+  if(!authed){
+    vueRattachementRome = false;
+    return renderArbre(arbreGlobal);
+  }
+  const situations = Object.entries(SITUATIONS_PAR_UID);
+  return `
+  <h1>Rattachement ROME (ROMEO)</h1>
+  <p class="sub">Interroge l'API ROMEO de France Travail pour chacune des ${situations.length} situations du référentiel (les deux guides), et propose la compétence ROME la plus proche au-dessus d'un seuil de confiance de ${SEUIL_ROMEO} — jamais un rapprochement forcé. À relire avant d'enregistrer.</p>
+  <div class="toggleBar">
+    <button class="toggleBtn" onclick="vueRattachementRome=false;render()">← Retour au référentiel</button>
+    <button class="toggleBtn" ${rattachementEnCours?'disabled':''} onclick="lancerRattachementRome()">${rattachementEnCours?'Recherche en cours…':'Lancer la recherche ROMEO'}</button>
+    ${RATTACHEMENT_RESULTATS ? `<button class="toggleBtn" ${rattachementEnCours?'disabled':''} onclick="enregistrerRattachementsRome()">Enregistrer les rattachements</button>` : ''}
+  </div>
+  ${rattachementErreur ? `<div class="modalErr" style="margin-bottom:14px">${escapeHtml(rattachementErreur)}</div>` : ''}
+  ${!RATTACHEMENT_RESULTATS ? '<div class="tiny" style="color:var(--muted)">Lance la recherche pour voir les propositions.</div>' : RATTACHEMENT_RESULTATS.map((r,i)=>{
+    const meilleure = r.propositions[0];
+    return `
+    <div class="noeud" style="padding:10px 16px;margin-bottom:6px;${r.exclu?'opacity:.5':''}">
+      <div class="ligne">
+        <span class="titre-act">${escapeHtml(r.situation)}</span>
+        <span class="kpi">${meilleure ? escapeHtml(meilleure.libelleCompetence)+' — '+escapeHtml(meilleure.codeCompetence)+' (score '+meilleure.scorePrediction.toFixed(2)+')' : 'Aucune proposition au-dessus du seuil → sans équivalent'}</span>
+        ${meilleure ? `<label class="tiny" style="margin-left:8px;cursor:pointer"><input type="checkbox" ${r.exclu?'checked':''} onchange="toggleExclusionRattachement(${i})"> Exclure</label>` : ''}
+      </div>
+      <div class="tiny" style="color:var(--muted)">${escapeHtml(r.processus)} → ${escapeHtml(r.sousProcessus)}</div>
+    </div>`;
+  }).join('')}
+  `;
+}
+
+function toggleExclusionRattachement(i){
+  if(!RATTACHEMENT_RESULTATS || !RATTACHEMENT_RESULTATS[i]) return;
+  RATTACHEMENT_RESULTATS[i].exclu = !RATTACHEMENT_RESULTATS[i].exclu;
+  render();
+}
+
+async function lancerRattachementRome(){
+  const situations = Object.entries(SITUATIONS_PAR_UID).map(([uid, s])=>({ uid, ...s }));
+  if(!situations.length) return;
+  if(!await confirmer(`Interroger ROMEO pour ${situations.length} situations ? Ça peut prendre une minute.`)) return;
+  rattachementEnCours = true; rattachementErreur = ''; render();
+  const TAILLE_LOT = 20;
+  const resultats = [];
+  try{
+    for(let i=0; i<situations.length; i+=TAILLE_LOT){
+      const lot = situations.slice(i, i+TAILLE_LOT);
+      const res = await fetch(ROMEO_FUNCTION_URL, {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json', 'Authorization': 'Bearer '+SUPABASE_KEY, 'apikey': SUPABASE_KEY },
+        body: JSON.stringify({
+          competences: lot.map(s=>({ identifiant: s.uid, intitule: s.situation })),
+          seuil: SEUIL_ROMEO,
+        }),
+      });
+      const data = await res.json();
+      if(!res.ok) throw new Error(data.error || `Erreur ROMEO (${res.status})`);
+      for(const s of lot){
+        const pred = (data||[]).find(d=>d.identifiant===s.uid);
+        resultats.push({
+          situationUid: s.uid, situation: s.situation, processus: s.processus, sousProcessus: s.sousProcessus,
+          propositions: (pred && pred.competencesRome) ? pred.competencesRome : [],
+          exclu: false,
+        });
+      }
+    }
+    RATTACHEMENT_RESULTATS = resultats;
+  }catch(err){
+    rattachementErreur = err.message || String(err);
+  }
+  rattachementEnCours = false; render();
+}
+
+async function enregistrerRattachementsRome(){
+  if(!RATTACHEMENT_RESULTATS) return;
+  if(!await confirmer(`Enregistrer ${RATTACHEMENT_RESULTATS.length} rattachements dans correspondances_rome ?`)) return;
+  rattachementEnCours = true; rattachementErreur = ''; render();
+  try{
+    for(const r of RATTACHEMENT_RESULTATS){
+      const meilleure = (!r.exclu && r.propositions[0]) ? r.propositions[0] : null;
+      await enregistrerCorrespondanceRome(r.situationUid, meilleure ? { code: meilleure.codeCompetence } : null);
+    }
+    RATTACHEMENT_RESULTATS = null;
+    await charger();
+    vueRattachementRome = false;
+  }catch(err){
+    rattachementErreur = err.message || String(err);
+  }
+  rattachementEnCours = false; render();
+}
+
+/* =========================================================================
+   PARCOURS DE FORMATION — regroupe plusieurs modules dans un ordre logique,
+   avec prérequis explicite entre modules (séquencement réel, pas une liste).
+   ========================================================================= */
+async function ouvrirParcours(){
+  vueParcours = true; formulaireParcours = null;
+  render();
+  const { data } = await sb.from('parcours_formation').select('id,titre,situations_visees').order('created_at');
+  PARCOURS_FORMATION = data || [];
+  const { data: pm } = await sb.from('parcours_modules').select('id,parcours_id');
+  const parParcours = {};
+  for(const p of (pm||[])) parParcours[p.parcours_id] = (parParcours[p.parcours_id]||0)+1;
+  for(const p of PARCOURS_FORMATION) p.modulesCount = parParcours[p.id]||0;
+  render();
+}
+function renderParcours(){
+  const authed = session && session.user.email===COMITE_EMAIL;
+  if(!authed){ vueParcours=false; return renderArbre(arbreGlobal); }
+  return `
+  <h1>Parcours de formation</h1>
+  <p class="sub">Un parcours regroupe plusieurs modules dans un ordre logique, avec des prérequis explicites entre eux.</p>
+  <div class="toggleBar">
+    <button class="toggleBtn" onclick="vueParcours=false;render()">← Retour au référentiel</button>
+    <button class="toggleBtn" onclick="ouvrirFormulaireParcours()">+ Nouveau parcours</button>
+  </div>
+  ${PARCOURS_FORMATION.length ? PARCOURS_FORMATION.map(p=>`
+    <div class="noeud" style="padding:12px 16px;margin-bottom:8px">
+      <div class="ligne">
+        <span class="titre-act">${escapeHtml(p.titre)}</span>
+        <span class="kpi">${(p.situations_visees||[]).length} situation(s) visée(s) · ${p.modulesCount||0} module(s)</span>
+        <button class="editBtn" onclick="ouvrirFormulaireParcours('${p.id}')">✎ Modifier</button>
+        <button class="editBtn" onclick="supprimerParcours('${p.id}')">Supprimer</button>
+      </div>
+    </div>`).join('') : '<div class="tiny" style="color:var(--muted)">Aucun parcours créé pour l\'instant.</div>'}
+  `;
+}
+async function ouvrirFormulaireParcours(id){
+  formulaireModule = null; formulaire = null; formulaireNoeud = null; formulaireTransition = null;
+  const existant = id ? PARCOURS_FORMATION.find(p=>p.id===id) : null;
+  formulaireParcours = { id: id||null, titre: existant?existant.titre:'', situationsVisees: existant ? [...(existant.situations_visees||[])] : [], erreur:'', enCours:false, modules:[], chargementModules:false };
+  renderModal();
+  if(id) await chargerModulesParcours(id);
+}
+function fermerFormulaireParcours(){ formulaireParcours = null; renderModal(); }
+function onChampParcoursTitre(v){ if(formulaireParcours) formulaireParcours.titre = v; }
+function toggleSituationVisee(uid){
+  const f = formulaireParcours; if(!f) return;
+  const i = f.situationsVisees.indexOf(uid);
+  if(i>=0) f.situationsVisees.splice(i,1); else f.situationsVisees.push(uid);
+  renderModal();
+}
+async function enregistrerParcours(){
+  const f = formulaireParcours; if(!f) return;
+  if(!f.titre.trim()){ f.erreur = 'Donne un titre au parcours.'; renderModal(); return; }
+  f.enCours = true; f.erreur=''; renderModal();
+  try{
+    const payload = { titre: f.titre.trim(), situations_visees: f.situationsVisees, metier_id: METIER_ACTUEL_ID };
+    if(f.id){
+      const { data, error } = await sb.from('parcours_formation').update(payload).eq('id', f.id).select('id');
+      if(error) throw error;
+      if(!data || !data.length) throw new Error("Écriture refusée — droits insuffisants (seul le comité référentiel connecté peut écrire).");
+    } else {
+      const { data, error } = await sb.from('parcours_formation').insert(payload).select('id');
+      if(error) throw error;
+      if(!data || !data.length) throw new Error("Écriture refusée — droits insuffisants (seul le comité référentiel connecté peut écrire).");
+      f.id = data[0].id;
+    }
+    f.enCours = false;
+    await chargerModulesParcours(f.id);
+    await ouvrirParcours();
+    formulaireParcours = f;
+    renderModal();
+  }catch(err){
+    f.enCours = false;
+    f.erreur = err.message || String(err);
+    renderModal();
+  }
+}
+async function supprimerParcours(id){
+  if(!await confirmer('Supprimer définitivement ce parcours ?')) return;
+  const { error } = await sb.from('parcours_formation').delete().eq('id', id);
+  if(error){ alert('Erreur : '+error.message); return; }
+  await ouvrirParcours();
+}
+async function chargerModulesParcours(parcoursId){
+  const f = formulaireParcours; if(!f) return;
+  f.chargementModules = true; renderModal();
+  const { data } = await sb.from('parcours_modules').select('id,module_id,ordre,module_prerequis_id').eq('parcours_id', parcoursId).order('ordre');
+  if(!formulaireParcours || formulaireParcours.id!==parcoursId) return;
+  f.modules = data || [];
+  f.chargementModules = false;
+  renderModal();
+}
+async function ajouterModuleParcours(moduleId){
+  const f = formulaireParcours; if(!f || !f.id || !moduleId) return;
+  if(f.modules.some(m=>m.module_id===moduleId)) return;
+  const ordre = f.modules.length ? Math.max(...f.modules.map(m=>m.ordre))+1 : 1;
+  const { error } = await sb.from('parcours_modules').insert({ parcours_id: f.id, module_id: moduleId, ordre });
+  if(error){ alert('Erreur : '+error.message); return; }
+  await chargerModulesParcours(f.id);
+}
+async function retirerModuleParcours(id){
+  const { error } = await sb.from('parcours_modules').delete().eq('id', id);
+  if(error){ alert('Erreur : '+error.message); return; }
+  await chargerModulesParcours(formulaireParcours.id);
+}
+async function majPrerequisModuleParcours(id, prerequisModuleId){
+  const { error } = await sb.from('parcours_modules').update({ module_prerequis_id: prerequisModuleId||null }).eq('id', id);
+  if(error){ alert('Erreur : '+error.message); return; }
+  await chargerModulesParcours(formulaireParcours.id);
+}
+async function deplacerModuleParcours(id, sens){
+  const f = formulaireParcours; if(!f) return;
+  const i = f.modules.findIndex(m=>m.id===id);
+  const j = i + sens;
+  if(i<0 || j<0 || j>=f.modules.length) return;
+  const a = f.modules[i], b = f.modules[j];
+  await Promise.all([
+    sb.from('parcours_modules').update({ ordre:b.ordre }).eq('id', a.id),
+    sb.from('parcours_modules').update({ ordre:a.ordre }).eq('id', b.id),
+  ]);
+  await chargerModulesParcours(f.id);
+}
+function renderModalParcours(root){
+  const f = formulaireParcours;
+  const situations = Object.entries(SITUATIONS_PAR_UID);
+  root.innerHTML = `
+  <div class="overlay" onclick="if(event.target===event.currentTarget) fermerFormulaireParcours()">
+    <div class="modal">
+      <h3>${f.id ? 'Modifier le parcours' : 'Nouveau parcours'}</h3>
+      <div class="champ"><label>Titre</label><input value="${escapeHtml(f.titre)}" oninput="onChampParcoursTitre(this.value)" placeholder="ex : Devenir peintre niveau 1"></div>
+      <div class="champ">
+        <label>Situations visées</label>
+        <div style="max-height:160px;overflow-y:auto;border:1px solid var(--line);border-radius:8px;padding:6px">
+          ${situations.map(([uid,s])=>`
+            <label style="display:block;font-size:12.5px;padding:2px 0;cursor:pointer">
+              <input type="checkbox" ${f.situationsVisees.includes(uid)?'checked':''} onchange="toggleSituationVisee('${uid}')"> ${escapeHtml(s.situation)}
+            </label>`).join('')}
+        </div>
+      </div>
+      ${f.erreur ? `<div class="modalErr">${escapeHtml(f.erreur)}</div>` : ''}
+      <div class="modalActions">
+        <button class="btnPrimaire" ${f.enCours?'disabled':''} onclick="enregistrerParcours()">${f.enCours?'Enregistrement…':'Enregistrer'}</button>
+        <button class="btnSecondaire" onclick="fermerFormulaireParcours()">Fermer</button>
+      </div>
+      ${f.id ? renderModulesParcours(f) : `<div class="tiny" style="color:var(--muted);margin-top:14px">Enregistre d'abord le parcours pour pouvoir lui ajouter des modules.</div>`}
+    </div>
+  </div>`;
+}
+function renderModulesParcours(f){
+  if(f.chargementModules) return `<div class="tiny" style="margin-top:14px">Chargement des modules…</div>`;
+  const moduleParId = {}; for(const m of MODULES_FORMATION) moduleParId[m.id] = m;
+  const idsDejaAjoutes = new Set(f.modules.map(m=>m.module_id));
+  const disponibles = MODULES_FORMATION.filter(m=>!idsDejaAjoutes.has(m.id));
+  return `
+  <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--line)">
+    <div style="font-weight:700;margin-bottom:8px">Modules du parcours, dans l'ordre</div>
+    ${f.modules.length ? f.modules.map((m,i)=>`
+      <div style="border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-bottom:6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+        <button class="btnSecondaire" style="padding:2px 8px" ${i===0?'disabled':''} onclick="deplacerModuleParcours('${m.id}',-1)">▲</button>
+        <button class="btnSecondaire" style="padding:2px 8px" ${i===f.modules.length-1?'disabled':''} onclick="deplacerModuleParcours('${m.id}',1)">▼</button>
+        <span style="flex:1">${escapeHtml((moduleParId[m.module_id]||{}).nom || '?')}</span>
+        <label class="tiny">Prérequis :
+          <select onchange="majPrerequisModuleParcours('${m.id}', this.value)">
+            <option value="">Aucun</option>
+            ${f.modules.filter(x=>x.id!==m.id).map(x=>`<option value="${x.module_id}" ${x.module_id===m.module_prerequis_id?'selected':''}>${escapeHtml((moduleParId[x.module_id]||{}).nom||'?')}</option>`).join('')}
+          </select>
+        </label>
+        <button class="btnSecondaire" onclick="retirerModuleParcours('${m.id}')">✕</button>
+      </div>`).join('') : '<div class="tiny" style="color:var(--muted)">Aucun module ajouté pour l\'instant.</div>'}
+    ${disponibles.length ? `
+    <select onchange="if(this.value){ajouterModuleParcours(this.value);this.value=''}">
+      <option value="">+ Ajouter un module…</option>
+      ${disponibles.map(m=>`<option value="${m.id}">${escapeHtml(m.nom)}</option>`).join('')}
+    </select>` : ''}
+  </div>`;
+}
+
+function renderModalActivite(root){
+  const f = formulaire;
+  root.innerHTML = `
+  <div class="overlay" onclick="if(event.target===event.currentTarget) fermerFormulaire()">
+    <div class="modal">
+      <h3>${f.situationOriginale ? 'Modifier l’activité' : 'Ajouter une activité'}</h3>
+      <div class="ctx">${escapeHtml(f.processus)} → ${escapeHtml(f.sousProcessus)}${f.niveau4?' → '+escapeHtml(f.niveau4):''}</div>
+
+      <div class="champ">
+        <label>Nom de l'activité</label>
+        <input value="${escapeHtml(f.nom)}" oninput="onChampNom(this.value)">
+      </div>
+
+      <div class="champ">
+        <label>Rôle concerné</label>
+        <select onchange="onChampRole(this.value)">${ROLES_DISPONIBLES.map(r=>`<option value="${escapeHtml(r.code)}" ${r.code===f.role?'selected':''}>${escapeHtml(r.label)}</option>`).join('')}</select>
+      </div>
+
+      <div class="champ">
+        <label>Recherche dans le référentiel ROME officiel</label>
+        <input placeholder="Tape un mot-clé (ex : sécurité, communication...)" value="${escapeHtml(f.rechercheRome)}" oninput="onRechercheRome(this.value)">
+        ${f.resultatsRome.length ? `<div class="romeResultats">${f.resultatsRome.map((r,i)=>`
+          <div class="romeItem" onclick="choisirRome(${i})"><div class="t">${escapeHtml(r.type)}</div>${escapeHtml(r.libelle)} <span style="color:var(--muted)">(${escapeHtml(r.code)})</span></div>
+        `).join('')}</div>` : ''}
+        ${f.romeChoisi ? `
+          <div class="romeChoisi"><span>ROME ${escapeHtml(f.romeChoisi.code)} — ${escapeHtml(f.romeChoisi.libelle)}</span><button onclick="retirerRome()">Retirer, passer en texte libre</button></div>
+        ` : `<div class="horsRome">Aucun item ROME choisi → sera enregistré comme "Fédération — hors ROME".</div>`}
+      </div>
+
+      ${NIVEAUX.map(n=>`
+        <div class="champ">
+          <label>${escapeHtml(n)}</label>
+          <textarea rows="2" oninput="onChampNiveau('${n}', this.value)">${escapeHtml(f.niveaux[n])}</textarea>
+        </div>`).join('')}
+
+      <div class="champ" style="margin-top:6px">
+        <button type="button" class="btnSecondaire" onclick="toggleFicheOuverte()">${f.ficheOuverte?'▲':'▼'} Fiche complète (optionnel — identité, cadrage, déroulé réel, résultat, preuves, axes)</button>
+      </div>
+      ${f.ficheOuverte ? renderFicheSection(f) : ''}
+
+      ${f.erreur ? `<div class="modalErr">${escapeHtml(f.erreur)}</div>` : ''}
+      <div class="modalActions">
+        <button class="btnPrimaire" ${f.enCours?'disabled':''} onclick="enregistrerActivite()">${f.enCours?'Enregistrement…':'Enregistrer'}</button>
+        ${f.situationOriginale ? `<button class="btnDanger" ${f.enCours?'disabled':''} onclick="supprimerActivite()">Supprimer</button>` : ''}
+        <button class="btnSecondaire" onclick="fermerFormulaire()">Annuler</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+// Partie 1 — fiche complète par situation. Rendue seulement si dépliée, et seulement une fois
+// chargée (formulaire.ficheChargee) pour ne pas afficher des champs vides pendant le fetch async
+// et risquer d'écraser une vraie fiche existante si la personne enregistre trop vite.
+function renderFicheSection(f){
+  if(!f.ficheChargee) return `<div class="champ tiny">Chargement de la fiche…</div>`;
+  const fi = f.fiche;
+  const champTexte = (label, section, cle, rows) => `
+    <div class="champ">
+      <label>${escapeHtml(label)}</label>
+      <textarea rows="${rows||2}" oninput="onChampFiche('${section}','${cle}',this.value)">${escapeHtml(section?fi[section][cle]:fi[cle])}</textarea>
+    </div>`;
+  const champCourt = (label, section, cle, type) => `
+    <div class="champ">
+      <label>${escapeHtml(label)}</label>
+      <input type="${type||'text'}" value="${escapeHtml(section?fi[section][cle]:fi[cle])}" oninput="onChampFiche('${section||''}','${cle}',this.value)">
+    </div>`;
+  return `
+  <div style="border-top:1px dashed var(--line,#ddd);margin-top:10px;padding-top:10px">
+    <div class="tiny" style="text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">Identité</div>
+    ${champCourt('Code', null, 'code')}
+    ${champCourt('Auteur', null, 'auteur')}
+    ${champCourt('Valideur', null, 'valideur')}
+    ${champCourt('Date de revue', null, 'dateRevue', 'date')}
+
+    <div class="tiny" style="text-transform:uppercase;letter-spacing:.04em;margin:12px 0 6px 0">Axe métier (vue transversale)</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px">
+      ${AXES_DISPONIBLES.map(a=>`
+        <label style="display:flex;align-items:center;gap:5px;font-size:13px;border:1px solid var(--line,#ddd);border-radius:8px;padding:4px 9px">
+          <input type="checkbox" ${fi.axesSelectionnes.includes(a.id)?'checked':''} onchange="toggleAxe('${a.id}', this.checked)">
+          ${escapeHtml(a.label)}
+        </label>`).join('') || '<div class="tiny">Aucun axe défini pour ce métier.</div>'}
+    </div>
+
+    <div class="tiny" style="text-transform:uppercase;letter-spacing:.04em;margin:12px 0 6px 0">Cadrage</div>
+    ${champTexte('Finalité','cadrage','finalite')}
+    ${champTexte('Déclencheur','cadrage','declencheur')}
+    ${champTexte('Contexte','cadrage','contexte')}
+    ${champCourt('Fréquence','cadrage','frequence')}
+    ${champTexte('Préconditions','cadrage','preconditions')}
+    ${champTexte('Conditions de sortie','cadrage','conditionsSortie')}
+
+    <div class="tiny" style="text-transform:uppercase;letter-spacing:.04em;margin:12px 0 6px 0">Déroulé réel</div>
+    ${champTexte('Étapes','derouleReel','etapes',3)}
+    ${champTexte('Décisions à prendre','derouleReel','decisions')}
+    ${champTexte('Ressources','derouleReel','ressources')}
+    ${champTexte('Outils','derouleReel','outils')}
+    ${champTexte('Aléas fréquents','derouleReel','aleas')}
+    ${champTexte('Points de vigilance','derouleReel','pointsVigilance')}
+    ${champTexte('Dépendances','derouleReel','dependances')}
+
+    <div class="tiny" style="text-transform:uppercase;letter-spacing:.04em;margin:12px 0 6px 0">Résultat</div>
+    ${champTexte('Résultats attendus','resultat','resultatsAttendus')}
+    ${champTexte('Critères de réussite','resultat','criteresReussite')}
+    ${champTexte('Risques','resultat','risques')}
+    ${champTexte('Contrôle qualité','resultat','controleQualite')}
+    ${champCourt('Délai attendu','resultat','delaiAttendu')}
+
+    <div class="tiny" style="text-transform:uppercase;letter-spacing:.04em;margin:12px 0 6px 0">Preuves possibles</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px">
+      ${TYPES_PREUVE_DISPONIBLES.map(t=>`
+        <label style="display:flex;align-items:center;gap:5px;font-size:13px;border:1px solid var(--line,#ddd);border-radius:8px;padding:4px 9px">
+          <input type="checkbox" ${fi.typesPreuve.includes(t)?'checked':''} onchange="toggleTypePreuve('${t}', this.checked)">
+          ${escapeHtml(t.replace(/_/g,' '))}
+        </label>`).join('')}
+    </div>
+  </div>`;
+}
+
+function renderModalNoeud(root){
+  const f = formulaireNoeud;
+  const label = LABEL_NOEUD[f.niveau];
+  let contexte;
+  if(f.niveau==='processus') contexte = `Catégorie : ${escapeHtml(f.parentKey)}`;
+  else if(f.niveau==='sous_processus') contexte = `Sous-processus : ${escapeHtml(f.parentKey)}`;
+  else { const [proc, sousProc] = splitKey(f.parentKey); contexte = `Sous-processus : ${escapeHtml(proc)} → Sous-sous-processus : ${escapeHtml(sousProc)}`; }
+  root.innerHTML = `
+  <div class="overlay" onclick="if(event.target===event.currentTarget) fermerFormulaireNoeud()">
+    <div class="modal">
+      <h3>${f.nomOriginal ? `Modifier le ${label}` : `Ajouter un ${label}`}</h3>
+      <div class="ctx">${contexte}</div>
+
+      <div class="champ">
+        <label>Nom du ${label}</label>
+        <input value="${escapeHtml(f.nom)}" oninput="onChampNoeudNom(this.value)">
+      </div>
+      <div class="champ">
+        <label>KPI consolidé (facultatif)</label>
+        <textarea rows="2" oninput="onChampNoeudKpi(this.value)">${escapeHtml(f.kpi)}</textarea>
+      </div>
+
+      ${f.erreur ? `<div class="modalErr">${escapeHtml(f.erreur)}</div>` : ''}
+      <div class="modalActions">
+        <button class="btnPrimaire" ${f.enCours?'disabled':''} onclick="enregistrerNoeud()">${f.enCours?'Enregistrement…':'Enregistrer'}</button>
+        ${f.nomOriginal ? `<button class="btnDanger" ${f.enCours?'disabled':''} onclick="supprimerNoeud()">Supprimer</button>` : ''}
+        <button class="btnSecondaire" onclick="fermerFormulaireNoeud()">Annuler</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* =========================================================================
+   PHASE 6 — PROFILS DE POSTE-TYPE. Une table comité (postes_types) + une
+   table de liaison (poste_type_situations, niveau minimum attendu par
+   situation). Remplie et maintenue uniquement par le comité — jamais déduite
+   automatiquement (charte de cohérence point 3). Réutilise le même arbre du
+   référentiel métier que les modules/épreuves, avec un sélecteur de niveau
+   posé sur chaque situation plutôt qu'une case à cocher.
+   ========================================================================= */
+function renderPostesTypes(){
+  const authed = session && session.user.email===COMITE_EMAIL;
+  if(!authed){ vuePostesTypes = false; return renderArbre(arbreGlobal); }
+  if(ficheProfilOuvert) return renderFicheProfil();
+  let lignes = POSTES_TYPES.filter(p => !rechercheProfils || p.nom.toLowerCase().includes(rechercheProfils.toLowerCase()));
+  const col = triProfils.col;
+  lignes = lignes.slice().sort((a,b)=>{
+    let va, vb;
+    if(col==='situations'){ va=NB_SITUATIONS_PAR_POSTE[a.id]||0; vb=NB_SITUATIONS_PAR_POSTE[b.id]||0; }
+    else if(col==='modifie'){ va=a.updated_at||''; vb=b.updated_at||''; }
+    else { va=a.nom; vb=b.nom; }
+    return va<vb ? -triProfils.dir : va>vb ? triProfils.dir : 0;
+  });
+  return `
+  <h1>Profils de poste-type</h1>
+  <p class="sub">Le niveau minimum attendu par situation, pour chaque poste-type (peintre apprenti, régisseur...). Sert au rattachement d'un membre et au positionnement obligatoire.</p>
+  <div class="toggleBar">
+    <button class="toggleBtn" onclick="vuePostesTypes=false;render()">← Retour au référentiel</button>
+  </div>
+  <div class="toolbar" style="margin:14px 0;gap:10px">
+    <input class="input" style="max-width:240px" placeholder="Rechercher un profil…" value="${escapeHtml(rechercheProfils)}" oninput="rechercheProfils=this.value;render()">
+    <button class="toggleBtn" onclick="ouvrirFicheProfil(null)">+ Nouveau profil</button>
+  </div>
+  <div style="overflow-x:auto">
+  <table style="width:100%;border-collapse:collapse;font-size:14px">
+    <thead><tr style="text-align:left;border-bottom:2px solid var(--line,#ddd)">
+      <th style="cursor:pointer;padding:8px" onclick="triCliqueTableau(triProfils,'nom')">Nom${fleche(triProfils,'nom')}</th>
+      <th style="cursor:pointer;padding:8px" onclick="triCliqueTableau(triProfils,'situations')">Situations${fleche(triProfils,'situations')}</th>
+      <th style="cursor:pointer;padding:8px" onclick="triCliqueTableau(triProfils,'modifie')">Modifié${fleche(triProfils,'modifie')}</th>
+    </tr></thead>
+    <tbody>
+      ${lignes.map(p=>`
+        <tr style="cursor:pointer;border-bottom:1px solid var(--line,#eee)" onclick="ouvrirFicheProfil('${p.id}')">
+          <td style="padding:8px">${escapeHtml(p.nom)}</td>
+          <td style="padding:8px">${NB_SITUATIONS_PAR_POSTE[p.id]||0}</td>
+          <td style="padding:8px" class="tiny">${p.updated_at?new Date(p.updated_at).toLocaleDateString('fr-FR'):'—'}</td>
+        </tr>`).join('') || `<tr><td colspan="3" class="tiny" style="padding:14px">Aucun profil de poste-type pour l'instant.</td></tr>`}
+    </tbody>
+  </table>
+  </div>`;
+}
+function ouvrirFicheProfil(id){
+  if(!id){ ficheProfilOuvert = { id:null, nom:'', description:'', erreur:'', enCours:false, updated_at:null }; render(); return; }
+  ficheProfilOuvert = { ...POSTES_TYPES.find(p=>p.id===id), erreur:'', enCours:false };
+  render();
+}
+function fermerFicheProfil(){ ficheProfilOuvert = null; render(); }
+function onChampFicheProfil(champ, v){ if(ficheProfilOuvert) ficheProfilOuvert[champ] = v; }
+async function enregistrerFicheProfil(){
+  const p = ficheProfilOuvert;
+  if(!p.nom || !p.nom.trim()){ p.erreur = 'Donne un nom à ce profil.'; render(); return; }
+  p.enCours = true; p.erreur = ''; render();
+  const payload = { nom: p.nom.trim(), description: p.description||null, metier_id: METIER_ACTUEL_ID };
+  let error, data;
+  if(p.id){ ({ error } = await sb.from('postes_types').update(payload).eq('id', p.id)); }
+  else { ({ data, error } = await sb.from('postes_types').insert(payload).select('id').single()); }
+  if(error){ p.enCours = false; p.erreur = 'Erreur : '+error.message; render(); return; }
+  await charger();
+  ficheProfilOuvert = POSTES_TYPES.find(p2=>p2.id===(p.id||data.id)) || null;
+  render();
+}
+async function supprimerFicheProfil(){
+  if(!ficheProfilOuvert.id) return;
+  if(!await confirmer('Supprimer ce profil de poste-type ? Les membres qui y étaient rattachés ne seront plus reliés à aucun profil.')) return;
+  const { error } = await sb.from('postes_types').delete().eq('id', ficheProfilOuvert.id);
+  if(error){ alert('Erreur : '+error.message); return; }
+  ficheProfilOuvert = null;
+  await charger();
+  render();
+}
+function renderFicheProfil(){
+  const p = ficheProfilOuvert;
+  return `
+  <h1>${p.id ? escapeHtml(p.nom) : 'Nouveau profil de poste-type'}</h1>
+  <div class="toggleBar"><button class="toggleBtn" onclick="fermerFicheProfil();vuePostesTypes=true;render()">← Retour aux profils</button></div>
+  <div class="champ"><label>Nom du profil</label><input class="input" value="${escapeHtml(p.nom)}" oninput="onChampFicheProfil('nom',this.value)"></div>
+  <div class="champ" style="margin-top:8px"><label>Description (optionnel)</label><textarea class="input" rows="3" oninput="onChampFicheProfil('description',this.value)">${escapeHtml(p.description||'')}</textarea></div>
+  ${p.erreur?`<div class="modalErr">${escapeHtml(p.erreur)}</div>`:''}
+  <button class="btnPrimaire" style="margin-top:14px" ${p.enCours?'disabled':''} onclick="enregistrerFicheProfil()">${p.enCours?'Enregistrement…':'Enregistrer'}</button>
+  ${p.id?`<button class="btnSecondaire" style="margin-top:14px;margin-left:8px" onclick="supprimerFicheProfil()">Supprimer le profil</button>`:''}
+  ${p.id?`
+  <div style="margin-top:24px;padding-top:14px;border-top:1px solid var(--line)">
+    <p class="sub">${NB_SITUATIONS_PAR_POSTE[p.id]||0} situation${(NB_SITUATIONS_PAR_POSTE[p.id]||0)>1?'s':''} avec un niveau minimum défini pour ce profil.</p>
+    <button class="toggleBtn" onclick="gererSituationsProfil('${p.id}','${esc1(p.nom)}')">Définir les niveaux minimum par situation</button>
+  </div>` : ''}
+  `;
+}
+function gererSituationsProfil(id, nom){
+  posteTypeEnEdition = { id, nom };
+  vuePostesTypes = false;
+  ficheProfilOuvert = null;
+  mode = 'piloter';
+  render();
+}
+async function retourFicheProfilApresSituations(){
+  const id = posteTypeEnEdition.id;
+  posteTypeEnEdition = null;
+  await charger();
+  vuePostesTypes = true;
+  ficheProfilOuvert = POSTES_TYPES.find(p=>p.id===id) || null;
+  render();
+}
+async function definirNiveauMinPosteType(situationUid, niveauMin){
+  if(!posteTypeEnEdition) return;
+  if(niveauMin){
+    const { error } = await sb.from('poste_type_situations')
+      .upsert({ poste_type_id: posteTypeEnEdition.id, situation_id: situationUid, niveau_min: niveauMin }, { onConflict: 'poste_type_id,situation_id' });
+    if(error){ alert('Erreur : '+error.message); return; }
+  } else {
+    const { error } = await sb.from('poste_type_situations').delete()
+      .eq('poste_type_id', posteTypeEnEdition.id).eq('situation_id', situationUid);
+    if(error){ alert('Erreur : '+error.message); return; }
+  }
+  const { data } = await sb.from('poste_type_situations').select('id,poste_type_id,situation_id,niveau_min').eq('poste_type_id', posteTypeEnEdition.id);
+  NB_SITUATIONS_PAR_POSTE[posteTypeEnEdition.id] = (data||[]).length;
+  for(const ps of (data||[])) NIVEAU_MIN_PAR_POSTE_SITUATION[ps.poste_type_id+'|'+ps.situation_id] = ps.niveau_min;
+  if(!niveauMin) delete NIVEAU_MIN_PAR_POSTE_SITUATION[posteTypeEnEdition.id+'|'+situationUid];
+}
+
+initApp();
+</script>
+<script src="therese-widget.js"></script>
+</body>
+</html>

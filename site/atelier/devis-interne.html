@@ -1,0 +1,2000 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <script src="boite-message.js"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Devis — Atelier (interne)</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="atelier-nav.js"></script>
+  <script src="moteur-devis.js"></script>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600;700;800&display=swap">
+  <style>
+    /* V0 — même système typo/couleurs que tout le projet, voir atelier-compte.html. */
+    :root{
+      --bg:#fff; --ink:#1c1a17; --muted:#55504a; --line:#e4e0d9; --soft:#f7f5f2;
+      --accent:#a8461f;
+      --red:var(--ink); --amber:var(--ink); --green:var(--ink);
+      --redBg:var(--soft); --amberBg:var(--soft); --greenBg:var(--soft);
+      --blue:var(--ink); --blueBg:var(--soft);
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif}
+    body{font-size:16px;line-height:1.25}
+    h1,h2,.brand,.treeTitle{font-family:Fraunces,Georgia,serif;font-weight:600}
+    body{font-variant-numeric:tabular-nums}
+    button,input,select,textarea{font:inherit;color:inherit}
+    button{cursor:pointer;background:none;border:none;padding:0}
+    .app{display:grid;grid-template-rows:auto auto 1fr;min-height:100vh}
+    nav.topnav{background:#1c1a17;color:#fff;display:flex;align-items:center;gap:4px;padding:0 20px;height:52px;font-size:14px}
+    nav.topnav a.brand{color:#fff;text-decoration:none;font-weight:600;margin-right:24px;font-size:15px;font-family:Fraunces,Georgia,serif}
+    nav.topnav .menuItem{position:relative;height:100%;display:flex;align-items:center}
+    nav.topnav .menuItem>span,nav.topnav .menuItem>a.topLink{padding:0 14px;cursor:pointer;color:#d7dbe4;text-decoration:none}
+    nav.topnav .menuItem:hover>span,nav.topnav .menuItem>a.topLink:hover{color:#fff}
+    nav.topnav .dropdown{display:none;position:absolute;top:100%;left:0;background:#fff;color:var(--ink);min-width:220px;box-shadow:0 8px 24px rgba(0,0,0,.18);border-radius:0 0 10px 10px;overflow:hidden;z-index:50}
+    nav.topnav .menuItem:hover .dropdown{display:block}
+    nav.topnav .dropdown a{display:block;padding:10px 16px;color:var(--ink);text-decoration:none;font-size:13.5px;border-bottom:1px solid var(--line)}
+    nav.topnav .dropdown a:last-child{border-bottom:none}
+    nav.topnav .dropdown a:hover{background:var(--soft)}
+    nav.topnav .navToggle{display:none;margin-left:auto;background:none;border:none;color:#fff;font-size:20px;cursor:pointer}
+    @media (max-width:820px){
+      nav.topnav{flex-wrap:wrap;height:auto;padding:10px 16px}
+      nav.topnav .navToggle{display:block}
+      nav.topnav .menuItem{display:none;width:100%;height:auto;flex-direction:column;align-items:stretch}
+      nav.topnav.navOpen .menuItem{display:flex}
+      nav.topnav .menuItem>span,nav.topnav .menuItem>a.topLink{padding:12px 0 4px;cursor:pointer;display:block}
+      nav.topnav .dropdown{position:static;box-shadow:none;border-radius:0;background:transparent;min-width:0}
+      nav.topnav .menuItem.open .dropdown{display:block}
+      nav.topnav .dropdown a{color:#fff;padding:10px 0 10px 14px;border-bottom:1px solid rgba(255,255,255,.12)}
+      nav.topnav .dropdown a:hover{background:rgba(255,255,255,.06)}
+    }
+    .topbar{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--line);padding:10px 18px;display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:center;z-index:20}
+    .brand{font-weight:700;font-size:22px;letter-spacing:.02em}
+    .brand small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+    @media (max-width:700px){ .topbar{grid-template-columns:1fr;row-gap:8px} .toolbar{flex-wrap:wrap} }
+    .main{display:grid;grid-template-columns:280px 1fr;gap:0;align-items:start;min-height:0}
+    .listPane{border-right:1px solid var(--line);padding:16px;min-height:calc(100vh - 62px)}
+    .editorPane{padding:18px 24px 60px 24px;min-width:0;max-width:1300px}
+    .section{margin:0 0 20px 0}
+    .toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px}
+    .miniBtn,.ghostBtn,.actionBtn{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 12px;min-height:36px;font-size:14px}
+    .actionBtn{background:#111;color:#fff;border-color:#111}
+    .actionBtn.secondary{background:#fff;color:#111}
+    .ghostBtn{color:var(--muted)}
+    .dangerBtn{color:var(--red)}
+    .miniBtn:hover,.ghostBtn:hover,.actionBtn:hover{opacity:.85}
+    .input,.select,.textarea{border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:#fff;width:100%;font-size:14px}
+    .textarea{min-height:60px;resize:vertical}
+    .grid2{display:grid;gap:10px;grid-template-columns:1fr 1fr}
+    .grid3{display:grid;gap:10px;grid-template-columns:1fr 1fr 1fr}
+    .grid4{display:grid;gap:10px;grid-template-columns:1fr 1fr 1fr 1fr}
+    .field label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
+    .fieldAuto{position:relative}
+    .sugBox{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid var(--line);border-radius:8px;margin-top:4px;max-height:220px;overflow-y:auto;z-index:20;box-shadow:0 8px 24px rgba(0,0,0,.10)}
+    .sugItem{padding:9px 12px;cursor:pointer;font-size:13.5px;border-bottom:1px solid var(--line)}
+    .sugItem:last-child{border-bottom:none}
+    .sugItem:hover{background:var(--soft)}
+    .listItem{padding:10px 0;border-bottom:1px solid var(--line);cursor:pointer}
+    .listItem:hover{background:var(--soft)}
+    .listItem.active{background:var(--soft);font-weight:700}
+    .listItem .num{font-size:13px;color:var(--muted)}
+    .treeTitle{font-weight:700;font-size:21px;margin:0 0 10px 0}
+    .muted{color:var(--muted)}
+    .tiny{font-size:12.5px;line-height:1.35}
+    .chip{display:inline-flex;align-items:center;padding:3px 9px;font-size:12.5px;border:1px solid var(--line);background:#fff;border-radius:999px;white-space:nowrap}
+    .chip.red,.chip.amber,.chip.green,.chip.blue{border-color:var(--line);background:var(--soft);color:var(--ink);font-weight:700}
+    .ligneCard{border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:12px}
+    .ligneHead{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:10px}
+    .ligneKind{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+    .ligneTitle{font-weight:700;font-size:17px}
+    .price{font-weight:700;font-size:19px}
+    .breakdown{font-size:12.5px;color:var(--muted);margin-top:6px;line-height:1.5}
+    /* Chiffrage privé à droite des articles du catalogue : détail du calcul, petit et gris, jamais imprimé */
+    .devisGrid{display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:18px;align-items:start}
+    .devisCorps{min-width:0}
+    .colPrivee{position:sticky;top:12px;display:flex;flex-direction:column;gap:12px;max-height:calc(100vh - 24px);overflow-y:auto}
+    .chiffragePrive{background:var(--soft);border-radius:10px;padding:10px 12px;font-size:11.5px;line-height:1.45;color:var(--muted)}
+    .chiffragePrive .cpTitre{font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:700;margin-bottom:6px}
+    .chiffragePrive .cpTotal{display:flex;justify-content:space-between;gap:8px;padding:2px 0}
+    .chiffragePrive .cpTotal b{color:var(--ink);font-weight:600}
+    .chiffragePrive .cpLigne{border-top:1px solid var(--line);margin-top:8px;padding-top:6px}
+    .chiffragePrive .cpLigne .cpSupport{font-weight:600;color:var(--ink);display:flex;justify-content:space-between;gap:8px}
+    .chiffragePrive .cpRows{margin-top:4px}
+    .chiffragePrive .cpRow{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:4px 0;border-top:1px dotted #d9d9d9}
+    .chiffragePrive .cpRow:first-child{border-top:0}
+    .chiffragePrive .cpK{color:var(--muted)}
+    .chiffragePrive .cpK small{display:block;font-size:10.5px;opacity:.85;margin-top:1px}
+    .chiffragePrive .cpV{color:var(--ink);font-weight:600;text-align:right;white-space:nowrap}
+    .chiffragePrive .cpDuree{border-top:1.5px solid var(--ink);margin-top:14px;padding-top:10px}
+    .chiffragePrive .cpDureeLib{font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--ink)}
+    .chiffragePrive .cpDureeVal{font-size:26px;font-weight:800;letter-spacing:-.02em;color:var(--ink);line-height:1.15;margin:2px 0}
+    .chiffragePrive .cpDureeNote{font-size:11px;color:var(--muted)}
+    .chiffragePrive .cpMarge{border-top:1px solid var(--line);margin-top:12px;padding-top:8px}
+    .chiffragePrive .cpMargeLigne{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:2px 0}
+    .chiffragePrive .cpMargeLigne b{font-size:17px;font-weight:800;color:var(--ink)}
+    .chiffragePrive .cpMargeLigne span{font-size:12px;font-weight:700;color:var(--ink)}
+    @media (max-width:1150px){ .devisGrid{grid-template-columns:minmax(0,1fr)} .colPrivee{position:static;order:-1;max-height:none;overflow:visible} }
+    @media print{ .devisGrid{display:block} .colPrivee{display:none} }
+    /* Calculateur de marge : même grammaire que le chiffrage, mais le résultat (la marge) est mis en avant */
+    .margePrive{border:1.5px solid var(--ink);padding:12px 14px;font-size:12px;line-height:1.45;color:var(--muted);background:#fff}
+    .margePrive .cpTitre{font-size:11px;text-transform:uppercase;letter-spacing:.09em;font-weight:800;color:var(--ink);margin-bottom:8px}
+    .margePrive .mpChamp{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:3px 0}
+    .margePrive .mpChamp span{flex:1}
+    .margePrive .mpChamp small{display:block;font-size:10.5px}
+    .margePrive .mpChamp input{width:82px;text-align:right;font-size:14px;padding:3px 0;font-weight:600;color:var(--ink)}
+    .margePrive .mpLigne{display:flex;justify-content:space-between;gap:10px;padding:3px 0;border-top:1px dotted #d9d9d9}
+    .margePrive .mpLigne b{color:var(--ink);font-weight:600;white-space:nowrap}
+    .margePrive .mpResultat{border-top:1.5px solid var(--ink);margin-top:10px;padding-top:10px}
+    .margePrive .mpLib{font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--ink)}
+    .margePrive .mpVal{font-size:26px;font-weight:800;letter-spacing:-.02em;color:var(--ink);line-height:1.15}
+    .margePrive .mpTaux{font-size:13px;font-weight:700;color:var(--ink)}
+    .margePrive .mpObjectif{margin-top:8px;padding:7px 9px;background:var(--soft);color:var(--ink);font-size:11.5px}
+    .arbitrageBox{margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)}
+    .totalBar{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-top:2px solid var(--ink);margin-top:6px;font-size:20px;font-weight:700}
+    .totalLigne{display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:14px;color:var(--muted)}
+    .addRow{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+    .errBox{padding:24px;color:var(--red);font-family:monospace;white-space:pre-wrap}
+    @media (max-width:900px){.main{grid-template-columns:1fr}.listPane{border-right:none;border-bottom:1px solid var(--line);min-height:auto}.grid2,.grid3,.grid4{grid-template-columns:1fr}}
+    /* Champs pré-remplis par l'IA : à compléter (vide, pointillé orange) / à confirmer (valeur donnée par la source avec un « ± », bordure ambre). Aucun ne bloque l'enregistrement. */
+    .aCompleter .input,.aCompleter .select,.aCompleter .textarea{border:2px dashed #d9822b;background:#fff7ee}
+    .aConfirmer .input,.aConfirmer .select,.aConfirmer .textarea{border:2px solid #e0a800;background:#fffbe6}
+    .noteFlag{font-size:11.5px;margin-top:3px;color:#9a5a12;line-height:1.3}
+    .aConfirmer .noteFlag{color:#7a5d00}
+    .lienFlag{margin-left:6px;text-decoration:underline;color:inherit;font-size:11.5px}
+    .blocIA{border:1px solid var(--line);border-left:4px solid #e0a800;background:var(--soft);border-radius:12px;padding:12px 14px;margin:0 0 14px}
+    .modalFond{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;display:flex;align-items:flex-start;justify-content:center;padding:6vh 16px;overflow-y:auto}
+    .modal{background:#fff;border-radius:16px;max-width:640px;width:100%;padding:22px 24px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+    .modal h2{font-size:24px;margin:0 0 6px}
+    .dropBesoin{border:2px dashed var(--line);border-radius:12px;padding:18px;text-align:center;color:var(--muted);cursor:pointer;font-size:14px}
+    .dropBesoin.survol{border-color:var(--accent);background:var(--soft)}
+    .fichierBesoin{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:5px 10px;font-size:13px;background:#fff}
+    .printEntete,.printPied{display:none}
+    .print-only{display:none}
+    .prixCol{width:100px;text-align:right;justify-content:flex-end}
+    .kmCol{width:115px;text-align:right;justify-content:flex-end}
+    @media print{
+      nav.topnav, .topbar, .listPane, .no-print, .catalogueLigneVide, .catalogueRubriqueVide{display:none !important}
+      .print-only{display:inline}
+      .main{display:block}
+      .editorPane{max-width:none;padding:0}
+      .ligneCard{border:none;padding:8px 0;margin-bottom:6px;page-break-inside:avoid}
+      .section{margin-bottom:16px}
+      .input,.select,.textarea{border:none;padding:0;background:transparent}
+      body{margin-top:70px;margin-bottom:50px}
+      .printEntete{display:block;position:fixed;top:0;left:0;right:0;text-align:center;padding:6px 0}
+      .printEntete img{max-height:60px}
+      .printPied{display:block;position:fixed;bottom:0;left:0;right:0;text-align:center;font-size:10px;color:#555;padding:6px 14px;border-top:1px solid #ccc;white-space:pre-line}
+    }
+  </style>
+  <link rel="stylesheet" href="charte-vsf.css">
+<script src="acces-entreprise.js" defer></script>
+</head>
+<body>
+<div class="app"></div>
+<script>
+/* =========================================================================
+   DONNÉES DE RÉFÉRENCE — reprises telles quelles des fichiers de Tristan
+   (onglets BASE / COEF / COMPATIBILITES / AIDE MEG du questionnaire projet)
+   ========================================================================= */
+/* Refonte du moteur de calcul : plancher journalier (plus de tarif horaire
+   déconnecté), modificateurs configurables (% ou prix fixe), hauteur en coût
+   externe fixe (nacelle/échafaudage réels), état du support nettoyé des cas
+   dangereux/impossibles (ceux-là sont exclus du devis standard, pas tarifés).
+   "Support autre" / "Matière autre" retirés (la ligne libre couvre déjà les
+   cas hors catalogue). */
+// Repère unique donné par Tristan, valable pour tous les supports (style bâton) :
+// LOI DU TEMPS : règle de Tristan conservée — 1 m² = 3,5 h (proportionnel : exposant 1), soit 50 % d'une journée à 795 € — plus un petit temps fixe de mise en route (0,9 h). Surface = EMPRISE du lettrage en m² (BAT).
+// tempsFixeH 0,9 h + kH 3,5 h/m² : 0,04 m² ≈ 1,0 h, 0,57 m² ≈ 2,9 h, 1,7 m² ≈ 6,9 h, 6 m² ≈ 21,9 h. Taux journalier : 795 € pour tous les supports.
+// Minimum HT : 250 € pour tous les supports (un petit besoin ne doit jamais être facturé comme une journée) ; le taux journalier (> 800 €/j visé) ne joue que sur le temps estimé.
+// Un COMPLÉMENT (petit ajout à un devis) a son propre minimum (180 €), réglable.
+// (Ancienne référence : 2 m² = 7 h, proportionnel à la surface.) Les anciens chiffres par support (16h Pignon, 8h Vitrines...) étaient
+// des placeholders inventés en tout début de projet, jamais des vraies données.
+const BASE_DEFAUT = {
+  "Enseigne principale": { surfaceMiniM2: 0.05, tempsFixeH: 0.9, kH: 3.5, minimumHT: 250 },
+  "Enseigne drapeau":    { surfaceMiniM2: 0.05, tempsFixeH: 0.9, kH: 3.5, minimumHT: 250 },
+  "Vitrines":            { surfaceMiniM2: 0.05, tempsFixeH: 0.9, kH: 3.5, minimumHT: 250 },
+  "Jambages":            { surfaceMiniM2: 0.05, tempsFixeH: 0.9, kH: 3.5, minimumHT: 250 },
+  "Pignon":              { surfaceMiniM2: 0.05, tempsFixeH: 0.9, kH: 3.5, minimumHT: 250 },
+  "Véhicule":            { surfaceMiniM2: 0.05, tempsFixeH: 0.9, kH: 3.5, minimumHT: 250 },
+  "Stop-trottoir":       { surfaceMiniM2: 0.05, tempsFixeH: 0.9, kH: 3.5, minimumHT: 250 },
+  "Ardoises":            { surfaceMiniM2: 0.05, tempsFixeH: 0.9, kH: 3.5, minimumHT: 250 }
+};
+// Plancher de revenu journalier visé (700-900 € HT/jour selon le besoin), réglable par support.
+const TARIF_JOURNALIER_DEFAUT = {
+  "Enseigne principale": 795, "Enseigne drapeau": 795, "Vitrines": 795, "Jambages": 795,
+  "Pignon": 795, "Véhicule": 795, "Stop-trottoir": 795, "Ardoises": 795
+};
+const COEF_MATIERE_DEFAUT = { "Bois peint":1, "Enduit lisse":1.05, "Bois brut":1.1, "Verre":1.15, "Enduit texturé":1.2, "Carrosserie":1.25 };
+
+// État du support : cas dangereux/impossibles retirés (ce n'est pas une variable de prix,
+// c'est un cas à exclure du devis standard). Les textures restantes déclenchent une primaire
+// à la chaux — coût réel, pas une simple mention — via le modificateur qui leur est associé.
+const ETAT_SUPPORT_DEFAUT = {
+  "Lisse et propre": { modificateur: null },
+  "Légèrement granuleux": { modificateur: 'primaire_leger' },
+  "Très rugueux / crépi / pierre": { modificateur: 'primaire_rugueux' },
+  "Texturé (enduit sablé type granite, crépi)": { modificateur: 'primaire_texture' },
+  "Blocage des fonds avant lettrage": { modificateur: 'blocage_fonds' },
+  "Je ne sais pas — voir photos": { modificateur: null },
+};
+// Hauteur = coût externe fixe (nacelle/échafaudage réels, catalogue MEG), plus proportionnel au reste.
+const HAUTEUR_OPTIONS_DEFAUT = {
+  "En rez-de-chaussée": { prixFixeHT: 0 },
+  "Hauteur moyenne — échafaudage mobile": { prixFixeHT: 90 },
+  "Grande hauteur — nacelle": { prixFixeHT: 300 },
+};
+const TAILLE_LETTRES_DEFAUT = {
+  "Petites (plus long à réaliser)": { modificateur: 'forme_petites_lettres' },
+  "Moyennes": { modificateur: null },
+  "Grandes": { modificateur: null },
+};
+const COEF_FORME_DEFAUT = { "Lettres capitales / majuscules":1, "Lettres minuscules":1.05, "Lettres bâton / sans empattement":1, "Lettres script / manuscrites":1.25, "Lettres anciennes / traditionnelles":1.25, "Lettres très décoratives":1.4, "Reproduction d'une typographie existante":1.25, "Reproduction d'un logo existant":1.3, "Je souhaite être conseillé.e":1.1 };
+const COEF_EFFET_DEFAUT = { "Aucun effet particulier / lettrage simple":1, "Filet / contour autour des lettres":1.2, "Dorure":1.8, "Dégradé":1.35, "Patine / effet vieilli":1.3, "Effet ancien / enseigne d'époque":1.35, "Décor ou illustration autour du texte":1.5, "Je souhaite être conseillé.e":1.1 };
+
+// Réglages de l'estimation client et du forfait au mot, réglables sans repasser par le code. Stockés ensemble dans devis_reglages.parametres_estimation
+// (colonne JSON ; voir migration_calculateur_reglages.sql). Valeurs de départ = celles qui étaient auparavant codées en dur.
+const PARAMETRES_ESTIMATION_DEFAUT = {
+  prixParMot: { "Jambages": 95 },                                   // forfait HT par mot peint
+  forfaitsProjet: [                                                 // prix fixes AFFICHÉS au client, une fois par projet
+    { cle:'maquette', label:'Création de la maquette', prixAffiche:{ particulier:290, professionnel:390 } },
+    { cle:'poncifs',  label:'Préparation des poncifs', prixAffiche:250 },
+  ],
+  empriseLettrage: { "Jambages": 0.20 },                            // part de la surface du support couverte par le lettrage
+  fourchettePct: 30,                                                // ± autour du prix calculé affiché au client (mode indicatif)
+  minimumComplementHT: 180,                                         // minimum HT d'un « complément » (petit ajout à un devis)
+  fabricationSupport: clone(FABRICATION_SUPPORT_DEFAUT),            // fabrication du support en atelier, prix fixes HT
+  fabricationDrapeau: { baseHT:700, parM2HT:1500, coefMetal:1.15 },   // enseigne drapeau complète : (base + €/m² de support) × coefficient métal — voir FABRICATION_DRAPEAU_DEFAUT (moteur)
+  coutEquipeJour: 250,                                                // coût journalier chargé d'une personne de l'atelier (€) — 0 = pas encore renseigné ; sert au calculateur de marge
+  objectifMargePct: 30,                                             // marge visée sur le prix de vente HT (%)
+};
+function parametresEstimation(brut){
+  const p = clone(PARAMETRES_ESTIMATION_DEFAUT);
+  if(brut && typeof brut === 'object'){
+    for(const k of Object.keys(p)) if(brut[k] !== undefined && brut[k] !== null) p[k] = brut[k];
+  }
+  return p;
+}
+
+// Ordre d'affichage fixe des menus — indépendant de l'ordre des clés dans les objets
+// (le JSONB de Supabase ne garantit pas de préserver l'ordre d'insertion une fois
+// enregistré). clesTriees() ne garde que les clés qui existent réellement dans la map,
+// dans cet ordre, puis ajoute à la fin toute clé imprévue (nouveau réglage ajouté à la main).
+function clesTriees(map, ordre){
+  const presentes = ordre.filter(k => Object.prototype.hasOwnProperty.call(map, k));
+  const restantes = Object.keys(map).filter(k => !ordre.includes(k));
+  return [...presentes, ...restantes];
+}
+const ORDRE_SUPPORT = ["Enseigne principale","Enseigne drapeau","Vitrines","Jambages","Pignon","Véhicule","Stop-trottoir","Ardoises"];
+const ORDRE_MATIERE = ["Bois peint","Bois brut","Enduit lisse","Enduit texturé","Verre","Carrosserie"];
+const ORDRE_ETAT = ["Lisse et propre","Légèrement granuleux","Très rugueux / crépi / pierre","Texturé (enduit sablé type granite, crépi)","Je ne sais pas — voir photos"];
+const ORDRE_HAUTEUR = ["En rez-de-chaussée","Hauteur moyenne — échafaudage mobile","Grande hauteur — nacelle"];
+const ORDRE_TAILLE = ["Petites (plus long à réaliser)","Moyennes","Grandes"];
+const ORDRE_FORME = ["Lettres capitales / majuscules","Lettres minuscules","Lettres bâton / sans empattement","Lettres script / manuscrites","Lettres anciennes / traditionnelles","Lettres très décoratives","Reproduction d'une typographie existante","Reproduction d'un logo existant","Je souhaite être conseillé.e"];
+const ORDRE_EFFET = ["Aucun effet particulier / lettrage simple","Filet / contour autour des lettres","Dorure","Dégradé","Patine / effet vieilli","Effet ancien / enseigne d'époque","Décor ou illustration autour du texte","Je souhaite être conseillé.e"];
+
+// État du support compatibles selon la matière — inutile de proposer une texture "crépi/granit"
+// sur du bois peint ou du verre, ça n'a pas de sens physique.
+const ETAT_COMPATIBLES_PAR_MATIERE = {
+  "Bois peint": ["Lisse et propre","Je ne sais pas — voir photos"],
+  "Bois brut": ["Lisse et propre","Légèrement granuleux","Je ne sais pas — voir photos"],
+  "Enduit lisse": ["Lisse et propre","Légèrement granuleux","Je ne sais pas — voir photos"],
+  "Enduit texturé": ["Lisse et propre","Légèrement granuleux","Très rugueux / crépi / pierre","Texturé (enduit sablé type granite, crépi)","Je ne sais pas — voir photos"],
+  "Verre": ["Lisse et propre","Je ne sais pas — voir photos"],
+  "Carrosserie": ["Lisse et propre","Je ne sais pas — voir photos"],
+};
+function etatOptionsPourMatiere(matiere){
+  const autorises = ETAT_COMPATIBLES_PAR_MATIERE[matiere];
+  const cles = clesTriees(ETAT_SUPPORT, ORDRE_ETAT);
+  return autorises ? cles.filter(c=>autorises.includes(c)) : cles;
+}
+// Modificateurs génériques : chacun réglable en % du prix de base OU en prix fixe, au choix du comité.
+const MODIFICATEURS_DEFAUT = [
+  { cle:'relief', label:'Effet de relief', type:'pourcentage', valeur:30 },
+  { cle:'couleurs_multiples', label:'Plusieurs couleurs', type:'pourcentage', valeur:15 },
+  { cle:'ombre_supplementaire', label:'Ombre supplémentaire', type:'pourcentage', valeur:30 },
+  { cle:'primaire_leger', label:'Primaire à la chaux — support légèrement granuleux', type:'pourcentage', valeur:10 },
+  { cle:'primaire_rugueux', label:'Primaire à la chaux — support très rugueux / crépi / pierre', type:'pourcentage', valeur:20 },
+  { cle:'primaire_texture', label:'Primaire à la chaux — support texturé (sablé type granite)', type:'pourcentage', valeur:30 },
+  { cle:'forme_petites_lettres', label:'Petites lettres (plus long à réaliser)', type:'pourcentage', valeur:15 },
+  { cle:'forme_empattements', label:'Lettres avec empattements', type:'pourcentage', valeur:15 },
+  // Valeur non validée par Tristan — placeholder à ajuster dans Réglages tarifs (Modificateurs).
+  { cle:'blocage_fonds', label:'Blocage des fonds avant lettrage', type:'pourcentage', valeur:15 },
+  // Enduit à la chaux choisi dans le formulaire d'estimation : sous-couche adaptée. Valeur de départ à ajuster.
+  { cle:'sous_couche_chaux', label:"Sous-couche adaptée à l'enduit à la chaux", type:'pourcentage', valeur:15 },
+];
+// Réglages enregistrés avant l'ajout d'un modificateur : on complète avec ceux qui manquent (valeur de départ), sans toucher aux valeurs réglées.
+function completerModificateurs(liste){
+  const l = Array.isArray(liste) && liste.length ? liste : clone(MODIFICATEURS_DEFAUT);
+  for(const d of MODIFICATEURS_DEFAUT) if(!l.find(x=>x.cle===d.cle)) l.push(clone(d));
+  return l;
+}
+
+/* =========================================================================
+   SUPABASE — cet outil suppose qu'on est déjà connecté au niveau Fédération
+   (federation-accueil.html) et qu'on gère un atelier précis (?est=... ou
+   dernier atelier ouvert). Les réglages tarifs et les devis sont maintenant
+   stockés dans Supabase, plus en localStorage.
+   ========================================================================= */
+const SUPABASE_URL = 'https://uuuigousvpijskbdhcal.supabase.co';
+const SUPABASE_KEY = 'sb_publishable__YuNj5XCo5YF8lwhwTu5OQ_RDM1Eesp';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+});
+const STORAGE = { currentEst: 'ac_current_est_v1' };
+function getCurrentEstId(){
+  const fromUrl = new URLSearchParams(window.location.search).get('est');
+  if(fromUrl) return fromUrl;
+  return localStorage.getItem(STORAGE.currentEst) || '';
+}
+let ESTABLISHMENT_ID = '';
+let ETABLISSEMENT = null; // { logo_data_url, pied_de_page_devis } — pour l'en-tête/pied de page à l'impression
+function estUrl(page){ return page+'?est='+encodeURIComponent(ESTABLISHMENT_ID); }
+
+function clone(o){ return JSON.parse(JSON.stringify(o)); }
+
+async function chargerReglages(estId){
+  const { data, error } = await sb.from('devis_reglages').select('*').eq('establishment_id', estId).maybeSingle();
+  if(error) throw error;
+  if(!data) return {
+    base: clone(BASE_DEFAUT), tarifJournalier: clone(TARIF_JOURNALIER_DEFAUT), coefMatiere: clone(COEF_MATIERE_DEFAUT),
+    etatSupport: clone(ETAT_SUPPORT_DEFAUT), hauteurOptions: clone(HAUTEUR_OPTIONS_DEFAUT), tailleLettres: clone(TAILLE_LETTRES_DEFAUT),
+    coefForme: clone(COEF_FORME_DEFAUT), coefEffet: clone(COEF_EFFET_DEFAUT), modificateurs: clone(MODIFICATEURS_DEFAUT),
+    heuresParJour: 7, rendementM2ParLitre: 10, remiseParticulierPct: 15, exposantSurface: 1, appliquerMinimumHT: true,
+    tempsParCaractereH: 0.05, prixParKm: 0.60, tvaPct: 20, produitsDerives: [ { cle:'carte_visite', label:'Carte de visite assortie au style', prixHT:80 }, { cle:'mini_charte', label:'Mini-charte graphique (couleurs, typo)', prixHT:250 }, { cle:'goodies', label:'Petits goodies (autocollants, etc.)', prixHT:150 } ],
+    ...parametresEstimation(null),
+  };
+  return {
+    base: data.base || clone(BASE_DEFAUT), tarifJournalier: data.tarif_journalier || clone(TARIF_JOURNALIER_DEFAUT),
+    coefMatiere: data.coef_matiere || clone(COEF_MATIERE_DEFAUT),
+    etatSupport: data.etat_support || clone(ETAT_SUPPORT_DEFAUT), hauteurOptions: data.hauteur_options || clone(HAUTEUR_OPTIONS_DEFAUT),
+    tailleLettres: data.taille_lettres_options || clone(TAILLE_LETTRES_DEFAUT),
+    coefForme: data.coef_forme || clone(COEF_FORME_DEFAUT), coefEffet: data.coef_effet || clone(COEF_EFFET_DEFAUT),
+    modificateurs: completerModificateurs(data.modificateurs),
+    heuresParJour: data.heures_par_jour ?? 7, rendementM2ParLitre: data.rendement_m2_par_litre ?? 10,
+    remiseParticulierPct: data.remise_particulier_pct ?? 15, exposantSurface: data.exposant_surface ?? 1,
+    appliquerMinimumHT: data.appliquer_minimum_ht ?? true,
+    tempsParCaractereH: data.temps_par_caractere_h ?? 0.05, prixParKm: data.prix_par_km ?? 0.60,
+    tvaPct: data.tva_pct ?? 20, produitsDerives: data.produits_derives || [ { cle:'carte_visite', label:'Carte de visite assortie au style', prixHT:80 }, { cle:'mini_charte', label:'Mini-charte graphique (couleurs, typo)', prixHT:250 }, { cle:'goodies', label:'Petits goodies (autocollants, etc.)', prixHT:150 } ],
+    ...parametresEstimation(data.parametres_estimation),
+  };
+}
+async function sauvegarderReglages(){
+  const ligne = {
+    establishment_id: ESTABLISHMENT_ID,
+    base: reglages.base, tarif_journalier: reglages.tarifJournalier, coef_matiere: reglages.coefMatiere,
+    etat_support: reglages.etatSupport, hauteur_options: reglages.hauteurOptions, taille_lettres_options: reglages.tailleLettres,
+    coef_forme: reglages.coefForme, coef_effet: reglages.coefEffet, modificateurs: reglages.modificateurs,
+    heures_par_jour: reglages.heuresParJour, rendement_m2_par_litre: reglages.rendementM2ParLitre,
+    remise_particulier_pct: reglages.remiseParticulierPct, exposant_surface: reglages.exposantSurface,
+    appliquer_minimum_ht: reglages.appliquerMinimumHT, temps_par_caractere_h: reglages.tempsParCaractereH,
+    prix_par_km: reglages.prixParKm, tva_pct: reglages.tvaPct, produits_derives: reglages.produitsDerives,
+    // coef_etat / coef_hauteur : colonnes orphelines (remplacées depuis par etat_support /
+    // hauteur_options) mais toujours NOT NULL côté base sur certains ateliers — on envoie un
+    // objet vide plutôt que de dépendre d'une migration qui pourrait ne pas tenir.
+    coef_etat: {}, coef_hauteur: {},
+    parametres_estimation: { prixParMot: reglages.prixParMot, forfaitsProjet: reglages.forfaitsProjet, empriseLettrage: reglages.empriseLettrage,
+      fourchettePct: reglages.fourchettePct, fabricationSupport: reglages.fabricationSupport, minimumComplementHT: reglages.minimumComplementHT,
+      coutEquipeJour: reglages.coutEquipeJour, objectifMargePct: reglages.objectifMargePct, fabricationDrapeau: reglages.fabricationDrapeau },
+    updated_at: new Date().toISOString()
+  };
+  let { error } = await sb.from('devis_reglages').upsert(ligne);
+  // Colonne pas encore créée (migration_calculateur_reglages.sql non exécutée) : on enregistre le reste plutôt que de tout perdre.
+  if(error && /parametres_estimation/.test(error.message)){
+    delete ligne.parametres_estimation;
+    ({ error } = await sb.from('devis_reglages').upsert(ligne));
+    if(!error) alert("Réglages enregistrés, SAUF les nouveaux paramètres (forfait au mot, maquette, poncifs, fabrication du support…) : exécutez d'abord migration_calculateur_reglages.sql dans Supabase.");
+  }
+  if(error) alert("Sauvegarde des réglages impossible : "+error.message);
+}
+
+let reglages = {
+  base: clone(BASE_DEFAUT), tarifJournalier: clone(TARIF_JOURNALIER_DEFAUT), coefMatiere: clone(COEF_MATIERE_DEFAUT),
+  etatSupport: clone(ETAT_SUPPORT_DEFAUT), hauteurOptions: clone(HAUTEUR_OPTIONS_DEFAUT), tailleLettres: clone(TAILLE_LETTRES_DEFAUT),
+  coefForme: clone(COEF_FORME_DEFAUT), coefEffet: clone(COEF_EFFET_DEFAUT), modificateurs: clone(MODIFICATEURS_DEFAUT),
+  heuresParJour: 7, rendementM2ParLitre: 10, remiseParticulierPct: 15, exposantSurface: 1, appliquerMinimumHT: true,
+  tempsParCaractereH: 0.05, prixParKm: 0.60, tvaPct: 20, produitsDerives: [ { cle:'carte_visite', label:'Carte de visite assortie au style', prixHT:80 }, { cle:'mini_charte', label:'Mini-charte graphique (couleurs, typo)', prixHT:250 }, { cle:'goodies', label:'Petits goodies (autocollants, etc.)', prixHT:150 } ],
+  ...parametresEstimation(null),
+};
+let BASE = reglages.base;
+let TARIF_JOURNALIER = reglages.tarifJournalier;
+let COEF_MATIERE = reglages.coefMatiere;
+let ETAT_SUPPORT = reglages.etatSupport;
+let HAUTEUR_OPTIONS = reglages.hauteurOptions;
+let TAILLE_LETTRES = reglages.tailleLettres;
+let COEF_FORME = reglages.coefForme;
+let COEF_EFFET = reglages.coefEffet;
+let MODIFICATEURS = reglages.modificateurs;
+
+const COMPATIBILITES = {
+  // Les premières matières sont celles du formulaire d'estimation (Bois, Enduit ciment, Enduit chaux) ; les anciennes restent pour les devis existants.
+  "Enseigne principale": ["Bois","Enduit ciment","Enduit chaux","Métal","Verre","Bois peint","Bois brut","Enduit lisse","Enduit texturé"],
+  "Enseigne drapeau": ["Bois","Métal","Bois peint","Bois brut"],
+  "Vitrines": ["Verre"],
+  "Jambages": ["Bois","Enduit ciment","Enduit chaux","Bois peint","Bois brut","Enduit lisse","Enduit texturé"],
+  "Pignon": ["Bois","Enduit ciment","Enduit chaux","Bois peint","Bois brut","Enduit lisse","Enduit texturé"],
+  "Véhicule": ["Carrosserie"],
+  "Stop-trottoir": ["Bois","Métal","Bois peint","Bois brut"],
+  "Ardoises": []
+};
+
+// Catalogue MEG réel, chargé depuis Supabase (table meg_catalogue, Fédération) —
+// remplace les 15 lignes estimées codées en dur. Référencé par id (deux codes
+// du catalogue source sont dupliqués avec des prix différents).
+let MEG_CATALOGUE = [];
+async function chargerMegCatalogue(){
+  const { data, error } = await sb.from('meg_catalogue').select('id,code,rubrique,article,prix_ht,unite,ordre').order('ordre');
+  if(error) throw error;
+  MEG_CATALOGUE = (data||[]).map(m=>({ id:m.id, code:m.code, article:m.article, rubrique:m.rubrique, prixHT:m.prix_ht, unite:m.unite, ordre:m.ordre }));
+}
+function megById(id){ return MEG_CATALOGUE.find(m=>m.id===id) || null; }
+async function majMegArticle(id, champ, valeur){
+  const m = MEG_CATALOGUE.find(x=>x.id===id); if(!m) return;
+  const colonne = { code:'code', article:'article', rubrique:'rubrique', prixHT:'prix_ht', unite:'unite' }[champ];
+  const val = champ==='prixHT' ? (valeur===''?null:Number(valeur)) : valeur;
+  m[champ] = val;
+  const { error } = await sb.from('meg_catalogue').update({ [colonne]: val }).eq('id', id);
+  if(error) alert('Erreur : '+error.message);
+  render();
+}
+async function ajouterMegArticle(rubrique){
+  const ordre = MEG_CATALOGUE.length ? Math.max(...MEG_CATALOGUE.map(m=>m.ordre||0))+1 : 1;
+  const { data, error } = await sb.from('meg_catalogue').insert({ code:'', rubrique, article:'Nouvel article', prix_ht:0, unite:'forfait', ordre }).select().single();
+  if(error){ alert('Erreur : '+error.message); return; }
+  MEG_CATALOGUE.push({ id:data.id, code:data.code, article:data.article, rubrique:data.rubrique, prixHT:data.prix_ht, unite:data.unite, ordre:data.ordre });
+  render();
+}
+async function supprimerMegArticle(id){
+  if(!await confirmer('Supprimer définitivement cet article du catalogue ?')) return;
+  const { error } = await sb.from('meg_catalogue').delete().eq('id', id);
+  if(error){ alert('Erreur : '+error.message); return; }
+  MEG_CATALOGUE = MEG_CATALOGUE.filter(m=>m.id!==id);
+  render();
+}
+
+/* Reprise directe de la formule AJ2 de l'onglet CALCUL : suggestion d'article MEG principal.
+   Renvoie un id de meg_catalogue (pas un code : deux codes source sont dupliqués). */
+function suggererMegId(support, matiere){
+  let code = null;
+  if(support==="Enseigne principale" && (matiere==="Bois brut" || matiere==="Bois peint")) code = "ART00016";
+  else if(["Enseigne principale","Vitrines","Jambages","Pignon"].includes(support)) code = "ART00003";
+  if(!code) return null;
+  const m = MEG_CATALOGUE.find(x=>x.code===code);
+  return m ? m.id : null;
+}
+
+function euros(n){ return (n==null || n==="") ? "—" : arrondir(n,2).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2}) + " €"; }
+function escapeHtml(s){ return String(s??'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])) }
+function toggleMenuItem(el){ el.parentElement.classList.toggle('open'); }
+function toggleNav(){ document.querySelector('nav.topnav').classList.toggle('navOpen'); }
+function uid(p='id'){ return p+'-'+Math.random().toString(16).slice(2,9) }
+
+function calculerArbitrage(l, calc){
+  if(!calc) return null;
+  const meg = l.megCode ? megById(l.megCode) : null;
+  if(!meg || meg.prixHT==null) return { decision:"Choisir l'article MEG", ecartHT:null, ecartPct:null, meg };
+  const ecartHT = arrondir(meg.prixHT - calc.prixHT, 2);
+  const ecartPct = calc.prixHT ? arrondir(ecartHT/calc.prixHT, 4) : null;
+  let decision;
+  if(ecartPct!=null && Math.abs(ecartPct) <= 0.10) decision = "Prix MEG cohérent";
+  else if(ecartHT>0) decision = "Arbitrage requis : prix MEG supérieur";
+  else decision = "Arbitrage requis : prix MEG inférieur";
+  return { meg, ecartHT, ecartPct, decision };
+}
+
+/* =========================================================================
+   PERSISTANCE — Supabase, scopé à l'atelier (ESTABLISHMENT_ID). Les lignes
+   et devis existants se modifient en local puis en arrière-plan (optimiste) ;
+   les créations attendent l'id réel renvoyé par Supabase avant d'afficher.
+   ========================================================================= */
+const LIGNE_CHAMP_TO_COLONNE = {
+  support:'support', matiere:'matiere', etat:'etat', hauteurChantier:'hauteur_chantier',
+  forme:'forme', effet:'effet', longueurCm:'longueur_cm', hauteurCm:'hauteur_cm',
+  deposePose:'depose_pose', megCode:'meg_code', prixRetenuMode:'prix_retenu_mode',
+  commentaireArbitrage:'commentaire_arbitrage', libelle:'libelle', prixHT:'prix_ht',
+  tailleLettres:'taille_lettres', empattements:'empattements', relief:'relief',
+  couleursMultiples:'couleurs_multiples', ombreSupplementaire:'ombre_supplementaire',
+  texteAPeindre:'texte_a_peindre', quantite:'quantite', distanceKm:'distance_km', precision:'precision', fabricationSupport:'fabrication_support', doreePct:'dorure_pct', complement:'complement'
+};
+function dbLigneToJs(row){
+  return { id:row.id, type:row.type, support:row.support||'', matiere:row.matiere||'', etat:row.etat||'',
+    hauteurChantier:row.hauteur_chantier||'', forme:row.forme||'', effet:row.effet||'',
+    longueurCm:row.longueur_cm==null?'':row.longueur_cm, hauteurCm:row.hauteur_cm==null?'':row.hauteur_cm,
+    deposePose:!!row.depose_pose, megCode:row.meg_code||'', prixRetenuMode:row.prix_retenu_mode||'sheet',
+    commentaireArbitrage:row.commentaire_arbitrage||'', libelle:row.libelle||'', prixHT:row.prix_ht,
+    tailleLettres:row.taille_lettres||'', empattements:!!row.empattements, relief:!!row.relief,
+    couleursMultiples:!!row.couleurs_multiples, ombreSupplementaire:!!row.ombre_supplementaire,
+    texteAPeindre:row.texte_a_peindre||'', quantite:row.quantite||1, distanceKm:row.distance_km??null, precision:row.precision||'', fabricationSupport:row.fabrication_support||'', doreePct:row.dorure_pct??null, complement:!!row.complement };
+}
+function dbDevisToJs(row, lignes, nomProjet){
+  const dev = dbDevisToJs0(row, lignes, nomProjet);
+  const obj = String((row.notes_client || {}).objectif || '');
+  for(const l of dev.lignes){
+    if(l.type !== 'calculee' || !l.support) continue;
+    const m = new RegExp('\\[' + l.support.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\] Dimensions du support indiquées : ([\\d.,]+) × ([\\d.,]+) cm').exec(obj);
+    if(m){ const a = parseFloat(m[1].replace(',', '.')), b = parseFloat(m[2].replace(',', '.')); if(a > 0 && b > 0) l.surfaceSupportM2 = a * b / 10000; }
+  }
+  return dev;
+}
+function dbDevisToJs0(row, lignes, nomProjet){
+  return { id:row.id, numero:row.numero, nomProjet:nomProjet||null,
+    client:{ nom:row.client_nom||'', telephone:row.client_telephone||'', email:row.client_email||'', adresse:row.client_adresse||'', type:row.client_type||'particulier' },
+    statut:row.statut, lignes:lignes.map(dbLigneToJs), createdAt:row.created_at,
+    historique:row.historique||[], photos:row.photos||[], notesClient:row.notes_client||null, source:row.source||'interne',
+    ajustementGlobalPct: row.ajustement_global_pct||0 };
+}
+async function chargerStore(estId){
+  const { data: devisRows, error: e1 } = await sb.from('devis').select('*').eq('establishment_id', estId).order('created_at', { ascending:false });
+  if(e1) throw e1;
+  const ids = devisRows.map(d=>d.id);
+  let ligneRows = [];
+  let projetRows = [];
+  if(ids.length){
+    const { data, error: e2 } = await sb.from('devis_lignes').select('*').in('devis_id', ids).order('position');
+    if(e2) throw e2;
+    ligneRows = data || [];
+    // Le nom de l'enseigne (nom_projet) vit sur la fiche Kanban liée, pas sur le devis
+    // lui-même — sans cette jointure la liste de gauche n'affiche que le nom du client.
+    const { data: pData, error: e3 } = await sb.from('projets').select('devis_id,nom_projet').in('devis_id', ids);
+    if(e3) console.error('Chargement des noms de projet liés échoué :', e3.message);
+    projetRows = pData || [];
+  }
+  const lignesParDevis = {};
+  for(const l of ligneRows){ (lignesParDevis[l.devis_id] = lignesParDevis[l.devis_id]||[]).push(l); }
+  const nomProjetParDevis = {};
+  for(const p of projetRows){ if(p.nom_projet) nomProjetParDevis[p.devis_id] = p.nom_projet; }
+  return { devis: devisRows.map(d=>dbDevisToJs(d, lignesParDevis[d.id]||[], nomProjetParDevis[d.id]||null)) };
+}
+
+let store = { devis: [] };
+let currentDevisId = null;
+
+function getDevis(id){ return store.devis.find(d=>d.id===id) || null; }
+
+/* Champs « à compléter » / « à confirmer » (extraction IA) — stockés dans notes_client.ia.champs, clé -> { niveau, raison }.
+   Éditer le champ (ou cliquer « C'est bon ») le lève. N'empêchent jamais la sauvegarde, seulement le « Marquer envoyé ». */
+function iaFlags(d){ return (d.notesClient && d.notesClient.ia && d.notesClient.ia.champs) || {}; }
+function classeFlag(d, cle){ const f = iaFlags(d)[cle]; return f ? (f.niveau==='a_completer' ? 'aCompleter' : 'aConfirmer') : ''; }
+function noteFlag(d, cle){
+  const f = iaFlags(d)[cle]; if(!f) return '';
+  return `<div class="noteFlag">${f.niveau==='a_completer'?'À compléter':'À confirmer avant chiffrage final'}${f.raison?' — '+escapeHtml(f.raison):''}${f.niveau==='a_confirmer'?` <button type="button" class="lienFlag" onclick="confirmerChamp('${d.id}','${cle}')">C'est bon ✓</button>`:''}</div>`;
+}
+function leverFlag(d, cle){
+  if(!iaFlags(d)[cle]) return;
+  delete d.notesClient.ia.champs[cle];
+  sb.from('devis').update({ notes_client: d.notesClient }).eq('id', d.id).then(({error})=>{ if(error) console.error('Mise à jour des champs à revoir échouée :', error.message); });
+}
+function confirmerChamp(devisId, cle){ const d = getDevis(devisId); if(!d) return; leverFlag(d, cle); render(); }
+function libelleFlag(d, cle){
+  const noms = { 'client.nom':'Nom du client', 'client.telephone':'Téléphone', 'client.email':'Email', 'client.adresse':'Adresse chantier', 'client.type':'Type de client', 'notes.adresseFacturation':'Adresse de facturation' };
+  if(noms[cle]) return noms[cle];
+  const m = /^ligne\.([^.]+)\.(\w+)$/.exec(cle); if(!m) return cle;
+  const l = d.lignes.find(x=>x.id===m[1]);
+  return `Ligne « ${(l && (l.support || String(l.precision||'').split(' — ')[0])) || 'support à choisir'} » : ${({support:'support',longueurCm:'longueur',hauteurCm:'hauteur',texteAPeindre:'texte à peindre'})[m[2]]||m[2]}`;
+}
+function champsARevoir(d){ return Object.keys(iaFlags(d)).filter(cle=>!cle.startsWith('ligne.') || d.lignes.some(l=>cle.startsWith('ligne.'+l.id+'.'))).map(cle=>libelleFlag(d, cle)); }
+async function updateNotesClient(devisId, champ, valeur){
+  const d = getDevis(devisId); if(!d) return;
+  d.notesClient = Object.assign({}, d.notesClient || {}, { [champ]: valeur });
+  leverFlag(d, 'notes.'+champ);
+  render();
+  const { error } = await sb.from('devis').update({ notes_client: d.notesClient }).eq('id', devisId);
+  if(error) alert("Enregistrement échoué côté serveur : "+error.message);
+}
+async function imprimerDevis(devisId){
+  const d = getDevis(devisId); const a = d ? champsARevoir(d) : [];
+  if(a.length && !await confirmer("Des champs pré-remplis par l'IA n'ont pas encore été revus :\n\n— "+a.join("\n— ")+"\n\nImprimer quand même ?")) return;
+  window.print();
+}
+
+// Le suivi de chantier se fait désormais uniquement dans le Kanban Client/Projet
+// (client-projet.html) — chaque devis y a sa carte, créée et tenue à jour automatiquement ici.
+async function creerProjetDepuisDevis(devis, extra){
+  extra = extra || {};
+  const { data: numeroProjet, error: eNum } = await sb.rpc('next_numero_projet', { p_establishment_id: ESTABLISHMENT_ID });
+  if(eNum) console.error('Numérotation du projet échouée :', eNum.message);
+  // Le formulaire client (devis-client.html) envoie déjà objectif/texteAPeindre/charteGraphique/
+  // dateSouhaitee/contraintes dans devis.notes_client — sans cette reprise, la fiche projet
+  // affichait "Aucune information renseignée" alors que le client avait bien tout rempli.
+  const nc = devis.notesClient || {};
+  const besoin_technique = {
+    objectif: nc.objectif || null, texteAPeindre: nc.texteAPeindre || null, charteGraphique: nc.charteGraphique || null,
+    dateSouhaitee: nc.dateSouhaitee || null, contraintes: nc.contraintes || null,
+  };
+  const ligne = {
+    establishment_id: ESTABLISHMENT_ID, nom: devis.numero, numero_projet: numeroProjet ?? null, nom_projet: extra.nomProjet || devis.numero, devis_id: devis.id,
+    etape: 'devis_a_envoyer', besoin_technique,
+    historique: [{ date: new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'}), type:'note', texte: `Projet créé automatiquement depuis le devis ${devis.numero}${extra.source?' ('+extra.source+')':''}` }]
+  };
+  if(extra.client){ Object.assign(ligne, { client_nom: extra.client.nom || null, client_telephone: extra.client.tel || null, client_email: extra.client.mail || null, client_adresse: extra.client.adresse || null }); }
+  if(extra.client_id) ligne.client_id = extra.client_id;
+  const { error } = await sb.from('projets').insert(ligne);
+  if(error) console.error('Création du projet liée au devis échouée :', error.message);
+}
+// Les étapes du Kanban collent aux vraies colonnes Trello (voir client-projet.html, table
+// etapes_kanban). Un devis créé depuis ce fichier saute directement à "devis_a_envoyer" (le
+// croquis ne concerne que les projets démarrés depuis le formulaire client). L'envoi/la
+// signature du devis fait avancer le projet tout seul vers le palier d'attente, ou vers
+// "Maquette/création" une fois signé — pas d'étape "devis signé, acompte reçu" séparée dans
+// le vrai Trello, le travail de création démarre directement.
+async function avancerProjetDepuisDevis(devisId, numero, nouveauStatut){
+  const { data: proj, error: eSel } = await sb.from('projets').select('id,etape,historique').eq('devis_id', devisId).maybeSingle();
+  if(eSel || !proj) return;
+  const historique = [...(proj.historique||[]), { date: new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'}), texte: `Devis ${numero} passé en "${STATUT_DEVIS_LABEL[nouveauStatut]||nouveauStatut}"` }];
+  const patch = { historique };
+  if(nouveauStatut==='envoye' && proj.etape==='devis_a_envoyer'){
+    patch.etape = 'devis_croquis_attente';
+  } else if(nouveauStatut==='signe' && (proj.etape==='devis_a_envoyer' || proj.etape==='devis_croquis_attente' || proj.etape==='relance_devis')){
+    patch.etape = 'maquette_a_creer';
+  }
+  const { error } = await sb.from('projets').update(patch).eq('id', proj.id);
+  if(error) console.error('Mise à jour du projet lié au devis échouée :', error.message);
+}
+
+/* =========================================================================
+   « Ajoute les infos du besoin en vrac ! » — au clic sur + Nouveau devis, on peut coller un mail et
+   déposer des maquettes / plans (PDF, PNG, JPEG) : l'IA (edge function devis-extraire-besoin) pré-remplit
+   la fiche client + le devis. Rien n'est validé à l'aveugle : un champ absent reste vide et pointillé
+   orange, un champ donné avec un « ± » reste amber ; ils ne bloquent jamais l'enregistrement du brouillon,
+   seulement le « Marquer envoyé » tant qu'ils n'ont pas été revus.
+   ========================================================================= */
+const intake = { ouvert:false, texte:'', fichiers:[], enCours:false, erreur:'', propositions:null, besoin:null };
+const TYPES_BESOIN = ['application/pdf','image/png','image/jpeg'];
+const MAX_FICHIERS_BESOIN = 6, MAX_PDF_OCTETS = 4*1024*1024, MAX_IMAGE_OCTETS = 12*1024*1024;
+
+function nouveauDevis(){ Object.assign(intake, { ouvert:true, texte:'', fichiers:[], enCours:false, erreur:'', propositions:null, besoin:null }); render(); }
+function fermerAccueilBesoin(){ if(intake.enCours) return; intake.ouvert = false; render(); }
+async function nouveauDevisManuel(){ intake.ouvert = false; await creerDevisVide(); }
+
+function lireDataUrl(file){ return new Promise((ok,ko)=>{ const r=new FileReader(); r.onload=()=>ok(r.result); r.onerror=()=>ko(new Error('lecture impossible')); r.readAsDataURL(file); }); }
+function chargerImage(file){ return new Promise((ok,ko)=>{ const u=URL.createObjectURL(file); const i=new Image(); i.onload=()=>{ URL.revokeObjectURL(u); ok(i); }; i.onerror=()=>ko(new Error('image illisible')); i.src=u; }); }
+// Les images sont réduites (1600 px max, JPEG) avant envoi : plus léger, et largement lisible pour l'IA.
+async function preparerFichierBesoin(file){
+  if(!TYPES_BESOIN.includes(file.type)) throw new Error(`« ${file.name} » : seuls les PDF, PNG et JPEG sont acceptés.`);
+  if(file.type === 'application/pdf'){
+    if(file.size > MAX_PDF_OCTETS) throw new Error(`« ${file.name} » dépasse 4 Mo — exporte seulement les pages utiles.`);
+    return { nom:file.name, type:file.type, tailleKo:Math.round(file.size/1024), dataUrl: await lireDataUrl(file) };
+  }
+  if(file.size > MAX_IMAGE_OCTETS) throw new Error(`« ${file.name} » dépasse 12 Mo.`);
+  const img = await chargerImage(file);
+  const k = Math.min(1, 1600/Math.max(img.width, img.height));
+  const c = document.createElement('canvas'); c.width = Math.round(img.width*k); c.height = Math.round(img.height*k);
+  const ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0,0,c.width,c.height); ctx.drawImage(img,0,0,c.width,c.height);
+  const dataUrl = c.toDataURL('image/jpeg', 0.85);
+  return { nom:file.name.replace(/\.\w+$/,'')+'.jpg', type:'image/jpeg', tailleKo:Math.round(dataUrl.length*0.75/1024), dataUrl };
+}
+async function ajouterFichiersBesoin(liste){
+  const erreurs = [];
+  for(const f of Array.from(liste||[])){
+    if(intake.fichiers.length >= MAX_FICHIERS_BESOIN){ erreurs.push(`${MAX_FICHIERS_BESOIN} fichiers maximum.`); break; }
+    try{ intake.fichiers.push(await preparerFichierBesoin(f)); }catch(e){ erreurs.push(e.message); }
+  }
+  intake.erreur = erreurs.join(' ');
+  render();
+}
+function retirerFichierBesoin(i){ intake.fichiers.splice(i,1); render(); }
+
+// Un champ renvoyé par l'IA : { valeur, statut: ferme | approximatif | incertain | absent, remarque }.
+// « incertain » et « absent » => aucune valeur appliquée (jamais de devinette).
+function lireChampIA(c, validateur){
+  let v = c && c.valeur!=null && String(c.valeur).trim()!=='' ? c.valeur : null;
+  let statut = (c && c.statut) || 'absent';
+  if(v!==null && validateur && !validateur(v)){ v = null; statut = 'incertain'; }
+  if(v===null && statut!=='incertain') statut = 'absent';
+  const brut = v;
+  return { valeur: statut==='incertain' ? null : v, brut: c && c.valeur!=null ? c.valeur : brut, statut, remarque:(c && c.remarque) || '' };
+}
+function drapeauIA(ch, libelleProposition){
+  if(ch.valeur!==null && ch.statut==='approximatif') return { niveau:'a_confirmer', raison: ch.remarque || 'Valeur approximative dans la source' };
+  if(ch.valeur===null){
+    const base = ch.statut==='incertain' ? 'Incertain' : 'Non mentionné';
+    return { niveau:'a_completer', raison: base + (ch.statut==='incertain' && ch.brut ? ` (proposition de l'IA : ${ch.brut})` : '') + (ch.remarque ? ' — '+ch.remarque : '') };
+  }
+  return null;
+}
+const validMail = v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v));
+const validTel = v => String(v).replace(/\D/g,'').length >= 9;
+function normaliserBesoin(b){
+  const cl = b.client || {}, pr = b.projet || {};
+  const out = {
+    client: { nom:lireChampIA(cl.nom), entreprise:lireChampIA(cl.entreprise), email:lireChampIA(cl.email, validMail), telephone:lireChampIA(cl.telephone, validTel),
+      type:lireChampIA(cl.type, v=>['professionnel','particulier'].includes(String(v).toLowerCase())), adresse:lireChampIA(cl.adresse_chantier), facturation:lireChampIA(cl.adresse_facturation) },
+    projet: { nom:lireChampIA(pr.nom_projet), objectif:lireChampIA(pr.objectif), texte:lireChampIA(pr.texte_a_peindre), date:lireChampIA(pr.date_souhaitee), contraintes:lireChampIA(pr.contraintes) },
+    lignes: (b.lignes||[]).map(l=>({ libelle:l.libelle||'', support: SUPPORTS_ENGINE.includes(l.support_explicite) ? l.support_explicite : '', improbable: l.support_explicite==='Support improbable',
+      longueur:lireChampIA(l.longueur_cm, v=>!isNaN(Number(v)) && Number(v)>0), hauteur:lireChampIA(l.hauteur_cm, v=>!isNaN(Number(v)) && Number(v)>0), texte:lireChampIA(l.texte_a_peindre),
+      style:l.style_visible||'', remarque:l.remarque||'' })),
+    alternatives: b.alternatives||[], resume: b.resume||''
+  };
+  if(out.client.type.valeur) out.client.type.valeur = String(out.client.type.valeur).toLowerCase();
+  return out;
+}
+const SUPPORTS_ENGINE = ["Enseigne principale","Enseigne drapeau","Vitrines","Jambages","Pignon","Véhicule","Stop-trottoir","Ardoises"];
+
+async function lancerExtraction(){
+  if(!intake.texte.trim() && !intake.fichiers.length){ intake.erreur = "Colle un mail ou ajoute au moins un fichier."; render(); return; }
+  intake.enCours = true; intake.erreur = ''; render();
+  try{
+    const { data, error } = await sb.functions.invoke('devis-extraire-besoin', { body:{ establishmentId:ESTABLISHMENT_ID, texte:intake.texte,
+      fichiers: intake.fichiers.map(f=>({ nom:f.nom, type:f.type, data:f.dataUrl.split(',')[1] })) } });
+    if(error){ let m = error.message; try{ const j = await error.context.json(); if(j && j.erreur) m = j.erreur + (j.detail ? ' — ' + String(j.detail).slice(0, 220) : ''); }catch(e){} throw new Error(m); }
+    if(data && data.erreur) throw new Error(data.erreur);
+    if(!data || !data.besoin) throw new Error('réponse vide');
+    const besoin = normaliserBesoin(data.besoin);
+    const props = await trouverCorrespondancesClient(besoin);
+    if(props.length){ intake.besoin = besoin; intake.propositions = props; intake.enCours = false; render(); return; }
+    await creerDevisDepuisBesoin(besoin, null);
+  }catch(e){
+    intake.erreur = "L'extraction a échoué : "+(e.message||e)+" — ton texte et tes fichiers sont conservés : réessaie, ou remplis le formulaire à la main.";
+    intake.enCours = false; render();
+  }
+}
+
+// Rattachement : avant de créer une nouvelle fiche, on cherche un client déjà connu (email ou téléphone identique, ou nom proche).
+const normNom = s => String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
+const neufChiffres = s => String(s||'').replace(/\D/g,'').slice(-9);
+async function trouverCorrespondancesClient(b){
+  const c = b.client, mail = String(c.email.valeur||'').toLowerCase(), tel = neufChiffres(c.telephone.valeur);
+  const noms = [c.nom.valeur, c.entreprise.valeur].map(normNom).filter(n=>n.length>=4);
+  const sources = store.devis.map(d=>({ origine:'devis', id:d.id, nom:d.client.nom, email:d.client.email, tel:d.client.telephone, type:d.client.type, ref:d.numero }));
+  try{
+    const { data } = await sb.from('clients').select('id,nom,telephone,email').eq('establishment_id', ESTABLISHMENT_ID);
+    for(const x of (data||[])) sources.push({ origine:'client', id:x.id, nom:x.nom, email:x.email, tel:x.telephone, type:null, ref:'fiche client' });
+  }catch(e){ /* table clients indisponible : on se rabat sur les devis */ }
+  const trouves = new Map();
+  for(const s of sources){
+    const raisons = [];
+    if(mail && String(s.email||'').toLowerCase()===mail) raisons.push('même e-mail');
+    if(tel.length===9 && neufChiffres(s.tel)===tel) raisons.push('même téléphone');
+    const n = normNom(s.nom);
+    if(n.length>=4 && noms.some(m=>m===n || (m.length>=5 && n.includes(m)) || (n.length>=5 && m.includes(n)))) raisons.push('nom proche');
+    if(!raisons.length) continue;
+    const cle = (neufChiffres(s.tel)||'') + '|' + String(s.email||'').toLowerCase() + '|' + n;
+    const ancien = trouves.get(cle);
+    if(!ancien || (s.origine==='client' && ancien.s.origine!=='client')) trouves.set(cle, { s, raisons });
+  }
+  return [...trouves.values()].sort((a,b)=>b.raisons.length-a.raisons.length).slice(0,3);
+}
+async function choisirRattachement(i){
+  const besoin = intake.besoin; const prop = i==null ? null : intake.propositions[i];
+  intake.enCours = true; intake.propositions = null; render();
+  try{ await creerDevisDepuisBesoin(besoin, prop ? prop.s : null); }
+  catch(e){ intake.erreur = 'Création du devis impossible : '+(e.message||e); intake.enCours = false; render(); }
+}
+
+async function creerDevisDepuisBesoin(b, existant){
+  const c = b.client, champs = {};
+  const poser = (cle, ch)=>{ const f = drapeauIA(ch); if(f) champs[cle] = f; };
+  let nom = c.nom.valeur || '', tel = c.telephone.valeur || '', mail = c.email.valeur || '', type = c.type.valeur || '';
+  if(c.nom.valeur) poser('client.nom', c.nom);
+  else if(existant && existant.nom) nom = existant.nom;
+  else if(c.entreprise.valeur){ nom = c.entreprise.valeur; champs['client.nom'] = { niveau:'a_confirmer', raison:"Nom de la structure — personne à contacter à préciser" }; }
+  else poser('client.nom', c.nom);
+  if(c.telephone.valeur) poser('client.telephone', c.telephone);
+  else if(existant && existant.tel) tel = existant.tel;
+  else poser('client.telephone', c.telephone);
+  if(c.email.valeur) poser('client.email', c.email);
+  else if(existant && existant.email) mail = existant.email;
+  else poser('client.email', c.email);
+  if(!type && existant && existant.type) type = existant.type;
+  poser('client.adresse', c.adresse);
+  if(!type){ type = 'particulier'; champs['client.type'] = { niveau:'a_confirmer', raison:"Type non précisé : « particulier » par défaut — le tarif particulier est réduit, à vérifier avant chiffrage" }; }
+  poser('notes.adresseFacturation', c.facturation);
+
+  const nc = { objectif:b.projet.objectif.valeur||'', texteAPeindre:b.projet.texte.valeur||'', dateSouhaitee:b.projet.date.valeur||'', contraintes:b.projet.contraintes.valeur||'',
+    adresseFacturation:c.facturation.valeur||'', ia:{ source:'extraction', date:new Date().toISOString(), champs, alternatives:b.alternatives, resume:b.resume } };
+  const maintenant = new Date().toISOString();
+  const numero = 'DEV-' + String(store.devis.length+1).padStart(4,'0');
+  const { data, error } = await sb.from('devis').insert({
+    establishment_id: ESTABLISHMENT_ID, numero, statut:'brouillon', historique:[{ statut:'brouillon', date:maintenant }], source:'interne',
+    client_nom:nom, client_telephone:tel, client_email:mail, client_adresse:c.adresse.valeur||'', client_type:type, notes_client:nc,
+    photos: intake.fichiers.map(f=>({ nom:f.nom, type:f.type, tailleKo:f.tailleKo, dataUrl:f.dataUrl }))
+  }).select().single();
+  if(error) throw error;
+  const lignes = [];
+  for(const [i,l] of b.lignes.entries()){
+    const note = [l.libelle, l.style, l.remarque].filter(Boolean).join(' — ');
+    const { data:lr, error:le } = await sb.from('devis_lignes').insert({
+      devis_id:data.id, type:'calculee', support:l.support||null, hauteur_chantier:'En rez-de-chaussée', depose_pose:false, prix_retenu_mode:'sheet', position:i,
+      longueur_cm:l.longueur.valeur!=null?Number(l.longueur.valeur):null, hauteur_cm:l.hauteur.valeur!=null?Number(l.hauteur.valeur):null,
+      texte_a_peindre:l.texte.valeur||null, precision:note||null
+    }).select().single();
+    if(le){ alert("Ligne « "+(l.libelle||i+1)+" » non créée : "+le.message); continue; }
+    lignes.push(lr);
+    if(!l.support) champs['ligne.'+lr.id+'.support'] = { niveau:'a_completer', raison: l.improbable ? 'Support improbable — hors calcul automatique, voir le contact humain' : "Support non précisé dans les documents — à choisir" };
+    const fl = drapeauIA(l.longueur); if(fl) champs['ligne.'+lr.id+'.longueurCm'] = fl;
+    const fh = drapeauIA(l.hauteur);  if(fh) champs['ligne.'+lr.id+'.hauteurCm'] = fh;
+    const ft = drapeauIA(l.texte);    if(ft) champs['ligne.'+lr.id+'.texteAPeindre'] = ft;
+  }
+  await sb.from('devis').update({ notes_client:nc }).eq('id', data.id);
+  const devis = dbDevisToJs(data, lignes);
+  store.devis.unshift(devis);
+  currentDevisId = data.id;
+  intake.ouvert = false; intake.enCours = false; render();
+  await creerProjetDepuisDevis(devis, { nomProjet:b.projet.nom.valeur, client_id: existant && existant.origine==='client' ? existant.id : null,
+    client:{ nom, tel, mail, adresse:c.adresse.valeur||'' }, source:'extraction IA' });
+}
+
+async function creerDevisVide(){
+  const maintenant = new Date().toISOString();
+  const numero = 'DEV-' + String(store.devis.length+1).padStart(4,'0');
+  const { data, error } = await sb.from('devis').insert({
+    establishment_id: ESTABLISHMENT_ID, numero, statut:'brouillon',
+    historique:[{ statut:'brouillon', date:maintenant }], source:'interne'
+  }).select().single();
+  if(error) return alert("Création du devis impossible : "+error.message);
+  store.devis.unshift(dbDevisToJs(data, []));
+  currentDevisId = data.id;
+  render();
+  await creerProjetDepuisDevis(data);
+}
+
+async function supprimerDevis(id){
+  if(!await confirmer('Supprimer ce devis ?')) return;
+  store.devis = store.devis.filter(d=>d.id!==id);
+  if(currentDevisId===id) currentDevisId = store.devis[0]?.id || null;
+  render();
+  await sb.from('projets').update({ devis_id: null }).eq('devis_id', id);
+  const { error } = await sb.from('devis').delete().eq('id', id);
+  if(error) alert("Suppression échouée côté serveur : "+error.message);
+}
+
+/* Suivi de statut — alimente le Kanban Client/Projet (client-projet.html) */
+async function changerStatutDevis(devisId, nouveauStatut){
+  const d = getDevis(devisId); if(!d) return;
+  if(nouveauStatut==='envoye'){
+    const a = champsARevoir(d);
+    if(a.length){ alert("Ce devis ne peut pas encore être marqué envoyé : des champs pré-remplis par l'IA restent à revoir.\n\n— "+a.join("\n— ")+"\n\nComplète-les (ou clique « C'est bon ✓ » sur ceux à confirmer). Le brouillon, lui, reste enregistré tel quel."); return; }
+  }
+  d.statut = nouveauStatut;
+  if(!d.historique) d.historique = [];
+  d.historique.push({ statut: nouveauStatut, date: new Date().toISOString() });
+  render();
+  const { error } = await sb.from('devis').update({ statut:d.statut, historique:d.historique }).eq('id', devisId);
+  if(error) alert("Mise à jour du statut échouée côté serveur : "+error.message);
+  await avancerProjetDepuisDevis(devisId, d.numero, nouveauStatut);
+}
+
+async function ajouterLigneCalculee(devisId){
+  const d = getDevis(devisId); if(!d) return;
+  const { data, error } = await sb.from('devis_lignes').insert({
+    devis_id:devisId, type:'calculee', support:'Enseigne principale', hauteur_chantier:'En rez-de-chaussée',
+    depose_pose:false, prix_retenu_mode:'sheet', position:d.lignes.length
+  }).select().single();
+  if(error) return alert("Ajout de ligne impossible : "+error.message);
+  d.lignes.push(dbLigneToJs(data)); render();
+}
+async function ajouterLigneManuelle(devisId){
+  const d = getDevis(devisId); if(!d) return;
+  const { data, error } = await sb.from('devis_lignes').insert({
+    devis_id:devisId, type:'manuelle', libelle:'', prix_ht:0, position:d.lignes.length
+  }).select().single();
+  if(error) return alert("Ajout de ligne impossible : "+error.message);
+  d.lignes.push(dbLigneToJs(data)); render();
+}
+// Forfaits que le client voit dans son estimatif (maquette, poncifs, déplacement) et article MEG qui leur correspond.
+const FORFAITS_ESTIMATIF = [
+  { re:/maquette/i,        code:'ART00113' },   // Création d'une maquette originale
+  { re:/poncif/i,          code:'ART00002' },   // Préparation des lettrages
+  { re:/d[ée]placement/i,  code:'ART00105' },   // Déplacement
+];
+const CODE_PEINTURE_PAR_DEFAUT = 'ART00003';   // article « peinture » générique quand aucun article précis ne correspond au support
+const ventilationEnCours = new Set();
+const codeMegDeLigne = l => (megById(l.megCode)||{}).code || '';
+const estLigneForfait = l => l.type==='manuelle' && FORFAITS_ESTIMATIF.some(f=>f.re.test(l.libelle||''));
+const estMegForfait = l => l.type==='option_meg' && FORFAITS_ESTIMATIF.some(f=>f.code===codeMegDeLigne(l));
+const estimationClient = d => (d && d.notesClient && d.notesClient.estimationAffichee) || null;
+function ventilationPossible(d){
+  return !!d && d.source!=='interne' && d.statut==='brouillon' && !(d.notesClient && d.notesClient.ventile)
+    && !d.lignes.some(l=>l.type==='option_meg') && d.lignes.some(l=>l.type==='calculee' && l.support) && MEG_CATALOGUE.length>0;
+}
+function hydratationPossible(d){
+  return !!d && d.source!=='interne' && d.statut==='brouillon' && !(d.notesClient && d.notesClient.lignesCompletees) && d.lignes.some(l=>l.type==='calculee' && l.support);
+}
+// Variables de la demande que la création du devis n'a pas recopiées sur les lignes calculées (texte, taille des lettres, effet, fabrication, dorure…) :
+// on les reprend de ce que le client a envoyé (notes_client.lignesCalculees, ou à défaut le texte, le niveau d'effet et l'estimatif affiché). Une seule fois par devis.
+async function completerLignesDepuisDemande(devisId){
+  const d = getDevis(devisId); if(!hydratationPossible(d)) return;
+  const nc = d.notesClient || {}, e = estimationClient(d), envoyees = Array.isArray(nc.lignesCalculees) ? nc.lignesCalculees : [];
+  const niveau = (/Niveau\s*([123])/i.exec(nc.objectif||'')||[])[1];
+  const cle = Object.keys(reglages.fabricationSupport||{}).includes('Panneau bois seul') ? 'Panneau bois seul' : (Object.keys(reglages.fabricationSupport||{})[0]||'');
+  const calcs = d.lignes.filter(l=>l.type==='calculee' && l.support);
+  for(let i=0;i<calcs.length;i++){
+    const l = calcs[i], src = envoyees[i] || {}, lib = (e && e.lignes && e.lignes[i] && e.lignes[i].libelle) || '', patch = {};
+    const mettre = (champ, colonne, valeur) => { l[champ] = valeur; patch[colonne] = valeur; };
+    if(!l.texteAPeindre){ const tx = src.texteAPeindre || nc.texteAPeindre; if(tx) mettre('texteAPeindre','texte_a_peindre',tx); }
+    if(!l.fabricationSupport && (src.fabricationSupport || /fabrication du support incluse/i.test(lib)) && cle) mettre('fabricationSupport','fabrication_support', src.fabricationSupport || cle);
+    if(!l.relief && !l.couleursMultiples){
+      const rel = src.relief !== undefined ? !!src.relief : (niveau==='2' || niveau==='3'), coul = src.couleursMultiples !== undefined ? !!src.couleursMultiples : niveau==='3';
+      if(rel) mettre('relief','relief',true); if(coul) mettre('couleursMultiples','couleurs_multiples',true);
+    }
+    if(!l.tailleLettres && src.tailleLettres) mettre('tailleLettres','taille_lettres',src.tailleLettres);
+    if(!l.empattements && src.empattements) mettre('empattements','empattements',true);
+    if(src.effet==='Dorure' && l.effet!=='Dorure'){ mettre('effet','effet','Dorure'); if(l.doreePct==null && src.doreePct!=null) mettre('doreePct','dorure_pct',Number(src.doreePct)); }
+    if(Object.keys(patch).length){ const { error } = await sb.from('devis_lignes').update(patch).eq('id', l.id); if(error) console.error('Reprise des variables de la demande impossible :', error.message); }
+  }
+  d.notesClient = Object.assign({}, d.notesClient||{}, { lignesCompletees:true });
+  await sb.from('devis').update({ notes_client: d.notesClient }).eq('id', d.id);
+}
+// L'estimatif livré au client fait foi : chaque forfait (maquette, poncifs, déplacement) devient son article du catalogue avec le prix que le client a vu,
+// et chaque support devient l'article « peinture » avec le prix affiché au client (fabrication du support comprise). Les lignes libres de forfait sont retirées
+// pour ne pas compter deux fois. Tout reste modifiable ensuite (libellé, prix, retrait). « refaire » remplace d'abord les articles déjà posés.
+async function ventilerEstimatif(devisId, refaire){
+  const d = getDevis(devisId); if(!d || ventilationEnCours.has(devisId)) return;
+  if(!refaire && !ventilationPossible(d)) return;
+  ventilationEnCours.add(devisId);
+  try{
+    const e = estimationClient(d), calcs = d.lignes.filter(x=>x.type==='calculee' && x.support);
+    const lignes = [], aRetirer = d.lignes.filter(estLigneForfait).map(l=>l.id);
+    const forfaits = e && Array.isArray(e.lignes) ? e.lignes.slice(calcs.length).filter(x=>FORFAITS_ESTIMATIF.some(f=>f.re.test(x.libelle||''))).map(x=>({ libelle:x.libelle, prixHT:x.prixHT }))
+                                                   : d.lignes.filter(estLigneForfait).map(l=>({ libelle:l.libelle, prixHT:l.prixHT }));
+    for(const x of forfaits){
+      const f = FORFAITS_ESTIMATIF.find(y=>y.re.test(x.libelle||'')), art = MEG_CATALOGUE.find(m=>m.code===f.code); if(!art) continue;
+      const km = f.code==='ART00105' ? parseFloat(((/([\d.,]+)\s*km/i.exec(x.libelle)||[])[1]||'').replace(',','.')) : NaN;
+      lignes.push({ meg_code:art.id, prix_ht:arrondir(Number(x.prixHT)||0,2), libelle:art.article||x.libelle, distance_km: isNaN(km) ? null : km });
+    }
+    const parArticle = new Map();
+    calcs.forEach((l,i)=>{
+      const calc = calculerLigne(l, d.client.type); if(!calc) return;
+      const vu = e && e.lignes && e.lignes[i] && e.lignes[i].prixHT != null ? Number(e.lignes[i].prixHT) : null;   // prix affiché au client
+      const megId = suggererMegId(l.support, l.matiere) || (MEG_CATALOGUE.find(m=>m.code===CODE_PEINTURE_PAR_DEFAUT)||{}).id; if(!megId) return;
+      const dim = l.longueurCm && l.hauteurCm ? ` — ${l.longueurCm} × ${l.hauteurCm} cm` : '';
+      const lib = (e && e.lignes && e.lignes[i] && e.lignes[i].libelle) ? `${e.lignes[i].libelle}${dim}` : `${l.support}${l.texteAPeindre ? ' « ' + String(l.texteAPeindre).slice(0, 40) + ' »' : ''}${dim}`;
+      const en = parArticle.get(megId) || { prix:0, precisions:[] };
+      en.prix += vu != null ? vu : (Number(calc.prixHT)||0); en.precisions.push(lib); parArticle.set(megId, en);
+    });
+    for(const [megId, en] of parArticle){ const art = megById(megId); lignes.push({ meg_code:megId, prix_ht:arrondir(en.prix,2), libelle:art.article||'', precision:en.precisions.join(' ; ') }); }
+    if(!lignes.length) return;
+    const anciens = refaire ? d.lignes.filter(l=>l.type==='option_meg').map(l=>l.id) : [];
+    const nouvelles = lignes.map((x,i)=>({ devis_id:d.id, type:'option_meg', position:d.lignes.length + i, ...x }));
+    const { data, error } = await sb.from('devis_lignes').insert(nouvelles).select();
+    if(error){ console.error('Ventilation automatique impossible :', error.message); return; }
+    const aSupprimer = [...new Set([...aRetirer, ...anciens])];
+    if(aSupprimer.length) await sb.from('devis_lignes').delete().in('id', aSupprimer);
+    d.lignes = d.lignes.filter(l=>!aSupprimer.includes(l.id)).concat((data||[]).map(dbLigneToJs));
+    d.notesClient = Object.assign({}, d.notesClient||{}, { ventile:true });
+    await sb.from('devis').update({ notes_client: d.notesClient }).eq('id', d.id);
+    render();
+  }catch(err){ console.error('Ventilation automatique impossible :', err); }
+  finally{ ventilationEnCours.delete(devisId); }
+}
+async function refaireVentilation(devisId){
+  if(!await confirmer("Remplacer les articles posés par une répartition refaite d'après l'estimatif livré au client ? Les articles actuels (et leurs prix modifiés) seront remplacés.")) return;
+  await ventilerEstimatif(devisId, true);
+}
+async function preparerDevisDuSite(devisId){
+  if(ventilationEnCours.has('prep-'+devisId)) return;
+  ventilationEnCours.add('prep-'+devisId);
+  try{ await completerLignesDepuisDemande(devisId); } finally { ventilationEnCours.delete('prep-'+devisId); }
+  await ventilerEstimatif(devisId);
+  render();
+}
+// Proposition automatique d'articles MEG à partir de ce qui est déjà qualifié (support/matière
+// de la première ligne calculée) — un point de départ modifiable, jamais un devis final : la
+// graphiste/l'atelier affine ensuite à la main (retire, change d'article, ajuste le prix).
+async function proposerArticlesMeg(devisId){
+  const d = getDevis(devisId); if(!d) return;
+  if(!await confirmer("Proposer un jeu d'articles MEG de départ (poncifs, maquette, peinture, déplacement) ? Tu pourras tout modifier ou retirer ensuite.")) return;
+
+  const ligneCalculee = d.lignes.find(l=>l.type==='calculee' && l.support);
+  const codesAProposer = ['ART00002', 'ART00113'];
+  const articlesAProposer = codesAProposer.map(code => MEG_CATALOGUE.find(m=>m.code===code)).filter(Boolean);
+
+  if(ligneCalculee){
+    const megId = suggererMegId(ligneCalculee.support, ligneCalculee.matiere);
+    const art = megId ? megById(megId) : null;
+    if(art) articlesAProposer.push(art);
+  }
+  const deplacement = MEG_CATALOGUE.find(m=>m.code==='ART00105');
+  if(deplacement) articlesAProposer.push(deplacement);
+
+  if(!articlesAProposer.length){ alert("Rien à proposer — le catalogue MEG semble vide."); return; }
+
+  for(const art of articlesAProposer){
+    const { data, error } = await sb.from('devis_lignes').insert({
+      devis_id:devisId, type:'option_meg', meg_code:art.id, prix_ht:art.prixHT||0, libelle:art.article||'', position:d.lignes.length
+    }).select().single();
+    if(error){ alert('Erreur : '+error.message); continue; }
+    d.lignes.push(dbLigneToJs(data));
+  }
+  render();
+}
+// Distance routière atelier <-> chantier (API Adresse pour géocoder, OSRM pour l'itinéraire —
+// deux services publics gratuits, sans clé). Calcule un aller-retour et propose de l'appliquer
+// à la ligne catalogue "Déplacement", sans jamais toucher aux autres lignes.
+async function geocoderAdresse(adresse){
+  try{
+    const r = await fetch('https://api-adresse.data.gouv.fr/search/?q='+encodeURIComponent(adresse)+'&limit=1');
+    const data = await r.json();
+    const f = data.features && data.features[0];
+    if(!f) return null;
+    return { lon: f.geometry.coordinates[0], lat: f.geometry.coordinates[1] };
+  }catch(e){ return null; }
+}
+async function calculerDeplacement(devisId){
+  const d = getDevis(devisId); if(!d) return;
+  if(!d.client.adresse){ alert("Renseigne d'abord l'adresse du chantier."); return; }
+  if(!ETABLISSEMENT || !ETABLISSEMENT.adresse){ alert("L'adresse de l'atelier n'est pas renseignée (Mon Atelier > Fiche entreprise) — impossible de calculer une distance sans point de départ."); return; }
+  const btn = document.getElementById('btnCalculerDeplacement');
+  if(btn){ btn.disabled = true; btn.textContent = 'Calcul en cours…'; }
+  try{
+    const [origine, destination] = await Promise.all([geocoderAdresse(ETABLISSEMENT.adresse), geocoderAdresse(d.client.adresse)]);
+    if(!origine || !destination){ alert("Adresse introuvable — vérifie l'adresse de l'atelier et celle du chantier."); return; }
+    const r = await fetch(`https://router.project-osrm.org/route/v1/driving/${origine.lon},${origine.lat};${destination.lon},${destination.lat}?overview=false`);
+    const data = await r.json();
+    if(data.code!=='Ok' || !data.routes || !data.routes.length){ alert("Calcul d'itinéraire impossible pour l'instant (service de routage public indisponible) — réessaie plus tard, ou renseigne le prix à la main."); return; }
+    const distanceKm = arrondir(data.routes[0].distance/1000, 1);
+    // distanceKm stockée sur la ligne = l'aller-retour directement (pas l'aller simple),
+    // pour que le prix se lise simplement comme distance × prix/km, sans facteur caché.
+    const distanceAllerRetourKm = arrondir(distanceKm*2, 1);
+    const prix = arrondir(distanceAllerRetourKm * (reglages.prixParKm||0), 2);
+    const artDeplacement = MEG_CATALOGUE.find(m=>m.code==='ART00105');
+    if(!artDeplacement){ alert('Article "Déplacement" introuvable dans le catalogue.'); return; }
+    const ligneExistante = d.lignes.find(l=>l.type==='option_meg' && l.megCode===artDeplacement.id);
+    if(ligneExistante){
+      ligneExistante.prixHT = prix; ligneExistante.distanceKm = distanceAllerRetourKm;
+      await sb.from('devis_lignes').update({ prix_ht: prix, distance_km: distanceAllerRetourKm }).eq('id', ligneExistante.id);
+    } else {
+      const { data: ligneData, error } = await sb.from('devis_lignes').insert({
+        devis_id:d.id, type:'option_meg', meg_code:artDeplacement.id, prix_ht:prix, distance_km:distanceAllerRetourKm, libelle:artDeplacement.article||'', position:d.lignes.length
+      }).select().single();
+      if(error){ alert('Erreur : '+error.message); return; }
+      d.lignes.push(dbLigneToJs(ligneData));
+    }
+    render();
+  }catch(e){
+    alert("Calcul de distance impossible (service indisponible) : "+e.message);
+  }finally{
+    const btnFin = document.getElementById('btnCalculerDeplacement');
+    if(btnFin){ btnFin.disabled = false; btnFin.textContent = '📍 Calculer'; }
+  }
+}
+// Un article du catalogue coché = une ligne option_meg. Décoché = la ligne est retirée.
+// Le libellé démarre sur la phrase du catalogue, modifiable ensuite (renommer plutôt
+// qu'ajouter une précision à côté) ; le prix reste modifiable aussi.
+async function toggleArticleMeg(devisId, megId, checked){
+  const d = getDevis(devisId); if(!d) return;
+  if(checked){
+    const art = megById(megId);
+    const { data, error } = await sb.from('devis_lignes').insert({
+      devis_id:devisId, type:'option_meg', meg_code:megId, prix_ht:art?.prixHT||0, libelle:art?.article||'', position:d.lignes.length
+    }).select().single();
+    if(error){ alert('Erreur : '+error.message); return; }
+    d.lignes.push(dbLigneToJs(data));
+  } else {
+    const ligne = d.lignes.find(l=>l.type==='option_meg' && l.megCode===megId);
+    if(ligne){ d.lignes = d.lignes.filter(l=>l.id!==ligne.id); await sb.from('devis_lignes').delete().eq('id', ligne.id); }
+  }
+  render();
+}
+function renderCatalogueCoche(d){
+  const lignesParMegId = {};
+  for(const l of d.lignes) if(l.type==='option_meg' && l.megCode) lignesParMegId[l.megCode] = l;
+  return megGroupesParRubrique().map(g=>{
+    const aArticleCoche = g.articles.some(m=>lignesParMegId[m.id]);
+    return `
+    <div style="margin-bottom:10px" class="${aArticleCoche?'':'catalogueRubriqueVide'}">
+      <div class="tiny muted" style="font-weight:700;margin-bottom:3px">${escapeHtml(g.rubrique)}</div>
+      ${g.articles.map(m=>{
+        const ligne = lignesParMegId[m.id];
+        const precisionHtml = ligne ? `<div class="${ligne.precision?'':'no-print'}" style="padding-left:26px;margin-bottom:4px"><input class="input" style="font-size:12px;padding:4px 8px" placeholder="Précision (facultatif) — s'affiche sous la désignation" value="${escapeHtml(ligne.precision||'')}" onchange="updateLigne('${d.id}','${ligne.id}','precision', this.value)"></div>` : '';
+        if(m.code==='ART00105'){
+          return `
+          <div>
+            <div class="catalogueLigne ${ligne?'':'catalogueLigneVide'}" style="display:flex;align-items:center;gap:8px;padding:3px 0;font-size:13.5px;flex-wrap:wrap">
+              <input class="no-print" type="checkbox" ${ligne?'checked':''} onchange="toggleArticleMeg('${d.id}','${m.id}', this.checked)">
+              ${ligne
+                ? `<input class="input" style="flex:1;min-width:160px" value="${escapeHtml(ligne.libelle||m.article)}" onchange="updateLigne('${d.id}','${ligne.id}','libelle', this.value)">
+                   <span class="kmCol" style="display:inline-flex;align-items:center;gap:4px"><span class="tiny muted">km A/R</span><input class="input" style="width:60px;text-align:right" type="number" step="0.1" title="Distance aller-retour (km)" value="${ligne.distanceKm??''}" onchange="updateLigne('${d.id}','${ligne.id}','distanceKm', this.value)"></span>
+                   <span class="prixCol" style="display:inline-flex;align-items:center;gap:4px"><input class="input no-print" style="width:80px;text-align:right" type="number" step="0.01" value="${ligne.prixHT}" onchange="updateLigne('${d.id}','${ligne.id}','prixHT', this.value)"><span class="tiny muted no-print">€</span><span class="print-only">${euros(ligne.prixHT)}</span></span>`
+                : `<span style="flex:1">${escapeHtml(m.article)}</span>
+                   <span class="tiny muted kmCol" style="text-align:right">—</span>
+                   <span class="tiny muted prixCol" style="text-align:right">${m.prixHT!=null?euros(m.prixHT):'—'}</span>`}
+              <button class="ghostBtn no-print" style="padding:4px 8px;font-size:11.5px" id="btnCalculerDeplacement" onclick="calculerDeplacement('${d.id}')">📍 Calculer</button>
+            </div>
+            ${precisionHtml}
+          </div>`;
+        }
+        return `
+        <div>
+          <div class="catalogueLigne ${ligne?'':'catalogueLigneVide'}" style="display:flex;align-items:center;gap:8px;padding:3px 0;font-size:13.5px">
+            <input class="no-print" type="checkbox" ${ligne?'checked':''} onchange="toggleArticleMeg('${d.id}','${m.id}', this.checked)">
+            ${ligne
+              ? `<input class="input" style="flex:1" value="${escapeHtml(ligne.libelle||m.article)}" onchange="updateLigne('${d.id}','${ligne.id}','libelle', this.value)">
+                 <span class="prixCol" style="display:inline-flex;align-items:center;gap:4px"><input class="input no-print" style="width:80px;text-align:right" type="number" step="0.01" value="${ligne.prixHT}" onchange="updateLigne('${d.id}','${ligne.id}','prixHT', this.value)"><span class="tiny muted no-print">€</span><span class="print-only">${euros(ligne.prixHT)}</span></span>
+                 ${/peinture/i.test(g.rubrique) && estimationAutoTotale(d) ? `<button type="button" class="ghostBtn no-print" style="padding:4px 8px;font-size:11.5px;white-space:nowrap" title="Remplace le prix de cet article par le total des lignes calculées" onclick="reprendreEstimationAuto('${d.id}','${ligne.id}')">↩ Reprendre l'estimation auto (${euros(estimationAutoTotale(d))})</button>` : ''}`
+              : `<span style="flex:1">${escapeHtml(m.article)}</span>
+                 <span class="tiny muted prixCol" style="text-align:right">${m.prixHT!=null?euros(m.prixHT):'—'}</span>`}
+          </div>
+          ${precisionHtml}
+        </div>`;
+      }).join('')}
+    </div>`;
+  }).join('');
+}
+async function supprimerLigne(devisId, ligneId){
+  const d = getDevis(devisId); if(!d) return;
+  d.lignes = d.lignes.filter(l=>l.id!==ligneId);
+  render();
+  const { error } = await sb.from('devis_lignes').delete().eq('id', ligneId);
+  if(error) alert("Suppression de la ligne échouée côté serveur : "+error.message);
+}
+
+// Niveau d'effet comme dans le questionnaire : 1 = aplat (0 %), 2 = + relief (+30 %), 3 = + relief et plusieurs couleurs (+45 %).
+function niveauEffetLigne(l){ return l.couleursMultiples ? '3' : (l.relief ? '2' : '1'); }
+function majCompteurCaracteres(ligneId, valeur){
+  const n = valeur.replace(/\s/g,'').length;
+  const el = document.getElementById('compteurCar-'+ligneId);
+  if(el) el.textContent = `(${n} caractère${n>1?'s':''} — entre dans le calcul du temps)`;
+}
+async function updateLigne(devisId, ligneId, champ, valeur){
+  const d = getDevis(devisId); if(!d) return;
+  const l = d.lignes.find(x=>x.id===ligneId); if(!l) return;
+  leverFlag(d, 'ligne.'+ligneId+'.'+champ);
+  const patch = {};
+  if(champ==='support'){ l.support=valeur; patch.support=valeur; if(!COMPATIBILITES[valeur]?.includes(l.matiere)){ l.matiere=''; patch.matiere=''; l.etat=''; patch.etat=''; } }
+  else if(champ==='matiere'){ l.matiere=valeur; patch.matiere=valeur; if(!l.megCode){ l.megCode = suggererMegId(l.support, l.matiere) || ''; patch.meg_code=l.megCode; }
+    if(!etatOptionsPourMatiere(l.matiere).includes(l.etat)){ l.etat=''; patch.etat=''; } }
+  else if(champ==='longueurCm' || champ==='hauteurCm'){ l[champ] = valeur===''? '' : Number(valeur); patch[LIGNE_CHAMP_TO_COLONNE[champ]] = l[champ]===''?null:l[champ]; }
+  else if(champ==='doreePct'){ l.doreePct = valeur===''? null : Math.min(100, Math.max(0, Number(valeur)||0)); patch.dorure_pct = l.doreePct; }
+  else if(champ==='quantite'){ l.quantite = Math.max(1, Number(valeur)||1); patch.quantite = l.quantite; }
+  else if(champ==='distanceKm'){ l.distanceKm = valeur===''? null : Number(valeur); patch.distance_km = l.distanceKm; }
+  else if(champ==='deposePose'){ l.deposePose = !!valeur; patch.depose_pose = l.deposePose; }
+  else if(champ==='niveauEffet'){ const n = String(valeur); l.relief = n==='2' || n==='3'; l.couleursMultiples = n==='3'; l.ombreSupplementaire = false; patch.relief = l.relief; patch.couleurs_multiples = l.couleursMultiples; patch.ombre_supplementaire = false; }
+  else if(champ==='dorure'){ l.effet = valeur ? 'Dorure' : 'Aucun effet particulier / lettrage simple'; patch.effet = l.effet; if(valeur && l.doreePct==null){ l.doreePct = 100; patch.dorure_pct = 100; } }
+  else if(champ==='fabrication'){ const cles = Object.keys(reglages.fabricationSupport||{}); l.fabricationSupport = valeur ? (cles.includes('Panneau bois seul') ? 'Panneau bois seul' : (cles[0]||'')) : ''; patch.fabrication_support = l.fabricationSupport; }
+  else if(champ==='prixHT'){ l.prixHT = Number(valeur)||0; patch.prix_ht = l.prixHT; }
+  else if(champ==='megCode'){ l.megCode = valeur; patch.meg_code=valeur; const m=megById(valeur); if(l.type==='option_meg' && m){ l.prixHT = m.prixHT||0; patch.prix_ht=l.prixHT; } }
+  else { l[champ] = valeur; if(LIGNE_CHAMP_TO_COLONNE[champ]) patch[LIGNE_CHAMP_TO_COLONNE[champ]] = valeur; }
+  // Persiste la décision d'arbitrage (recalculée ici) pour que le tableau de bord de l'atelier
+  // puisse la lire directement, sans dupliquer le moteur de calcul BASE×COEF ailleurs.
+  if(l.type==='calculee'){
+    const arb = calculerArbitrage(l, calculerLigne(l, d.client.type));
+    patch.arbitrage_decision = arb ? arb.decision : null;
+  }
+  render();
+  const { error } = await sb.from('devis_lignes').update(patch).eq('id', ligneId);
+  if(error) alert("Mise à jour de la ligne échouée côté serveur : "+error.message);
+}
+
+// Une ligne calculée sert à estimer le besoin ; les articles du catalogue cochés
+// servent à s'en rapprocher avec de vrais articles facturables. Les deux ne
+// doivent jamais s'additionner dans le total : dès qu'au moins un article du
+// catalogue est coché, les lignes calculées deviennent une estimation affichée
+// mais non comptée (voir aussi renderLigneCalculee).
+// Sous-total = somme des lignes, sans l'ajustement global (voir totalDevis).
+function sousTotalDevis(d){
+  const aDesArticlesCatalogue = d.lignes.some(l=>l.type==='option_meg');
+  let total = 0;
+  for(const l of d.lignes){
+    if(l.type==='calculee'){
+      if(aDesArticlesCatalogue) continue;
+      const calc = calculerLigne(l, d.client.type);
+      if(calc){ total += (l.prixRetenuMode==='meg' && l.megCode && megById(l.megCode)?.prixHT!=null) ? megById(l.megCode).prixHT : calc.prixHT; }
+    } else {
+      total += Number(l.prixHT)||0;
+    }
+  }
+  return arrondir(total,2);
+}
+// Total des estimations automatiques des lignes calculées (affiché même quand il n'est plus compté).
+function estimationAutoTotale(d){
+  return arrondir(d.lignes.filter(l=>l.type==='calculee').reduce((t,l)=>{ const c = calculerLigne(l, d.client.type); return t + (c ? ((l.prixRetenuMode==='meg' && l.megCode && megById(l.megCode)?.prixHT!=null) ? megById(l.megCode).prixHT : c.prixHT) : 0); }, 0), 2);
+}
+async function reprendreEstimationAuto(devisId, ligneId){
+  const d = getDevis(devisId); if(!d) return;
+  const v = estimationAutoTotale(d); if(!v) return;
+  await updateLigne(devisId, ligneId, 'prixHT', v);
+}
+// Ajustement global : un curseur en % sur le devis entier (voir updateAjustementGlobal),
+// indépendant du calcul de chaque ligne — c'est ce total-ci qui est le total réel du devis.
+function totalDevis(d){
+  return arrondir(sousTotalDevis(d) * (1 + (d.ajustementGlobalPct||0)/100), 2);
+}
+function montantTva(d){ return arrondir(totalDevis(d) * (reglages.tvaPct||0)/100, 2); }
+function totalTTC(d){ return arrondir(totalDevis(d) + montantTva(d), 2); }
+async function updateAjustementGlobal(devisId, valeur){
+  const d = getDevis(devisId); if(!d) return;
+  d.ajustementGlobalPct = Number(valeur)||0;
+  render();
+  const { error } = await sb.from('devis').update({ ajustement_global_pct: d.ajustementGlobalPct }).eq('id', devisId);
+  if(error) alert("Mise à jour de l'ajustement global échouée côté serveur : "+error.message);
+}
+
+/* =========================================================================
+   AFFICHAGE
+   ========================================================================= */
+function optionsHtml(map, selected, placeholder){
+  let h = `<option value="">${placeholder||'—'}</option>`;
+  for(const k of Object.keys(map)) h += `<option value="${escapeHtml(k)}" ${k===selected?'selected':''}>${escapeHtml(k)}</option>`;
+  return h;
+}
+function optionsListeHtml(list, selected, placeholder){
+  let h = `<option value="">${placeholder||'—'}</option>`;
+  for(const k of list) h += `<option value="${escapeHtml(k)}" ${k===selected?'selected':''}>${escapeHtml(k)}</option>`;
+  return h;
+}
+// Détail PRIVÉ du calcul d'une ligne (jamais montré au client) : sert à qualifier le chiffrage, à répartir le montant sur les articles
+// du catalogue, et à apprendre la durée de chantier (planning Kanban). Textes courts, rendus en petit et en gris.
+function detailCalculPrive(l, calc){
+  const q = calc.quantite, e = escapeHtml, h = n => String(arrondir(n,2)).replace('.',',') + ' h';
+  const out = [];   // { k: libellé, v: valeur, n: précision en petit (facultatif) }
+  if(calc.forfaitMot) out.push({ k:'Forfait au mot', v:`${calc.nbMots} mot${calc.nbMots>1?'s':''} × ${euros(calc.prixParMot)}` });
+  else if(calc.surfaceRetenueM2 != null) out.push({ k:'Surface retenue', v:`${String(calc.surfaceRetenueM2).replace('.',',')} m²`, n: q>1 ? `×${q} exemplaires — mini ${String(calc.surfaceMiniM2).replace('.',',')} m² pour l'ensemble` : `mini ${String(calc.surfaceMiniM2).replace('.',',')} m²` });
+  else out.push({ k:'Surface', v:'non renseignée', n:`minimum ${String(calc.surfaceMiniM2).replace('.',',')} m² retenu` });
+  if(calc.nombreCaracteres > 0) out.push({ k:'Texte', v:`${calc.nombreCaracteres} caractère${calc.nombreCaracteres>1?'s':''}`, n:`× forme (${calc.coefForme.toFixed(2).replace('.',',')}) = +${h(calc.tempsCaracteresH)}` });
+  out.push({ k:'Temps estimé', v:h(calc.tempsEstimeH), n: calc.loiFixeVariable ? `fixe ${h(calc.tempsFixeH)} + surface ${h(calc.tempsSurfaceH)}${calc.tempsCaracteresH>0?' + texte '+h(calc.tempsCaracteresH):''}` : (calc.facteurSurface!==1 ? `base ${h(calc.tempsBaseH)} × ${calc.facteurSurface.toFixed(2).replace('.',',')}` : '') });
+  out.push({ k:'Temps converti en prix', v:`${String(calc.joursEstimes).replace('.',',')} j × ${euros(calc.tarifJournalier)}` });
+  out.push({ k:'Coefficient matière / effet / dépose', v:calc.coefTotal.toFixed(3).replace('.',','), n: (l.effet==='Dorure' && calc.partDoree<1) ? `dorure sur ${Math.round(calc.partDoree*100)} %` : '' });
+  out.push({ k:'Modificateurs', v: calc.modifsAppliques.length ? calc.modifsAppliques.map(m=>`${e(m.label)} (${m.type==='pourcentage'?'+'+m.valeur+' %':'+'+euros(m.valeur)})`).join(', ') : 'aucun' });
+  out.push({ k:'Hauteur du chantier (coût fixe)', v:euros(calc.coutHauteurHT) });
+  out.push({ k:calc.forfaitMot ? 'Minimum HT' : (calc.complement ? 'Minimum HT (complément)' : 'Minimum HT du support'), v: calc.forfaitMot ? 'non appliqué (forfait au mot)' : euros(calc.minimumHT) });
+  if(calc.fabricationHT > 0) out.push({ k:'Fabrication du support', v:'+ ' + euros(calc.fabricationHT) });
+  if(calc.remiseParticulierPct > 0) out.push({ k:'Tarif particulier', v:`− ${calc.remiseParticulierPct} %`, n:`${euros(calc.prixAvantRemise)} avant remise` });
+  return out;
+}
+// Calculateur de marge : prix de vente HT du devis contre le coût de l'équipe atelier (jours-personnes × coût journalier chargé + autres coûts).
+// Les jours-personnes reprennent la durée de chantier estimée par le calcul (hors maquette, pose et déplacement) tant qu'on ne les a pas modifiés.
+function renderMargePrive(d){
+  const nombre = n => String(arrondir(n,2)).replace('.',','), pct = n => String(arrondir(n,1)).replace('.',',') + ' %';
+  const lignes = d.lignes.filter(l=>l.type==='calculee' && l.support).map(l=>calculerLigne(l, d.client.type)).filter(Boolean);
+  const joursAuto = arrondir(lignes.reduce((s,c)=>s+c.joursEstimesTotal, 0), 2);
+  const m = (d.notesClient && d.notesClient.marge) || {};
+  const jours = m.jours != null ? m.jours : joursAuto, autres = m.autres || 0, coutJour = reglages.coutEquipeJour || 0, objectif = reglages.objectifMargePct ?? 30;
+  const prix = totalDevis(d), coutEquipe = arrondir(jours * coutJour, 2), cout = arrondir(coutEquipe + autres, 2), marge = arrondir(prix - cout, 2);
+  const taux = prix > 0 ? marge / prix * 100 : 0;
+  const prixCible = objectif < 100 ? arrondir(cout / (1 - objectif/100), 2) : null;
+  const jourDevis = `'${d.id}'`;
+  return `<aside class="margePrive no-print" aria-label="Calculateur de marge">
+    <div class="cpTitre">Marge — coût de l'équipe atelier</div>
+    <div class="mpChamp"><span>Jours-personnes de travail<small>${m.jours != null ? `estimé par le calcul : ${nombre(joursAuto)} j — <a href="#" onclick="majMargeDevis(${jourDevis},'jours','');return false" style="color:inherit">reprendre</a>` : 'repris de la durée de chantier estimée'}</small></span><input class="input" type="number" step="0.25" min="0" value="${nombre(jours).replace(',','.')}" onchange="majMargeDevis(${jourDevis},'jours', this.value)"></div>
+    <div class="mpChamp"><span>Coût journalier chargé (€ / jour)<small>réglage de l'atelier</small></span><input class="input" type="number" step="5" min="0" value="${coutJour||''}" placeholder="à saisir" onchange="majCoutEquipe(this.value)"></div>
+    <div class="mpChamp"><span>Autres coûts (€)<small>matière, sous-traitance, hors déplacement</small></span><input class="input" type="number" step="10" min="0" value="${autres||''}" placeholder="0" onchange="majMargeDevis(${jourDevis},'autres', this.value)"></div>
+    ${coutJour > 0 ? `
+    <div class="mpLigne" style="margin-top:6px"><span>Coût de l'équipe</span><b>${euros(coutEquipe)}</b></div>
+    ${autres ? `<div class="mpLigne"><span>Autres coûts</span><b>${euros(autres)}</b></div>` : ''}
+    <div class="mpLigne"><span>Coût total</span><b>${euros(cout)}</b></div>
+    <div class="mpLigne"><span>Prix de vente du devis (HT)</span><b>${euros(prix)}</b></div>
+    <div class="mpResultat">
+      <div class="mpLib">Marge</div>
+      <div class="mpVal">${euros(marge)}</div>
+      <div class="mpTaux">${pct(taux)} du prix de vente${cout > 0 ? ` · coefficient ×${nombre(prix/cout)}` : ''}</div>
+      <div class="mpObjectif">${taux >= objectif ? `Objectif de marge (${objectif} %) atteint ✓` : `Objectif de marge ${objectif} % : il manque ${euros(Math.max(0, (prixCible||0) - prix))} — prix à viser ${euros(prixCible)} HT`}</div>
+    </div>` : `<div class="mpObjectif">Saisis le coût journalier chargé d'une personne de l'atelier pour voir la marge.</div>`}
+  </aside>`;
+}
+// Coût moyen d'une journée de travail d'un membre de l'équipe (salaire chargé + part des frais de l'atelier) : ESTIMATION de départ, à affiner dans Réglages tarifs.
+const COUT_EQUIPE_JOUR_DEFAUT = 250;
+const coutEquipeJour = () => Number(reglages.coutEquipeJour) > 0 ? Number(reglages.coutEquipeJour) : COUT_EQUIPE_JOUR_DEFAUT;
+function renderChiffragePrive(d){
+  const lignes = d.lignes.filter(l=>l.type==='calculee' && l.support).map(l=>({ l, calc: calculerLigne(l, d.client.type) })).filter(x=>x.calc);
+  if(!lignes.length) return '';
+  const calcul = arrondir(lignes.reduce((s,x)=>s+x.calc.prixHT, 0), 2);
+  const ec = estimationClient(d), vuClient = ec && ec.totalHT != null ? arrondir(Number(ec.totalHT)||0, 2) : null;
+  // Forfaits de l'estimatif (maquette, poncifs, déplacement) : encore en lignes libres, ou déjà posés comme articles.
+  const forfaits = arrondir(d.lignes.filter(l=>estLigneForfait(l)||estMegForfait(l)).reduce((s,l)=>s+(Number(l.prixHT)||0), 0), 2);
+  const total = sousTotalDevis(d);
+  // Avec l'estimatif livré au client : on compare le total du devis à ce que le client a vu. Sans lui (devis interne) : on compare le calcul aux articles posés.
+  const reference = vuClient != null ? vuClient : arrondir(calcul + forfaits, 2);
+  const compare = vuClient != null ? total : arrondir(d.lignes.filter(l=>l.type==='option_meg'||estLigneForfait(l)).reduce((s,l)=>s+(Number(l.prixHT)||0), 0), 2);
+  const reste = arrondir(reference - compare, 2);
+  const heures = arrondir(lignes.reduce((s,x)=>s+x.calc.tempsEstimeHTotal, 0), 2), jours = arrondir(lignes.reduce((s,x)=>s+x.calc.joursEstimesTotal, 0), 2);
+  return `<aside class="chiffragePrive no-print" aria-label="Chiffrage privé">
+    <div class="cpTitre">Chiffrage estimé — privé</div>
+    ${vuClient != null ? `<div class="cpTotal"><span>Estimatif livré au client (HT)</span><b>${euros(vuClient)}</b></div>
+    <div class="cpTotal"><span>Total du devis (HT)</span><b>${euros(total)}</b></div>
+    <div class="cpTotal" style="border-top:1px solid var(--line);margin-top:4px;padding-top:5px"><span>${Math.abs(reste)<0.5?'Devis = estimatif livré':(reste>0?'Devis inférieur à l\'estimatif livré de':'Devis supérieur à l\'estimatif livré de')}</span><b>${Math.abs(reste)<0.5?'✓':euros(Math.abs(reste))}</b></div>
+    <div class="cpTotal" style="margin-top:6px"><span>Contrôle : lettrage recalculé ici</span><b>${euros(calcul)}</b></div>` : `
+    <div class="cpTotal"><span>Lettrage calculé</span><b>${euros(calcul)}</b></div>
+    ${forfaits ? `<div class="cpTotal"><span>Forfaits (maquette, poncifs, déplacement)</span><b>${euros(forfaits)}</b></div>` : ''}
+    <div class="cpTotal" style="border-top:1px solid var(--line);margin-top:4px;padding-top:5px"><span>Estimatif global</span><b>${euros(reference)}</b></div>
+    <div class="cpTotal"><span>Articles du catalogue posés</span><b>${euros(compare)}</b></div>
+    <div class="cpTotal"><span>${Math.abs(reste)<0.005?'Tout est réparti':(reste>0?'Reste à répartir':'Dépassement par rapport à l\'estimatif')}</span><b>${Math.abs(reste)<0.005?'✓':euros(Math.abs(reste))}</b></div>`}
+    ${d.notesClient && d.notesClient.ventile ? `<div class="tiny" style="margin-top:6px">Articles posés automatiquement d'après l'estimatif livré au client — modifiables ci-contre.</div>` : ''}
+    ${ventilationPossible(d) ? `<button type="button" class="ghostBtn no-print" style="margin-top:6px" onclick="ventilerEstimatif('${d.id}')">Répartir l'estimatif dans les articles</button>` : (vuClient != null && d.statut==='brouillon' ? `<button type="button" class="ghostBtn no-print" style="margin-top:6px" onclick="refaireVentilation('${d.id}')">Refaire la répartition d'après l'estimatif livré</button>` : '')}
+    ${lignes.map(({l,calc})=>`<div class="cpLigne">
+      <div class="cpSupport"><span>${escapeHtml(l.support)}${calc.quantite>1?' ×'+calc.quantite:''}${l.matiere?' · '+escapeHtml(l.matiere):''}</span><span>${euros(calc.prixHT)}</span></div>
+      <div class="cpRows">${detailCalculPrive(l, calc).map(x=>`<div class="cpRow"><span class="cpK">${x.k}${x.n?`<small>${x.n}</small>`:''}</span><span class="cpV">${x.v}</span></div>`).join('')}</div>
+    </div>`).join('')}
+    <div class="cpDuree"><div class="cpDureeLib">Durée de chantier estimée</div><div class="cpDureeVal">${String(jours).replace('.',',')} j</div><div class="cpDureeNote">${String(heures).replace('.',',')} h de travail, hors pose et déplacement — base du planning Kanban.</div></div>
+    ${(()=>{ const prix = totalDevis(d), cout = arrondir(jours * coutEquipeJour(), 2), marge = arrondir(prix - cout, 2), taux = prix > 0 ? marge / prix * 100 : 0;
+      return `<div class="cpMarge"><div class="cpDureeLib">Marge estimée</div>
+        <div class="cpMargeLigne"><b>${euros(marge)}</b><span>${String(arrondir(taux,1)).replace('.',',')} % du prix HT</span></div>
+        <div class="cpDureeNote">Coût équipe ≈ ${euros(cout)} (${String(jours).replace('.',',')} j × ${euros(coutEquipeJour())} / j, coût moyen estimé — à affiner dans Réglages tarifs).</div></div>`; })()}
+  </aside>`;
+}
+function renderLigneCalculee(d, l){
+  const calc = calculerLigne(l, d.client.type);
+  const prixSheet = calc?.prixHT ?? null;
+  const prixNonCompte = d.lignes.some(x=>x.type==='option_meg');
+
+  return `
+  <div class="ligneCard">
+    <div class="ligneHead">
+      <div><div class="ligneKind">Ligne calculée</div><div class="ligneTitle">${escapeHtml(l.support||'Support à choisir')}</div></div>
+      <div style="text-align:right">
+        <div class="price">${calc ? euros(prixSheet) : '—'}</div>
+        <button class="ghostBtn tiny" onclick="supprimerLigne('${d.id}','${l.id}')">Supprimer</button>
+      </div>
+    </div>
+    <div class="grid3">
+      <div class="field ${classeFlag(d,'ligne.'+l.id+'.support')}"><label>Support</label><select class="select" onchange="updateLigne('${d.id}','${l.id}','support', this.value)">${optionsListeHtml(clesTriees(BASE, ORDRE_SUPPORT), l.support)}</select>${noteFlag(d,'ligne.'+l.id+'.support')}</div>
+      <div class="field"><label>Matière du support</label><select class="select" onchange="updateLigne('${d.id}','${l.id}','matiere', this.value)">${optionsListeHtml(COMPATIBILITES[l.support]||[], l.matiere)}</select></div>
+      <div class="field"><label>État du support</label><select class="select" onchange="updateLigne('${d.id}','${l.id}','etat', this.value)">${optionsListeHtml(etatOptionsPourMatiere(l.matiere), l.etat)}</select></div>
+      <div class="field ${classeFlag(d,'ligne.'+l.id+'.longueurCm')}"><label>Longueur du lettrage (cm)</label><input class="input" type="number" min="0" value="${l.longueurCm??''}" onchange="updateLigne('${d.id}','${l.id}','longueurCm', this.value)">${noteFlag(d,'ligne.'+l.id+'.longueurCm')}</div>
+      <div class="field ${classeFlag(d,'ligne.'+l.id+'.hauteurCm')}"><label>Hauteur du lettrage (cm)</label><input class="input" type="number" min="0" value="${l.hauteurCm??''}" onchange="updateLigne('${d.id}','${l.id}','hauteurCm', this.value)">${noteFlag(d,'ligne.'+l.id+'.hauteurCm')}</div>
+      <div class="field"><label>Quantité (ex : 2 façades identiques)</label><input class="input" type="number" min="1" step="1" value="${l.quantite||1}" onchange="updateLigne('${d.id}','${l.id}','quantite', this.value)"></div>
+      <div class="field"><label>Hauteur du chantier</label><select class="select" onchange="updateLigne('${d.id}','${l.id}','hauteurChantier', this.value)">${optionsListeHtml(clesTriees(HAUTEUR_OPTIONS, ORDRE_HAUTEUR), l.hauteurChantier)}</select></div>
+      <div class="field"><label>Taille des lettres</label><select class="select" onchange="updateLigne('${d.id}','${l.id}','tailleLettres', this.value)">${optionsListeHtml(clesTriees(TAILLE_LETTRES, ORDRE_TAILLE), l.tailleLettres)}</select></div>
+      <div class="field"><label>Niveau d'effet</label><select class="select" onchange="updateLigne('${d.id}','${l.id}','niveauEffet', this.value)">
+        ${[['1','1 — Aplat'],['2','2 — Aplat + épaisseur'],['3','3 — Épaisseur bicolore + ombre portée']].map(([v,lib])=>`<option value="${v}" ${niveauEffetLigne(l)===v?'selected':''}>${lib}</option>`).join('')}
+      </select></div>
+    </div>
+    ${(()=>{ const m = new RegExp('\\[' + String(l.support).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\] Dimensions du support indiquées : ([\\d.,]+) × ([\\d.,]+) cm').exec(String((d.notesClient||{}).objectif||''));
+      return m ? `<div class="tiny muted" style="margin:-2px 0 8px">Dimensions du <b>support</b> saisies par le client : <b>${m[1]} × ${m[2]} cm</b> — les champs « lettrage » ci-dessous sont l'emprise estimée par le calcul.</div>` : ''; })()}
+    <div class="field ${classeFlag(d,'ligne.'+l.id+'.texteAPeindre')}" style="margin-top:12px">
+      <label>Texte à peindre <span class="muted" id="compteurCar-${l.id}" style="text-transform:none;letter-spacing:0;font-weight:500">(${(l.texteAPeindre||'').replace(/\s/g,'').length} caractère${(l.texteAPeindre||'').replace(/\s/g,'').length>1?'s':''} — entre dans le calcul du temps)</span></label>
+      <textarea class="textarea" rows="2" oninput="majCompteurCaracteres('${l.id}', this.value)" onchange="updateLigne('${d.id}','${l.id}','texteAPeindre', this.value)">${escapeHtml(l.texteAPeindre||'')}</textarea>${noteFlag(d,'ligne.'+l.id+'.texteAPeindre')}
+    </div>
+    ${l.precision ? `<div class="tiny muted" style="margin-top:4px">Précision : ${escapeHtml(l.precision)}</div>` : ''}
+    <div class="coches">
+      <label class="coche"><input type="checkbox" ${l.effet==='Dorure'?'checked':''} onchange="updateLigne('${d.id}','${l.id}','dorure', this.checked)"> Dorure
+        ${l.effet==='Dorure' ? `<span class="aide">part dorée</span><input class="input" type="number" min="0" max="100" step="5" style="width:56px" placeholder="100" title="Part du lettrage doré, en % (100 = tout)" value="${l.doreePct??''}" onchange="updateLigne('${d.id}','${l.id}','doreePct', this.value)"><span class="aide">%</span>` : ''}</label>
+      <label class="coche"><input type="checkbox" ${l.fabricationSupport?'checked':''} onchange="updateLigne('${d.id}','${l.id}','fabrication', this.checked)"> Fabrication du support <span class="aide">(panneau neuf à fabriquer)</span>
+        ${l.fabricationSupport && Object.keys(reglages.fabricationSupport||{}).length>1 ? `<select class="select" onchange="updateLigne('${d.id}','${l.id}','fabricationSupport', this.value)">${Object.keys(reglages.fabricationSupport).map(k=>`<option value="${escapeHtml(k)}" ${l.fabricationSupport===k?'selected':''}>${escapeHtml(k)} — ${euros(reglages.fabricationSupport[k])}</option>`).join('')}</select>` : (l.fabricationSupport ? `<span class="aide">${euros((reglages.fabricationSupport||{})[l.fabricationSupport])} HT</span>` : '')}</label>
+      <label class="coche"><input type="checkbox" ${l.deposePose?'checked':''} onchange="updateLigne('${d.id}','${l.id}','deposePose', this.checked)"> Dépose / pose d'un élément <span class="aide">(×1,10)</span></label>
+      <label class="coche"><input type="checkbox" ${l.empattements?'checked':''} onchange="updateLigne('${d.id}','${l.id}','empattements', this.checked)"> Lettres avec empattements</label>
+      <label class="coche"><input type="checkbox" ${l.complement?'checked':''} onchange="updateLigne('${d.id}','${l.id}','complement', this.checked)"> Complément à un devis <span class="aide">(minimum ${euros(reglages.minimumComplementHT||180)})</span></label>
+    </div>
+    ${calc ? `` : `<div class="breakdown">Choisis un support pour calculer le prix.</div>`}
+    ${prixNonCompte ? `<div class="tiny muted" style="margin-top:8px">Estimation ${calc?euros(prixSheet):''} — non comptée dans le total, voir la validation du détail prix plus bas (Articles du catalogue).</div>` : ''}
+  </div>`;
+}
+
+function renderLigneManuelle(d, l){
+  return `
+  <div class="ligneCard">
+    <div class="ligneHead">
+      <div><div class="ligneKind">Ligne libre</div><div class="ligneTitle">Saisie manuelle</div></div>
+      <div style="text-align:right"><div class="price">${euros(l.prixHT)}</div><button class="ghostBtn tiny no-print" onclick="supprimerLigne('${d.id}','${l.id}')">Supprimer</button></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>Libellé</label><input class="input" value="${escapeHtml(l.libelle||'')}" onchange="updateLigne('${d.id}','${l.id}','libelle', this.value)" placeholder="Ex : fourniture spécifique, déplacement..."></div>
+      <div class="field no-print"><label>Prix HT (€)</label><input class="input" type="number" step="0.01" value="${l.prixHT??0}" onchange="updateLigne('${d.id}','${l.id}','prixHT', this.value)"></div>
+    </div>
+  </div>`;
+}
+
+
+const STATUT_DEVIS_LABEL = { brouillon:'Brouillon', envoye:'Envoyé', signe:'Signé', refuse:'Refusé' };
+const STATUT_DEVIS_CHIP = { brouillon:'blue', envoye:'amber', signe:'green', refuse:'red' };
+function renderStatutDevis(d){
+  const boutons = {
+    brouillon: [['envoye','Marquer envoyé']],
+    envoye: [['signe','Marquer signé'],['refuse','Marquer refusé']],
+    signe: [],
+    refuse: [['brouillon','Rouvrir en brouillon']]
+  }[d.statut] || [];
+  return `
+    <span class="chip ${STATUT_DEVIS_CHIP[d.statut]||'blue'}">${STATUT_DEVIS_LABEL[d.statut]||d.statut}</span>
+    ${boutons.map(([s,label])=>`<button class="miniBtn" onclick="changerStatutDevis('${d.id}','${s}')">${label}</button>`).join('')}
+  `;
+}
+
+function renderBlocIA(d){
+  const ia = d.notesClient && d.notesClient.ia; if(!ia) return '';
+  const a = champsARevoir(d);
+  return `<div class="blocIA">
+    <div style="font-weight:700;margin-bottom:4px">${ia.source==='contact' ? 'Demande reçue par la page contact' : "Pré-rempli par l'IA à partir du mail et des pièces jointes"}</div>
+    ${ia.resume ? `<div class="tiny" style="margin-bottom:6px">${escapeHtml(ia.resume)}</div>` : ''}
+    ${(ia.alternatives||[]).length ? `<div class="tiny" style="margin-bottom:6px"><b>Propositions alternatives (une seule sera réalisée — non cumulées dans le devis) :</b><ul style="margin:4px 0 0 18px;padding:0">${ia.alternatives.map(x=>`<li><b>${escapeHtml(x.libelle||'')}</b>${x.description?' — '+escapeHtml(x.description):''}${x.texte?' · « '+escapeHtml(x.texte)+' »':''}</li>`).join('')}</ul></div>` : ''}
+    <div class="tiny">${a.length ? `<b>${a.length} champ${a.length>1?'s':''} à revoir avant envoi :</b> ${a.map(escapeHtml).join(' · ')}. <span class="muted">Pointillé orange = à compléter · bordure ambre = à confirmer. Ils n'empêchent pas d'enregistrer le brouillon.</span>` : 'Tous les champs signalés ont été revus.'}</div>
+  </div>`;
+}
+function renderAccueilBesoin(){
+  if(intake.propositions){
+    return `<div class="modalFond"><div class="modal">
+      <h2>Ce client existe peut-être déjà</h2>
+      <div class="tiny muted" style="margin-bottom:12px">Pour éviter un doublon, choisis de rattacher ce besoin à une fiche existante.</div>
+      ${intake.propositions.map((p,i)=>`<div style="border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+        <div><b>${escapeHtml(p.s.nom||'Sans nom')}</b><div class="tiny muted">${escapeHtml([p.s.email,p.s.tel,p.s.ref].filter(Boolean).join(' · '))} — ${escapeHtml(p.raisons.join(', '))}</div></div>
+        <button class="actionBtn" onclick="choisirRattachement(${i})">Rattacher à ${escapeHtml(p.s.nom||'cette fiche')}</button></div>`).join('')}
+      <div class="toolbar" style="margin-top:12px"><button class="ghostBtn" onclick="choisirRattachement(null)">Non, créer une nouvelle fiche</button></div>
+    </div></div>`;
+  }
+  return `<div class="modalFond"><div class="modal">
+    <h2>Ajoute les infos du besoin en vrac !</h2>
+    <div class="tiny muted" style="margin-bottom:12px">Colle le mail du client (ou n'importe quelle description) et dépose les maquettes, plans ou photos de côtes. L'IA pré-remplit la fiche et le devis ; ce qu'elle ne sait pas reste vide et signalé.</div>
+    <div class="field"><textarea class="textarea" rows="8" placeholder="Colle ici le mail ou la description…" oninput="intake.texte=this.value" ${intake.enCours?'disabled':''}>${escapeHtml(intake.texte)}</textarea></div>
+    <div class="dropBesoin" ondragover="event.preventDefault();this.classList.add('survol')" ondragleave="this.classList.remove('survol')" ondrop="event.preventDefault();this.classList.remove('survol');ajouterFichiersBesoin(event.dataTransfer.files)" onclick="document.getElementById('fichiersBesoin').click()">Glisse des fichiers ici ou clique pour les choisir — PDF, PNG, JPEG</div>
+    <input type="file" id="fichiersBesoin" multiple accept="application/pdf,image/png,image/jpeg" hidden onchange="ajouterFichiersBesoin(this.files);this.value=''">
+    ${intake.fichiers.length ? `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px">${intake.fichiers.map((f,i)=>`<div class="fichierBesoin">${f.type.startsWith('image/')?`<img src="${f.dataUrl}" style="width:28px;height:28px;object-fit:cover;border-radius:4px">`:'📄'}<span>${escapeHtml(f.nom)}</span><span class="muted">(${f.tailleKo} Ko)</span><button type="button" onclick="retirerFichierBesoin(${i})" aria-label="Retirer">✕</button></div>`).join('')}</div>` : ''}
+    ${intake.erreur ? `<div class="tiny" style="color:#9a3412;margin-top:10px">${escapeHtml(intake.erreur)}</div>` : ''}
+    <div class="toolbar" style="margin:16px 0 0;justify-content:space-between">
+      <button class="actionBtn" onclick="lancerExtraction()" ${intake.enCours?'disabled':''}>${intake.enCours?'Lecture en cours…':'Extraire les infos'}</button>
+      <div style="display:flex;gap:12px;align-items:center">
+        <button class="ghostBtn" style="border:none;text-decoration:underline" onclick="nouveauDevisManuel()" ${intake.enCours?'disabled':''}>Remplir le formulaire à la main à la place</button>
+        <button class="ghostBtn" onclick="fermerAccueilBesoin()" ${intake.enCours?'disabled':''}>Annuler</button>
+      </div>
+    </div>
+  </div></div>`;
+}
+
+// Montre ce qui entre (ou non) dans le total : dès qu'un article du catalogue est coché, l'estimation
+// automatique des lignes calculées n'est plus comptée (elle sert de repère, voir sousTotalDevis).
+function detailTotal(d){
+  const calc = estimationAutoTotale(d);
+  const cat = d.lignes.filter(l=>l.type==='option_meg').reduce((t,l)=>t+(Number(l.prixHT)||0),0);
+  const lib = d.lignes.filter(l=>l.type==='manuelle').reduce((t,l)=>t+(Number(l.prixHT)||0),0);
+  const catalogue = d.lignes.some(l=>l.type==='option_meg');
+  if(!calc && !cat && !lib) return '';
+  return `<div class="tiny muted no-print" style="text-align:right;margin:2px 0 6px">${catalogue
+    ? `Compté : articles du catalogue ${euros(cat)}${lib?` + lignes libres ${euros(lib)}`:''} · <b>estimation automatique ${euros(calc)} non comptée</b>`
+    : `Compté : estimation automatique ${euros(calc)}${lib?` + lignes libres ${euros(lib)}`:''}`}${d.ajustementGlobalPct?` · ajustement ${d.ajustementGlobalPct} %`:''}</div>`;
+}
+
+function renderEditor(d){
+  if(!d) return `<div class="sideText muted">Sélectionne un devis à gauche, ou crée-en un nouveau.</div>`;
+  return `
+  <div class="section no-print">
+    <div class="toolbar" style="justify-content:space-between">
+      <div class="treeTitle" style="margin:0">${d.numero}${d.nomProjet||d.client.nom?' — '+escapeHtml([d.nomProjet,d.client.nom].filter(Boolean).join(' · ')):''}</div>
+      <div class="toolbar" style="margin:0">
+        ${renderStatutDevis(d)}
+        <button class="ghostBtn dangerBtn" onclick="supprimerDevis('${d.id}')">Supprimer le devis</button>
+      </div>
+    </div>
+    <div class="tiny muted" style="margin-bottom:10px">Pour le suivi de chantier, indique <b>${escapeHtml(d.numero)}</b> comme "Chantier" sur le besoin correspondant dans Stock &amp; commandes.</div>
+    <div class="grid4">
+      <div class="field ${classeFlag(d,'client.nom')}"><label>Nom du client</label><input class="input" value="${escapeHtml(d.client.nom)}" onchange="updateClient('${d.id}','nom', this.value)">${noteFlag(d,'client.nom')}</div>
+      <div class="field ${classeFlag(d,'client.telephone')}"><label>Téléphone</label><input class="input" value="${escapeHtml(d.client.telephone)}" onchange="updateClient('${d.id}','telephone', this.value)">${noteFlag(d,'client.telephone')}</div>
+      <div class="field ${classeFlag(d,'client.email')}"><label>Email</label><input class="input" type="email" value="${escapeHtml(d.client.email)}" onchange="updateClient('${d.id}','email', this.value)">${noteFlag(d,'client.email')}</div>
+      <div class="field fieldAuto ${classeFlag(d,'client.adresse')}"><label>Adresse chantier</label><input class="input" autocomplete="off" placeholder="N°, rue, code postal, ville — ça se complète tout seul" value="${escapeHtml(d.client.adresse)}" oninput="chercherAdresseInterne(this.value)"><div class="sugBox" id="sugAdresseInterne"></div>${noteFlag(d,'client.adresse')}</div>
+      <div class="field ${classeFlag(d,'client.type')}"><label>Type de client (pilote le tarif particulier)</label><select class="select" onchange="updateClient('${d.id}','type', this.value)">
+        <option value="particulier" ${d.client.type==='particulier'?'selected':''}>Particulier</option>
+        <option value="professionnel" ${d.client.type==='professionnel'?'selected':''}>Professionnel</option>
+      </select>${noteFlag(d,'client.type')}</div>
+      <div class="field ${classeFlag(d,'notes.adresseFacturation')}"><label>Adresse de facturation</label><input class="input" value="${escapeHtml((d.notesClient&&d.notesClient.adresseFacturation)||'')}" onchange="updateNotesClient('${d.id}','adresseFacturation', this.value)">${noteFlag(d,'notes.adresseFacturation')}</div>
+    </div>
+    ${renderBlocIA(d)}
+    ${d.notesClient ? `
+    <div class="field" style="margin-top:4px;background:var(--soft);border-radius:12px;padding:12px 14px">
+      <label>Notes du client (formulaire en ligne)</label>
+      <div class="tiny" style="line-height:1.6">
+        ${d.notesClient.objectif?`<div><b>Objectif :</b> ${escapeHtml(d.notesClient.objectif)}</div>`:''}
+        ${d.notesClient.texteAPeindre?`<div><b>Texte à peindre :</b> ${escapeHtml(d.notesClient.texteAPeindre)}</div>`:''}
+        ${d.notesClient.charteGraphique?`<div><b>Charte graphique :</b> ${escapeHtml(d.notesClient.charteGraphique)}</div>`:''}
+        ${d.notesClient.dateSouhaitee?`<div><b>Date souhaitée :</b> ${escapeHtml(d.notesClient.dateSouhaitee)}</div>`:''}
+        ${d.notesClient.contraintes?`<div><b>Contraintes :</b> ${escapeHtml(d.notesClient.contraintes)}</div>`:''}
+      </div>
+    </div>` : ''}
+    ${(d.photos && d.photos.length) ? `
+    <div class="field" style="margin-top:4px">
+      <label>Pièces jointes du client (${d.photos.length})</label>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">
+        ${d.photos.map(p=>`
+          <a href="${p.dataUrl}" download="${escapeHtml(p.nom)}" style="border:1px solid var(--line);border-radius:10px;padding:6px 10px;font-size:13.5px;display:flex;align-items:center;gap:7px;text-decoration:none;color:inherit;background:#fff">
+            ${p.type && p.type.startsWith('image/') ? `<img src="${p.dataUrl}" style="width:30px;height:30px;object-fit:cover;border-radius:5px">` : '📄'}
+            <span>${escapeHtml(p.nom)}</span><span class="tiny muted">(${p.tailleKo} Ko)</span>
+          </a>`).join('')}
+      </div>
+    </div>` : ''}
+  </div>
+
+  <div class="devisGrid">
+  <div class="devisCorps">
+  <div class="section no-print">
+    <div class="treeTitle">Lignes du devis</div>
+    ${d.lignes.filter(l=>l.type==='calculee').map(l => renderLigneCalculee(d,l)).join('') || `<div class="tiny muted" style="margin-bottom:10px">Aucune ligne pour l'instant.</div>`}
+    <div class="addRow">
+      <button class="actionBtn secondary" onclick="ajouterLigneCalculee('${d.id}')">+ Ligne calculée (support)</button>
+    </div>
+    <div style="margin-top:14px;padding:10px 12px;background:var(--soft);border-radius:10px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <div class="tiny muted">Sous-total (calcul automatique) : <b>${euros(sousTotalDevis(d))}</b></div>
+      <div class="field" style="margin:0;max-width:200px">
+        <label class="tiny" style="margin:0">Ajustement global (%) — corrige le total sans retoucher les lignes</label>
+        <input class="input" type="number" step="1" value="${d.ajustementGlobalPct||0}" onchange="updateAjustementGlobal('${d.id}', this.value)">
+      </div>
+      ${d.ajustementGlobalPct ? `<div class="tiny" style="font-weight:700">Total ajusté : ${euros(totalDevis(d))}</div>` : ''}
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="toolbar no-print" style="justify-content:space-between">
+      <div class="treeTitle" style="margin:0">Validation du devis</div>
+      <button class="ghostBtn" onclick="imprimerDevis('${d.id}')">🖨 Imprimer / PDF</button>
+    </div>
+    <div style="margin:4px 0 10px 0;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px">
+      <div class="tiny" style="font-weight:700">Réf. : ${escapeHtml(d.numero)}${d.nomProjet||d.client.nom?' — '+escapeHtml([d.nomProjet,d.client.nom].filter(Boolean).join(' · ')):''}</div>
+      <div class="tiny muted">Date d'émission : ${d.createdAt ? new Date(d.createdAt).toLocaleDateString('fr-FR') : '—'}</div>
+    </div>
+    <div style="margin:4px 0 18px 0;padding:14px 16px;border:1px solid var(--line);border-radius:12px;max-width:360px">
+      <div class="tiny muted" style="text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">Adressé à</div>
+      <div style="font-weight:700">${escapeHtml(d.client.nom)}</div>
+      ${d.client.adresse ? `<div class="tiny" style="white-space:pre-line;margin-top:2px">${escapeHtml(d.client.adresse)}</div>` : ''}
+    </div>
+    <div class="toolbar" style="justify-content:space-between">
+      <div class="treeTitle" style="margin:0;font-size:15px">Articles du catalogue</div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px" class="no-print">
+        <button class="ghostBtn" onclick="proposerArticlesMeg('${d.id}')">✦ Pré-cocher les articles probables</button>
+      </div>
+    </div>
+    ${renderCatalogueCoche(d)}
+  </div>
+
+  <div class="section">
+    <div class="treeTitle ${d.lignes.some(l=>l.type==='manuelle')?'':'no-print'}" style="font-size:15px">Ligne libre</div>
+    ${d.lignes.filter(l=>l.type==='manuelle').map(l => renderLigneManuelle(d,l)).join('')}
+    <div class="addRow no-print">
+      <button class="actionBtn secondary" onclick="ajouterLigneManuelle('${d.id}')">+ Ligne libre</button>
+    </div>
+  </div>
+  </div>
+  <div class="colPrivee no-print">${renderChiffragePrive(d)}</div>
+  </div>
+
+  <div style="margin-top:6px;border-top:2px solid var(--ink);padding-top:10px">
+    <div class="totalLigne" style="font-weight:700;color:var(--ink)"><span>Total HT</span><span>${euros(totalDevis(d))}</span></div>
+    ${detailTotal(d)}
+    ${reglages.tvaPct>0 ? `
+    <div class="totalLigne"><span>TVA (${reglages.tvaPct}%)</span><span>${euros(montantTva(d))}</span></div>
+    <div class="totalBar" style="border-top:none;margin-top:4px;padding-top:4px"><span>Total TTC</span><span>${euros(totalTTC(d))}</span></div>
+    ` : `
+    <div class="tiny muted" style="margin:4px 0">TVA non applicable, art. 293 B du CGI</div>
+    <div class="totalBar" style="border-top:none;margin-top:4px;padding-top:4px"><span>Total TTC</span><span>${euros(totalDevis(d))}</span></div>
+    `}
+  </div>
+
+  <div style="margin-top:20px;display:flex;gap:16px;flex-wrap:wrap">
+    <div style="flex:1;min-width:220px;border:1px solid var(--line);border-radius:12px;overflow:hidden">
+      <div class="tiny" style="font-weight:700;background:var(--soft);padding:6px 12px">Bon pour accord</div>
+      <div class="tiny muted" style="padding:14px 12px">Date et signature (précédée de la mention manuscrite « Bon pour accord »)</div>
+      <div style="height:60px"></div>
+    </div>
+    ${ETABLISSEMENT && ETABLISSEMENT.coordonnees_bancaires ? `
+    <div style="flex:1;min-width:220px;border:1px solid var(--line);border-radius:12px;overflow:hidden">
+      <div class="tiny" style="font-weight:700;background:var(--soft);padding:6px 12px">Coordonnées bancaires</div>
+      <div class="tiny" style="padding:10px 12px;white-space:pre-line">${escapeHtml(ETABLISSEMENT.coordonnees_bancaires)}</div>
+    </div>` : ''}
+  </div>
+  `;
+}
+
+const CLIENT_CHAMP_TO_COLONNE = { nom:'client_nom', telephone:'client_telephone', email:'client_email', adresse:'client_adresse', type:'client_type' };
+/* Autocomplétion adresse — API Adresse (gouv.fr), gratuite, sans clé. Best-effort :
+   une erreur réseau laisse simplement la saisie manuelle intacte. */
+let adresseSuggestionsInterne = [];
+let adresseTimerInterne = null;
+function chercherAdresseInterne(valeur){
+  clearTimeout(adresseTimerInterne);
+  if(valeur.trim().length < 4){ adresseSuggestionsInterne = []; renderSuggestionsAdresseInterne(); return; }
+  adresseTimerInterne = setTimeout(async ()=>{
+    try{
+      const r = await fetch('https://api-adresse.data.gouv.fr/search/?q='+encodeURIComponent(valeur)+'&limit=5');
+      const data = await r.json();
+      adresseSuggestionsInterne = (data.features||[]).map(f=>f.properties.label);
+    }catch(e){ adresseSuggestionsInterne = []; }
+    renderSuggestionsAdresseInterne();
+  }, 300);
+}
+function choisirAdresseInterne(i){
+  const label = adresseSuggestionsInterne[i]; if(!label) return;
+  adresseSuggestionsInterne = [];
+  updateClient(currentDevisId, 'adresse', label);
+}
+function renderSuggestionsAdresseInterne(){
+  const el = document.getElementById('sugAdresseInterne'); if(!el) return;
+  el.innerHTML = adresseSuggestionsInterne.map((label,i)=>`<div class="sugItem" onclick="choisirAdresseInterne(${i})">${escapeHtml(label)}</div>`).join('');
+}
+async function updateClient(devisId, champ, valeur){
+  const d = getDevis(devisId); if(!d) return;
+  d.client[champ] = valeur;
+  leverFlag(d, 'client.'+champ);
+  render();
+  const { error } = await sb.from('devis').update({ [CLIENT_CHAMP_TO_COLONNE[champ]]: valeur }).eq('id', devisId);
+  if(error) alert("Mise à jour du client échouée côté serveur : "+error.message);
+  // Le Kanban Client/Projet garde sa propre fiche client synchronisée (pas de champ "type" là-bas)
+  if(champ!=='type'){
+    await sb.from('projets').update({ [CLIENT_CHAMP_TO_COLONNE[champ]]: valeur }).eq('devis_id', devisId);
+  }
+}
+
+let vueReglages = false;
+
+function majReglageBase(support, champ, valeur){
+  reglages.base[support][champ] = Number(valeur)||0;
+  BASE = reglages.base;
+  sauvegarderReglages(); render();
+}
+function majReglageTarifJournalier(support, valeur){
+  reglages.tarifJournalier[support] = Number(valeur)||0;
+  TARIF_JOURNALIER = reglages.tarifJournalier;
+  sauvegarderReglages(); render();
+}
+function majReglageRendement(valeur){
+  reglages.rendementM2ParLitre = Number(valeur)||8;
+  sauvegarderReglages(); render();
+}
+function majReglageHeuresParJour(valeur){
+  reglages.heuresParJour = Number(valeur)||7;
+  sauvegarderReglages(); render();
+}
+function majReglageRemiseParticulier(valeur){
+  reglages.remiseParticulierPct = Number(valeur)||0;
+  sauvegarderReglages(); render();
+}
+function majReglageExposantSurface(valeur){
+  reglages.exposantSurface = Number.isFinite(Number(valeur)) && valeur !== '' ? Number(valeur) : 1;
+  sauvegarderReglages(); render();
+}
+function majReglageAppliquerMinimum(coche){
+  reglages.appliquerMinimumHT = !!coche;
+  sauvegarderReglages(); render();
+}
+function majReglageTempsParCaractere(valeur){
+  reglages.tempsParCaractereH = Number(valeur)||0;
+  sauvegarderReglages(); render();
+}
+function majReglagePrixParKm(valeur){
+  reglages.prixParKm = Number(valeur)||0;
+  sauvegarderReglages(); render();
+}
+function majReglageTva(valeur){
+  reglages.tvaPct = Number(valeur)||0;
+  sauvegarderReglages(); render();
+}
+function majProduitDerive(index, champ, valeur){
+  const p = reglages.produitsDerives[index]; if(!p) return;
+  p[champ] = champ==='prixHT' ? (Number(valeur)||0) : valeur;
+  sauvegarderReglages(); render();
+}
+function ajouterProduitDerive(){
+  reglages.produitsDerives.push({ cle:'produit_'+Date.now(), label:'Nouveau produit', prixHT:0 });
+  sauvegarderReglages(); render();
+}
+function supprimerProduitDerive(index){
+  reglages.produitsDerives.splice(index,1);
+  sauvegarderReglages(); render();
+}
+function majReglageCoef(categorie, cle, valeur){
+  reglages[categorie][cle] = Number(valeur)||0;
+  if(categorie==='coefMatiere') COEF_MATIERE = reglages.coefMatiere;
+  if(categorie==='coefForme') COEF_FORME = reglages.coefForme;
+  if(categorie==='coefEffet') COEF_EFFET = reglages.coefEffet;
+  sauvegarderReglages(); render();
+}
+// Modificateurs génériques : chaque réglage ajustable en % OU en prix fixe, au choix du comité.
+function majModificateur(cle, champ, valeur){
+  const m = reglages.modificateurs.find(x=>x.cle===cle); if(!m) return;
+  m[champ] = champ==='valeur' ? (Number(valeur)||0) : valeur;
+  MODIFICATEURS = reglages.modificateurs;
+  sauvegarderReglages(); render();
+}
+function majParamEstimation(groupe, cle, valeur){
+  if(!reglages[groupe]) reglages[groupe] = {};
+  reglages[groupe][cle] = Number(valeur) || 0;
+  sauvegarderReglages(); render();
+}
+function majForfaitProjet(index, qui, valeur){
+  const f = reglages.forfaitsProjet[index]; if(!f) return;
+  const v = Number(valeur) || 0;
+  if(f.prixAffiche && typeof f.prixAffiche === 'object') f.prixAffiche[qui] = v; else f.prixAffiche = v;
+  sauvegarderReglages(); render();
+}
+function majMinimumComplement(valeur){
+  reglages.minimumComplementHT = Math.max(0, Number(valeur) || 0);
+  sauvegarderReglages(); render();
+}
+function majFabDrapeau(champ, valeur){
+  reglages.fabricationDrapeau = { ...(reglages.fabricationDrapeau || {}), [champ]: Math.max(0, Number(valeur) || 0) };
+  sauvegarderReglages(); render();
+}
+function majCoutEquipe(valeur){
+  reglages.coutEquipeJour = Math.max(0, Number(valeur) || 0);
+  sauvegarderReglages(); render();
+}
+function majObjectifMarge(valeur){
+  reglages.objectifMargePct = Math.min(95, Math.max(0, Number(valeur) || 0));
+  sauvegarderReglages(); render();
+}
+// Valeurs propres à un devis (jours-personnes retenus, autres coûts), gardées dans ses notes ; vide = on reprend l'estimation automatique.
+function majMargeDevis(devisId, champ, valeur){
+  const d = getDevis(devisId); if(!d) return;
+  const m = Object.assign({}, (d.notesClient && d.notesClient.marge) || {});
+  if(valeur === '' || valeur == null) delete m[champ]; else m[champ] = Math.max(0, Number(valeur) || 0);
+  updateNotesClient(devisId, 'marge', m);
+}
+function majFourchette(valeur){
+  reglages.fourchettePct = Math.max(0, Number(valeur) || 0);
+  sauvegarderReglages(); render();
+}
+function majReglageHauteurPrix(cle, valeur){
+  reglages.hauteurOptions[cle].prixFixeHT = Number(valeur)||0;
+  HAUTEUR_OPTIONS = reglages.hauteurOptions;
+  sauvegarderReglages(); render();
+}
+async function reinitialiserReglages(){
+  if(!await confirmer("Revenir aux tarifs et modificateurs d'origine ? Tes modifications seront perdues.")) return;
+  reglages = {
+    base: clone(BASE_DEFAUT), tarifJournalier: clone(TARIF_JOURNALIER_DEFAUT), coefMatiere: clone(COEF_MATIERE_DEFAUT),
+    etatSupport: clone(ETAT_SUPPORT_DEFAUT), hauteurOptions: clone(HAUTEUR_OPTIONS_DEFAUT), tailleLettres: clone(TAILLE_LETTRES_DEFAUT),
+    coefForme: clone(COEF_FORME_DEFAUT), coefEffet: clone(COEF_EFFET_DEFAUT), modificateurs: clone(MODIFICATEURS_DEFAUT),
+    heuresParJour: 7, rendementM2ParLitre: 10, remiseParticulierPct: 15, exposantSurface: 1, appliquerMinimumHT: true,
+    tempsParCaractereH: 0.05, prixParKm: 0.60, tvaPct: 20, produitsDerives: [ { cle:'carte_visite', label:'Carte de visite assortie au style', prixHT:80 }, { cle:'mini_charte', label:'Mini-charte graphique (couleurs, typo)', prixHT:250 }, { cle:'goodies', label:'Petits goodies (autocollants, etc.)', prixHT:150 } ],
+    ...parametresEstimation(null),
+  };
+  BASE = reglages.base; TARIF_JOURNALIER = reglages.tarifJournalier; COEF_MATIERE = reglages.coefMatiere;
+  ETAT_SUPPORT = reglages.etatSupport; HAUTEUR_OPTIONS = reglages.hauteurOptions; TAILLE_LETTRES = reglages.tailleLettres;
+  COEF_FORME = reglages.coefForme; COEF_EFFET = reglages.coefEffet; MODIFICATEURS = reglages.modificateurs;
+  sauvegarderReglages(); render();
+}
+
+function renderTableauCoef(titre, categorie, map){
+  return `
+  <div class="section">
+    <div class="treeTitle" style="font-size:17px">${escapeHtml(titre)}</div>
+    <table class="table" style="width:100%;border-collapse:collapse">
+      ${Object.keys(map).map(cle=>`
+      <tr>
+        <td style="padding:5px 8px 5px 0;font-size:14.5px">${escapeHtml(cle)}</td>
+        <td style="padding:5px 0;width:110px"><input class="input" type="number" step="0.01" value="${map[cle]}" onchange="majReglageCoef('${categorie}','${cle.replace(/'/g,"\\'")}', this.value)"></td>
+      </tr>`).join('')}
+    </table>
+  </div>`;
+}
+
+function renderReglages(){
+  return `
+  <div class="section">
+    <div class="toolbar" style="justify-content:space-between">
+      <div class="treeTitle" style="margin:0">Réglages tarifs</div>
+      <button class="ghostBtn" onclick="reinitialiserReglages()">Réinitialiser aux valeurs d'origine</button>
+    </div>
+    <div class="tiny muted" style="margin-bottom:16px">Ces réglages pilotent le calcul automatique du devis, aussi bien ici que sur le formulaire client en ligne — une modification s'applique aux deux immédiatement.
+    Principe : prix de base = temps estimé converti en jours × plancher journalier visé (700-900 € HT/jour selon le besoin), puis les modificateurs ci-dessous s'ajoutent en % ou en prix fixe.</div>
+
+    <div class="treeTitle" style="font-size:18px">Par support (temps fixe, temps selon la surface, plancher journalier, minimum)</div>
+    <div class="tiny muted" style="margin-bottom:8px">Temps estimé = temps fixe de mise en route + k × surface^exposant (surface = emprise du lettrage en m², exposant réglé plus bas, 1 par défaut = proportionnel). « — » : réglage ancien, à migrer avec migration_calculateur_reglages.sql.</div>
+    <table class="table" style="width:100%;border-collapse:collapse;margin-bottom:14px">
+      <tr><th style="text-align:left;font-size:12px;color:var(--muted)">Support</th><th style="text-align:left;font-size:12px;color:var(--muted)">Surface mini (m²)</th><th style="text-align:left;font-size:12px;color:var(--muted)">Temps fixe (h)</th><th style="text-align:left;font-size:12px;color:var(--muted)">k (h par m² ^ exposant)</th><th style="text-align:left;font-size:12px;color:var(--muted)">Plancher journalier HT (€)</th><th style="text-align:left;font-size:12px;color:var(--muted)">Minimum HT (€)</th></tr>
+      ${Object.keys(BASE).map(support=>`
+      <tr>
+        <td style="padding:5px 8px 5px 0;font-size:14.5px">${escapeHtml(support)}</td>
+        <td style="padding:5px 6px 5px 0;width:90px"><input class="input" type="number" step="0.01" value="${BASE[support].surfaceMiniM2}" onchange="majReglageBase('${support}','surfaceMiniM2', this.value)"></td>
+        <td style="padding:5px 6px 5px 0;width:90px"><input class="input" type="number" step="0.1" placeholder="—" value="${BASE[support].tempsFixeH ?? ''}" onchange="majReglageBase('${support}','tempsFixeH', this.value)"></td>
+        <td style="padding:5px 6px 5px 0;width:90px"><input class="input" type="number" step="0.1" placeholder="—" value="${BASE[support].kH ?? ''}" onchange="majReglageBase('${support}','kH', this.value)"></td>
+        <td style="padding:5px 6px 5px 0;width:100px"><input class="input" type="number" step="10" value="${TARIF_JOURNALIER[support]??800}" onchange="majReglageTarifJournalier('${support}', this.value)"></td>
+        <td style="padding:5px 0;width:100px"><input class="input" type="number" step="5" value="${BASE[support].minimumHT}" onchange="majReglageBase('${support}','minimumHT', this.value)"></td>
+      </tr>`).join('')}
+    </table>
+    <div class="grid2" style="max-width:460px;margin-bottom:20px">
+      <div class="field">
+        <label>Heures par jour (pour convertir le temps de base en jours)</label>
+        <input class="input" type="number" step="0.5" value="${reglages.heuresParJour}" onchange="majReglageHeuresParJour(this.value)">
+      </div>
+      <div class="field">
+        <label>Tarif particulier — remise (%) sur le prix final</label>
+        <input class="input" type="number" step="1" min="0" max="100" value="${reglages.remiseParticulierPct}" onchange="majReglageRemiseParticulier(this.value)">
+      </div>
+      <div class="field">
+        <label>Exposant de mise à l'échelle de la surface</label>
+        <input class="input" type="number" step="0.01" min="0.1" max="1" value="${reglages.exposantSurface}" onchange="majReglageExposantSurface(this.value)">
+        <div class="tiny muted" style="margin-top:3px">1 = temps proportionnel à la surface : règle de Tristan, 1 m² = 3,5 h (k = 3,5), le temps fixe de mise en route (0,9 h) s'ajoute. En dessous de 1, le temps croîtrait moins vite que la surface pour les grandes emprises.</div>
+      </div>
+      <div class="field">
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" ${reglages.appliquerMinimumHT!==false?'checked':''} onchange="majReglageAppliquerMinimum(this.checked)"> Appliquer le minimum HT par support</label>
+        <div class="tiny muted" style="margin-top:3px">Décoche pour désactiver temporairement le plancher "Minimum HT" partout (le temps de caler le tarif journalier) — les valeurs par support restent enregistrées, juste ignorées tant que c'est décoché.</div>
+      </div>
+      <div class="field">
+        <label>Temps par caractère — style bâton (h)</label>
+        <input class="input" type="number" step="0.01" min="0" value="${reglages.tempsParCaractereH}" onchange="majReglageTempsParCaractere(this.value)">
+        <div class="tiny muted" style="margin-top:3px">Un seul réglage pour tous les supports (le tarif de base, style bâton/sans empattement). Les styles plus longs (script, décoratif...) appliquent leur % par-dessus via "Forme des lettres", pas de réglage séparé par style.</div>
+      </div>
+      <div class="field">
+        <label>Prix au km (€) — déplacement</label>
+        <input class="input" type="number" step="0.05" min="0" value="${reglages.prixParKm}" onchange="majReglagePrixParKm(this.value)">
+        <div class="tiny muted" style="margin-top:3px">Utilisé par le calculateur de distance (aller-retour) sur chaque devis.</div>
+      </div>
+      <div class="field">
+        <label>Taux de TVA (%)</label>
+        <input class="input" type="number" step="0.5" min="0" max="100" value="${reglages.tvaPct}" onchange="majReglageTva(this.value)">
+        <div class="tiny muted" style="margin-top:3px">Mets 0 si l'atelier est en franchise en base de TVA (le devis affichera alors "TVA non applicable, art. 293 B du CGI" à la place).</div>
+      </div>
+    </div>
+
+    <div class="treeTitle" style="font-size:18px">Modificateurs — % du prix de base ou prix fixe, au choix</div>
+    <table class="table" style="width:100%;border-collapse:collapse;margin-bottom:20px">
+      <tr><th style="text-align:left;font-size:12px;color:var(--muted)">Modificateur</th><th style="text-align:left;font-size:12px;color:var(--muted)">Type</th><th style="text-align:left;font-size:12px;color:var(--muted)">Valeur</th></tr>
+      ${MODIFICATEURS.map(m=>`
+      <tr>
+        <td style="padding:5px 8px 5px 0;font-size:14.5px">${escapeHtml(m.label)}</td>
+        <td style="padding:5px 6px 5px 0;width:130px">
+          <select class="select" onchange="majModificateur('${m.cle}','type', this.value)">
+            <option value="pourcentage" ${m.type==='pourcentage'?'selected':''}>%</option>
+            <option value="fixe" ${m.type==='fixe'?'selected':''}>Prix fixe (€)</option>
+          </select>
+        </td>
+        <td style="padding:5px 0;width:100px"><input class="input" type="number" step="1" value="${m.valeur}" onchange="majModificateur('${m.cle}','valeur', this.value)"></td>
+      </tr>`).join('')}
+    </table>
+
+    <div class="treeTitle" style="font-size:18px">Produits dérivés — galerie d'envie du formulaire client</div>
+    <div class="tiny muted" style="margin-bottom:8px">Prix forfaitaires proposés en plus sur le formulaire client (à côté des autres supports), une fois le style choisi. Valeurs de départ non validées — à ajuster.</div>
+    <table class="table" style="width:100%;border-collapse:collapse;margin-bottom:20px">
+      <tr><th style="text-align:left;font-size:12px;color:var(--muted)">Produit</th><th style="text-align:left;font-size:12px;color:var(--muted)">Prix HT (€)</th><th></th></tr>
+      ${reglages.produitsDerives.map((p,i)=>`
+      <tr>
+        <td style="padding:5px 8px 5px 0;font-size:14.5px"><input class="input" value="${escapeHtml(p.label)}" onchange="majProduitDerive(${i},'label', this.value)"></td>
+        <td style="padding:5px 6px 5px 0;width:100px"><input class="input" type="number" step="5" value="${p.prixHT}" onchange="majProduitDerive(${i},'prixHT', this.value)"></td>
+        <td style="padding:5px 0;width:40px"><button class="ghostBtn" style="padding:4px 8px" onclick="supprimerProduitDerive(${i})">✕</button></td>
+      </tr>`).join('')}
+    </table>
+    <button class="ghostBtn" style="margin-bottom:20px" onclick="ajouterProduitDerive()">+ Produit dérivé</button>
+
+    <div class="treeTitle" style="font-size:18px">Hauteur du chantier — coût externe fixe (nacelle/échafaudage), pas un coefficient</div>
+    <table class="table" style="width:100%;border-collapse:collapse;margin-bottom:20px">
+      <tr><th style="text-align:left;font-size:12px;color:var(--muted)">Hauteur</th><th style="text-align:left;font-size:12px;color:var(--muted)">Prix fixe HT (€)</th></tr>
+      ${Object.keys(HAUTEUR_OPTIONS).map(cle=>`
+      <tr>
+        <td style="padding:5px 8px 5px 0;font-size:14.5px">${escapeHtml(cle)}</td>
+        <td style="padding:5px 0;width:100px"><input class="input" type="number" step="5" value="${HAUTEUR_OPTIONS[cle].prixFixeHT}" onchange="majReglageHauteurPrix('${cle.replace(/'/g,"\\'")}', this.value)"></td>
+      </tr>`).join('')}
+    </table>
+
+    <div class="treeTitle" style="font-size:18px">Fabrication du support en atelier — prix fixes HT</div>
+    <div class="tiny muted" style="margin-bottom:8px">Quand le panneau est à fabriquer de zéro (découpe, ponçage, apprêt, métal…), choisi ligne par ligne dans le devis. Distinct de l'état d'un support existant. Ajouté après la remise particulier.</div>
+    <table class="table" style="width:100%;border-collapse:collapse;margin-bottom:20px">
+      <tr><th style="text-align:left;font-size:12px;color:var(--muted)">Fabrication</th><th style="text-align:left;font-size:12px;color:var(--muted)">Prix fixe HT (€)</th></tr>
+      ${Object.keys(reglages.fabricationSupport).map(k=>`
+      <tr>
+        <td style="padding:5px 8px 5px 0;font-size:14.5px">${escapeHtml(k)}</td>
+        <td style="padding:5px 0;width:110px"><input class="input" type="number" step="10" value="${reglages.fabricationSupport[k]}" onchange="majParamEstimation('fabricationSupport','${k.replace(/'/g,"\\'")}', this.value)"></td>
+      </tr>`).join('')}
+    </table>
+
+    <div class="treeTitle" style="font-size:18px">Forfaits et paramètres de l'estimation client</div>
+    <div class="tiny muted" style="margin-bottom:8px">Ces valeurs étaient auparavant fixées dans le code. Les prix « affichés » sont ceux que voit le client (TTC pour un particulier).</div>
+    <table class="table" style="width:100%;border-collapse:collapse;margin-bottom:20px">
+      ${Object.keys(reglages.prixParMot).map(k=>`
+      <tr><td style="padding:5px 8px 5px 0;font-size:14.5px">Forfait au mot — ${escapeHtml(k)} (€ HT par mot peint)</td>
+        <td style="padding:5px 0;width:110px"><input class="input" type="number" step="5" value="${reglages.prixParMot[k]}" onchange="majParamEstimation('prixParMot','${k.replace(/'/g,"\\'")}', this.value)"></td></tr>`).join('')}
+      ${reglages.forfaitsProjet.map((f,i)=>`
+      <tr><td style="padding:5px 8px 5px 0;font-size:14.5px">${escapeHtml(f.label)} — prix fixe affiché (€)${(f.prixAffiche && typeof f.prixAffiche==='object') ? ' · particulier' : ''}</td>
+        <td style="padding:5px 0;width:110px"><input class="input" type="number" step="5" value="${f.prixAffiche && typeof f.prixAffiche==='object' ? f.prixAffiche.particulier : f.prixAffiche}" onchange="majForfaitProjet(${i}, 'particulier', this.value)"></td></tr>
+      ${(f.prixAffiche && typeof f.prixAffiche==='object') ? `<tr><td style="padding:5px 8px 5px 0;font-size:14.5px">${escapeHtml(f.label)} — prix fixe affiché (€) · professionnel</td>
+        <td style="padding:5px 0;width:110px"><input class="input" type="number" step="5" value="${f.prixAffiche.professionnel}" onchange="majForfaitProjet(${i}, 'professionnel', this.value)"></td></tr>` : ''}`).join('')}
+      ${Object.keys(reglages.empriseLettrage).map(k=>`
+      <tr><td style="padding:5px 8px 5px 0;font-size:14.5px">Emprise du lettrage sur le support — ${escapeHtml(k)} (part de la surface, 0,20 = 20 %)</td>
+        <td style="padding:5px 0;width:110px"><input class="input" type="number" step="0.01" min="0.01" max="1" value="${reglages.empriseLettrage[k]}" onchange="majParamEstimation('empriseLettrage','${k.replace(/'/g,"\\'")}', this.value)"></td></tr>`).join('')}
+      <tr><td style="padding:5px 8px 5px 0;font-size:14.5px">Enseigne drapeau complète — fabrication : prix de base (€ HT)</td>
+        <td style="padding:5px 0;width:110px"><input class="input" type="number" step="10" min="0" value="${(reglages.fabricationDrapeau||{}).baseHT ?? 700}" onchange="majFabDrapeau('baseHT', this.value)"></td></tr>
+      <tr><td style="padding:5px 8px 5px 0;font-size:14.5px">Enseigne drapeau complète — fabrication : € HT par m² de support (proportionnel à la taille)</td>
+        <td style="padding:5px 0;width:110px"><input class="input" type="number" step="50" min="0" value="${(reglages.fabricationDrapeau||{}).parM2HT ?? 1500}" onchange="majFabDrapeau('parM2HT', this.value)"></td></tr>
+      <tr><td style="padding:5px 8px 5px 0;font-size:14.5px">Enseigne drapeau complète — coefficient si la matière est « Métal » (1,15 = +15 %)</td>
+        <td style="padding:5px 0;width:110px"><input class="input" type="number" step="0.05" min="0.5" value="${(reglages.fabricationDrapeau||{}).coefMetal ?? 1.15}" onchange="majFabDrapeau('coefMetal', this.value)"></td></tr>
+      <tr><td style="padding:5px 8px 5px 0;font-size:14.5px">Minimum HT d'un complément (€) — petit ajout à un devis, coché sur la ligne</td>
+        <td style="padding:5px 0;width:110px"><input class="input" type="number" step="10" min="0" value="${reglages.minimumComplementHT ?? 180}" onchange="majMinimumComplement(this.value)"></td></tr>
+      <tr><td style="padding:5px 8px 5px 0;font-size:14.5px">Fourchette affichée au client (± %)</td>
+        <td style="padding:5px 0;width:110px"><input class="input" type="number" step="1" min="0" max="50" value="${reglages.fourchettePct}" onchange="majFourchette(this.value)"></td></tr>
+    </table>
+
+    <div class="treeTitle" style="font-size:15px;margin-top:6px">Coût de l'équipe atelier — calculateur de marge</div>
+    <div class="tiny muted" style="margin-bottom:6px">Sert uniquement au calculateur de marge à droite des devis (jamais montré au client).</div>
+    <table style="width:100%;max-width:760px;border-collapse:collapse;margin-bottom:16px">
+      <tr><td style="padding:5px 8px 5px 0;font-size:14.5px">Coût journalier chargé d'une personne de l'atelier (€) — salaire + charges + part des frais de l'atelier</td>
+        <td style="padding:5px 0;width:110px"><input class="input" type="number" step="5" min="0" value="${coutEquipeJour()}" onchange="majCoutEquipe(this.value)"></td></tr>
+      <tr><td style="padding:5px 8px 5px 0;font-size:14.5px">Marge visée sur le prix de vente HT (%)</td>
+        <td style="padding:5px 0;width:110px"><input class="input" type="number" step="1" min="0" max="95" value="${reglages.objectifMargePct ?? 30}" onchange="majObjectifMarge(this.value)"></td></tr>
+    </table>
+
+    <div class="field" style="max-width:260px;margin-bottom:20px">
+      <label>Rendement peinture (m² couverts par litre)</label>
+      <input class="input" type="number" step="0.5" value="${reglages.rendementM2ParLitre}" onchange="majReglageRendement(this.value)">
+      <div class="tiny muted" style="margin-top:4px">Utilisé pour calculer le besoin en litres à partir du m² à peindre, sur la fiche projet (étape Maquette finale/BAT).</div>
+    </div>
+
+    <div class="grid2">
+      ${renderTableauCoef('Coef. matière', 'coefMatiere', COEF_MATIERE)}
+      ${renderTableauCoef('Coef. forme (style)', 'coefForme', COEF_FORME)}
+      ${renderTableauCoef('Coef. effet', 'coefEffet', COEF_EFFET)}
+    </div>
+
+    ${renderCatalogueMeg()}
+  </div>`;
+}
+
+function megGroupesParRubrique(){
+  // Préserve l'ordre transmis (colonne ordre), pas l'ordre alphabétique — groupe par
+  // rubrique en gardant l'ordre de première apparition.
+  const rubriques = [];
+  const parRubrique = {};
+  for(const m of MEG_CATALOGUE){
+    if(!parRubrique[m.rubrique]){ parRubrique[m.rubrique] = []; rubriques.push(m.rubrique); }
+    parRubrique[m.rubrique].push(m);
+  }
+  return rubriques.map(rub=>({ rubrique:rub, articles:parRubrique[rub] }));
+}
+function renderCatalogueMeg(){
+  return `
+  <div class="section" style="margin-top:10px">
+    <div class="treeTitle" style="font-size:18px">Catalogue MEG — modifiable</div>
+    <div class="tiny muted" style="margin-bottom:10px">Le vrai catalogue tarifaire du fournisseur, dans l'ordre transmis — modifiable ici, et proposé automatiquement dans le sélecteur "Option (catalogue)" de chaque devis.</div>
+    ${megGroupesParRubrique().map(g=>`
+      <div style="margin-bottom:14px">
+        <div style="font-weight:700;font-size:14px;margin-bottom:4px">${escapeHtml(g.rubrique)}</div>
+        <table class="table" style="width:100%;border-collapse:collapse">
+          ${g.articles.map(m=>`
+          <tr>
+            <td style="padding:3px 6px 3px 0;width:100px"><input class="input" value="${escapeHtml(m.code)}" onchange="majMegArticle('${m.id}','code', this.value)"></td>
+            <td style="padding:3px 6px 3px 0"><input class="input" value="${escapeHtml(m.article)}" onchange="majMegArticle('${m.id}','article', this.value)"></td>
+            <td style="padding:3px 6px 3px 0;width:110px"><input class="input" type="number" step="0.01" value="${m.prixHT??''}" onchange="majMegArticle('${m.id}','prixHT', this.value)"></td>
+            <td style="padding:3px 6px 3px 0;width:90px"><input class="input" value="${escapeHtml(m.unite)}" onchange="majMegArticle('${m.id}','unite', this.value)"></td>
+            <td style="padding:3px 0;width:30px"><button class="ghostBtn tiny" onclick="supprimerMegArticle('${m.id}')">✕</button></td>
+          </tr>`).join('')}
+        </table>
+        <button class="ghostBtn tiny" style="margin-top:4px" onclick="ajouterMegArticle('${g.rubrique.replace(/'/g,"\\'")}')">+ Article dans « ${escapeHtml(g.rubrique)} »</button>
+      </div>`).join('')}
+  </div>`;
+}
+
+function render(){
+  { const dc = getDevis(currentDevisId); if(!vueReglages && (hydratationPossible(dc) || ventilationPossible(dc))) setTimeout(()=>preparerDevisDuSite(currentDevisId), 0); }
+  document.querySelector('.app').innerHTML = `
+  <nav class="topnav">
+    ${navAtelierHtml(ESTABLISHMENT_ID, { actif:'atelier' })}
+  </nav>
+  ${ETABLISSEMENT && ETABLISSEMENT.logo_data_url ? `<div class="printEntete"><img src="${ETABLISSEMENT.logo_data_url}"></div>` : ''}
+  ${ETABLISSEMENT && ETABLISSEMENT.pied_de_page_devis ? `<div class="printPied">${escapeHtml(ETABLISSEMENT.pied_de_page_devis)}</div>` : ''}
+  <div class="topbar">
+    <div class="brand">DEVIS<small>Atelier — usage interne</small></div>
+    <div></div>
+    <div class="toolbar" style="margin:0">
+      <button class="${vueReglages?'actionBtn':'ghostBtn'}" onclick="vueReglages=!vueReglages;render()">${vueReglages?'← Retour aux devis':'Réglages tarifs'}</button>
+    </div>
+  </div>
+  ${vueReglages ? `<div class="main" style="grid-template-columns:1fr"><div class="editorPane">${renderReglages()}</div></div>` : `
+  <div class="main">
+    <div class="listPane">
+      <button class="actionBtn" style="width:100%;margin-bottom:14px" onclick="nouveauDevis()">+ Nouveau devis</button>
+      <div>
+        ${store.devis.map(d => `<div class="listItem ${d.id===currentDevisId?'active':''}" onclick="currentDevisId='${d.id}';render()">
+          ${d.numero}<br><span class="num">${d.nomProjet?escapeHtml(d.nomProjet)+' — ':''}${escapeHtml(d.client.nom||'Sans nom')} · ${euros(totalDevis(d))}</span>
+        </div>`).join('') || '<div class="tiny muted">Aucun devis pour l’instant.</div>'}
+      </div>
+    </div>
+    <div class="editorPane">${renderEditor(getDevis(currentDevisId))}</div>
+  </div>`}
+  ${intake.ouvert ? renderAccueilBesoin() : ''}`;
+}
+
+async function initApp(){
+  document.querySelector('.app').innerHTML = `<div style="padding:24px" class="tiny muted">Chargement…</div>`;
+  try{
+    const { data:{ session }, error } = await sb.auth.getSession();
+    if(error) throw error;
+    if(!session){ location.replace('federation-accueil.html'); return; }
+    const estId = getCurrentEstId();
+    if(!estId){ location.replace('federation-accueil.html'); return; }
+    const { data: membre, error: e1 } = await sb.from('members').select('id').eq('user_id', session.user.id).eq('establishment_id', estId).maybeSingle();
+    if(e1) throw e1;
+    if(!membre){ location.replace('federation-accueil.html'); return; }
+    ESTABLISHMENT_ID = estId;
+    const { data: est } = await sb.from('establishments').select('logo_data_url,pied_de_page_devis,adresse,coordonnees_bancaires').eq('id', estId).maybeSingle();
+    ETABLISSEMENT = est || null;
+    await chargerMegCatalogue();
+    reglages = await chargerReglages(estId);
+    BASE = reglages.base; TARIF_JOURNALIER = reglages.tarifJournalier; COEF_MATIERE = reglages.coefMatiere;
+    ETAT_SUPPORT = reglages.etatSupport; HAUTEUR_OPTIONS = reglages.hauteurOptions; TAILLE_LETTRES = reglages.tailleLettres;
+    COEF_FORME = reglages.coefForme; COEF_EFFET = reglages.coefEffet; MODIFICATEURS = reglages.modificateurs;
+    store = await chargerStore(estId);
+    const devisDemande = new URLSearchParams(window.location.search).get('devis');
+    currentDevisId = (devisDemande && store.devis.some(d=>d.id===devisDemande)) ? devisDemande : (store.devis[0]?.id || null);
+    render();
+  }catch(e){
+    console.error(e);
+    document.querySelector('.app').innerHTML = `<div class="errBox">Impossible de charger le devis : ${escapeHtml(e.message||String(e))}\n\nRecharge la page.</div>`;
+  }
+}
+initApp();
+</script>
+<script src="therese-widget.js"></script>
+</body>
+</html>

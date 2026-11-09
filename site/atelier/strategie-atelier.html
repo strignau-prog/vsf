@@ -1,0 +1,1052 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <script src="boite-message.js"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Stratégie — Atelier</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="societes-api.js"></script>
+  <script src="atelier-nav.js"></script>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600;700&display=swap">
+  <style>
+    :root{ --bg:#fff; --ink:#1c1a17; --muted:#55504a; --line:#e4e0d9; --soft:#f7f5f2; --accent:#a8461f; --red:#b3261e; --orange:#8a4a00; }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif}
+    body{font-size:15px;line-height:1.3}
+    h1,h2,h3,.brand,.treeTitle{font-family:Fraunces,Georgia,serif;font-weight:600}
+    button,input,select,textarea{font:inherit;color:inherit}
+    button{cursor:pointer;background:none;border:none;padding:0}
+    .app{min-height:100vh}
+    nav.topnav{background:#1c1a17;color:#fff;display:flex;align-items:center;gap:4px;padding:0 20px;height:52px;font-size:14px}
+    nav.topnav a.brand{color:#fff;text-decoration:none;font-weight:600;margin-right:24px;font-size:17px;font-family:Fraunces,Georgia,serif}
+    nav.topnav .menuItem{position:relative;height:100%;display:flex;align-items:center}
+    nav.topnav .menuItem>span,nav.topnav .menuItem>a.topLink{padding:0 14px;cursor:pointer;color:#d7dbe4;text-decoration:none}
+    nav.topnav .menuItem:hover>span,nav.topnav .menuItem>a.topLink:hover{color:#fff}
+    nav.topnav .dropdown{display:none;position:absolute;top:100%;left:0;background:#fff;color:var(--ink);min-width:220px;box-shadow:0 8px 24px rgba(0,0,0,.18);border-radius:0 0 10px 10px;overflow:hidden;z-index:50}
+    nav.topnav .menuItem:hover .dropdown{display:block}
+    nav.topnav .dropdown a{display:block;padding:10px 16px;color:var(--ink);text-decoration:none;font-size:13.5px;border-bottom:1px solid var(--line)}
+    nav.topnav .dropdown a:last-child{border-bottom:none}
+    nav.topnav .dropdown a:hover{background:var(--soft)}
+    nav.topnav .navToggle{display:none;margin-left:auto;background:none;border:none;color:#fff;font-size:20px;cursor:pointer}
+    @media (max-width:820px){
+      nav.topnav{flex-wrap:wrap;height:auto;padding:10px 16px}
+      nav.topnav .navToggle{display:block}
+      nav.topnav .menuItem{display:none;width:100%;height:auto;flex-direction:column;align-items:stretch}
+      nav.topnav.navOpen .menuItem{display:flex}
+      nav.topnav .menuItem>span,nav.topnav .menuItem>a.topLink{padding:12px 0 4px;cursor:pointer;display:block}
+      nav.topnav .dropdown{position:static;box-shadow:none;border-radius:0;background:transparent;min-width:0}
+      nav.topnav .menuItem.open .dropdown{display:block}
+      nav.topnav .dropdown a{color:#fff;padding:10px 0 10px 14px;border-bottom:1px solid rgba(255,255,255,.12)}
+    }
+    .main{padding:20px 24px 60px;width:100%}
+    .layout{display:grid;grid-template-columns:430px 1fr;gap:22px;align-items:start}
+    @media (max-width:1000px){.layout{grid-template-columns:1fr}}
+    .blocCible{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:14px;background:var(--soft)}
+    .blocCible .enTete{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+    .btnTransforme{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600}
+    .btnTransforme:hover{background:var(--accent);opacity:.88}
+    .fieldAuto{position:relative}
+    .sugBox{position:absolute;left:0;right:0;top:100%;background:#fff;border:1px solid var(--line);border-radius:10px;z-index:5;box-shadow:0 6px 18px rgba(0,0,0,.12)}
+    .sugBox:empty{display:none}
+    .sugItem{padding:8px 11px;cursor:pointer;font-size:13.5px;border-bottom:1px solid var(--line)}
+    .sugItem:last-child{border-bottom:none}
+    .sugItem:hover{background:var(--soft)}
+    .histoLine{display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px solid var(--line);font-size:13px}
+    .contactLigne{display:flex;justify-content:space-between;gap:10px;padding:4px 0;font-size:13.5px}
+    .lienDiscret{background:none;border:none;color:var(--muted);font-size:12px;text-decoration:underline;cursor:pointer;padding:0}
+    .btnPointille{border:1px dashed #bdb6aa;background:none;border-radius:10px;padding:6px 12px;font-size:13px;color:var(--muted);cursor:pointer}
+    .objectifsHead{display:flex;justify-content:space-between;align-items:center;cursor:pointer;padding:6px 2px;margin-bottom:4px}
+    .ongletsKanban{display:none}
+    @media (max-width:760px){
+      .main{padding:14px 12px 50px}
+      .grid2{grid-template-columns:1fr}
+      .ongletsKanban{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:10px;-webkit-overflow-scrolling:touch}
+      .ongletsKanban .ongletBtn{flex:0 0 auto;border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 14px;font-size:13px;white-space:nowrap}
+      .ongletsKanban .ongletBtn.actif{background:#1c1a17;color:#fff;border-color:#1c1a17}
+      .board{display:block}
+      .board .col{display:none;min-height:0}
+      .board .col.colActif{display:block}
+    }
+    .colTitle{font-size:12.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700;margin:0 0 8px}
+    .btn{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 14px;font-size:14px}
+    .btn:hover{background:var(--soft)}
+    .btnPrimary{background:#111;color:#fff;border-color:#111}
+    .btnPrimary:hover{background:#111;opacity:.85}
+    .btnDanger{color:var(--red)}
+    .input,.select,.textarea{border:1px solid var(--line);border-radius:10px;padding:7px 10px;background:#fff;width:100%}
+    .tiny{font-size:12.5px;line-height:1.35}
+    .muted{color:var(--muted)}
+    /* Jalons */
+    .jalon{border:1px solid var(--line);border-left-width:5px;border-radius:12px;margin-bottom:10px;background:#fff;cursor:grab}
+    .jalon.over{outline:2px dashed var(--accent)}
+    .jalonHead{padding:11px 13px;cursor:pointer;display:block}
+    .swatches{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+    .swatch{width:20px;height:20px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px var(--line);padding:0}
+    .swatch.actif{box-shadow:0 0 0 2px var(--ink)}
+    .jalonHead .l1{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+    .jalonHead b{font-size:15px}
+    .bar{height:7px;background:#efece7;border-radius:99px;overflow:hidden;margin:7px 0 3px}
+    .bar>i{display:block;height:100%;background:var(--accent);transition:width .25s}
+    .jalonBody{border-top:1px solid var(--line);padding:10px 13px;background:var(--soft);border-radius:0 0 12px 12px}
+    .ligne{padding:6px 0;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+    .ligne:last-child{border-bottom:none}
+    .ligne .ligneL1{display:flex;align-items:center;gap:4px;flex:1 1 90px;min-width:0}
+    .ligne .ligneL1>.input{flex:1 1 auto;min-width:0;width:auto}
+    .ligne .ligneL2{display:flex;align-items:center;gap:4px;flex:0 0 auto}
+    .ligne .ligneL2 .input.dt{flex:0 0 128px;width:128px}
+    .ligne input[type=checkbox]{width:17px;height:17px;accent-color:var(--accent);flex:0 0 auto}
+    .ligne .input{padding:5px 8px;font-size:14px}
+    .ligne.retard .input.dt{border-color:var(--red);color:var(--red)}
+    .ligne.fait .input.tt{text-decoration:line-through;color:var(--muted)}
+    @media (max-width:600px){ .ligne .ligneL2{padding-left:23px} }
+    /* Tableau */
+    .board{display:grid;grid-template-columns:repeat(4,minmax(200px,1fr));gap:12px;overflow-x:auto}
+    .col{background:var(--soft);border-radius:12px;padding:10px;min-height:220px}
+    .col.over{outline:2px dashed var(--accent)}
+    .col h3{margin:0 0 8px;font-size:14px;display:flex;justify-content:space-between}
+    .carte{background:#fff;border:1px solid var(--line);border-radius:10px;padding:9px 10px;margin-bottom:8px;cursor:pointer}
+    .carte:hover{border-color:#bdb6aa}
+    .carte .jl{font-size:12px;color:var(--muted);margin-bottom:3px}
+    .pill{display:inline-block;color:#fff;font-size:11.5px;font-weight:600;border-radius:99px;padding:2px 9px}
+    .avatar{display:inline-flex;width:24px;height:24px;border-radius:50%;background:#1c1a17;color:#fff;align-items:center;justify-content:center;font-size:10.5px;font-weight:700;margin-left:-4px;border:2px solid #fff}
+    .avatars{display:inline-flex;padding-left:4px}
+    .chip{display:inline-flex;align-items:center;color:var(--ink);font-size:12.5px;font-weight:700;white-space:nowrap}
+    .badge{font-size:11.5px;font-weight:600;border-radius:6px;padding:2px 7px;background:#efece7;color:var(--muted)}
+    .badge.proche{background:#f8e2c6;color:var(--orange)}
+    .badge.retard{background:#f7d4d0;color:var(--red)}
+    /* Fenêtre carte */
+    .voile{position:fixed;inset:0;background:rgba(20,18,15,.45);padding:40px 14px;overflow:auto;z-index:100}
+    .fenetre{background:#fff;border-radius:14px;width:min(880px,100%);margin:0 auto;padding:20px 22px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+    .field{margin-bottom:12px}
+    .field>label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .sousTachesTable{width:100%;border-collapse:collapse;margin-top:4px}
+    .sousTachesTable th{text-align:left;font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;padding:4px 6px;border-bottom:1px solid var(--line)}
+    .sousTachesTable td{padding:4px 6px;vertical-align:middle}
+    .sousTachesTable .input{padding:6px 8px;font-size:13.5px}
+    .sousTachesTable .responsableGroupe{display:flex;align-items:center;gap:6px;text-transform:none;font-size:13px;color:var(--ink);font-weight:600;padding:6px 6px 8px}
+    .sousTachesTable .responsableGroupe select{border:1px solid var(--line);border-radius:6px;padding:2px 4px;font-size:12px;background:#fff;color:inherit;font-weight:400}
+    .sousTachesTable th.groupeSepare, .sousTachesTable td.colSepare{border-left:1px solid var(--line)}
+    .feu{width:20px;height:20px;min-width:20px;border-radius:50%;border:1px solid var(--line);background:#efece7;padding:0}
+    .feu.rouge{background:var(--red);border-color:var(--red)}
+    .feu.orange{background:var(--orange);border-color:var(--orange)}
+    .feu.vert{background:#2f855a;border-color:#2f855a}
+    .notif{background:#fbeee6;border:1px solid #efc9b1;border-radius:10px;padding:8px 12px;margin-bottom:8px;display:flex;justify-content:space-between;gap:10px;align-items:center}
+    .errBox{padding:24px;color:var(--red);white-space:pre-wrap}
+  </style>
+<script src="acces-entreprise.js" defer></script>
+</head>
+<body>
+<div class="app"><div style="padding:24px" class="tiny">Chargement…</div></div>
+<script>
+const SUPABASE_URL = 'https://uuuigousvpijskbdhcal.supabase.co';
+const SUPABASE_KEY = 'sb_publishable__YuNj5XCo5YF8lwhwTu5OQ_RDM1Eesp';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:true } });
+
+const STATUTS = [
+  { cle:'a_faire', label:'À faire' }, { cle:'en_cours', label:'En cours' },
+  { cle:'a_valider', label:'À commenter/valider' }, { cle:'fait', label:'Fait' },
+];
+const state = { estId:null, user:null, membres:[], categories:[], jalons:[], cartes:[], notifs:[], ouverts:new Set(), carteOuverte:null, erreur:null, objectifsOuvert:true, ongletKanban:'a_faire', ajoutContact:false, suggSocietes:[], ciblesTransformees:[] };
+let dragJalonId = null;
+
+function escapeHtml(s){ return String(s??'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])) }
+function erreur(msg){ alert(msg); }
+
+/* ------------------------------------------------------------------ chargement */
+async function charger(){
+  const e = state.estId;
+  const [cat, jal, car, mem, not] = await Promise.all([
+    sb.from('strategie_categories').select('*').eq('establishment_id', e).order('ordre').order('created_at'),
+    sb.from('strategie_jalons').select('*').eq('establishment_id', e).order('ordre').order('created_at'),
+    sb.from('strategie_cartes').select('*').eq('establishment_id', e).order('created_at'),
+    sb.from('members').select('user_id,email').eq('establishment_id', e),
+    sb.from('strategie_notifications').select('*').eq('destinataire', state.user.id).eq('lu', false).order('created_at', { ascending:false }),
+  ]);
+  for(const r of [cat,jal,car,mem,not]) if(r.error) throw r.error;
+  state.categories = cat.data||[]; state.jalons = jal.data||[]; state.notifs = not.data||[];
+  // Une carte « Ciblé » transformée en projet est archivée (transforme_le) : elle n'apparaît plus
+  // nulle part ici, mais reste comptée dans la conversion Ciblé -> Transformé de son objectif.
+  state.cartes = (car.data||[]).filter(c=>!c.transforme_le);
+  state.ciblesTransformees = (car.data||[]).filter(c=>c.transforme_le);
+  const membres = (mem.data||[]).filter(m=>m.user_id);
+  const ids = membres.map(m=>m.user_id);
+  let noms = {};
+  if(ids.length){
+    const { data: fm } = await sb.from('federation_members').select('user_id,nom,prenom').in('user_id', ids);
+    for(const f of (fm||[])) noms[f.user_id] = `${f.prenom||''} ${f.nom||''}`.trim();
+  }
+  state.membres = membres.map(m=>({ user_id:m.user_id, email:m.email, nom: noms[m.user_id] || m.email || m.user_id.slice(0,6) }));
+  if(!state.categories.length){
+    const { data, error } = await sb.from('strategie_categories').insert([
+      { establishment_id:e, nom:'ERP', couleur:'#2b6cb0', ordre:1 }, { establishment_id:e, nom:'Commercial', couleur:'#dd7a1a', ordre:2 }
+    ]).select();
+    if(!error) state.categories = data||[];
+  }
+}
+
+/* ------------------------------------------------------------------ helpers */
+const carteParId = id => state.cartes.find(c=>c.id===id);
+const jalonParId = id => state.jalons.find(j=>j.id===id);
+const catParId = id => state.categories.find(c=>c.id===id);
+const membreParId = id => state.membres.find(m=>m.user_id===id);
+function prenom(m){
+  if(!m) return '';
+  return (m.nom||'').trim().split(/\s+/)[0] || m.email || '';
+}
+// Prénom affiché sur une carte : le responsable de l'action tant que la tâche n'est pas à
+// commenter/valider, puis celui à qui la main est passée (responsable du contrôle).
+function personnePourCarte(c){
+  const id = c.statut==='a_valider' ? c.responsable_controle : c.responsable_action;
+  return membreParId(id);
+}
+function initiales(m){
+  const nom = (m && m.nom) || '?';
+  const mots = nom.split(/[\s@.]+/).filter(Boolean);
+  const a = (mots[0]||'?')[0]; const b = (mots[1]||'')[0] || '';
+  return (a+b).toUpperCase();
+}
+function joursAvant(dateStr){
+  if(!dateStr) return null;
+  const auj = new Date(); auj.setHours(0,0,0,0);
+  return Math.round((new Date(dateStr+'T00:00:00') - auj) / 86400000);
+}
+function enRetard(c){ const j = joursAvant(c.echeance); return j!==null && j<0 && c.statut!=='fait'; }
+function badgeEcheance(c){
+  if(!c.echeance) return '';
+  const j = joursAvant(c.echeance);
+  const cls = c.statut==='fait' ? '' : (j<0 ? 'retard' : (j<=3 ? 'proche' : ''));
+  return `<span class="badge ${cls}">${new Date(c.echeance+'T00:00:00').toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'})}${cls==='retard'?' · dépassée':''}</span>`;
+}
+function ordreJalon(c){
+  const j = jalonParId(c.jalon_id);
+  return j && j.ordre!=null ? j.ordre : Infinity;
+}
+// à échéance égale, l'ordre des fiches Objectifs (celui de la colonne de gauche) départage
+function parEcheance(a,b){
+  if(!a.echeance && !b.echeance) return ordreJalon(a)-ordreJalon(b);
+  if(!a.echeance) return 1;
+  if(!b.echeance) return -1;
+  const cmp = a.echeance.localeCompare(b.echeance);
+  return cmp!==0 ? cmp : ordreJalon(a)-ordreJalon(b);
+}
+// Conversion Ciblé -> Transformé d'un objectif : cartes « Ciblé » transformées / toutes les cartes « Ciblé »
+// créées sur cet objectif (encore actives + déjà transformées). Calculé, jamais saisi.
+function conversionJalon(j){
+  const transformes = state.ciblesTransformees.filter(c=>c.jalon_id===j.id).length;
+  const cibles = state.cartes.filter(c=>c.jalon_id===j.id && c.type==='cible').length + transformes;
+  return { cibles, transformes, pct: cibles ? Math.round(100*transformes/cibles) : 0 };
+}
+function progressionJalon(j){
+  const lignes = state.cartes.filter(c=>c.jalon_id===j.id).sort(parEcheance);
+  const faites = lignes.filter(c=>c.statut==='fait').length;
+  return { lignes, faites, total:lignes.length, pct: lignes.length ? Math.round(100*faites/lignes.length) : 0 };
+}
+
+/* ------------------------------------------------------------------ actions : jalons */
+async function ajouterJalon(){
+  const t = document.getElementById('nvJalonTitre').value.trim(); if(!t) return;
+  const d = document.getElementById('nvJalonDate').value || null;
+  const { data, error } = await sb.from('strategie_jalons').insert({ establishment_id:state.estId, titre:t, echeance:d, ordre:state.jalons.length }).select().single();
+  if(error) return erreur('Création de l\'objectif impossible : '+error.message);
+  state.jalons.push(data); state.ouverts.clear(); state.ouverts.add(data.id); render();
+}
+async function majJalon(id, patch){
+  const j = jalonParId(id); if(!j) return; Object.assign(j, patch); render();
+  const { error } = await sb.from('strategie_jalons').update(patch).eq('id', id);
+  if(error) erreur('Mise à jour de l\'objectif impossible : '+error.message);
+}
+async function supprimerJalon(id){
+  const n = progressionJalon(jalonParId(id)).total;
+  if(!await confirmer(n ? `Supprimer cet objectif ET ses ${n} tâche(s) liée(s) ?` : 'Supprimer cet objectif ?')) return;
+  const { error } = await sb.from('strategie_jalons').delete().eq('id', id);
+  if(error) return erreur('Suppression impossible : '+error.message);
+  state.jalons = state.jalons.filter(j=>j.id!==id); state.cartes = state.cartes.filter(c=>c.jalon_id!==id); render();
+}
+function basculerJalon(id){ const etaitOuvert = state.ouverts.has(id); state.ouverts.clear(); if(!etaitOuvert) state.ouverts.add(id); render(); }
+function toggleObjectifsPanel(){ state.objectifsOuvert = !state.objectifsOuvert; render(); }
+function choisirOngletKanban(cle){ state.ongletKanban = cle; render(); }
+
+/* ------------------------------------------------------------------ actions : cartes */
+async function creerCarte(titre, jalonId, echeance){
+  const { data, error } = await sb.from('strategie_cartes').insert({
+    establishment_id:state.estId, titre, jalon_id:jalonId||null, echeance:echeance||null, statut:'a_faire', assignes:[state.user.id]
+  }).select().single();
+  if(error){ erreur('Création de la tâche liée impossible : '+error.message); return null; }
+  state.cartes.push(data); return data;
+}
+async function ajouterLigneJalon(jalonId){
+  const inp = document.getElementById('nvLigne-'+jalonId); const t = inp.value.trim(); if(!t) return;
+  const dt = document.getElementById('nvLigneDate-'+jalonId).value || null;
+  if(await creerCarte(t, jalonId, dt)) render();
+}
+async function majCarte(id, patch){
+  const c = carteParId(id); if(!c) return;
+  Object.assign(c, patch, { updated_at:new Date().toISOString() });
+  render();
+  const { error } = await sb.from('strategie_cartes').update({ ...patch, updated_at:c.updated_at }).eq('id', id);
+  if(error) erreur('Mise à jour de la tâche liée impossible : '+error.message);
+}
+async function supprimerCarte(id){
+  if(!await confirmer('Supprimer cette tâche liée ?')) return;
+  const { error } = await sb.from('strategie_cartes').delete().eq('id', id);
+  if(error) return erreur('Suppression impossible : '+error.message);
+  state.cartes = state.cartes.filter(c=>c.id!==id); state.carteOuverte = null; render();
+}
+async function changerStatut(id, statut){
+  const c = carteParId(id); if(!c || c.statut===statut) return;
+  const patch = { statut, fait_le: statut==='fait' ? new Date().toISOString() : null };
+  let destinataires = [];
+  if(statut==='a_valider'){
+    // Le déplacement de la tâche liée EST le signal : on passe la main à l'autre membre, sans message à écrire.
+    const autresQueAssignes = state.membres.filter(m=>!c.assignes.includes(m.user_id));
+    if(c.assignes.length===1 && autresQueAssignes.length===1){
+      patch.assignes = [autresQueAssignes[0].user_id];
+      destinataires = [autresQueAssignes[0].user_id];
+    } else {
+      destinataires = state.membres.map(m=>m.user_id);
+    }
+    destinataires = destinataires.filter(u=>u!==state.user.id);
+  }
+  await majCarte(id, patch);
+  if(destinataires.length){
+    const qui = (membreParId(state.user.id)||{}).nom || 'Un membre';
+    const { error } = await sb.from('strategie_notifications').insert(destinataires.map(u=>({
+      establishment_id:state.estId, destinataire:u, carte_id:id, message:`${qui} a passé « ${c.titre} » à valider / tester.`
+    })));
+    if(error) console.error('Notification non envoyée :', error.message);
+  }
+}
+// Détail d'une tâche liée : mini-checklist (à faire / feu rouge-orange-vert / commentaire),
+// remplace la description libre + le fil de commentaires — quand tout est coché, la tâche
+// liée passe automatiquement en "Fait" (et se recoche donc sur son objectif).
+const COULEURS_FEU = ['', 'rouge', 'orange', 'vert'];
+function cycleCouleur(c){ return COULEURS_FEU[(COULEURS_FEU.indexOf(c||'')+1) % COULEURS_FEU.length]; }
+// Statut de la tâche liée déduit de l'état de ses lignes (plus de glisser-déposer manuel) :
+// aucune PRÊT -> À faire ; certaines PRÊT -> En cours ; toutes PRÊT mais pas toutes avec une
+// couleur FAIT posée -> À commenter/valider ; toutes avec une couleur FAIT (peu importe laquelle) -> Fait.
+function statutDepuisSousTaches(sousTaches){
+  if(!sousTaches || !sousTaches.length) return null;
+  const nbPret = sousTaches.filter(x=>x.coche).length;
+  if(nbPret===0) return 'a_faire';
+  if(nbPret < sousTaches.length) return 'en_cours';
+  return sousTaches.every(x=>!!x.couleur) ? 'fait' : 'a_valider';
+}
+async function ecrireSousTaches(carteId, sousTaches){
+  const c = carteParId(carteId); if(!c) return;
+  c.sous_taches = sousTaches; render();
+  const { error } = await sb.from('strategie_cartes').update({ sous_taches: sousTaches, updated_at:new Date().toISOString() }).eq('id', carteId);
+  if(error){ erreur('Mise à jour impossible : '+error.message); return; }
+  const nouveauStatut = statutDepuisSousTaches(sousTaches);
+  if(nouveauStatut && nouveauStatut !== c.statut) await changerStatut(carteId, nouveauStatut);
+}
+async function ajouterSousTache(carteId){
+  const c = carteParId(carteId); if(!c) return;
+  await ecrireSousTaches(carteId, [...(c.sous_taches||[]), { texte:'', couleur:'', commentaire:'', coche:false }]);
+}
+async function majSousTache(carteId, idx, patch){
+  const c = carteParId(carteId); if(!c) return;
+  await ecrireSousTaches(carteId, (c.sous_taches||[]).map((x,i)=> i===idx ? { ...x, ...patch } : x));
+}
+async function supprimerSousTache(carteId, idx){
+  const c = carteParId(carteId); if(!c) return;
+  await ecrireSousTaches(carteId, (c.sous_taches||[]).filter((_,i)=>i!==idx));
+}
+/* lien hypertexte sur une ligne de la checklist (sous-tâche) */
+async function clicLienSousTache(carteId, idx){
+  const c = carteParId(carteId); const cur = (c.sous_taches||[])[idx]; if(!cur) return;
+  if(cur.lien){ window.open(cur.lien, '_blank', 'noopener'); return; }
+  const url = await demander('Lien à associer à cette ligne :'); if(!url) return;
+  majSousTache(carteId, idx, { lien: url.trim() });
+}
+async function definirLienSousTache(carteId, idx){
+  const c = carteParId(carteId); const cur = (c.sous_taches||[])[idx]; if(!cur) return;
+  const url = await demander('Lien pour cette ligne (laisser vide pour retirer) :', cur.lien||''); if(url===null) return;
+  majSousTache(carteId, idx, { lien: url.trim()||null });
+}
+/* pièce jointe (Word/Excel/PPT/PDF...) sur une ligne de la checklist */
+const BUCKET_PIECES = 'strategie-pieces-jointes';
+async function televerserPieceJointe(carteId, idx, fichier){
+  if(!fichier) return;
+  const chemin = `${state.estId}/${carteId}/${idx}-${Date.now()}-${fichier.name}`;
+  const { error } = await sb.storage.from(BUCKET_PIECES).upload(chemin, fichier);
+  if(error){ erreur("Envoi du fichier impossible : "+error.message); return; }
+  const { data } = sb.storage.from(BUCKET_PIECES).getPublicUrl(chemin);
+  await majSousTache(carteId, idx, { piece: { nom:fichier.name, url:data.publicUrl, chemin } });
+}
+async function retirerPieceJointe(carteId, idx){
+  const c = carteParId(carteId); const cur = (c.sous_taches||[])[idx]; if(!cur || !cur.piece) return;
+  if(!await confirmer('Retirer la pièce jointe « '+cur.piece.nom+' » ?')) return;
+  await sb.storage.from(BUCKET_PIECES).remove([cur.piece.chemin]);
+  await majSousTache(carteId, idx, { piece:null });
+}
+// Le survol (title) ne déclenche rien au tactile : pour les lecteurs non responsables, un tap
+// affiche donc la note dans une alerte plutôt que de compter uniquement sur l'infobulle.
+function voirNoteSousTache(carteId, idx){
+  const c = carteParId(carteId); const cur = (c.sous_taches||[])[idx]; if(!cur) return;
+  alert(cur.note ? cur.note : 'Aucune note pour cette ligne.');
+}
+/* note privée sur une ligne de checklist : seul le responsable de l'action peut l'ajouter/la
+   modifier/la retirer ; le responsable du contrôle (et tout autre lecteur) la découvre en
+   pop-up au survol, en lecture seule. */
+async function definirNoteSousTache(carteId, idx){
+  const c = carteParId(carteId); const cur = (c.sous_taches||[])[idx]; if(!cur) return;
+  const texte = await demander('Note pour cette ligne (visible par le contrôleur au survol ; laisser vide pour retirer) :', cur.note||''); if(texte===null) return;
+  majSousTache(carteId, idx, { note: texte.trim()||null });
+}
+/* lien hypertexte manuel sur le titre d'une échéance / tâche liée (en plus de celui posé automatiquement par la génération TEST MAURICE) */
+async function definirLienCarte(id){
+  const c = carteParId(id); if(!c) return;
+  const url = await demander('Lien pour cette échéance / tâche (laisser vide pour retirer) :', c.lien||''); if(url===null) return;
+  majCarte(id, { lien: url.trim()||null });
+}
+/* lien hypertexte manuel sur le titre d'une fiche Objectif */
+async function definirLienJalon(id){
+  const j = jalonParId(id); if(!j) return;
+  const url = await demander('Lien pour cet objectif (laisser vide pour retirer) :', j.lien||''); if(url===null) return;
+  majJalon(id, { lien: url.trim()||null });
+}
+// Le rond FAIT est cyclique (rouge/orange/vert) : on affiche le changement de couleur tout de
+// suite, mais on ne persiste / ne recalcule le statut de la tâche qu'une fois l'utilisateur
+// arrêté sur une couleur, sinon traverser rouge puis orange pour atteindre vert déclencherait
+// ces effets (fermeture de ligne, notification) à chaque étape intermédiaire pour rien.
+const timersCouleur = {};
+function cyclerCouleurSousTache(carteId, idx){
+  const c = carteParId(carteId); const cur = (c.sous_taches||[])[idx]; if(!cur) return;
+  c.sous_taches = c.sous_taches.map((x,i)=> i===idx ? { ...x, couleur: cycleCouleur(x.couleur) } : x);
+  render();
+  const cle = carteId+'#'+idx;
+  clearTimeout(timersCouleur[cle]);
+  timersCouleur[cle] = setTimeout(()=>{ delete timersCouleur[cle]; const cc = carteParId(carteId); if(cc) ecrireSousTaches(carteId, cc.sous_taches); }, 700);
+}
+async function marquerLu(id){
+  state.notifs = state.notifs.filter(n=>n.id!==id); render();
+  await sb.from('strategie_notifications').update({ lu:true }).eq('id', id);
+}
+function ouvrirCarte(id){ state.carteOuverte = id; render(); }
+function fermerCarte(){ state.carteOuverte = null; render(); }
+
+/* glisser-déposer des fiches Objectifs (ordre mémorisé) */
+async function deposerJalon(ev, cibleId){
+  ev.preventDefault(); ev.currentTarget.classList.remove('over');
+  const dId = dragJalonId; dragJalonId = null;
+  if(!dId || dId===cibleId) return;
+  const depuis = state.jalons.findIndex(j=>j.id===dId);
+  const vers = state.jalons.findIndex(j=>j.id===cibleId);
+  if(depuis<0 || vers<0) return;
+  const [j] = state.jalons.splice(depuis,1);
+  state.jalons.splice(vers,0,j);
+  state.jalons.forEach((jl,i)=>{ jl.ordre = i; });
+  render();
+  const res = await Promise.all(state.jalons.map((jl,i)=>sb.from('strategie_jalons').update({ ordre:i }).eq('id', jl.id)));
+  if(res.some(r=>r.error)) erreur('Réordonnancement des objectifs partiellement échoué — recharge la page pour vérifier.');
+}
+
+/* catégories */
+/* ------------------------------------------------------------------ carte "Ciblé" (prospect nommé) */
+const SOURCES_CIBLE = ['Recommandation','Salon','Prospection directe','Site web','Bouche-à-oreille'];
+const ACTIONS_CIBLE = ['Relancer par téléphone','Envoyer la plaquette','Envoyer un email','Planifier un RDV','Préparer le devis'];
+const TYPES_ECHANGE = { note:'Note', appel:'Appel', email:'Email', rdv:'RDV', sms:'SMS' };
+function cibleDefaut(nom){
+  return { nom, type_client:'particulier', siret:'', telephone:'', email:'', rappel_date:'', rappel_objet:'',
+    echanges:[], source:'', prochaine_action:'', autres_contacts:[] };
+}
+function dateIsoAujourdhui(){
+  const d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function dateAffichage(iso){
+  const [a,m,j] = iso.split('-');
+  return String(new Date().getFullYear())===a ? `${j}/${m}` : `${j}/${m}/${a}`;
+}
+// Du plus récent en haut ; à date égale, l'échange saisi en dernier passe devant.
+function echangesTries(c){
+  return ((c.cible||{}).echanges||[]).map((e,i)=>({ ...e, _i:i }))
+    .sort((x,y)=> (y.iso||'').localeCompare(x.iso||'') || y._i - x._i);
+}
+async function majCible(id, patch){
+  const c = carteParId(id); if(!c) return;
+  const maj = { cible: { ...(c.cible||{}), ...patch } };
+  if('nom' in patch && patch.nom) maj.titre = patch.nom;
+  await majCarte(id, maj);
+}
+function renommerCarte(id, valeur){
+  const t = valeur.trim() || 'Sans titre';
+  const c = carteParId(id);
+  return c && c.type==='cible' ? majCible(id, { nom:t }) : majCarte(id, { titre:t });
+}
+async function ajouterCible(jalonId){
+  const nom = document.getElementById('nvLigne-'+jalonId).value.trim() || 'Nouveau prospect';
+  const dt = document.getElementById('nvLigneDate-'+jalonId).value || null;
+  const c = await creerCarteAvancee({ titre:nom, jalon_id:jalonId, echeance:dt, type:'cible', cible:cibleDefaut(nom) });
+  if(c){ state.carteOuverte = c.id; render(); }
+}
+function ajouterEchangeCible(id){
+  const c = carteParId(id); if(!c) return;
+  const texte = document.getElementById('cibEchTexte').value.trim(); if(!texte) return;
+  const type = document.getElementById('cibEchType').value;
+  const iso = dateIsoAujourdhui();
+  majCible(id, { echanges:[...((c.cible||{}).echanges||[]), { iso, date:dateAffichage(iso), type, texte }] });
+}
+function basculerAjoutContact(){ state.ajoutContact = !state.ajoutContact; render(); }
+function ajouterContactCible(id){
+  const c = carteParId(id); if(!c) return;
+  const nom = document.getElementById('cibContactNom').value.trim(); if(!nom) return;
+  const role = document.getElementById('cibContactRole').value.trim();
+  state.ajoutContact = false;
+  majCible(id, { autres_contacts:[...((c.cible||{}).autres_contacts||[]), { nom, role }] });
+}
+function retirerContactCible(id, i){
+  const c = carteParId(id); if(!c) return;
+  majCible(id, { autres_contacts:((c.cible||{}).autres_contacts||[]).filter((_,k)=>k!==i) });
+}
+// Même mécanisme que le formulaire client : taper le nom d'un professionnel propose son SIRET.
+let timerSocieteCible = null;
+function afficherSuggSocietes(id){
+  const el = document.getElementById('sugSocieteCible'); if(!el) return;
+  el.innerHTML = state.suggSocietes.map((s,i)=>`<div class="sugItem" onmousedown="event.preventDefault();choisirSocieteCible('${id}',${i})">${escapeHtml(s.nom)}${s.siret?` <span class="tiny muted">(${escapeHtml(s.siret)})</span>`:''}</div>`).join('');
+}
+function chercherSocieteCible(id, valeur){
+  clearTimeout(timerSocieteCible);
+  if(valeur.trim().length < 3){ state.suggSocietes = []; afficherSuggSocietes(id); return; }
+  timerSocieteCible = setTimeout(async ()=>{
+    try{ state.suggSocietes = await chercherSocietesApi(valeur); }catch(e){ state.suggSocietes = []; }
+    afficherSuggSocietes(id);
+  }, 350);
+}
+function choisirSocieteCible(id, i){
+  const s = state.suggSocietes[i]; if(!s) return;
+  state.suggSocietes = [];
+  majCible(id, { nom:s.nom, siret:s.siret||'' });
+}
+// Transfert complet vers le Kanban Client/Projet : la fiche est créée à « À qualifier »
+// avec ce qui a été saisi, puis la carte disparaît d'ici (pas de copie des deux côtés).
+// Elle est archivée (transforme_le + projet_id) plutôt que supprimée : invisible ici, mais
+// comptée dans la conversion de son objectif ; les événements de proposition qui arrivent
+// ensuite (ouverture, téléchargement) vont dans l'historique du projet.
+async function transformerCible(id){
+  const c = carteParId(id); if(!c || c.type!=='cible') return;
+  const k = c.cible || {};
+  if(!(k.nom||'').trim()){ alert('Renseigne le nom du prospect avant de le transformer.'); return; }
+  if(!await confirmer(`Transformer « ${k.nom} » en projet dans le Kanban (étape « À qualifier ») ?\nLa carte disparaîtra de Stratégie atelier.`)) return;
+  const { data: numero, error: eNum } = await sb.rpc('next_numero_projet', { p_establishment_id: state.estId });
+  if(eNum){ alert('Erreur de numérotation : '+eNum.message); return; }
+  const iso = dateIsoAujourdhui();
+  const historique = [
+    ...(k.echanges||[]).map(e=>({ date:e.date, iso:e.iso, type:e.type, texte:e.texte })),
+    { date:dateAffichage(iso), iso, texte:'Projet créé depuis la prospection (carte « Ciblé »)' }
+  ];
+  const notes = [k.source ? `Source : ${k.source}` : '', k.prochaine_action ? `Prochaine action prévue : ${k.prochaine_action}` : ''].filter(Boolean).join('\n') || null;
+  const { data: projet, error } = await sb.from('projets').insert({
+    establishment_id:state.estId, nom:k.nom, nom_projet:k.nom, numero_projet:numero,
+    client_nom:k.nom, client_telephone:k.telephone||null, client_email:k.email||null,
+    client_type:k.type_client||null, client_siret:k.siret||null,
+    etape:'qualification', historique,
+    echeance_date:k.rappel_date||null, echeance_label:k.rappel_objet||null,
+    notes, autres_contacts:k.autres_contacts||[]
+  }).select('id').single();
+  if(error){ alert('Création du projet impossible : '+error.message); return; }
+  const archive = { transforme_le:new Date().toISOString(), projet_id:projet.id };
+  let { error: eArch } = await sb.from('strategie_cartes').update(archive).eq('id', id);
+  // Base pas encore migrée (colonnes absentes) : on garde l'ancien comportement (suppression)
+  if(eArch && /transforme_le|projet_id/.test(eArch.message||'')) ({ error: eArch } = await sb.from('strategie_cartes').delete().eq('id', id));
+  if(eArch){ alert(`Le projet n° ${numero} est bien créé dans le Kanban, mais la carte n'a pas pu être retirée d'ici : ${eArch.message}`); return; }
+  state.cartes = state.cartes.filter(x=>x.id!==id);
+  state.ciblesTransformees.push({ ...c, ...archive });
+  state.carteOuverte = null; render();
+  alert(`Transformé : le projet n° ${numero} est créé dans le Kanban, à l'étape « À qualifier ».`);
+}
+/* ------------------------------------------------------------------ export Word / Excel */
+function libelleStatut(c){ return (STATUTS.find(s=>s.cle===c.statut)||{}).label || c.statut; }
+function libelleResponsable(id){ const m = membreParId(id); return m ? prenom(m) : ''; }
+function construireDonneesExport(){
+  const porteeEl = document.getElementById('exportPortee');
+  const portee = porteeEl ? porteeEl.value : 'tous';
+  const jalonsAExporter = portee==='tous' ? state.jalons : state.jalons.filter(j=>j.id===portee);
+  return jalonsAExporter.map(j=>({
+    jalon: j,
+    cartes: state.cartes.filter(c=>c.jalon_id===j.id).sort(parEcheance),
+  }));
+}
+function telechargerFichier(contenu, type, nomFichier){
+  const blob = new Blob(['﻿', contenu], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = nomFichier;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 2000);
+}
+function dateFr(d){ return d ? new Date(d+'T00:00:00').toLocaleDateString('fr-FR') : ''; }
+function exporterWord(){
+  const detail = document.getElementById('exportDetail').checked;
+  const donnees = construireDonneesExport();
+  let html = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+  <head><meta charset="utf-8"><title>Stratégie atelier</title>
+  <style>
+    body{font-family:Calibri,Arial,sans-serif;font-size:11pt}
+    h1{font-size:18pt;margin-bottom:2px} h2{font-size:14pt;margin:20px 0 4px;border-bottom:1px solid #999;padding-bottom:2px}
+    table{border-collapse:collapse;width:100%;margin:4px 0 16px}
+    th,td{border:1px solid #ccc;padding:4px 6px;font-size:10pt;text-align:left;vertical-align:top}
+    th{background:#f2f2f2}
+    .muted{color:#666;font-size:9pt}
+    .sousTitre{font-size:11pt;margin:10px 0 2px}
+  </style></head><body>
+  <h1>Stratégie atelier</h1>
+  <p class="muted">Export du ${dateFr(new Date().toISOString().slice(0,10))}</p>`;
+  donnees.forEach(d=>{
+    html += `<h2>${escapeHtml(d.jalon.titre)}${d.jalon.echeance?' — échéance '+dateFr(d.jalon.echeance):''}</h2>`;
+    html += `<table><thead><tr><th>Échéance / tâche</th><th>Date</th><th>Statut</th><th>Responsable action</th><th>Responsable contrôle</th></tr></thead><tbody>`;
+    (d.cartes.length ? d.cartes : []).forEach(c=>{
+      html += `<tr><td>${escapeHtml(c.titre)}</td><td>${dateFr(c.echeance)}</td><td>${escapeHtml(libelleStatut(c))}</td><td>${escapeHtml(libelleResponsable(c.responsable_action))}</td><td>${escapeHtml(libelleResponsable(c.responsable_controle))}</td></tr>`;
+    });
+    if(!d.cartes.length) html += `<tr><td colspan="5" class="muted">Aucune échéance.</td></tr>`;
+    html += `</tbody></table>`;
+    if(detail){
+      d.cartes.forEach(c=>{
+        if(!c.sous_taches || !c.sous_taches.length) return;
+        html += `<p class="sousTitre"><b>${escapeHtml(c.titre)}</b> — détail :</p><table><thead><tr><th>À faire</th><th>Prêt</th><th>Commentaire</th><th>Fait</th></tr></thead><tbody>`;
+        c.sous_taches.forEach(st=>{
+          html += `<tr><td>${escapeHtml(st.texte||'')}</td><td>${st.coche?'Oui':'Non'}</td><td>${escapeHtml(st.commentaire||'')}</td><td>${escapeHtml(st.couleur||'')}</td></tr>`;
+        });
+        html += `</tbody></table>`;
+      });
+    }
+  });
+  html += `</body></html>`;
+  telechargerFichier(html, 'application/msword', `strategie-atelier-${Date.now()}.doc`);
+}
+function exporterExcel(){
+  const detail = document.getElementById('exportDetail').checked;
+  const donnees = construireDonneesExport();
+  const wb = XLSX.utils.book_new();
+  const lignes = [['Objectif','Échéance objectif','Tâche liée','Échéance tâche','Statut','Responsable action','Responsable contrôle']];
+  donnees.forEach(d=>{
+    if(!d.cartes.length) lignes.push([d.jalon.titre, dateFr(d.jalon.echeance), '', '', '', '', '']);
+    d.cartes.forEach(c=>{
+      lignes.push([d.jalon.titre, dateFr(d.jalon.echeance), c.titre, dateFr(c.echeance), libelleStatut(c), libelleResponsable(c.responsable_action), libelleResponsable(c.responsable_controle)]);
+    });
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(lignes), 'Échéances');
+  if(detail){
+    const lignesDetail = [['Objectif','Tâche liée','À faire','Prêt','Commentaire','Fait']];
+    donnees.forEach(d=>{
+      d.cartes.forEach(c=>{
+        (c.sous_taches||[]).forEach(st=>{
+          lignesDetail.push([d.jalon.titre, c.titre, st.texte||'', st.coche?'Oui':'Non', st.commentaire||'', st.couleur||'']);
+        });
+      });
+    });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(lignesDetail), 'Détail tâches');
+  }
+  XLSX.writeFile(wb, `strategie-atelier-${Date.now()}.xlsx`);
+}
+/* ------------------------------------------------------------------ génération TEST MAURICE + PROSPECTION */
+async function trouverOuCreerJalon(titre, echeance){
+  // recherche large (ex. « TEST MAURICE ERP » doit être retrouvé même si on cherche « TEST MAURICE »,
+  // au cas où la fiche a été renommée depuis sa création)
+  let j = state.jalons.find(x=>x.titre===titre) || state.jalons.find(x=>x.titre.toUpperCase().includes(titre.toUpperCase()));
+  if(j) return j;
+  const { data, error } = await sb.from('strategie_jalons').insert({ establishment_id:state.estId, titre, echeance, ordre:state.jalons.length }).select().single();
+  if(error){ erreur('Création de « '+titre+' » impossible : '+error.message); return null; }
+  state.jalons.push(data); return data;
+}
+async function creerCarteAvancee(patch){
+  const { data, error } = await sb.from('strategie_cartes').insert({
+    establishment_id:state.estId, statut:'a_faire', assignes:[state.user.id], ...patch
+  }).select().single();
+  if(error){ erreur('Création de « '+(patch.titre||'')+' » impossible : '+error.message); return null; }
+  state.cartes.push(data); return data;
+}
+function idMembreParEmail(email){ const m = state.membres.find(x=>(x.email||'').toLowerCase()===email.toLowerCase()); return m ? m.user_id : null; }
+function idMembreParNom(sousChaine){ const m = state.membres.find(x=>(x.nom||'').toLowerCase().includes(sousChaine.toLowerCase())); return m ? m.user_id : null; }
+const CHECKS_PAGE = () => ([
+  { texte:"La page s'ouvre sans erreur", couleur:'', commentaire:'', coche:false },
+  { texte:'Les boutons et champs fonctionnent', couleur:'', commentaire:'', coche:false },
+  { texte:"Les données saisies s'enregistrent bien", couleur:'', commentaire:'', coche:false },
+  { texte:'Le contenu est compréhensible pour un utilisateur qui découvre', couleur:'', commentaire:'', coche:false },
+]);
+// Périmètres ERP Maurice + Thérèse tirés de plan-du-site.html (23/09/2026) — VraiSavoirFaire et
+// l'outil geste laissés de côté. ⭐ (prioritaires) en premier, le reste ensuite.
+function pagesAControler(estId){
+  const ERP_BASE = 'https://fastidious-kringle-8ac4c1.netlify.app/';
+  const E = (page, params) => ERP_BASE + page + (params ? '?est='+encodeURIComponent(estId)+params : (page.includes('?')?'':'?est='+encodeURIComponent(estId)));
+  const EQ = (page) => ERP_BASE + page;
+  return [
+    ['Devis (interne)', E('devis-interne.html')],
+    ['Formulaire client (devis)', E('devis-client.html')],
+    ['Calendrier chantier', E('client-projet.html')],
+    ['Stratégie atelier', E('strategie-atelier.html')],
+    ['Accueil / tableau de bord membre', EQ('federation-accueil.html')],
+    ['Carte des réalisations', EQ('carte-realisations.html')],
+    ['Constellation des gestes', EQ('constellation-des-gestes.html')],
+    ['Reconversion', EQ('reconversion.html')],
+    ['Éditos du site public', EQ('federation-editos.html')],
+    ['Admin métiers', EQ('admin-metiers.html')],
+    ['Thérèse — clôture de chantier', E('therese.html')],
+    ['Guide de production (carte mentale)', EQ('guide-production-mindmap.html')],
+    ['Déploiement du référentiel-formation', EQ('deploiement-referentiel-formation.html')],
+    ['Kanban clients', E('client-projet.html')],
+    ['Dossier de présentation', EQ('dossier-presentation.html')],
+    ['Optimisation impression poncifs', EQ('poncifs-optimisation.html')],
+    ['Stock & commandes', E('stock-atelier.html')],
+    ['Accueil atelier / Fiche entreprise', E('atelier-compte.html')],
+    ['Compte & équipe', E('atelier-compte.html','&tab=equipe')],
+    ['Temps de travail', E('atelier-compte.html','&tab=temps')],
+    ['Nos peintres / carte', EQ('federation-accueil.html?tab=peintres')],
+    ['Nous rejoindre', EQ('federation-accueil.html?tab=devenir')],
+    ['Positionnement', E('positionnement.html')],
+    ['MAMAIN — cartographie des compétences', EQ('cartographie-metier_1.html')],
+    ['Accueil « Mon Atelier » (à vérifier)', EQ('index.html')],
+  ];
+}
+const ETAPES_PROSPECTION = [
+  'Docs commerciaux conformes + 3 cibles + pitch RDV1 validés', 'RDV1', 'Devis envoyés / préparation RDV2',
+  'RDV2 et pitch ajusté', 'Relances et objections', 'Négociation', 'Conditions des contrats-cadres',
+  'Derniers ajustements', 'Derniers échanges', 'Signature de 2 contrats-cadres',
+];
+function datesEtalees(n, dateFin){
+  const debut = new Date(); debut.setHours(0,0,0,0);
+  const jours = Math.round((new Date(dateFin+'T00:00:00') - debut) / 86400000);
+  const res = [];
+  for(let i=0;i<n;i++){
+    const j = n>1 ? Math.round(i*jours/(n-1)) : jours;
+    const d = new Date(debut); d.setDate(d.getDate()+j);
+    res.push(d.toISOString().slice(0,10));
+  }
+  return res;
+}
+async function genererFichesTestEtProspection(){
+  if(!await confirmer("Créer les échéances « TEST MAURICE » (contrôle des pages Maurice + Thérèse) et « PROSPECTION » (plan commercial) ? Ça ajoute des fiches dans Supabase pour cet atelier.")) return;
+  const DATE_FIN = '2026-12-18';
+  const stephaneId = idMembreParEmail('strignau@gmail.com');
+  const tristanId = idMembreParNom('tristan') || idMembreParNom('gesret');
+  if(!stephaneId || !tristanId) erreur("Attention : je n'ai pas retrouvé "+(!stephaneId&&!tristanId?'Stéphane ni Tristan':(!stephaneId?'Stéphane (strignau@gmail.com)':'Tristan'))+" dans les membres de cet atelier — les responsables des nouvelles fiches sont à choisir à la main.");
+  const catErp = (state.categories.find(c=>c.nom==='ERP')||{}).id || null;
+  const catCommercial = (state.categories.find(c=>c.nom==='Commercial')||{}).id || null;
+
+  const jTest = await trouverOuCreerJalon('TEST MAURICE', DATE_FIN);
+  const jProspection = await trouverOuCreerJalon('PROSPECTION', DATE_FIN);
+  if(!jTest || !jProspection) return;
+
+  const pages = pagesAControler(state.estId);
+  const datesPages = datesEtalees(pages.length, DATE_FIN);
+  const dejaTest = new Set(state.cartes.filter(c=>c.jalon_id===jTest.id).map(c=>c.lien||c.titre));
+  for(let i=0;i<pages.length;i++){
+    const [nom, url] = pages[i];
+    if(dejaTest.has(url)) continue;
+    await creerCarteAvancee({
+      titre:nom, lien:url, jalon_id:jTest.id, categorie_id:catErp, echeance:datesPages[i],
+      responsable_action:stephaneId, responsable_controle:tristanId,
+      assignes:[stephaneId||state.user.id].filter(Boolean), sous_taches:CHECKS_PAGE(),
+    });
+  }
+
+  const datesProspection = datesEtalees(ETAPES_PROSPECTION.length, DATE_FIN);
+  const dejaProspection = new Set(state.cartes.filter(c=>c.jalon_id===jProspection.id).map(c=>c.titre));
+  for(let i=0;i<ETAPES_PROSPECTION.length;i++){
+    const titre = ETAPES_PROSPECTION[i];
+    if(dejaProspection.has(titre)) continue;
+    await creerCarteAvancee({
+      titre, jalon_id:jProspection.id, categorie_id:catCommercial, echeance:datesProspection[i],
+      responsable_action:tristanId, responsable_controle:stephaneId,
+      assignes:[tristanId||state.user.id].filter(Boolean), sous_taches:[],
+    });
+  }
+  render();
+}
+/* ------------------------------------------------------------------ rendu */
+const PALETTE_JALON = ['', '#e53e3e', '#dd6b20', '#b7791f', '#38a169', '#319795', '#3182ce', '#805ad5', '#d53f8c'];
+function renderJalon(j){
+  const p = progressionJalon(j); const ouvert = state.ouverts.has(j.id);
+  const enteteRetard = j.echeance && joursAvant(j.echeance)<0 && p.faites<p.total;
+  return `
+  <div class="jalon" style="border-left-color:${j.couleur || 'var(--line)'}" draggable="true" ondragstart="dragJalonId='${j.id}'" ondragover="event.preventDefault();this.classList.add('over')" ondragleave="this.classList.remove('over')" ondrop="deposerJalon(event,'${j.id}')">
+    <div class="jalonHead" onclick="basculerJalon('${j.id}')">
+      <div class="l1"><b>${j.lien ? `<a href="${escapeHtml(j.lien)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:inherit;text-decoration:underline" title="Ouvrir la page liée dans un nouvel onglet">${escapeHtml(j.titre)} ↗</a>` : escapeHtml(j.titre)}</b><span class="tiny muted">${ouvert?'▾':'▸'}</span></div>
+      <div class="tiny ${enteteRetard?'':'muted'}" style="${enteteRetard?'color:var(--red);font-weight:600':''}">${j.echeance ? 'Échéance '+new Date(j.echeance+'T00:00:00').toLocaleDateString('fr-FR') : 'Sans échéance'}${enteteRetard?' · dépassée':''}</div>
+      <div class="bar"><i style="width:${p.pct}%"></i></div>
+      <div class="tiny muted">${p.faites}/${p.total}</div>
+      ${(()=>{ const cv = conversionJalon(j); return cv.cibles ? `<div class="tiny" style="margin-top:3px;color:#6b46c1;font-weight:600" title="Cartes « Ciblé » de cet objectif transformées en projet / total des cartes « Ciblé » créées sur cet objectif">${cv.transformes} transformé${cv.transformes>1?'s':''} / ${cv.cibles} ciblé${cv.cibles>1?'s':''} — ${cv.pct} %</div>` : ''; })()}
+    </div>
+    ${ouvert ? `
+    <div class="jalonBody">
+      <div class="grid2" style="margin-bottom:10px">
+        <div style="display:flex;gap:4px;align-items:center;min-width:0">
+          ${j.lien
+            ? `<a class="input" style="display:inline-flex;align-items:center;flex:1;min-width:0;text-decoration:none;color:inherit;background:#fff" href="${escapeHtml(j.lien)}" target="_blank" rel="noopener" title="Ouvrir la page liée dans un nouvel onglet">${escapeHtml(j.titre)} ↗</a>`
+            : `<input class="input" style="flex:1;min-width:0" value="${escapeHtml(j.titre)}" onchange="majJalon('${j.id}',{titre:this.value.trim()||'Sans titre'})" title="Titre de l'objectif">`}
+          <button class="btn" style="padding:7px 10px;flex-shrink:0" title="${j.lien?'Modifier le lien':'Ajouter un lien'}" onclick="definirLienJalon('${j.id}')">🔗</button>
+        </div>
+        <input class="input" type="date" value="${j.echeance||''}" onchange="majJalon('${j.id}',{echeance:this.value||null})" title="Grande échéance de l'objectif (indépendante de ses tâches)">
+      </div>
+      <div class="swatches">
+        <span class="tiny muted">Couleur</span>
+        ${PALETTE_JALON.map(col=>`<button class="swatch ${(j.couleur||'')===col?'actif':''}" style="background:${col||'#fff'}" onclick="majJalon('${j.id}',{couleur:${col?`'${col}'`:'null'}})" title="${col||'Aucune couleur'}"></button>`).join('')}
+      </div>
+      ${p.lignes.map(c=>`
+        <div class="ligne ${c.statut==='fait'?'fait':''} ${enRetard(c)?'retard':''}">
+          <div class="ligneL1">
+            <input type="checkbox" ${c.statut==='fait'?'checked':''} onchange="changerStatut('${c.id}', this.checked ? 'fait' : 'a_faire')" title="Cocher = tâche « Fait » ; se coche aussi toute seule quand la tâche passe en « Fait »">
+            ${c.lien
+              ? `<a class="input tt" style="display:inline-flex;align-items:center;text-decoration:none;color:inherit;background:#fff" href="${escapeHtml(c.lien)}" target="_blank" rel="noopener" title="Ouvrir la page à contrôler dans un nouvel onglet">${escapeHtml(c.titre)} ↗</a>`
+              : `<input class="input tt" value="${escapeHtml(c.titre)}" onchange="renommerCarte('${c.id}',this.value)">`}
+            <button class="btn" style="padding:4px 8px;flex:0 0 auto" title="${c.lien?'Modifier le lien':'Ajouter un lien'}" onclick="definirLienCarte('${c.id}')">🔗</button>
+          </div>
+          <div class="ligneL2">
+            <input class="input dt" type="date" value="${c.echeance||''}" onchange="majCarte('${c.id}',{echeance:this.value||null})">
+            <button class="btn" style="padding:4px 10px" onclick="ouvrirCarte('${c.id}')" title="Ouvrir la tâche liée">↗</button>
+            <button class="btn btnDanger" style="padding:4px 10px" onclick="supprimerCarte('${c.id}')" title="Supprimer cette échéance">🗑</button>
+          </div>
+        </div>`).join('') || '<div class="tiny muted" style="margin-bottom:6px">Aucune tâche encore.</div>'}
+      <div class="ligne" style="margin-top:6px">
+        <div class="ligneL1"><input class="input" id="nvLigne-${j.id}" placeholder="Nouvelle échéance / tâche…" onkeydown="if(event.key==='Enter')ajouterLigneJalon('${j.id}')"></div>
+        <div class="ligneL2" style="padding-left:0">
+          <input class="input" id="nvLigneDate-${j.id}" type="date">
+          <button class="btn btnPrimary" onclick="ajouterLigneJalon('${j.id}')">+</button>
+          <button class="btn" onclick="ajouterCible('${j.id}')" title="Créer une carte pour un prospect précis (le nom saisi à gauche devient le nom du prospect)">Ciblé</button>
+        </div>
+      </div>
+      <div style="margin-top:10px"><button class="btn btnDanger tiny" onclick="supprimerJalon('${j.id}')">Supprimer l'objectif</button></div>
+    </div>` : ''}
+  </div>`;
+}
+
+function renderCarte(c){
+  const cat = catParId(c.categorie_id); const jl = jalonParId(c.jalon_id); const personne = personnePourCarte(c);
+  return `
+  <div class="carte" style="border-left:4px solid ${(jl&&jl.couleur)||'var(--line)'}" onclick="ouvrirCarte('${c.id}')">
+    ${jl ? `<div class="jl">↳ ${escapeHtml(jl.titre)}</div>` : ''}
+    <div style="font-weight:600;margin-bottom:6px">${c.lien ? `<a href="${escapeHtml(c.lien)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:inherit;text-decoration:underline" title="Ouvrir la page à contrôler dans un nouvel onglet">${escapeHtml(c.titre)} ↗</a>` : escapeHtml(c.titre)}</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap">
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        ${c.type==='cible' ? `<span class="pill" style="background:#6b46c1">Ciblé</span>` : ''}
+        ${cat ? `<span class="pill" style="background:${escapeHtml(cat.couleur)}">${escapeHtml(cat.nom)}</span>` : ''}
+        ${badgeEcheance(c)}
+      </div>
+      ${personne ? `<span class="chip" title="${escapeHtml(personne.email||'')}">${escapeHtml(prenom(personne))}</span>` : ''}
+    </div>
+  </div>`;
+}
+
+function renderBlocCible(c){
+  const k = c.cible || {};
+  const pro = k.type_client === 'professionnel';
+  const autres = k.autres_contacts || [];
+  const ech = echangesTries(c);
+  const val = v => escapeHtml(v||'');
+  return `
+  <div class="blocCible">
+    <div class="enTete">
+      <span class="tiny muted">Prospect ciblé — reste ici tant qu'il n'est pas transformé en projet.</span>
+      <button class="btn btnTransforme" onclick="transformerCible('${c.id}')" title="Crée la fiche projet dans le Kanban (À qualifier) et retire cette carte d'ici">Transformé</button>
+    </div>
+    <div class="field">
+      <label>Nom du prospect / de l'entreprise</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start">
+        <select class="input" style="width:auto" onchange="majCible('${c.id}',{type_client:this.value})">
+          <option value="particulier" ${!pro?'selected':''}>Particulier</option>
+          <option value="professionnel" ${pro?'selected':''}>Professionnel</option>
+        </select>
+        <div class="fieldAuto" style="flex:1;min-width:200px">
+          <input class="input" autocomplete="off" value="${val(k.nom||c.titre)}" ${pro?`oninput="chercherSocieteCible('${c.id}',this.value)" placeholder="Tape le nom — le SIRET se propose tout seul"`:''} onchange="majCible('${c.id}',{nom:this.value.trim()||'Nouveau prospect'})">
+          ${pro ? `<div class="sugBox" id="sugSocieteCible"></div>` : ''}
+        </div>
+      </div>
+    </div>
+    ${pro ? `<div class="field"><label>SIRET</label><input class="input" value="${val(k.siret)}" placeholder="14 chiffres, ou laisse le nom le remplir" onchange="majCible('${c.id}',{siret:this.value.trim()})"></div>` : ''}
+    <div class="grid2">
+      <div class="field"><label>Téléphone</label><input class="input" value="${val(k.telephone)}" onchange="majCible('${c.id}',{telephone:this.value.trim()})"></div>
+      <div class="field"><label>Email</label><input class="input" value="${val(k.email)}" onchange="majCible('${c.id}',{email:this.value.trim()})"></div>
+    </div>
+
+    <div class="field">
+      <div class="tiny muted" style="margin-bottom:4px">Autres contacts dans l'entreprise${autres.length?` (${autres.length})`:''}</div>
+      ${autres.map((a,i)=>`<div class="contactLigne"><span>${val(a.nom)}${a.role?` — ${val(a.role)}`:''}</span><button class="lienDiscret" onclick="retirerContactCible('${c.id}',${i})">Retirer</button></div>`).join('')}
+      ${state.ajoutContact ? `
+      <div class="grid2" style="margin-top:6px">
+        <input class="input" id="cibContactNom" placeholder="Nom">
+        <input class="input" id="cibContactRole" placeholder="Rôle (texte libre)" onkeydown="if(event.key==='Enter')ajouterContactCible('${c.id}')">
+      </div>
+      <div style="display:flex;gap:8px;margin-top:6px"><button class="btn btnPrimary" onclick="ajouterContactCible('${c.id}')">Ajouter</button><button class="btn" onclick="basculerAjoutContact()">Annuler</button></div>`
+      : `<button class="btnPointille" onclick="basculerAjoutContact()">+ Ajouter un contact</button>`}
+    </div>
+
+    <div class="grid2">
+      <div class="field"><label>Date de rappel</label><input class="input" type="date" value="${val(k.rappel_date)}" onchange="majCible('${c.id}',{rappel_date:this.value})"></div>
+      <div class="field"><label>Objet du rappel</label><input class="input" value="${val(k.rappel_objet)}" placeholder="ex : relancer après l'envoi de la plaquette" onchange="majCible('${c.id}',{rappel_objet:this.value.trim()})"></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>Source</label>
+        <input class="input" list="dlSources" value="${val(k.source)}" placeholder="Comment ce prospect a été identifié" onchange="majCible('${c.id}',{source:this.value.trim()})">
+        <datalist id="dlSources">${SOURCES_CIBLE.map(s=>`<option value="${escapeHtml(s)}">`).join('')}</datalist></div>
+      <div class="field"><label>Prochaine action prévue</label>
+        <input class="input" list="dlActions" value="${val(k.prochaine_action)}" placeholder="Court, ex : relancer par téléphone" onchange="majCible('${c.id}',{prochaine_action:this.value.trim()})">
+        <datalist id="dlActions">${ACTIONS_CIBLE.map(s=>`<option value="${escapeHtml(s)}">`).join('')}</datalist></div>
+    </div>
+    ${!(c.sous_taches||[]).length ? `
+    <div class="field" style="max-width:240px"><label>Statut</label>
+      <select class="input" onchange="changerStatut('${c.id}',this.value)">${STATUTS.map(s=>`<option value="${s.cle}" ${c.statut===s.cle?'selected':''}>${s.label}</option>`).join('')}</select></div>` : ''}
+
+    <div class="field" style="margin-bottom:0">
+      <label>Suivi des échanges</label>
+      ${ech.map(e=>`<div class="histoLine"><span><b>[${escapeHtml(TYPES_ECHANGE[e.type]||e.type||'Note')}]</b> ${escapeHtml(e.texte)}</span><span class="muted">${escapeHtml(e.date||'')}</span></div>`).join('') || '<div class="tiny muted">Aucun échange enregistré.</div>'}
+      <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+        <select class="input" style="width:auto" id="cibEchType">${Object.entries(TYPES_ECHANGE).map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}</select>
+        <input class="input" id="cibEchTexte" style="flex:1;min-width:150px;width:auto" placeholder="Ex : appelé, en attente…" onkeydown="if(event.key==='Enter')ajouterEchangeCible('${c.id}')">
+        <button class="btn" onclick="ajouterEchangeCible('${c.id}')">Ajouter</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderFenetreCarte(){
+  const c = carteParId(state.carteOuverte); if(!c) return '';
+  const jl = jalonParId(c.jalon_id);
+  const estResponsableAction = !!state.user && state.user.id === c.responsable_action;
+  return `
+  <div class="voile" onclick="if(event.target===this)fermerCarte()">
+    <div class="fenetre" style="border-top:6px solid ${(jl&&jl.couleur)||'var(--line)'}">
+      <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:12px">
+        <input class="input" style="font-size:17px;font-weight:600;flex:1;min-width:0" value="${escapeHtml(c.titre)}" onchange="renommerCarte('${c.id}',this.value)">
+        <button class="btn" style="flex:0 0 auto" onclick="fermerCarte()">Fermer</button>
+      </div>
+      <div class="tiny" style="margin:-6px 0 10px;display:flex;gap:10px;align-items:center">
+        ${c.lien ? `<a href="${escapeHtml(c.lien)}" target="_blank" rel="noopener">🔗 Ouvrir la page à contrôler ↗</a>` : ''}
+        <button class="btn" style="padding:2px 8px" onclick="definirLienCarte('${c.id}')">${c.lien?'Modifier le lien':'🔗 Ajouter un lien'}</button>
+      </div>
+      <div class="field" style="max-width:220px"><label>Échéance de la tâche</label><input class="input" type="date" value="${c.echeance||''}" onchange="majCarte('${c.id}',{echeance:this.value||null})"></div>
+      ${c.type==='cible' ? renderBlocCible(c) : ''}
+      <div class="field"><label>Description/Commentaire</label>
+        <div style="overflow-x:auto">
+        <table class="sousTachesTable">
+          <thead>
+            <tr>
+              <th colspan="2">
+                <div class="responsableGroupe">
+                  <span class="chip">${c.responsable_action ? escapeHtml(prenom(membreParId(c.responsable_action))) : 'Personne'}</span>
+                  <select onchange="majCarte('${c.id}',{responsable_action:this.value||null})">
+                    <option value="">Responsable action…</option>
+                    ${state.membres.map(m=>`<option value="${m.user_id}" ${c.responsable_action===m.user_id?'selected':''}>${escapeHtml(m.nom)}</option>`).join('')}
+                  </select>
+                </div>
+              </th>
+              <th colspan="2" class="groupeSepare">
+                <div class="responsableGroupe">
+                  <span class="chip">${c.responsable_controle ? escapeHtml(prenom(membreParId(c.responsable_controle))) : 'Personne'}</span>
+                  <select onchange="majCarte('${c.id}',{responsable_controle:this.value||null})">
+                    <option value="">Responsable contrôle…</option>
+                    ${state.membres.map(m=>`<option value="${m.user_id}" ${c.responsable_controle===m.user_id?'selected':''}>${escapeHtml(m.nom)}</option>`).join('')}
+                  </select>
+                </div>
+              </th>
+              <th></th>
+            </tr>
+            <tr><th>À faire</th><th>Prêt</th><th class="groupeSepare">Commentaire</th><th>Fait</th><th></th></tr>
+          </thead>
+          <tbody>
+          ${(c.sous_taches||[]).map((st,i)=>`
+          <tr>
+            <td>
+              <div style="display:flex;gap:4px;align-items:center">
+                <input class="input" style="flex:1;min-width:90px" placeholder="À faire…" value="${escapeHtml(st.texte||'')}" onchange="majSousTache('${c.id}',${i},{texte:this.value})">
+                <button class="btn" style="padding:2px 6px;opacity:${st.lien?1:.35}" title="${st.lien?'Ouvrir le lien':'Ajouter un lien'}" onclick="clicLienSousTache('${c.id}',${i})">🔗</button>
+                ${st.lien?`<button class="btn" style="padding:2px 6px" title="Modifier le lien" onclick="definirLienSousTache('${c.id}',${i})">✎</button>`:''}
+                ${estResponsableAction
+                  ? `<button class="btn" style="padding:2px 6px;opacity:${st.note?1:.35}" title="${st.note?escapeHtml(st.note):'Ajouter une note (lisible par le contrôleur au survol)'}" onclick="definirNoteSousTache('${c.id}',${i})">📝</button>`
+                  : `<button class="btn" style="padding:2px 6px;opacity:${st.note?1:.35}" title="${st.note?escapeHtml(st.note):'Aucune note'}" onclick="voirNoteSousTache('${c.id}',${i})">📝</button>`}
+                <input type="file" id="fichier-${c.id}-${i}" style="display:none" accept=".doc,.docx,.xls,.xlsx,.ppt,.pptx,.pdf" onchange="televerserPieceJointe('${c.id}',${i},this.files[0])">
+                <button class="btn" style="padding:2px 6px;opacity:${st.piece?1:.35}" title="${st.piece?('Ouvrir : '+escapeHtml(st.piece.nom)):'Joindre un fichier (Word/Excel/PPT/PDF)'}" onclick="${st.piece?`window.open('${escapeHtml(st.piece.url)}','_blank')`:`document.getElementById('fichier-${c.id}-${i}').click()`}">📎</button>
+                ${st.piece?`<button class="btn" style="padding:2px 6px" title="Retirer la pièce jointe" onclick="retirerPieceJointe('${c.id}',${i})">✕</button>`:''}
+              </div>
+            </td>
+            <td style="text-align:center"><input type="checkbox" ${st.coche?'checked':''} onchange="majSousTache('${c.id}',${i},{coche:this.checked})" title="Prêt"></td>
+            <td class="colSepare"><input class="input" placeholder="Commentaire…" value="${escapeHtml(st.commentaire||'')}" onchange="majSousTache('${c.id}',${i},{commentaire:this.value})"></td>
+            <td style="text-align:center"><button class="feu ${st.couleur||''}" title="Cliquer pour poser/faire tourner la couleur Fait" onclick="cyclerCouleurSousTache('${c.id}',${i})"></button></td>
+            <td><button class="btn" style="padding:2px 8px" onclick="supprimerSousTache('${c.id}',${i})">✕</button></td>
+          </tr>`).join('') || `<tr><td colspan="5" class="tiny muted">Aucune ligne — ajoute ce qu'il y a à faire.</td></tr>`}
+          </tbody>
+        </table>
+        </div>
+        <button class="btn" style="margin-top:6px" onclick="ajouterSousTache('${c.id}')">+ Ligne</button>
+      </div>
+      <button class="btn btnDanger tiny" onclick="supprimerCarte('${c.id}')">Supprimer la tâche liée</button>
+    </div>
+  </div>`;
+}
+
+function render(){
+  document.querySelector('.app').innerHTML = `
+  <nav class="topnav">${navAtelierHtml(state.estId, { actif:'strategie' })}</nav>
+  <div class="main">
+    ${state.notifs.map(n=>`<div class="notif"><span>🔔 ${escapeHtml(n.message)}</span><span style="display:flex;gap:6px">${n.carte_id&&carteParId(n.carte_id)?`<button class="btn" onclick="ouvrirCarte('${n.carte_id}')">Voir</button>`:''}<button class="btn" onclick="marquerLu('${n.id}')">OK</button></span></div>`).join('')}
+    <div class="layout">
+      <div>
+        <div class="objectifsHead" onclick="toggleObjectifsPanel()">
+          <p class="colTitle" style="margin:0">Objectifs <span class="muted" style="font-weight:400;text-transform:none;letter-spacing:0">(${state.jalons.length})</span></p>
+          <span class="tiny muted">${state.objectifsOuvert?'▾ replier':'▸ déplier'}</span>
+        </div>
+        ${state.objectifsOuvert ? `
+        <div>
+          ${state.jalons.map(renderJalon).join('') || '<div class="tiny muted" style="margin-bottom:10px">Aucun objectif pour l\'instant.</div>'}
+          <div style="display:grid;grid-template-columns:1fr 122px auto;gap:8px;margin-top:6px">
+            <input class="input" id="nvJalonTitre" placeholder="Nouvel objectif…" onkeydown="if(event.key==='Enter')ajouterJalon()">
+            <input class="input" id="nvJalonDate" type="date">
+            <button class="btn btnPrimary" onclick="ajouterJalon()">+</button>
+          </div>
+          <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line)">
+            <p class="colTitle" style="margin-bottom:6px">Export / impression</p>
+            <select class="input" id="exportPortee" style="margin-bottom:6px">
+              <option value="tous">Toutes les fiches Objectifs</option>
+              ${state.jalons.map(j=>`<option value="${j.id}">${escapeHtml(j.titre)}</option>`).join('')}
+            </select>
+            <label class="tiny" style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+              <input type="checkbox" id="exportDetail" checked> Inclure le détail des tâches liées (checklist)
+            </label>
+            <div style="display:flex;gap:8px">
+              <button class="btn" onclick="exporterWord()">📄 Word</button>
+              <button class="btn" onclick="exporterExcel()">📊 Excel</button>
+            </div>
+          </div>
+        </div>` : ''}
+      </div>
+      <div>
+        <p class="colTitle">Tâches liées</p>
+        <div class="ongletsKanban">
+          ${STATUTS.map(s=>{ const n = state.cartes.filter(c=>c.statut===s.cle).length; return `<button class="ongletBtn ${state.ongletKanban===s.cle?'actif':''}" onclick="choisirOngletKanban('${s.cle}')">${s.label} (${n})</button>`; }).join('')}
+        </div>
+        <div class="board">
+          ${STATUTS.map(s=>{ const cartes = state.cartes.filter(c=>c.statut===s.cle).sort(parEcheance); return `
+          <div class="col ${state.ongletKanban===s.cle?'colActif':''}">
+            <h3><span>${s.label}</span><span class="muted">${cartes.length}</span></h3>
+            ${cartes.map(renderCarte).join('')}
+          </div>`; }).join('')}
+        </div>
+      </div>
+    </div>
+  </div>
+  ${state.carteOuverte ? renderFenetreCarte() : ''}`
+}
+
+async function initApp(){
+  try{
+    const { data:{ session }, error } = await sb.auth.getSession();
+    if(error) throw error;
+    if(!session){ window.location.href = 'federation-accueil.html'; return; }
+    state.user = session.user;
+    state.estId = new URLSearchParams(window.location.search).get('est') || localStorage.getItem('ac_current_est_v1') || '';
+    if(!state.estId){ window.location.href = 'federation-accueil.html'; return; }
+    localStorage.setItem('ac_current_est_v1', state.estId);
+    state.objectifsOuvert = window.innerWidth > 760;
+    await charger();
+    render();
+  }catch(e){
+    console.error(e);
+    document.body.innerHTML = `<div class="errBox">Impossible de charger la stratégie : ${escapeHtml(e.message||String(e))}\n\nSi le message parle d'une table introuvable, la migration SQL « stratégie atelier » n'a pas encore été lancée.</div>`;
+  }
+  sb.auth.onAuthStateChange((event, session)=>{ if(!session) window.location.href = 'federation-accueil.html'; });
+}
+initApp();
+</script>
+</body>
+</html>

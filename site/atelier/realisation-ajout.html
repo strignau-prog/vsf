@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <script src="boite-message.js"></script>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Ajouter une réalisation</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600;700&display=swap">
+<style>
+  :root{ --bg:#fff; --ink:#1c1a17; --muted:#55504a; --line:#e4e0d9; --soft:#f7f5f2; --accent:#a8461f; --red:#b3261e; --green:#2f855a; }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif}
+  body{font-size:15px;line-height:1.4}
+  h1,h2{font-family:Fraunces,Georgia,serif;font-weight:600;margin:0}
+  button,input,select,textarea{font:inherit;color:inherit}
+  .topbar{background:#1c1a17;padding:14px 20px}
+  .topbar a{color:#fff;text-decoration:none;font-size:14px}
+  .main{max-width:760px;margin:0 auto;padding:22px 16px 80px}
+  h1{font-size:26px;margin-bottom:6px}
+  h2{font-size:19px;margin:34px 0 10px}
+  .sub{color:var(--muted);font-size:14px;margin:0 0 16px}
+  .note{background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:13.5px;margin-bottom:18px}
+  .field{margin-bottom:16px}
+  .field>label{display:block;font-size:13px;font-weight:600;margin-bottom:5px}
+  .hint{font-size:12.5px;color:var(--muted);margin-top:4px}
+  .input,select.input,textarea.input{width:100%;border:1px solid var(--line);border-radius:10px;padding:9px 11px;background:#fff}
+  textarea.input{min-height:76px;resize:vertical}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media (max-width:600px){.row2{grid-template-columns:1fr}}
+  .btn{border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 16px;font-size:14px;cursor:pointer}
+  .btn:hover{background:var(--soft)}
+  .btnPrimary{background:#111;color:#fff;border-color:#111;padding:11px 22px;font-weight:600}
+  .btnPrimary:disabled{opacity:.5;cursor:default}
+  .btnOk{background:var(--green);color:#fff;border-color:var(--green)}
+  .btnKo{color:var(--red)}
+  .collabList{border:1px solid var(--line);border-radius:10px;max-height:190px;overflow-y:auto;margin-top:6px}
+  .collabItem{display:flex;gap:9px;align-items:center;padding:7px 11px;border-bottom:1px solid var(--line);cursor:pointer;font-size:14px}
+  .collabItem:last-child{border-bottom:none}
+  .collabItem:hover{background:var(--soft)}
+  .collabItem small{color:var(--muted);margin-left:auto}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .chip{background:#1c1a17;color:#fff;border-radius:999px;padding:3px 10px;font-size:12.5px;display:inline-flex;gap:6px;align-items:center}
+  .chip button{background:none;border:none;color:#fff;cursor:pointer;padding:0;font-size:13px}
+  .msgOk{color:var(--green);font-weight:600;margin-top:12px}
+  .msgKo{color:var(--red);font-weight:600;margin-top:12px;white-space:pre-wrap}
+  .carte{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+  .carte .t{font-weight:600}
+  .carte .s{font-size:13px;color:var(--muted);margin-top:2px}
+  .carte .actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+  .badge{display:inline-block;font-size:11.5px;font-weight:600;border-radius:6px;padding:2px 8px;background:#efece7;color:var(--muted)}
+  .badge.validee{background:#e6f2ea;color:var(--green)}
+  .badge.refusee{background:#fbe4e1;color:var(--red)}
+  .thumbs{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .tabImport{width:100%;border-collapse:collapse;font-size:13px;margin-top:10px}
+  .tabImport th{text-align:left;border-bottom:2px solid #111;padding:5px 6px;white-space:nowrap}
+  .tabImport td{border-bottom:1px solid var(--line);padding:5px 6px;vertical-align:top}
+  .etatOk{color:var(--green);font-weight:600}
+  .etatKo{color:var(--red);font-weight:600}
+  .etatDup{color:var(--muted);font-weight:600}
+  .barre{height:8px;background:var(--soft);border-radius:999px;overflow:hidden;margin-top:8px}
+  .barre>i{display:block;height:100%;background:#111;width:0}
+  .thumbs img{width:64px;height:64px;object-fit:cover;border-radius:6px;border:1px solid var(--line)}
+</style>
+</head>
+<body>
+<div class="topbar"><a href="federation-accueil.html?tab=peintres">← Annuaire et carte des réalisations</a></div>
+<div class="main">
+  <h1>Ajouter une réalisation</h1>
+  <p class="sub">Une enseigne ou un chantier réalisé par un membre de la Fédération. Il apparaîtra sur la carte une fois validé.</p>
+  <div id="regle" class="note">Chargement…</div>
+
+  <div id="formZone" style="display:none">
+    <div class="field">
+      <label for="enseigne">Nom de l'enseigne *</label>
+      <input id="enseigne" class="input" placeholder="Ex : Enseigne « Chez Louison »">
+    </div>
+    <div class="field">
+      <label for="adresse">Adresse complète *</label>
+      <input id="adresse" class="input" placeholder="Rue, code postal, ville, pays">
+      <div class="hint">Sert à placer le point sur la carte.</div>
+    </div>
+    <div class="field">
+      <label for="villeAffichee">Ville affichée (facultatif)</label>
+      <input id="villeAffichee" class="input" placeholder="Ex : Lyon, France — sinon l'adresse sera affichée">
+    </div>
+    <div class="field">
+      <label for="peintre">Peintre responsable *</label>
+      <select id="peintre" class="input" onchange="renderCollabs()"></select>
+    </div>
+    <div class="field">
+      <label>Collaborateurs (facultatif)</label>
+      <input id="collabFiltre" class="input" placeholder="Chercher un membre (graphiste, régisseur, autre peintre)…" oninput="renderCollabs()">
+      <div id="collabList" class="collabList"></div>
+      <div id="collabChips" class="chips"></div>
+      <div class="hint">Cette réalisation apparaîtra dans les « Contributions » de chaque collaborateur choisi.</div>
+    </div>
+    <div class="field">
+      <label for="tags">Mots-clés (séparés par des virgules)</label>
+      <input id="tags" class="input" placeholder="Lettres capitales, Doré à la feuille, Devanture">
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="temoignage">Témoignage du client (facultatif)</label>
+        <textarea id="temoignage" class="input" placeholder="Ce que le client a dit…"></textarea>
+      </div>
+      <div class="field">
+        <label for="temoignageAuteur">Qui a dit ça ? (facultatif)</label>
+        <input id="temoignageAuteur" class="input" placeholder="Ex : Retour du client — boulangerie Chez Louison">
+      </div>
+    </div>
+    <div class="field">
+      <label for="photos">Photo(s)</label>
+      <input id="photos" type="file" accept="image/*" multiple>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="videoFichier">Vidéo (facultatif)</label>
+        <input id="videoFichier" type="file" accept="video/*">
+        <input id="videoLien" class="input" style="margin-top:6px" placeholder="…ou coller un lien (YouTube, Vimeo…)">
+        <div class="hint">Fichier : 50 Mo maximum.</div>
+      </div>
+      <div class="field">
+        <label for="audioFichier">Audio (facultatif)</label>
+        <input id="audioFichier" type="file" accept="audio/*">
+        <input id="audioLien" class="input" style="margin-top:6px" placeholder="…ou coller un lien">
+        <div class="hint">Fichier : 50 Mo maximum.</div>
+      </div>
+    </div>
+    <button id="btnEnvoyer" class="btn btnPrimary" onclick="soumettre()">Enregistrer la réalisation</button>
+    <div id="msg"></div>
+  </div>
+
+  <div id="zoneModeration" style="display:none">
+    <h2>À valider</h2>
+    <div id="listeModeration"></div>
+  </div>
+
+  <div id="zoneImport" style="display:none">
+    <h2>Intégration en masse</h2>
+    <p class="sub">Pour ajouter plusieurs lieux d'un coup : remplissez un tableau (une ligne par réalisation), collez-le ou chargez le fichier. Chaque adresse est placée sur la carte automatiquement, vous vérifiez, puis vous importez. Les réalisations importées sont publiées tout de suite.</p>
+    <div class="note">
+      <b>Colonnes</b> (première ligne = titres, dans n'importe quel ordre) : <b>Enseigne</b> *, <b>Adresse</b> * (complète, avec code postal et ville), Ville affichée, <b>Peintre</b> (prénom nom, ou numéro de membre — sinon le peintre par défaut ci-dessous), Mots-clés (séparés par des virgules), Témoignage, Auteur du témoignage, Photos (liens séparés par « | »), Vidéo (lien), Audio (lien).
+      Les photos se donnent par liens (adresses web) ; pour téléverser des fichiers photo, utilisez le formulaire d'ajout ci-dessus, ligne par ligne.
+    </div>
+    <div class="field">
+      <button class="btn" onclick="telechargerModele()">⬇ Télécharger le modèle (CSV, s'ouvre dans Excel)</button>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="fichierImport">Fichier Excel (.xlsx) ou CSV</label>
+        <input id="fichierImport" type="file" accept=".xlsx,.xls,.csv,.tsv,.txt" onchange="chargerFichierImport(this.files[0])">
+      </div>
+      <div class="field">
+        <label for="peintreDefaut">Peintre par défaut</label>
+        <select id="peintreDefaut" class="input"></select>
+        <div class="hint">Utilisé quand la colonne Peintre est vide.</div>
+      </div>
+    </div>
+    <div class="field">
+      <label for="texteImport">…ou collez ici le tableau copié depuis Excel</label>
+      <textarea id="texteImport" class="input" style="min-height:110px" placeholder="Enseigne&#9;Adresse&#9;Peintre&#10;Chez Louison&#9;12 rue de la République, 69002 Lyon&#9;Jean Dupont"></textarea>
+    </div>
+    <button id="btnAnalyser" class="btn btnPrimary" onclick="analyserImport()">Analyser et placer sur la carte</button>
+    <div id="progressionImport" class="hint"></div>
+    <div class="barre" id="barreImport" style="display:none"><i></i></div>
+    <div id="resultatImport"></div>
+    <button id="btnImporter" class="btn btnPrimary" style="display:none;margin-top:14px" onclick="importerLignes()">Importer</button>
+    <div id="msgImport"></div>
+  </div>
+
+  <h2>Mes ajouts</h2>
+  <div id="listeMesAjouts" class="sub">Chargement…</div>
+</div>
+
+<script>
+const sb = supabase.createClient('https://uuuigousvpijskbdhcal.supabase.co', 'sb_publishable__YuNj5XCo5YF8lwhwTu5OQ_RDM1Eesp', { auth:{ persistSession:true, autoRefreshToken:true } });
+const COMITE_EMAIL = 'strignau@gmail.com';
+const ROLES = { peintre_dirigeant:'Peintre dirigeant', graphiste:'Graphiste', regisseur:'Régisseur' };
+const state = { user:null, comite:false, membres:[], collabs:new Set() };
+
+const esc = s => String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+const nom = m => m ? `${m.prenom||''} ${m.nom||''}`.trim() || 'Membre' : 'Membre';
+const membre = id => state.membres.find(m => m.user_id === id);
+const $ = id => document.getElementById(id);
+
+function renderCollabs(){
+  const peintre = $('peintre').value;
+  const f = $('collabFiltre').value.trim().toLowerCase();
+  state.collabs.delete(peintre);
+  const liste = state.membres.filter(m => m.user_id !== peintre && (!f || nom(m).toLowerCase().includes(f)));
+  $('collabList').innerHTML = liste.length ? liste.map(m => `
+    <label class="collabItem"><input type="checkbox" ${state.collabs.has(m.user_id)?'checked':''} onchange="basculerCollab('${m.user_id}',this.checked)">
+      ${esc(nom(m))}<small>${esc(ROLES[m.role_public]||'')}</small></label>`).join('') : '<div class="collabItem" style="cursor:default">Aucun membre trouvé.</div>';
+  $('collabChips').innerHTML = [...state.collabs].map(id => `<span class="chip">${esc(nom(membre(id)))}<button onclick="basculerCollab('${id}',false)" title="Retirer">✕</button></span>`).join('');
+}
+function basculerCollab(id, coche){ if(coche) state.collabs.add(id); else state.collabs.delete(id); renderCollabs(); }
+
+function nomFichier(f){ return f.name.replace(/[^a-zA-Z0-9._-]+/g, '_'); }
+async function televerser(fichier){
+  if(fichier.size > 50*1024*1024) throw new Error(`« ${fichier.name} » dépasse 50 Mo.`);
+  const chemin = `${state.user.id}/${Date.now()}-${Math.random().toString(36).slice(2,7)}-${nomFichier(fichier)}`;
+  const { error } = await sb.storage.from('realisations-medias').upload(chemin, fichier, { contentType: fichier.type || undefined });
+  if(error) throw new Error(`Envoi de « ${fichier.name} » impossible : ${error.message}`);
+  return sb.storage.from('realisations-medias').getPublicUrl(chemin).data.publicUrl;
+}
+
+async function soumettre(){
+  const msg = $('msg'); msg.className = ''; msg.textContent = '';
+  const enseigne = $('enseigne').value.trim(), adresse = $('adresse').value.trim(), peintre = $('peintre').value;
+  if(!enseigne || !adresse || !peintre){ msg.className = 'msgKo'; msg.textContent = "Renseigne au moins le nom de l'enseigne, l'adresse et le peintre responsable."; return; }
+  const btn = $('btnEnvoyer'); btn.disabled = true; btn.textContent = 'Enregistrement…';
+  try{
+    const { data: geo, error: eGeo } = await sb.functions.invoke('geocoder', { body: { query: adresse } });
+    if(eGeo || !geo || geo.error || geo.lat == null) throw new Error("Adresse introuvable — vérifie-la (ex : « 12 rue de la République, 69002 Lyon, France »).");
+    const photos = [];
+    for(const f of $('photos').files) photos.push(await televerser(f));
+    let video = $('videoLien').value.trim() || null, audio = $('audioLien').value.trim() || null;
+    if($('videoFichier').files[0]) video = await televerser($('videoFichier').files[0]);
+    if($('audioFichier').files[0]) audio = await televerser($('audioFichier').files[0]);
+    const ligne = {
+      enseigne, adresse, ville: $('villeAffichee').value.trim() || adresse,
+      lat: geo.lat, lng: geo.lng, peintre_user_id: peintre, collaborateurs: [...state.collabs],
+      tags: $('tags').value.split(',').map(t => t.trim()).filter(Boolean),
+      temoignage: $('temoignage').value.trim() || null, temoignage_auteur: $('temoignageAuteur').value.trim() || null,
+      photos, video_url: video, audio_url: audio,
+      statut: state.comite ? 'validee' : 'en_attente'
+    };
+    const { error } = await sb.from('realisations').insert(ligne);
+    if(error) throw new Error(error.message);
+    msg.className = 'msgOk';
+    msg.textContent = state.comite ? 'Réalisation publiée : elle est déjà visible sur la carte.' : 'Réalisation enregistrée : elle sera visible sur la carte après validation par le webmaster.';
+    for(const id of ['enseigne','adresse','villeAffichee','tags','temoignage','temoignageAuteur','videoLien','audioLien','collabFiltre']) $(id).value = '';
+    for(const id of ['photos','videoFichier','audioFichier']) $(id).value = '';
+    state.collabs.clear(); renderCollabs();
+    await chargerListes();
+  }catch(e){
+    msg.className = 'msgKo'; msg.textContent = e.message || String(e);
+  }
+  btn.disabled = false; btn.textContent = 'Enregistrer la réalisation';
+}
+
+function carteRealisation(r, avecActions){
+  const p = membre(r.peintre_user_id);
+  const collabs = (r.collaborateurs||[]).map(u => nom(membre(u))).join(', ');
+  const statut = { en_attente:'En attente de validation', validee:'Publiée', refusee:'Refusée' }[r.statut];
+  return `<div class="carte">
+    <div class="t">${esc(r.enseigne)} <span class="badge ${r.statut}">${statut}</span></div>
+    <div class="s">${esc(r.ville||r.adresse||'')} · Peintre : ${esc(nom(p))}${collabs?` · Avec : ${esc(collabs)}`:''}</div>
+    ${(r.tags||[]).length ? `<div class="s">${esc(r.tags.join(' · '))}</div>` : ''}
+    ${(r.photos||[]).length ? `<div class="thumbs">${r.photos.map(u => `<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt=""></a>`).join('')}</div>` : ''}
+    ${r.video_url ? `<div class="s"><a href="${esc(r.video_url)}" target="_blank" rel="noopener">▶ Vidéo</a></div>` : ''}
+    ${r.audio_url ? `<div class="s"><a href="${esc(r.audio_url)}" target="_blank" rel="noopener">♪ Audio</a></div>` : ''}
+    ${avecActions ? `<div class="actions">
+      <button class="btn btnOk" onclick="decider('${r.id}','validee')">Publier</button>
+      <button class="btn btnKo" onclick="decider('${r.id}','refusee')">Refuser</button></div>` : ''}
+  </div>`;
+}
+async function decider(id, statut){
+  const { error } = await sb.from('realisations').update({ statut }).eq('id', id);
+  if(error){ alert('Action impossible : ' + error.message); return; }
+  await chargerListes();
+}
+async function chargerListes(){
+  const { data: mes } = await sb.from('realisations').select('*').eq('cree_par', state.user.id).order('created_at', { ascending:false });
+  $('listeMesAjouts').className = '';
+  $('listeMesAjouts').innerHTML = (mes||[]).length ? mes.map(r => carteRealisation(r, false)).join('') : '<div class="sub">Aucun ajout pour l\'instant.</div>';
+  if(state.comite){
+    const { data: att } = await sb.from('realisations').select('*').eq('statut','en_attente').order('created_at');
+    $('zoneModeration').style.display = '';
+    $('listeModeration').innerHTML = (att||[]).length ? att.map(r => carteRealisation(r, true)).join('') : '<div class="sub">Rien en attente.</div>';
+  }
+}
+
+/* ───────────── Intégration en masse (webmaster) ───────────── */
+const COLONNES = {
+  enseigne:['enseigne','nom','nomdelenseigne'], adresse:['adresse','adressecomplete'], ville:['villeaffichee','ville'],
+  peintre:['peintre','peintreresponsable','numeromembre'], tags:['motscles','tags','motcle'], temoignage:['temoignage'],
+  auteur:['auteurdutemoignage','auteur','quiaditca'], photos:['photos','photo'], video:['video','lienvideo'], audio:['audio','lienaudio']
+};
+let lignesImport = [];
+const norm = t => String(t ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
+function parserTableau(texte){
+  const t = texte.replace(/^\uFEFF/, '');
+  const premiere = t.split(/\r?\n/)[0] || '';
+  const sep = [['\t',(premiere.match(/\t/g)||[]).length],[';',(premiere.match(/;/g)||[]).length],[',',(premiere.match(/,/g)||[]).length]].sort((a,b)=>b[1]-a[1])[0][0];
+  const lignes = []; let ligne = [], champ = '', guillemets = false;
+  for(let i=0;i<t.length;i++){
+    const c = t[i];
+    if(guillemets){
+      if(c === '"' && t[i+1] === '"'){ champ += '"'; i++; }
+      else if(c === '"') guillemets = false;
+      else champ += c;
+    }else if(c === '"') guillemets = true;
+    else if(c === sep){ ligne.push(champ); champ = ''; }
+    else if(c === '\n'){ ligne.push(champ); champ = ''; lignes.push(ligne); ligne = []; }
+    else if(c !== '\r') champ += c;
+  }
+  if(champ !== '' || ligne.length){ ligne.push(champ); lignes.push(ligne); }
+  return lignes.filter(l => l.some(x => String(x).trim() !== ''));
+}
+function telechargerModele(){
+  const csv = '\uFEFFEnseigne;Adresse;Ville affichée;Peintre;Mots-clés;Témoignage;Auteur du témoignage;Photos;Vidéo;Audio\r\n'
+    + 'Chez Louison;12 rue de la République, 69002 Lyon, France;Lyon;Jean Dupont;Lettres capitales, Doré à la feuille;Un travail magnifique;Boulangerie Chez Louison;https://exemple.fr/photo1.jpg|https://exemple.fr/photo2.jpg;;\r\n';
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type:'text/csv;charset=utf-8' })); a.download = 'modele-import-realisations.csv'; a.click();
+}
+function chargerFichierImport(f){
+  if(!f) return;
+  if(/\.(xlsx|xls)$/i.test(f.name)){
+    const lire = () => { const r = new FileReader(); r.onload = e => { const wb = XLSX.read(e.target.result, { type:'array' }); $('texteImport').value = XLSX.utils.sheet_to_csv(wb.Sheets[wb.SheetNames[0]], { FS:'\t' }); }; r.readAsArrayBuffer(f); };
+    if(window.XLSX) return lire();
+    const sc = document.createElement('script'); sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'; sc.onload = lire;
+    sc.onerror = () => alert("Impossible de lire ce fichier Excel pour l'instant. Enregistrez-le en CSV (Fichier > Enregistrer sous > CSV) et rechargez-le."); document.head.appendChild(sc);
+  }else{
+    const r = new FileReader(); r.onload = e => { $('texteImport').value = e.target.result; }; r.readAsText(f, 'utf-8');
+  }
+}
+function trouverPeintre(valeur){
+  const v = norm(valeur); if(!v) return null;
+  return state.membres.find(m => norm(m.numero_membre) === v || norm((m.prenom||'')+(m.nom||'')) === v || norm((m.nom||'')+(m.prenom||'')) === v) || null;
+}
+async function analyserImport(){
+  const brut = parserTableau($('texteImport').value);
+  if(brut.length < 2){ alert("Le tableau est vide : collez-le ou chargez un fichier (première ligne = titres des colonnes, puis une ligne par réalisation)."); return; }
+  const titres = brut[0].map(norm), idx = {};
+  for(const [cle, noms] of Object.entries(COLONNES)) idx[cle] = titres.findIndex(t => noms.includes(t));
+  if(idx.enseigne < 0 || idx.adresse < 0){ alert("Colonnes obligatoires introuvables : il faut au moins « Enseigne » et « Adresse » sur la première ligne."); return; }
+  const btn = $('btnAnalyser'); btn.disabled = true; $('btnImporter').style.display = 'none'; $('msgImport').textContent = '';
+  const { data: existantes } = await sb.from('realisations').select('enseigne,adresse');
+  const deja = new Set((existantes||[]).map(r => norm(r.enseigne) + '|' + norm(r.adresse)));
+  const defaut = $('peintreDefaut').value, lus = new Set();
+  const lignes = brut.slice(1).map((c, i) => {
+    const val = k => idx[k] >= 0 ? String(c[idx[k]] ?? '').trim() : '';
+    return { n:i+2, enseigne:val('enseigne'), adresse:val('adresse'), ville:val('ville'), peintreTexte:val('peintre'),
+             tags:val('tags').split(',').map(t=>t.trim()).filter(Boolean), temoignage:val('temoignage'), auteur:val('auteur'),
+             photos:val('photos').split('|').map(t=>t.trim()).filter(Boolean), video:val('video'), audio:val('audio'), etat:'', erreur:'' };
+  });
+  $('barreImport').style.display = '';
+  for(let i=0;i<lignes.length;i++){
+    const l = lignes[i];
+    $('progressionImport').textContent = `Analyse ${i+1} / ${lignes.length}…`; $('barreImport').firstElementChild.style.width = Math.round((i+1)/lignes.length*100) + '%';
+    if(!l.enseigne || !l.adresse){ l.etat = 'ko'; l.erreur = 'Enseigne ou adresse manquante'; continue; }
+    const cle = norm(l.enseigne) + '|' + norm(l.adresse);
+    if(deja.has(cle) || lus.has(cle)){ l.etat = 'dup'; l.erreur = 'Déjà présente (ignorée)'; continue; }
+    lus.add(cle);
+    const pe = l.peintreTexte ? trouverPeintre(l.peintreTexte) : state.membres.find(m => m.user_id === defaut);
+    if(!pe){ l.etat = 'ko'; l.erreur = `Peintre « ${l.peintreTexte} » introuvable dans l'annuaire`; continue; }
+    l.peintreId = pe.user_id; l.peintreNom = nom(pe);
+    try{
+      const { data: geo, error } = await sb.functions.invoke('geocoder', { body: { query: l.adresse } });
+      if(error || !geo || geo.error || geo.lat == null) throw new Error('Adresse introuvable');
+      l.lat = geo.lat; l.lng = geo.lng; l.etat = 'ok';
+    }catch(e){ l.etat = 'ko'; l.erreur = 'Adresse introuvable — à corriger'; }
+    await new Promise(r => setTimeout(r, 250));
+  }
+  lignesImport = lignes;
+  const ok = lignes.filter(l=>l.etat==='ok').length, ko = lignes.filter(l=>l.etat==='ko').length, dup = lignes.filter(l=>l.etat==='dup').length;
+  $('progressionImport').textContent = `${ok} prête(s) à importer · ${ko} à corriger · ${dup} déjà présente(s).`;
+  $('barreImport').style.display = 'none';
+  $('resultatImport').innerHTML = `<table class="tabImport"><tr><th>Ligne</th><th>Enseigne</th><th>Adresse</th><th>Peintre</th><th>État</th></tr>${lignes.map(l => `<tr><td>${l.n}</td><td>${esc(l.enseigne)}</td><td>${esc(l.adresse)}</td><td>${esc(l.peintreNom||l.peintreTexte)}</td><td class="${l.etat==='ok'?'etatOk':l.etat==='dup'?'etatDup':'etatKo'}">${l.etat==='ok'?'✓ placée':esc(l.erreur)}</td></tr>`).join('')}</table>`;
+  if(ok){ $('btnImporter').style.display = ''; $('btnImporter').textContent = `Importer ${ok} réalisation${ok>1?'s':''}`; }
+  btn.disabled = false;
+}
+async function importerLignes(){
+  const prêtes = lignesImport.filter(l => l.etat === 'ok');
+  if(!prêtes.length) return;
+  if(!confirm(`Importer ${prêtes.length} réalisation(s) ? Elles seront publiées tout de suite sur la carte.`)) return;
+  const btn = $('btnImporter'); btn.disabled = true; $('msgImport').className = ''; $('msgImport').textContent = 'Import en cours…';
+  const lignes = prêtes.map(l => ({ enseigne:l.enseigne, adresse:l.adresse, ville:l.ville || l.adresse, lat:l.lat, lng:l.lng,
+    peintre_user_id:l.peintreId, collaborateurs:[], tags:l.tags, temoignage:l.temoignage || null, temoignage_auteur:l.auteur || null,
+    photos:l.photos, video_url:l.video || null, audio_url:l.audio || null, statut:'validee' }));
+  let faites = 0;
+  for(let i=0;i<lignes.length;i+=50){
+    const { error } = await sb.from('realisations').insert(lignes.slice(i, i+50));
+    if(error){ $('msgImport').className = 'msgKo'; $('msgImport').textContent = `Import interrompu après ${faites} réalisation(s) : ${error.message}`; btn.disabled = false; await chargerListes(); return; }
+    faites += Math.min(50, lignes.length - i);
+  }
+  $('msgImport').className = 'msgOk'; $('msgImport').textContent = `${faites} réalisation(s) importée(s) : elles sont visibles sur la carte.`;
+  lignesImport = []; $('resultatImport').innerHTML = ''; btn.style.display = 'none'; btn.disabled = false; $('texteImport').value = ''; $('fichierImport').value = '';
+  await chargerListes();
+}
+
+async function init(){
+  const { data:{ session } } = await sb.auth.getSession();
+  if(!session){ window.location.href = 'federation-accueil.html'; return; }
+  state.user = session.user;
+  state.comite = (session.user.email || '').toLowerCase() === COMITE_EMAIL;
+  const { data: ms, error } = await sb.from('annuaire_public').select('user_id,numero_membre,prenom,nom,role_public').order('nom');
+  if(error){ $('regle').textContent = 'Impossible de charger l\'annuaire : ' + error.message; return; }
+  state.membres = ms || [];
+  const peintres = state.membres.filter(m => m.role_public === 'peintre_dirigeant');
+  const options = peintres.length ? peintres : state.membres;
+  $('peintre').innerHTML = options.map(m => `<option value="${m.user_id}" ${m.user_id===state.user.id?'selected':''}>${esc(nom(m))}</option>`).join('');
+  $('regle').textContent = state.comite
+    ? 'Tu es webmaster : tes ajouts sont publiés tout de suite sur la carte. Les ajouts des peintres apparaissent plus bas, dans « À valider ».'
+    : 'Ton ajout sera visible sur la carte après validation par le webmaster.';
+  $('formZone').style.display = '';
+  if(state.comite){ $('zoneImport').style.display = ''; $('peintreDefaut').innerHTML = $('peintre').innerHTML; }
+  else{ const z = document.createElement('div'); z.className = 'note'; z.innerHTML = "<b>Intégration en masse</b> : réservée au webmaster. Vous êtes connecté avec <b>" + esc(state.user.email || 'un compte sans e-mail') + "</b> ; connectez-vous avec <b>" + COMITE_EMAIL + "</b> pour la voir."; $('zoneImport').parentNode.insertBefore(z, $('zoneImport')); }
+  renderCollabs();
+  await chargerListes();
+}
+init();
+</script>
+</body>
+</html>

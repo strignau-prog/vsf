@@ -1,0 +1,1390 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <script src="boite-message.js"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Fédération de peintres en lettres</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600;700&display=swap">
+  <style>
+    /* V0 — même système typo/couleurs que tout le projet, voir atelier-compte.html. */
+    :root{
+      --bg:#fff; --ink:#1c1a17; --muted:#55504a; --line:#e4e0d9; --soft:#f7f5f2;
+      --accent:#a8461f;
+      --red:var(--ink); --amber:var(--ink); --green:var(--ink);
+      --redBg:var(--soft); --amberBg:var(--soft); --greenBg:var(--soft);
+      --blue:var(--ink); --blueBg:var(--soft);
+      --sidebar:#1c1a17; --sidebarSoft:#2b2823; --sidebarLine:#3a352d;
+      --sidebarInk:#ffffff; --sidebarMuted:#a39c90;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif}
+    body{font-size:16px;line-height:1.3;font-variant-numeric:tabular-nums}
+    h1,h2,.treeTitle,.portalTitle,nav.topnav .brandBtn,nav.topnav a.brand{font-family:Fraunces,Georgia,serif;font-weight:600}
+    a{color:inherit}
+    button,input,select,textarea{font:inherit;color:inherit}
+    button{cursor:pointer;background:none;border:none;padding:0}
+
+    /* ---------- Nav horizontale — jamais latérale, sous-menu au survol ---------- */
+    nav.topnav{background:var(--sidebar);color:var(--sidebarInk);display:flex;align-items:center;gap:4px;padding:0 20px;height:56px;font-size:14.5px;position:sticky;top:0;z-index:40}
+    nav.topnav .brandBtn,nav.topnav a.brand{color:#fff;background:none;border:none;font:inherit;cursor:pointer;font-weight:700;margin-right:22px;font-size:15.5px;letter-spacing:.02em;padding:0;text-decoration:none;display:inline-block}
+    nav.topnav .menuItem{position:relative;height:100%;display:flex;align-items:center}
+    nav.topnav .menuItem>span,nav.topnav .menuItem>a.topLink,nav.topnav .menuItem>button.topLink{padding:0 14px;cursor:pointer;color:var(--sidebarMuted);text-decoration:none;background:none;border:none;font:inherit}
+    nav.topnav .menuItem:hover>span,nav.topnav .menuItem>a.topLink:hover,nav.topnav .menuItem>button.topLink:hover{color:#fff}
+    nav.topnav .dropdown{display:none;position:absolute;top:100%;left:0;background:#fff;color:var(--ink);min-width:260px;box-shadow:0 8px 24px rgba(0,0,0,.18);border-radius:0 0 10px 10px;overflow:hidden;z-index:50}
+    nav.topnav .menuItem:hover .dropdown{display:block}
+    nav.topnav .dropdown a,nav.topnav .dropdown button.ddItem{display:block;width:100%;text-align:left;padding:10px 16px;color:var(--ink);text-decoration:none;font-size:13.5px;border-bottom:1px solid var(--line);background:none;border-left:none;border-right:none;border-top:none;cursor:pointer;font-family:inherit}
+    nav.topnav .dropdown a:last-child,nav.topnav .dropdown button.ddItem:last-child{border-bottom:none}
+    nav.topnav .dropdown a:hover,nav.topnav .dropdown button.ddItem:hover{background:var(--soft)}
+    nav.topnav .dropdown .ddFuture{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 16px;font-size:13px;color:var(--muted);border-bottom:1px solid var(--line)}
+    nav.topnav .dropdown .ddFuture:last-child{border-bottom:none}
+    nav.topnav .dropdown .ddTag{font-size:10px;border:1px solid var(--line);border-radius:999px;padding:1px 7px;white-space:nowrap}
+    nav.topnav .navRight{margin-left:auto;display:flex;align-items:center;gap:12px}
+    nav.topnav .navRight span{color:var(--sidebarMuted);font-size:12.5px}
+    nav.topnav .navRight button{color:var(--sidebarMuted);background:none;border:none;font:inherit;cursor:pointer}
+    nav.topnav .navRight button:hover{color:#fff}
+    nav.topnav .navRight .actionBtn{background:var(--amber);color:#fff;border-radius:999px;padding:7px 14px;font-size:13.5px}
+    .navToggle{display:none;background:none;border:none;color:#fff;font-size:22px;cursor:pointer;padding:4px 10px}
+    @media (max-width:720px){
+      nav.topnav{flex-wrap:wrap;height:auto;padding:10px 16px}
+      .navToggle{display:block;margin-left:auto}
+      nav.topnav .menuItem{display:none;width:100%;height:auto;flex-direction:column;align-items:stretch}
+      nav.topnav.navOpen .menuItem{display:flex}
+      nav.topnav .menuItem>span,nav.topnav .menuItem>a.topLink,nav.topnav .menuItem>button.topLink{padding:12px 0 4px;cursor:pointer;text-align:left;width:100%}
+      nav.topnav .dropdown{position:static;box-shadow:none;border-radius:0;background:transparent;min-width:0}
+      nav.topnav .menuItem.open .dropdown{display:block}
+      nav.topnav .dropdown a,nav.topnav .dropdown button.ddItem{color:#fff;padding:10px 0 10px 14px;border-bottom:1px solid rgba(255,255,255,.12)}
+      nav.topnav .dropdown a:hover,nav.topnav .dropdown button.ddItem:hover{background:rgba(255,255,255,.06)}
+      nav.topnav .navRight{width:100%;order:-1}
+    }
+
+    .content{padding:40px 32px 60px 32px;max-width:900px;margin:0 auto}
+    .treeTitle{font-weight:700;font-size:23px;margin:0 0 8px 0}
+    .sectionSub{font-size:14.5px;color:var(--muted);margin:0 0 20px 0;line-height:1.5}
+    .muted{color:var(--muted)}
+    .tiny{font-size:13px;line-height:1.35}
+    .section{margin:0 0 30px 0}
+    .statusGrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:30px}
+    .statusCard{border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+    .statusCard .num{font-size:26px;font-weight:700}
+    .statusCard .lbl{font-size:13px;color:var(--muted);margin-top:2px}
+    .cardGrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .card{border:1px solid var(--line);border-radius:14px;padding:16px 18px;text-decoration:none;color:inherit;display:block}
+    .card:hover{border-color:var(--amber)}
+    .card.disabled{opacity:.55;cursor:default}
+    .card .t{font-weight:700;font-size:16px;margin-bottom:4px}
+    .card .s{font-size:13.5px;color:var(--muted)}
+    .input,.select,.textarea{width:100%;border:1px solid var(--line);border-radius:12px;padding:9px 11px;background:#fff}
+    .miniBtn,.ghostBtn,.actionBtn{border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 14px;min-height:38px}
+    .actionBtn{background:#111;color:#fff;border-color:#111}
+    .ghostBtn{color:var(--muted)}
+    .toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+    .chip{display:inline-flex;align-items:center;padding:3px 9px;font-size:12.5px;border:1px solid var(--line);background:#fff;border-radius:999px;white-space:nowrap}
+    .pageTabs{display:flex;flex-wrap:wrap;gap:6px}
+    .pageTab{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 14px;font-size:13px;cursor:pointer;font-family:inherit;color:var(--ink)}
+    .pageTab.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+    .portalItem{padding:12px 0;border-bottom:1px solid var(--line)}
+    .portalItem:last-child{border-bottom:none}
+    .portalTitle{font-weight:700;font-size:18px}
+    .portalMeta{font-size:13.5px;color:var(--muted);margin-top:2px}
+    .toggleBar{display:flex;gap:8px;margin-bottom:20px}
+    .toggleBtn{display:inline-block;padding:8px 16px;border-radius:9px;border:1px solid var(--line);background:#fff;font-size:14px;text-decoration:none;color:inherit}
+    .toggleBtn.active{background:#111;color:#fff;border-color:#111}
+    .refGrid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    .cadransGrid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:10px}
+    @media (max-width:640px){.refGrid,.cadransGrid{grid-template-columns:1fr}}
+    .refCard{border:1px solid var(--line);border-radius:14px;padding:18px 20px}
+    .refCard .tag{font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;font-weight:700;padding:3px 8px;border-radius:5px;display:inline-block;margin-bottom:8px}
+    .refCard.cadre .tag{background:var(--amberBg);color:var(--amber)}
+    .refCard.metier .tag{background:var(--greenBg);color:var(--green)}
+    .refCard h4{font-size:16px;margin:0 0 6px 0}
+    .refCard p{font-size:13px;color:var(--muted);margin:0 0 10px 0;line-height:1.5}
+    .treeLine{display:flex;justify-content:space-between;font-size:12.5px;padding:6px 0;border-bottom:1px solid var(--line)}
+    .treeLine:last-child{border-bottom:none}
+    .lockPill{font-size:10.5px;background:var(--soft);color:var(--muted);padding:2px 8px;border-radius:10px}
+    .note{font-size:12.5px;color:var(--muted);background:var(--soft);border:1px dashed var(--line);border-radius:10px;padding:10px 12px;margin-top:16px}
+    .errBox{padding:24px;color:var(--red);font-family:monospace;white-space:pre-wrap}
+    @media (max-width:900px){.statusGrid,.cardGrid,.refGrid{grid-template-columns:1fr}}
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="federation-nav.js"></script>
+  <link rel="stylesheet" href="charte-vsf.css">
+<script src="acces-entreprise.js" defer></script>
+</head>
+<body>
+<div class="app"></div>
+<script>
+const SUPABASE_URL = 'https://uuuigousvpijskbdhcal.supabase.co';
+const SUPABASE_KEY = 'sb_publishable__YuNj5XCo5YF8lwhwTu5OQ_RDM1Eesp';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+});
+
+const STORAGE = { currentEst: 'ac_current_est_v1' };
+function setCurrentEstId(id){ id ? localStorage.setItem(STORAGE.currentEst, id) : localStorage.removeItem(STORAGE.currentEst) }
+
+function escapeHtml(s){ return String(s??'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])) }
+function toggleNav(){ document.querySelector('nav.topnav').classList.toggle('navOpen'); }
+function toggleMenuItem(el){ el.parentElement.classList.toggle('open'); }
+
+let currentUser = null;
+let inPasswordRecovery = false;
+const state = { tab:'accueil', federation:null, numeroMembre:'', maFiche:{nom:'',prenom:'',telephone:'',adresse:'',thereseActif:false,consentementAgregation:false}, kpis:{ateliers:0,personnes:0}, myMemberships:[], myInvitations:[], guides:[], mesValidations:[],
+  ficheAnnuaire:{nomAtelier:'',rolePublic:'',photoUrl:'',presentation:'',anneesExperience:'',tagsSpecialites:[],villeIntervention:'',latitude:null,longitude:null,rayonInterventionKm:100,accueilAtelier:false,accueilleStagiaires:false,ouvertReconversion:false,collaborations:'',contactPublic:'',membreDepuis:''},
+  annuaire:{chargement:false,charge:false,membres:[],rechercheVille:'',resultats:null,rechercheEnCours:false,rechercheErreur:''},
+  peintreOuvert:null };
+
+/* =========================================================================
+   AUTHENTIFICATION — email + mot de passe, avec confirmation à l'inscription
+   et récupération de mot de passe. C'est ici, au niveau Fédération, que tout
+   compte se crée : jamais directement depuis un atelier.
+   ========================================================================= */
+let loginIntent = 'connexion';
+function startLogin(intent){ loginIntent = intent; renderLogin(); }
+function renderLogin(msg){
+  const creer = loginIntent==='creer';
+  document.querySelector('.app').innerHTML = `
+  <div style="max-width:420px;margin:12vh auto;padding:0 20px">
+    <button class="ghostBtn" style="margin-bottom:14px" onclick="renderPublicHome()">← Retour à Ma Fédération</button>
+    <div style="font-weight:700;font-size:22px;margin-bottom:24px">FÉDÉRATION DE PEINTRES EN LETTRES</div>
+    <div style="font-weight:700;font-size:21px;margin-bottom:8px">${creer?'Créer mon compte':'Connexion'}</div>
+    <div class="sectionSub">${creer?"Choisis un email et un mot de passe pour créer ton compte Fédération. C'est le même compte que pour MAMAIN.":"Entre ton email et ton mot de passe."}</div>
+    <input id="loginEmail" class="input" type="email" placeholder="ton@email.fr" style="margin-bottom:10px">
+    <input id="loginPassword" class="input" type="password" placeholder="Mot de passe" style="margin-bottom:10px">
+    ${creer?'<input id="loginPassword2" class="input" type="password" placeholder="Confirme le mot de passe" style="margin-bottom:10px">':''}
+    <button class="actionBtn" onclick="${creer?'handleSignUp()':'handleSignIn()'}">${creer?'Créer mon compte':'Se connecter'}</button>
+    <div id="loginMsg" class="tiny" style="margin-top:14px">${msg?escapeHtml(msg):''}</div>
+    <div class="tiny" style="margin-top:16px">
+      ${creer
+        ? `Déjà un compte ? <button class="ghostBtn" onclick="startLogin('connexion')">Se connecter</button>`
+        : `Pas encore de compte ? <button class="ghostBtn" onclick="startLogin('creer')">Créer mon compte</button><br><button class="ghostBtn" style="margin-top:6px" onclick="renderForgotPassword()">Mot de passe oublié ?</button>`}
+    </div>
+  </div>`;
+}
+async function handleSignIn(){
+  const email=document.getElementById('loginEmail').value.trim();
+  const password=document.getElementById('loginPassword').value;
+  if(!email||!password) return;
+  const msgEl=document.getElementById('loginMsg'); msgEl.textContent='Connexion…';
+  try{
+    const {error}=await sb.auth.signInWithPassword({ email, password });
+    if(error) throw error;
+  }catch(err){
+    msgEl.textContent = err.message==='Invalid login credentials'
+      ? "Email ou mot de passe incorrect."
+      : err.message==='Email not confirmed'
+        ? "Confirme d'abord ton adresse email (regarde ta boîte mail), puis reviens te connecter."
+        : "Erreur : "+(err.message||err);
+  }
+}
+async function handleSignUp(){
+  const email=document.getElementById('loginEmail').value.trim();
+  const password=document.getElementById('loginPassword').value;
+  const password2=document.getElementById('loginPassword2').value;
+  const msgEl=document.getElementById('loginMsg');
+  if(!email||!password) return;
+  if(password.length<6) return msgEl.textContent='Le mot de passe doit faire au moins 6 caractères.';
+  if(password!==password2) return msgEl.textContent='Les deux mots de passe ne correspondent pas.';
+  msgEl.textContent='Création du compte…';
+  try{
+    const {data, error}=await sb.auth.signUp({ email, password, options:{ emailRedirectTo: window.location.origin + '/federation-accueil.html'} });
+    if(error) throw error;
+    if(!data.session){
+      msgEl.textContent="Compte créé ! Vérifie ta boîte mail (et les spams) pour confirmer ton adresse, puis reviens te connecter avec ton mot de passe.";
+      loginIntent='connexion';
+    }
+  }catch(err){
+    msgEl.textContent = err.message==='User already registered'
+      ? "Un compte existe déjà avec cet email — connecte-toi plutôt."
+      : "Erreur : "+(err.message||err);
+  }
+}
+function renderForgotPassword(){
+  document.querySelector('.app').innerHTML = `
+  <div style="max-width:420px;margin:15vh auto;padding:0 20px">
+    <button class="ghostBtn" style="margin-bottom:14px" onclick="startLogin('connexion')">← Retour</button>
+    <div style="font-weight:700;font-size:22px;margin-bottom:24px">FÉDÉRATION DE PEINTRES EN LETTRES</div>
+    <div style="font-weight:700;font-size:21px;margin-bottom:8px">Mot de passe oublié</div>
+    <div class="sectionSub">Entre ton email, tu vas recevoir un lien pour choisir un nouveau mot de passe.</div>
+    <input id="forgotEmail" class="input" type="email" placeholder="ton@email.fr" style="margin-bottom:10px">
+    <button class="actionBtn" onclick="handleForgotPassword()">Envoyer le lien</button>
+    <div id="forgotMsg" class="tiny" style="margin-top:14px"></div>
+  </div>`;
+}
+async function handleForgotPassword(){
+  const email=document.getElementById('forgotEmail').value.trim(); if(!email) return;
+  const msgEl=document.getElementById('forgotMsg'); msgEl.textContent='Envoi…';
+  try{
+    const {error}=await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + '/federation-accueil.html' });
+    if(error) throw error;
+    msgEl.textContent="Lien envoyé si ce compte existe. Vérifie ta boîte mail.";
+  }catch(err){
+    msgEl.textContent="Erreur : "+(err.message||err);
+  }
+}
+function renderResetPassword(){
+  document.querySelector('.app').innerHTML = `
+  <div style="max-width:420px;margin:15vh auto;padding:0 20px">
+    <div style="font-weight:700;font-size:22px;margin-bottom:24px">FÉDÉRATION DE PEINTRES EN LETTRES</div>
+    <div style="font-weight:700;font-size:21px;margin-bottom:8px">Nouveau mot de passe</div>
+    <div class="sectionSub">Choisis un nouveau mot de passe pour ton compte.</div>
+    <input id="newPassword" class="input" type="password" placeholder="Nouveau mot de passe" style="margin-bottom:10px">
+    <input id="newPassword2" class="input" type="password" placeholder="Confirme le mot de passe" style="margin-bottom:10px">
+    <button class="actionBtn" onclick="handleResetPassword()">Enregistrer</button>
+    <div id="resetMsg" class="tiny" style="margin-top:14px"></div>
+  </div>`;
+}
+async function handleResetPassword(){
+  const p1=document.getElementById('newPassword').value;
+  const p2=document.getElementById('newPassword2').value;
+  const msgEl=document.getElementById('resetMsg');
+  if(p1.length<6) return msgEl.textContent='Le mot de passe doit faire au moins 6 caractères.';
+  if(p1!==p2) return msgEl.textContent='Les deux mots de passe ne correspondent pas.';
+  msgEl.textContent='Enregistrement…';
+  try{
+    const {error}=await sb.auth.updateUser({ password: p1 });
+    if(error) throw error;
+    inPasswordRecovery=false;
+    history.replaceState(null, '', window.location.pathname + window.location.search);
+    const {data:{session}} = await sb.auth.getSession();
+    currentUser = session ? session.user : null;
+    await afterLogin();
+  }catch(err){
+    msgEl.textContent="Erreur : "+(err.message||err);
+  }
+}
+async function logout(){ try{ await sb.auth.signOut(); }catch(e){ console.error(e); } currentUser=null; await renderPublicHome(); }
+
+/* =========================================================================
+   PAGE PUBLIQUE (avant connexion)
+   ========================================================================= */
+async function loadFederationPublic(){
+  if(state.federation) return;
+  try{
+    const { data } = await sb.from('federations').select('id,name').order('created_at').limit(1);
+    state.federation = (data && data[0]) || null;
+  }catch(e){ console.error(e); }
+}
+async function renderPublicHome(){
+  document.querySelector('.app').innerHTML = `<div style="padding:24px" class="tiny">Chargement…</div>`;
+  try{
+    await loadFederationPublic();
+    await loadPagesPubliques();
+  }catch(e){ console.error(e); }
+  // Lien direct vers une fiche peintre (partagé, ou depuis la carte des réalisations) —
+  // ?peintre=<numero_membre> ouvre directement l'annuaire sur cette fiche.
+  const params = new URLSearchParams(window.location.search);
+  const peintreDemande = params.get('peintre');
+  if(peintreDemande){ state.tab='pub-peintres'; state.peintreOuvert = peintreDemande; }
+  else if(params.get('tab')==='peintres') state.tab='pub-peintres';
+  else if(params.get('tab')==='devenir') state.tab='pub-devenir';
+  else state.tab='pub-accueil';
+  renderTab();
+}
+
+/* =========================================================================
+   DONNÉES APRÈS CONNEXION
+   ========================================================================= */
+async function loadMyFederationIdentity(){
+  const { data, error } = await sb.from('federation_members').select('numero_membre,federation_id,nom,prenom,telephone,adresse,therese_actif,consentement_agregation,nom_atelier,role_public,photo_url,presentation,annees_experience,tags_specialites,ville_intervention,latitude,longitude,rayon_intervention_km,accueil_atelier,accueille_stagiaires,ouvert_reconversion,collaborations,contact_public,membre_depuis').eq('user_id', currentUser.id).maybeSingle();
+  if(error) throw error;
+  state.numeroMembre = data ? data.numero_membre : '';
+  state.maFiche = data ? { nom:data.nom||'', prenom:data.prenom||'', telephone:data.telephone||'', adresse:data.adresse||'', thereseActif:!!data.therese_actif, consentementAgregation:!!data.consentement_agregation } : { nom:'', prenom:'', telephone:'', adresse:'', thereseActif:false, consentementAgregation:false };
+  state.ficheAnnuaire = data ? {
+    nomAtelier:data.nom_atelier||'', rolePublic:data.role_public||'', photoUrl:data.photo_url||'',
+    presentation:data.presentation||'', anneesExperience:data.annees_experience??'', tagsSpecialites:data.tags_specialites||[],
+    villeIntervention:data.ville_intervention||'', latitude:data.latitude, longitude:data.longitude,
+    rayonInterventionKm:data.rayon_intervention_km??100, accueilAtelier:!!data.accueil_atelier,
+    accueilleStagiaires:!!data.accueille_stagiaires, ouvertReconversion:!!data.ouvert_reconversion,
+    collaborations:data.collaborations||'', contactPublic:data.contact_public||'', membreDepuis:data.membre_depuis||''
+  } : state.ficheAnnuaire;
+}
+let cadransCharges = false;
+async function chargerCadrans(){
+  const [
+    { data: consolide }, { data: evenements },
+    { data: sudOuest }, { data: contribMoi }, { data: contribEquipe },
+    { data: consentement }, { data: syntheseMoisData }
+  ] = await Promise.all([
+    sb.from('niveau_consolide').select('situation_id,niveau,statut').eq('personne_id', currentUser.id),
+    sb.from('situation_events').select('id,date').eq('personne_id', currentUser.id).gte('date', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()),
+    sb.from('boussole_sud_ouest').select('*').eq('personne_id', currentUser.id).order('date',{ascending:false}),
+    sb.from('contributions_collectives').select('*').eq('personne_id', currentUser.id).order('date',{ascending:false}),
+    sb.from('contributions_collectives').select('*').order('date',{ascending:false}).limit(10),
+    sb.from('consentements_donnees_sensibles').select('consenti').eq('personne_id', currentUser.id).eq('categorie','sud_ouest').maybeSingle(),
+    sb.from('syntheses_mensuelles').select('*').eq('personne_id', currentUser.id).eq('mois', premierJourMoisCourant()).maybeSingle(),
+  ]);
+  state.cadrans = {
+    consolide: consolide || [], nbEvenementsMois: (evenements||[]).length,
+    sudOuest: sudOuest || [], contribMoi: contribMoi || [], contribEquipe: contribEquipe || [],
+    consentementSudOuest: consentement ? !!consentement.consenti : false,
+    syntheseMois: syntheseMoisData ? syntheseMoisData.texte : '',
+  };
+}
+function premierJourMoisCourant(){
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-01`;
+}
+let mesDonneesChargees = false;
+async function chargerMesDonnees(){
+  const { data, error } = await sb.from('validations_competence').select('*').eq('user_id', currentUser.id).order('created_at', { ascending:false });
+  state.mesValidations = error ? [] : (data||[]);
+}
+async function loadKpis(){
+  try{
+    const { data, error } = await sb.rpc('federation_kpis');
+    if(error) throw error;
+    state.kpis = data || {ateliers:0,personnes:0};
+  }catch(e){ console.error(e); state.kpis = {ateliers:0,personnes:0}; }
+}
+async function loadMyData(){
+  const { data: memberRows, error: e1 } = await sb.from('members').select('id,establishment_id,role').eq('user_id', currentUser.id);
+  if(e1) throw e1;
+  const estIds = [...new Set(memberRows.map(m=>m.establishment_id))];
+  let establishments = [];
+  if(estIds.length){
+    const { data, error: e2 } = await sb.from('establishments').select('id,name,mode').in('id', estIds);
+    if(e2) throw e2;
+    establishments = data || [];
+  }
+  state.myMemberships = memberRows.map(m=>({ ...m, establishment: establishments.find(e=>e.id===m.establishment_id) }));
+
+  const { data: invRows, error: e3 } = await sb.from('invitations').select('id,establishment_id,role,status').or(`email.eq.${currentUser.email.toLowerCase()},invitee_user_id.eq.${currentUser.id}`).eq('status','pending');
+  if(e3) throw e3;
+  let invEstablishments = [];
+  const invEstIds = [...new Set((invRows||[]).map(i=>i.establishment_id))];
+  if(invEstIds.length){
+    const { data, error: e4 } = await sb.from('establishments').select('id,name').in('id', invEstIds);
+    if(e4) throw e4;
+    invEstablishments = data || [];
+  }
+  state.myInvitations = (invRows||[]).map(i=>({ ...i, establishment: invEstablishments.find(e=>e.id===i.establishment_id) }));
+}
+async function loadGuides(){
+  const { data, error } = await sb.from('federation_guides').select('slug,titre,description,sections').order('slug');
+  if(error) throw error;
+  state.guides = data || [];
+}
+
+// Générique par métier (roles_metier) — plus de rôles codés en dur, voir guide-production-mindmap.html.
+let ROLES = [];
+async function chargerRoles(){
+  const { data: metiers } = await sb.from('metiers').select('id').order('ordre').limit(1);
+  const metierId = metiers && metiers[0] ? metiers[0].id : null;
+  if(!metierId){ ROLES = []; return; }
+  const { data } = await sb.from('roles_metier').select('code,label').eq('metier_id', metierId).order('ordre');
+  ROLES = (data||[]).map(r=>({ value:r.code, label:r.label }));
+}
+function roleLabel(v){ return (ROLES.find(r=>r.value===v)||{}).label || v || '—' }
+
+/* =========================================================================
+   COQUILLE (sidebar + contenu) — une fois connecté
+   ========================================================================= */
+function navAdmin(){
+  return `
+    <a class="brand" href="federation-accueil.html">Maurice</a>
+    <button class="navToggle" onclick="toggleNav()" aria-label="Menu">☰</button>
+    <div class="menuItem"><span onclick="toggleMenuItem(this)">Mon Atelier</span>
+      <div class="dropdown">
+        ${state.myMemberships.length ? state.myMemberships.map(m=>`<a href="atelier-compte.html?est=${m.establishment_id}">${escapeHtml(m.establishment?m.establishment.name:'Atelier')} — ${escapeHtml(roleLabel(m.role))}</a>`).join('') : `<div class="ddFuture">Aucun atelier pour l'instant</div>`}
+        <button class="ddItem" onclick="setTab('mesAteliers')">Créer un atelier</button>
+      </div>
+    </div>
+    <div class="menuItem"><span onclick="toggleMenuItem(this)">Ma Fédération</span>
+      <div class="dropdown">
+        <button class="ddItem" onclick="setTab('accueil')">Accueil (admin)</button>
+        <button class="ddItem" onclick="setTab('guides')">Référentiels métier</button>
+        <button class="ddItem" onclick="setTab('pub-peintres')">Nos peintres</button>
+        <button class="ddItem" onclick="setTab('pub-devenir')">Nous rejoindre (Constellation &amp; Reconversion)</button>
+        ${state.maFiche.thereseActif ? `<a href="therese.html">Thérèse <span class="ddTag">version test</span></a>` : ''}
+        ${currentUser && currentUser.email===COMITE_EMAIL_FEDERATION ? `
+        <a href="federation-editos.html">Éditos du site public</a>
+        <a href="admin-metiers.html">Admin métiers</a>
+        <a href="deploiement-referentiel-formation.html">Déploiement référentiel-formation</a>` : ''}
+        <button class="ddItem" onclick="setTab('maFiche')">Ma fiche</button>
+        <button class="ddItem" onclick="setTab('mesDonnees')">Mes données</button>
+        <button class="ddItem" onclick="setTab('cadrans')">Mes 4 cadrans</button>
+        <div class="ddFuture">Mon passeport<span class="ddTag">bientôt</span></div>
+        <div class="ddFuture">Challenges &amp; formations<span class="ddTag">bientôt</span></div>
+        <div class="ddFuture">Réseau &amp; mutualisation<span class="ddTag">bientôt</span></div>
+        <div class="ddFuture">Ce que je partage<span class="ddTag">bientôt</span></div>
+      </div>
+    </div>
+    <div class="navRight"><span>N° ${escapeHtml(state.numeroMembre||'—')}</span><button onclick="logout()">Déconnexion</button></div>`;
+}
+
+function navPublique(){
+  const vs = pagePublique('vousetes')?.contenu;
+  return `
+    <a class="brand" href="federation-accueil.html">Fédération de peintres en lettres</a>
+    <button class="navToggle" onclick="toggleNav()" aria-label="Menu">☰</button>
+    <div class="menuItem"><button class="topLink" onclick="setTab('pub-accueil')">Accueil</button></div>
+    <div class="menuItem"><button class="topLink" onclick="setTab('pub-federation')">La Fédération</button></div>
+    <div class="menuItem"><button class="topLink" onclick="setTab('pub-peintres')">Nos peintres</button></div>
+    <div class="menuItem"><button class="topLink" onclick="setTab('pub-rse')">Responsabilités</button></div>
+    <div class="menuItem"><button class="topLink" onclick="setTab('pub-devenir')">Nous rejoindre</button></div>
+    <div class="menuItem"><span onclick="toggleMenuItem(this)">Vous êtes...</span>
+      <div class="dropdown">
+        ${vs ? vs.tabs.map((t,i)=>`<button class="ddItem" onclick="setTab('pub-vs-${i}')">${escapeHtml(t.label)}</button>`).join('') : ''}
+      </div>
+    </div>
+    <div class="menuItem"><button class="topLink" onclick="setTab('pub-recits')">Blog — récits</button></div>
+    <div class="menuItem"><button class="topLink" onclick="setTab('pub-contact')">Contact</button></div>
+    <div class="navRight"><button onclick="startLogin('connexion')">Connexion</button><button class="actionBtn" onclick="startLogin('creer')">Créer mon compte</button></div>`;
+}
+
+function shell(contentHtml){
+  const authed = !!currentUser;
+  document.querySelector('.app').innerHTML = `
+  <nav class="topnav">${authed ? navAdmin() : navPublique()}</nav>
+  <main class="content">${contentHtml}</main>`;
+}
+async function setTab(tab){
+  state.tab=tab; renderTab();
+  if(tab==='mesDonnees' && !mesDonneesChargees){
+    await chargerMesDonnees();
+    mesDonneesChargees = true;
+    renderTab();
+  }
+  if(tab==='cadrans' && !cadransCharges){
+    await chargerCadrans();
+    cadransCharges = true;
+    renderTab();
+  }
+}
+function renderTab(){
+  if(state.tab==='accueil') return shell(renderAccueilAdmin());
+  if(state.tab==='guides') return shell(renderGuides());
+  if(state.tab==='maFiche') return shell(currentUser ? renderMaFiche() : renderConnexionRequise());
+  if(state.tab==='mesDonnees') return shell(currentUser ? renderMesDonnees() : renderConnexionRequise());
+  if(state.tab==='cadrans') return shell(currentUser ? renderCadrans() : renderConnexionRequise());
+  if(state.tab==='mesAteliers') return shell(currentUser ? renderCreerAtelier() : renderConnexionRequise());
+  if(state.tab.startsWith('pub-')) return shell(renderPagePublique(state.tab));
+}
+function renderMaFiche(){
+  const f = state.maFiche;
+  return `
+  <div class="section" style="max-width:480px">
+    <div class="treeTitle">Ma fiche</div>
+    <div class="sectionSub">Tes informations personnelles au niveau Fédération — elles te suivent quel que soit l'atelier où tu travailles. Visibles et modifiables uniquement par toi.</div>
+    <div class="tiny muted" style="margin-bottom:4px">Numéro Fédération</div>
+    <div style="margin-bottom:14px"><span class="chip">${escapeHtml(state.numeroMembre||'—')}</span></div>
+    <div class="tiny muted" style="margin-bottom:4px">Email</div>
+    <div style="margin-bottom:14px" class="tiny">${escapeHtml(currentUser?currentUser.email:'')}</div>
+    <input id="ficheNom" class="input" placeholder="Nom" value="${escapeHtml(f.nom)}" style="margin-bottom:10px">
+    <input id="fichePrenom" class="input" placeholder="Prénom" value="${escapeHtml(f.prenom)}" style="margin-bottom:10px">
+    <input id="ficheTelephone" class="input" placeholder="Téléphone" value="${escapeHtml(f.telephone)}" style="margin-bottom:10px">
+    <input id="ficheAdresse" class="input" placeholder="Adresse" value="${escapeHtml(f.adresse)}" style="margin-bottom:14px">
+    <button class="actionBtn" onclick="handleSaveFiche()">Enregistrer</button>
+    <div id="ficheMsg" class="tiny" style="margin-top:12px"></div>
+
+    ${renderFicheAnnuaireForm()}
+
+    <div class="sectionSub" style="margin-top:28px;margin-bottom:8px;font-weight:700;color:var(--ink,#111)">Thérèse</div>
+    <div class="sectionSub" style="margin-bottom:10px">Thérèse t'accompagne pour faire reconnaître ton savoir-faire au fil des chantiers. Elle reste éteinte tant que tu ne l'actives pas ici — Mon Atelier passe toujours en premier.</div>
+    <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer">
+      <input type="checkbox" id="ficheThereseActif" ${f.thereseActif?'checked':''} onchange="handleToggleTherese(this.checked)">
+      Activer Thérèse
+    </label>
+    <div id="thereseMsg" class="tiny" style="margin-top:8px"></div>
+  </div>`;
+}
+
+const ROLES_PUBLICS = { peintre_dirigeant:'Peintre dirigeant', graphiste:'Graphiste', regisseur:'Régisseur' };
+// Fiche publique (annuaire "Nos peintres") — 100% déclaratif, rien n'est déduit de Maurice.
+// Séparée de "Ma fiche" (privée) dans son propre bloc, mais sur le même écran et le même
+// bouton d'enregistrement logique — pas un écran à part à retrouver ailleurs.
+function renderFicheAnnuaireForm(){
+  const a = state.ficheAnnuaire;
+  const visible = a.rolePublic && a.villeIntervention;
+  return `
+  <div style="margin-top:28px;padding-top:18px;border-top:1px solid var(--line)">
+    <div class="sectionSub" style="margin-bottom:4px;font-weight:700;color:var(--ink,#111)">Fiche publique — annuaire "Nos peintres"</div>
+    <div class="sectionSub" style="margin-bottom:14px">${visible ? 'Ta fiche est visible dans l\'annuaire public.' : 'Renseigne au moins le rôle et la ville d\'intervention pour apparaître dans l\'annuaire.'}</div>
+
+    <div class="tiny muted" style="margin-bottom:4px">Photo de profil</div>
+    ${a.photoUrl ? `<img src="${escapeHtml(a.photoUrl)}" style="width:64px;height:64px;object-fit:cover;border-radius:50%;display:block;margin-bottom:8px">` : ''}
+    <input type="file" accept="image/*" id="ficheAnnuairePhotoFile" style="margin-bottom:14px" onchange="handleUploadPhotoProfil(event)">
+
+    <div class="tiny muted" style="margin-bottom:4px">Rôle affiché</div>
+    <select id="ficheAnnuaireRole" class="select" style="margin-bottom:10px">
+      <option value="">— Choisir —</option>
+      ${Object.entries(ROLES_PUBLICS).map(([v,l])=>`<option value="${v}" ${a.rolePublic===v?'selected':''}>${escapeHtml(l)}</option>`).join('')}
+    </select>
+    <input id="ficheAnnuaireNomAtelier" class="input" placeholder="Nom de l'atelier (si différent de ton nom)" value="${escapeHtml(a.nomAtelier)}" style="margin-bottom:10px">
+    <textarea id="ficheAnnuairePresentation" class="textarea" placeholder="Présentation libre (quelques lignes)" style="margin-bottom:10px;min-height:80px">${escapeHtml(a.presentation)}</textarea>
+    <input id="ficheAnnuaireAnnees" class="input" type="number" min="0" placeholder="Années d'expérience" value="${a.anneesExperience??''}" style="margin-bottom:10px">
+    <input id="ficheAnnuaireTags" class="input" placeholder="Spécialités, séparées par des virgules (ex : lettres capitales, doré à la feuille)" value="${escapeHtml((a.tagsSpecialites||[]).join(', '))}" style="margin-bottom:14px">
+
+    <div class="tiny muted" style="margin-bottom:4px">Zone d'intervention</div>
+    <input id="ficheAnnuaireVille" class="input" placeholder="Ville de base (ex : Lyon)" value="${escapeHtml(a.villeIntervention)}" style="margin-bottom:6px">
+    <div class="tiny" style="margin-bottom:10px">Rayon d'intervention : <input id="ficheAnnuaireRayon" type="number" min="0" value="${a.rayonInterventionKm}" style="width:70px;border:1px solid var(--line);border-radius:8px;padding:3px 6px"> km</div>
+    <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;margin-bottom:6px">
+      <input type="checkbox" id="ficheAnnuaireAccueilAtelier" ${a.accueilAtelier?'checked':''}> J'accueille en atelier
+    </label>
+
+    <div class="tiny muted" style="margin:14px 0 4px 0">Transmission</div>
+    <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;margin-bottom:6px">
+      <input type="checkbox" id="ficheAnnuaireStagiaires" ${a.accueilleStagiaires?'checked':''}> J'accueille des stagiaires/apprentis
+    </label>
+    <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;margin-bottom:14px">
+      <input type="checkbox" id="ficheAnnuaireReconversion" ${a.ouvertReconversion?'checked':''}> Ouvert à la reconversion
+    </label>
+
+    <div class="tiny muted" style="margin-bottom:4px">Collaborations</div>
+    <textarea id="ficheAnnuaireCollaborations" class="textarea" placeholder="Ex : A collaboré avec Untel, sur tel projet" style="margin-bottom:14px;min-height:60px">${escapeHtml(a.collaborations)}</textarea>
+
+    <div class="tiny muted" style="margin-bottom:4px">Contact public</div>
+    <input id="ficheAnnuaireContact" class="input" placeholder="Coordonnées ou lien vers un formulaire" value="${escapeHtml(a.contactPublic)}" style="margin-bottom:10px">
+    <div class="tiny muted" style="margin-bottom:4px">Membre depuis</div>
+    <input id="ficheAnnuaireMembreDepuis" class="input" type="date" value="${a.membreDepuis||''}" style="margin-bottom:14px">
+
+    <button class="actionBtn" onclick="handleSaveFicheAnnuaire()">Enregistrer la fiche publique</button>
+    <div id="ficheAnnuaireMsg" class="tiny" style="margin-top:10px"></div>
+  </div>`;
+}
+async function handleUploadPhotoProfil(event){
+  const file = event.target.files && event.target.files[0];
+  if(!file || !currentUser) return;
+  const msgEl = document.getElementById('ficheAnnuaireMsg');
+  msgEl.textContent = 'Envoi de la photo…';
+  const chemin = `${currentUser.id}/${Date.now()}-${file.name}`;
+  const { error: eUp } = await sb.storage.from('photos-profil').upload(chemin, file);
+  if(eUp){ msgEl.textContent = 'Erreur photo : '+eUp.message; return; }
+  const { data } = sb.storage.from('photos-profil').getPublicUrl(chemin);
+  state.ficheAnnuaire.photoUrl = data.publicUrl;
+  msgEl.textContent = 'Photo envoyée — pense à Enregistrer pour la fixer sur ta fiche.';
+  renderTab();
+}
+async function handleSaveFicheAnnuaire(){
+  const msgEl = document.getElementById('ficheAnnuaireMsg'); msgEl.textContent = 'Enregistrement…';
+  try{
+    const villeIntervention = document.getElementById('ficheAnnuaireVille').value.trim();
+    let latitude = state.ficheAnnuaire.latitude, longitude = state.ficheAnnuaire.longitude;
+    if(villeIntervention && villeIntervention !== state.ficheAnnuaire.villeIntervention){
+      msgEl.textContent = 'Localisation de la ville…';
+      const { data: geo, error: eGeo } = await sb.functions.invoke('geocoder', { body: { query: villeIntervention } });
+      if(eGeo || !geo || geo.error){
+        msgEl.textContent = "Ville introuvable ou trop imprécise — vérifie l'orthographe (ex : \"Lyon, France\") avant d'enregistrer.";
+        return;
+      }
+      latitude = geo.lat; longitude = geo.lng;
+    }
+    const tags = document.getElementById('ficheAnnuaireTags').value.split(',').map(t=>t.trim()).filter(Boolean);
+    const payload = {
+      p_nom_atelier: document.getElementById('ficheAnnuaireNomAtelier').value.trim() || null,
+      p_role_public: document.getElementById('ficheAnnuaireRole').value || null,
+      p_photo_url: state.ficheAnnuaire.photoUrl || null,
+      p_presentation: document.getElementById('ficheAnnuairePresentation').value.trim() || null,
+      p_annees_experience: document.getElementById('ficheAnnuaireAnnees').value ? Number(document.getElementById('ficheAnnuaireAnnees').value) : null,
+      p_tags_specialites: tags,
+      p_ville_intervention: villeIntervention || null,
+      p_latitude: latitude, p_longitude: longitude,
+      p_rayon_intervention_km: Number(document.getElementById('ficheAnnuaireRayon').value)||100,
+      p_accueil_atelier: document.getElementById('ficheAnnuaireAccueilAtelier').checked,
+      p_accueille_stagiaires: document.getElementById('ficheAnnuaireStagiaires').checked,
+      p_ouvert_reconversion: document.getElementById('ficheAnnuaireReconversion').checked,
+      p_collaborations: document.getElementById('ficheAnnuaireCollaborations').value.trim() || null,
+      p_contact_public: document.getElementById('ficheAnnuaireContact').value.trim() || null,
+      p_membre_depuis: document.getElementById('ficheAnnuaireMembreDepuis').value || null,
+    };
+    const { error } = await sb.rpc('update_fiche_annuaire', payload);
+    if(error) throw error;
+    state.ficheAnnuaire = {
+      nomAtelier:payload.p_nom_atelier||'', rolePublic:payload.p_role_public||'', photoUrl:payload.p_photo_url||'',
+      presentation:payload.p_presentation||'', anneesExperience:payload.p_annees_experience??'', tagsSpecialites:tags,
+      villeIntervention:payload.p_ville_intervention||'', latitude, longitude, rayonInterventionKm:payload.p_rayon_intervention_km,
+      accueilAtelier:payload.p_accueil_atelier, accueilleStagiaires:payload.p_accueille_stagiaires,
+      ouvertReconversion:payload.p_ouvert_reconversion, collaborations:payload.p_collaborations||'',
+      contactPublic:payload.p_contact_public||'', membreDepuis:payload.p_membre_depuis||''
+    };
+    msgEl.textContent = 'Enregistré.';
+    renderTab();
+  }catch(err){
+    msgEl.textContent = 'Erreur : '+(err.message||err);
+  }
+}
+async function handleToggleTherese(actif){
+  const msgEl=document.getElementById('thereseMsg'); msgEl.textContent='Enregistrement…';
+  try{
+    const { error } = await sb.rpc('toggle_therese_actif', { p_actif: actif });
+    if(error) throw error;
+    state.maFiche.thereseActif = actif;
+    msgEl.textContent = actif ? 'Thérèse est activée.' : 'Thérèse est désactivée.';
+  }catch(err){
+    msgEl.textContent = "Erreur : "+(err.message||err);
+  }
+}
+
+function renderMesDonnees(){
+  const f = state.maFiche;
+  const validations = state.mesValidations || [];
+  return `
+  <div class="section" style="max-width:640px">
+    <div class="treeTitle">Mes données</div>
+    <div class="sectionSub">Ce que la Fédération et Thérèse savent de toi — un accès permanent, pas seulement sur demande.</div>
+
+    <div style="border:1px solid var(--line,#e7e7e7);border-radius:14px;padding:16px 18px;margin-bottom:18px">
+      <div class="treeTitle" style="font-size:16px;margin-bottom:2px">Tes données personnelles</div>
+      <div class="sectionSub" style="margin-bottom:10px">Strictement à toi. Jamais partagées, jamais utilisées sans que tu le voies ici.</div>
+      <div class="tiny muted">Numéro Fédération</div>
+      <div style="margin-bottom:8px">${escapeHtml(state.numeroMembre||'—')}</div>
+      <div class="tiny muted">Nom</div>
+      <div style="margin-bottom:8px">${escapeHtml(f.nom||'—')} ${escapeHtml(f.prenom||'')}</div>
+      <div class="tiny muted">Email</div>
+      <div style="margin-bottom:8px">${escapeHtml(currentUser?currentUser.email:'')}</div>
+      <div class="tiny muted">Téléphone</div>
+      <div style="margin-bottom:8px">${escapeHtml(f.telephone||'—')}</div>
+      <div class="tiny muted">Adresse</div>
+      <div style="margin-bottom:4px">${escapeHtml(f.adresse||'—')}</div>
+      <button class="ghostBtn" style="margin-top:8px" onclick="setTab('maFiche')">Modifier ma fiche</button>
+
+      <div class="treeTitle" style="font-size:15px;margin:22px 0 4px 0">Mes validations avec Thérèse (${validations.length})</div>
+      ${validations.length ? validations.map(v=>`
+        <div style="border-top:1px solid var(--line,#e7e7e7);padding:10px 0">
+          <div class="tiny muted">${new Date(v.created_at).toLocaleDateString('fr-FR')} · ${v.enjeu==='fort'?'Enjeu fort':'Enjeu pédagogique'}${v.contestee?' · Contestée':''}</div>
+          <div style="font-weight:700;font-size:14px;margin:2px 0">${escapeHtml(v.critere_valide)}</div>
+          <div class="tiny" style="white-space:pre-wrap">${escapeHtml(v.verbatim)}</div>
+        </div>`).join('') : '<div class="tiny muted">Aucune validation enregistrée pour l\'instant.</div>'}
+    </div>
+
+    <div style="border:1px dashed var(--line,#e7e7e7);border-radius:14px;padding:16px 18px">
+      <div class="treeTitle" style="font-size:16px;margin-bottom:2px">Ce qui remonte (rare, toujours consenti)</div>
+      <div class="sectionSub" style="margin-bottom:10px">Thérèse peut un jour repérer des tendances communes à plusieurs personnes (ex : une étape de progression qui bloque souvent) pour proposer une amélioration au comité référentiel — jamais un cas individuel identifiable. Rien de ce genre n'existe encore réellement aujourd'hui : cette case prépare seulement ton consentement pour le jour où ce sera construit.</div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer">
+        <input type="checkbox" ${f.consentementAgregation?'checked':''} onchange="handleToggleConsentement(this.checked)">
+        J'accepte que mes réponses anonymisées et agrégées puissent servir à repérer des tendances d'apprentissage
+      </label>
+      <div id="consentMsg" class="tiny" style="margin-top:8px"></div>
+    </div>
+
+    <div style="border:1px solid var(--line,#e7e7e7);border-radius:14px;padding:16px 18px;margin-top:18px">
+      <div class="treeTitle" style="font-size:16px;margin-bottom:2px">Tes droits</div>
+      <div class="sectionSub" style="margin-bottom:12px">Accès et rectification : juste au-dessus, "Modifier ma fiche". Portabilité et suppression : ici.</div>
+      <button class="ghostBtn" onclick="handleExporterMesDonnees()">Télécharger toutes mes données</button>
+      <button class="ghostBtn" style="margin-left:8px" onclick="handleDemandeSuppression()">Demander la suppression de mes données</button>
+      <div id="rgpdMsg" class="tiny" style="margin-top:10px"></div>
+    </div>
+  </div>`;
+}
+async function handleExporterMesDonnees(){
+  const el = document.getElementById('rgpdMsg'); if(el) el.textContent = 'Préparation de l\'export…';
+  try{
+    const { data, error } = await sb.rpc('exporter_mes_donnees');
+    if(error) throw error;
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'mes-donnees-federation.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+    if(el) el.textContent = 'Export téléchargé.';
+  }catch(err){
+    if(el) el.textContent = 'Erreur : '+(err.message||err);
+  }
+}
+async function handleDemandeSuppression(){
+  if(!await confirmer("Envoyer une demande de suppression complète de tes données à la Fédération ? Le comité te recontactera pour la traiter.")) return;
+  const el = document.getElementById('rgpdMsg'); if(el) el.textContent = 'Envoi…';
+  try{
+    const { error } = await sb.from('demandes_rgpd').insert({ personne_id: currentUser.id, type:'suppression' });
+    if(error) throw error;
+    if(el) el.textContent = 'Demande envoyée — le comité te recontactera.';
+  }catch(err){
+    if(el) el.textContent = 'Erreur : '+(err.message||err);
+  }
+}
+/* =========================================================================
+   MES 4 CADRANS (point 13) — Nord-Ouest à gauche, Nord-Est à droite,
+   Sud-Ouest en bas à gauche, Sud-Est en bas à droite. Jamais inversé.
+   ========================================================================= */
+const NIVEAUX_ORDRE = { 'Niveau 1 débutant':1, 'Niveau 2 apprenti opérationnel':2, 'Niveau 3 compagnon':3, 'Niveau 4 maître':4 };
+function renderCadrans(){
+  const c = state.cadrans || {};
+  return `
+  <div class="section" style="max-width:820px">
+    <div class="treeTitle">Comment je progresse</div>
+    <div class="sectionSub">Quatre façons de regarder ta progression — jamais réduites à un seul score.</div>
+
+    <div class="cadransGrid">
+      <div style="border:1px solid var(--line,#e7e7e7);border-radius:14px;padding:16px 18px">
+        <div class="treeTitle" style="font-size:15px;margin-bottom:2px">Progression démontrée</div>
+        <div class="sectionSub" style="margin-bottom:10px">Compétences validées, niveaux atteints.</div>
+        ${c.consolide && c.consolide.length ? `
+          <div class="tiny">${c.consolide.length} situation${c.consolide.length>1?'s':''} avec un niveau consolidé.</div>
+          ${c.consolide.slice(0,6).map(n=>`<div class="tiny" style="margin-top:4px">${escapeHtml(n.niveau)} · ${escapeHtml(n.statut)}</div>`).join('')}
+        ` : `<div class="tiny muted">Pas encore de données — l'écran de déclaration de niveau n'est pas encore construit.</div>`}
+      </div>
+
+      <div style="border:1px solid var(--line,#e7e7e7);border-radius:14px;padding:16px 18px">
+        <div class="treeTitle" style="font-size:15px;margin-bottom:2px">Objectifs tenus</div>
+        <div class="sectionSub" style="margin-bottom:10px">Y compris le gain administratif et de traçabilité apporté par Maurice.</div>
+        ${c.nbEvenementsMois ? `<div class="tiny">${c.nbEvenementsMois} situation${c.nbEvenementsMois>1?'s':''} documentée${c.nbEvenementsMois>1?'s':''} ce mois-ci.</div>`
+          : `<div class="tiny muted">Pas encore de données — l'écran de journalisation des situations n'est pas encore construit.</div>`}
+      </div>
+
+      <div style="border:1px solid var(--line,#e7e7e7);border-radius:14px;padding:16px 18px">
+        <div class="treeTitle" style="font-size:15px;margin-bottom:2px">Conditions de réussite</div>
+        <div class="sectionSub" style="margin-bottom:10px">Ce que tu demandes pour progresser — jamais un score, strictement à toi.</div>
+        ${!c.consentementSudOuest ? `
+          <label style="display:flex;align-items:flex-start;gap:8px;font-size:13.5px;cursor:pointer;margin-bottom:10px">
+            <input type="checkbox" onchange="handleConsentirSudOuest(this.checked)">
+            <span>J'accepte d'enregistrer mes demandes de cadre et mon ressenti dans Maurice (donnée sensible, strictement personnelle — <a href="federation-accueil.html">détails RGPD</a> dans Mes données).</span>
+          </label>
+        ` : `
+          ${(c.sudOuest||[]).length ? c.sudOuest.map(d=>`
+            <div style="border-top:1px solid var(--line,#e7e7e7);padding:8px 0">
+              <div class="tiny muted">${new Date(d.date).toLocaleDateString('fr-FR')} · ${escapeHtml(d.statut)}</div>
+              <div style="font-size:14px">${escapeHtml(d.demande_cadre)}</div>
+              ${d.action_suivie ? `<div class="tiny" style="margin-top:2px">→ ${escapeHtml(d.action_suivie)}</div>` : ''}
+            </div>`).join('') : `<div class="tiny muted" style="margin-bottom:8px">Rien enregistré pour l'instant.</div>`}
+          <textarea id="nouvelleDemandeCadre" class="input" placeholder="Une demande de cadre (ex : plus de temps sur X, besoin d'aide sur Y)…" style="margin-top:10px;min-height:60px"></textarea>
+          <button class="ghostBtn" style="margin-top:8px" onclick="handleAjouterDemandeCadre()">Enregistrer</button>
+          <div id="msgSudOuest" class="tiny" style="margin-top:6px"></div>
+        `}
+      </div>
+
+      <div style="border:1px solid var(--line,#e7e7e7);border-radius:14px;padding:16px 18px">
+        <div class="treeTitle" style="font-size:15px;margin-bottom:2px">Vitalité collective</div>
+        <div class="sectionSub" style="margin-bottom:10px">Contributions, entraide, transmission — visible par toute l'équipe.</div>
+        ${(c.contribEquipe||[]).length ? c.contribEquipe.slice(0,6).map(x=>`
+          <div class="tiny" style="margin-top:4px">${new Date(x.date).toLocaleDateString('fr-FR')} · ${escapeHtml(x.type)} — ${escapeHtml(x.description)}</div>
+        `).join('') : `<div class="tiny muted" style="margin-bottom:8px">Rien enregistré pour l'instant.</div>`}
+        <select id="typeContribution" class="select" style="margin-top:10px">
+          <option value="formation">Formation donnée</option>
+          <option value="entraide">Entraide</option>
+          <option value="transmission">Transmission</option>
+        </select>
+        <input id="descriptionContribution" class="input" placeholder="En une phrase…" style="margin-top:8px">
+        <button class="ghostBtn" style="margin-top:8px" onclick="handleAjouterContribution()">Enregistrer</button>
+        <div id="msgContribution" class="tiny" style="margin-top:6px"></div>
+      </div>
+    </div>
+
+    <div style="border:1px dashed var(--line,#e7e7e7);border-radius:14px;padding:16px 18px;margin-top:16px">
+      <div class="treeTitle" style="font-size:15px;margin-bottom:6px">Qu'est-ce qui t'a aidé à progresser ce mois-ci ?</div>
+      <div class="sectionSub" style="margin-bottom:8px">Question ouverte, jamais notée.</div>
+      <textarea id="texteSynthese" class="input" style="min-height:70px">${escapeHtml(c.syntheseMois||'')}</textarea>
+      <button class="ghostBtn" style="margin-top:8px" onclick="handleEnregistrerSynthese()">Enregistrer</button>
+      <div id="msgSynthese" class="tiny" style="margin-top:6px"></div>
+    </div>
+  </div>`;
+}
+async function handleConsentirSudOuest(consent){
+  try{
+    const { error } = await sb.from('consentements_donnees_sensibles').upsert(
+      { personne_id: currentUser.id, categorie:'sud_ouest', consenti: consent, date:new Date().toISOString() },
+      { onConflict:'personne_id,categorie' }
+    );
+    if(error) throw error;
+    state.cadrans.consentementSudOuest = consent;
+    renderTab();
+  }catch(err){ alert('Erreur : '+(err.message||err)); }
+}
+async function handleAjouterDemandeCadre(){
+  const texte = document.getElementById('nouvelleDemandeCadre').value.trim();
+  const el = document.getElementById('msgSudOuest');
+  if(!texte){ if(el) el.textContent = 'Écris ta demande avant d\'enregistrer.'; return; }
+  if(el) el.textContent = 'Enregistrement…';
+  try{
+    const { error } = await sb.from('boussole_sud_ouest').insert({ personne_id: currentUser.id, demande_cadre: texte });
+    if(error) throw error;
+    await chargerCadrans();
+    renderTab();
+  }catch(err){ if(el) el.textContent = 'Erreur : '+(err.message||err); }
+}
+async function handleAjouterContribution(){
+  const type = document.getElementById('typeContribution').value;
+  const description = document.getElementById('descriptionContribution').value.trim();
+  const el = document.getElementById('msgContribution');
+  if(!description){ if(el) el.textContent = 'Décris ta contribution avant d\'enregistrer.'; return; }
+  if(el) el.textContent = 'Enregistrement…';
+  try{
+    const { error } = await sb.from('contributions_collectives').insert({ personne_id: currentUser.id, type, description });
+    if(error) throw error;
+    await chargerCadrans();
+    renderTab();
+  }catch(err){ if(el) el.textContent = 'Erreur : '+(err.message||err); }
+}
+async function handleEnregistrerSynthese(){
+  const texte = document.getElementById('texteSynthese').value.trim();
+  const el = document.getElementById('msgSynthese');
+  if(!texte){ if(el) el.textContent = 'Écris quelque chose avant d\'enregistrer.'; return; }
+  if(el) el.textContent = 'Enregistrement…';
+  try{
+    const { error } = await sb.from('syntheses_mensuelles').upsert(
+      { personne_id: currentUser.id, mois: premierJourMoisCourant(), texte, date:new Date().toISOString() },
+      { onConflict:'personne_id,mois' }
+    );
+    if(error) throw error;
+    if(el) el.textContent = 'Enregistré.';
+  }catch(err){ if(el) el.textContent = 'Erreur : '+(err.message||err); }
+}
+
+async function handleToggleConsentement(consent){
+  const msgEl=document.getElementById('consentMsg'); if(msgEl) msgEl.textContent='Enregistrement…';
+  try{
+    const { error } = await sb.rpc('toggle_consentement_agregation', { p_consent: consent });
+    if(error) throw error;
+    state.maFiche.consentementAgregation = consent;
+    if(msgEl) msgEl.textContent = consent ? 'Consentement enregistré.' : 'Consentement retiré.';
+  }catch(err){
+    if(msgEl) msgEl.textContent = "Erreur : "+(err.message||err);
+  }
+}
+async function handleSaveFiche(){
+  const nom=document.getElementById('ficheNom').value.trim();
+  const prenom=document.getElementById('fichePrenom').value.trim();
+  const telephone=document.getElementById('ficheTelephone').value.trim();
+  const adresse=document.getElementById('ficheAdresse').value.trim();
+  const msgEl=document.getElementById('ficheMsg'); msgEl.textContent='Enregistrement…';
+  try{
+    const { error } = await sb.rpc('update_ma_fiche', { p_nom:nom, p_prenom:prenom, p_telephone:telephone, p_adresse:adresse });
+    if(error) throw error;
+    state.maFiche = { nom, prenom, telephone, adresse };
+    msgEl.textContent='Enregistré.';
+  }catch(err){
+    msgEl.textContent="Erreur : "+(err.message||err);
+  }
+}
+function renderConnexionRequise(){
+  return `
+  <div class="section" style="max-width:480px">
+    <div class="treeTitle">Connecte-toi d'abord</div>
+    <div class="sectionSub">Il faut un compte Fédération avant de créer un atelier.</div>
+    <button class="actionBtn" onclick="startLogin('creer')">Créer mon compte</button>
+  </div>`;
+}
+
+function renderAccueilAdmin(){
+  return `
+  <div class="section">
+    <div class="treeTitle">Bonjour</div>
+    <div class="sectionSub">Vue d'ensemble de la Fédération, tous ateliers membres confondus.</div>
+  </div>
+  <div class="statusGrid">
+    <div class="statusCard"><div class="num">${state.kpis.ateliers}</div><div class="lbl">Ateliers membres</div></div>
+    <div class="statusCard"><div class="num">${state.kpis.personnes}</div><div class="lbl">Personnes avec un compte Fédération</div></div>
+    <div class="statusCard"><div class="num">0</div><div class="lbl">Demandes de reconversion en cours</div></div>
+  </div>
+  <div class="section">
+    <div class="treeTitle" style="font-size:18px">Accès rapide</div>
+    <div class="cardGrid">
+      <a class="card" onclick="setTab('guides')"><div class="t">Référentiels métier</div><div class="s">Comment on travaille &amp; comment on peint</div></a>
+      <a class="card" onclick="setTab('pub-devenir')"><div class="t">Nous rejoindre (Constellation &amp; Reconversion)</div><div class="s">Comparer un métier passé à un métier de la Fédération</div></a>
+      ${currentUser.email===COMITE_EMAIL_FEDERATION ? `<a class="card" href="federation-editos.html"><div class="t">Éditos du site public</div><div class="s">Modifier les textes des pages publiques</div></a>` : ''}
+    </div>
+  </div>
+  <div class="note">Un nouvel atelier crée toujours son entité depuis la Fédération — c'est ici, pas dans un outil séparé, que commence le parcours de tout nouveau membre.</div>
+  `;
+}
+
+/* =========================================================================
+   PAGES PUBLIQUES (site grand public, avant connexion) — contenu éditable
+   sans toucher au code via federation-editos.html (comité uniquement).
+   Même palette / mêmes classes que le reste de Maurice, jamais un style à part.
+   ========================================================================= */
+let pagesPubliques = [];
+async function loadPagesPubliques(){
+  if(pagesPubliques.length) return;
+  const { data, error } = await sb.from('federation_pages_publiques').select('slug,titre_menu,contenu,ordre').order('ordre');
+  if(error){ console.error(error); return; }
+  pagesPubliques = data || [];
+}
+function pagePublique(slug){ return pagesPubliques.find(p=>p.slug===slug); }
+// Un titre éditorial peut contenir un <br> volontaire (retour à la ligne dans la maquette
+// d'origine) — ici on l'aplatit en espace, le style Maurice ne fait jamais de gros titre coupé.
+function titreHtml(s){ return escapeHtml(s).replace(/&lt;br&gt;/g, ' '); }
+
+// Seuls les boutons qui mènent vers une vraie fonctionnalité déjà construite ont un lien réel —
+// tout le reste renvoie vers Contact plutôt qu'un lien mort, honnêtement, en attendant.
+const CTA_LIENS = {
+  "Consulter les Guides du métier": { href: "guide-production-mindmap.html" },
+  "Simuler ma reconversion": { href: "reconversion.html" },
+  "Rejoindre le réseau": { onclick: "startLogin('creer')" },
+};
+function renderCta(texte, secondaire){
+  const cls = secondaire ? 'ghostBtn' : 'actionBtn';
+  const info = CTA_LIENS[texte];
+  if(info && info.href) return `<a class="${cls}" href="${escapeHtml(info.href)}">${escapeHtml(texte)}</a>`;
+  if(info && info.onclick) return `<button class="${cls}" onclick="${info.onclick}">${escapeHtml(texte)}</button>`;
+  return `<button class="${cls}" onclick="setTab('pub-contact')">${escapeHtml(texte)}</button>`;
+}
+
+function renderPagePublique(tab){
+  if(tab==='pub-accueil') return renderPubAccueil();
+  if(tab==='pub-federation') return renderPubFederationComplete();
+  if(tab==='pub-peintres') return renderPubPeintres();
+  if(tab.startsWith('pub-vs-')) return renderPubVousEtes(Number(tab.split('-')[2]));
+  if(tab==='pub-devenir') return renderPubDevenir();
+  if(tab==='pub-rse') return renderPubRse();
+  if(tab==='pub-recits') return renderPubRecits();
+  if(tab==='pub-contact') return renderPubContact();
+  return `<div class="sectionSub">Chargement...</div>`;
+}
+
+function renderPubAccueil(){
+  const c = pagePublique('accueil')?.contenu; if(!c) return `<div class="sectionSub">Chargement...</div>`;
+  return `
+  <div class="section">
+    <div class="treeTitle">${titreHtml(c.titre)}</div>
+    <div class="sectionSub">${escapeHtml(c.lead)}</div>
+    <div class="sectionSub">${escapeHtml(c.intro)}</div>
+  </div>
+  ${c.dernier_recit ? `<div class="note">Dernier récit publié — "${escapeHtml(c.dernier_recit.texte)}" — ${escapeHtml(c.dernier_recit.auteur)}</div>` : ''}
+  <div class="section" style="margin-top:24px">
+    <div class="cardGrid">
+      <div class="card"><div class="t">${escapeHtml(c.carte1.titre)}</div><div class="s">${escapeHtml(c.carte1.texte)}</div></div>
+      <div class="card"><div class="t">${escapeHtml(c.carte2.titre)}</div><div class="s">${escapeHtml(c.carte2.texte)}</div></div>
+    </div>
+  </div>`;
+}
+
+// "La Fédération" — une seule page, condense ce qui était avant réparti sur 4
+// destinations (Le Savoir-faire vivant + Missions + Gouvernance + Équipe fondatrice).
+// Aucun texte réécrit : mêmes paragraphes, juste empilés dans l'ordre du sens
+// (le savoir-faire vivant d'abord, puis Maurice comme structure qui le protège).
+function ajusterHauteurConstellation(ifr){
+  function sync(){
+    try{
+      const h = ifr.contentDocument.documentElement.scrollHeight;
+      if(h>0) ifr.style.height = (h+20)+'px';
+    }catch(e){}
+  }
+  sync();
+  setTimeout(sync,300);
+  window.addEventListener('resize', ()=>setTimeout(sync,150));
+}
+function renderPubFederationComplete(){
+  const sf = pagePublique('savoirfaire')?.contenu;
+  const fed = pagePublique('federation')?.contenu;
+  if(!sf || !fed) return `<div class="sectionSub">Chargement...</div>`;
+  return `
+  <div class="section">
+    <div class="treeTitle">${titreHtml(sf.titre)}</div>
+    <div class="sectionSub">${escapeHtml(sf.intro)}</div>
+  </div>
+  <div class="section">
+    <div class="treeTitle" style="font-size:18px">${escapeHtml(sf.principe_titre)}</div>
+    <div class="sectionSub">${escapeHtml(sf.principe_texte)}</div>
+  </div>
+  <div class="section">
+    <div class="treeTitle" style="font-size:18px">${escapeHtml(sf.therese_titre)}</div>
+    <div class="sectionSub">${escapeHtml(sf.therese_texte)}</div>
+  </div>
+  <div class="section" style="margin-top:28px;padding-top:20px;border-top:1px solid var(--line)">
+    <div class="tiny muted" style="margin-bottom:4px">${titreHtml(fed.titre)}</div>
+    <div class="sectionSub">${escapeHtml(fed.lead)}</div>
+  </div>
+  <div class="section">
+    <div class="treeTitle" style="font-size:18px">${escapeHtml(fed.missions.titre)}</div>
+    <div class="sectionSub">${escapeHtml(fed.missions.texte)}</div>
+  </div>
+  <div class="section">
+    <div class="treeTitle" style="font-size:18px">${escapeHtml(fed.gouvernance.titre)}</div>
+    <div class="sectionSub">${escapeHtml(fed.gouvernance.texte)}</div>
+  </div>
+  <div class="section">
+    <div class="treeTitle" style="font-size:18px">${escapeHtml(fed.equipe.titre)}</div>
+    <div class="sectionSub">${escapeHtml(fed.equipe.texte)}</div>
+  </div>`;
+}
+
+// Distance à vol d'oiseau entre deux points (km) — suffisant pour un rayon d'intervention
+// déclaré par le membre, pas besoin de routage réel.
+function distanceKm(lat1,lng1,lat2,lng2){
+  const R = 6371, toRad = d=>d*Math.PI/180;
+  const dLat = toRad(lat2-lat1), dLng = toRad(lng2-lng1);
+  const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+async function chargerAnnuaire(){
+  if(state.annuaire.charge || state.annuaire.chargement) return;
+  state.annuaire.chargement = true;
+  const { data, error } = await sb.from('annuaire_public').select('*').order('nom');
+  state.annuaire.membres = error ? [] : (data||[]);
+  const { data: rs } = await sb.from('realisations').select('id,enseigne,ville,peintre_user_id,collaborateurs').eq('statut','validee').order('created_at',{ascending:false});
+  state.annuaire.realisations = rs || [];
+  state.annuaire.chargement = false; state.annuaire.charge = true;
+  renderTab();
+}
+async function rechercherVilleAnnuaire(){
+  const ville = document.getElementById('annuaireRechercheVille').value.trim();
+  state.annuaire.rechercheVille = ville;
+  if(!ville){ state.annuaire.resultats = null; renderTab(); return; }
+  state.annuaire.rechercheEnCours = true; state.annuaire.rechercheErreur = ''; renderTab();
+  const { data: geo, error } = await sb.functions.invoke('geocoder', { body: { query: ville } });
+  state.annuaire.rechercheEnCours = false;
+  if(error || !geo || geo.error){
+    state.annuaire.rechercheErreur = "Ville introuvable — vérifie l'orthographe (ex : \"Lyon, France\").";
+    state.annuaire.resultats = null; renderTab(); return;
+  }
+  state.annuaire.resultats = state.annuaire.membres.filter(m =>
+    m.latitude!=null && m.longitude!=null &&
+    distanceKm(geo.lat, geo.lng, m.latitude, m.longitude) <= (m.rayon_intervention_km||100)
+  );
+  renderTab();
+}
+function ouvrirFichePeintre(numero){
+  state.peintreOuvert = numero;
+  history.pushState(null, '', 'federation-accueil.html?peintre='+encodeURIComponent(numero));
+  renderTab();
+  window.scrollTo(0,0);
+}
+function fermerFichePeintre(){
+  state.peintreOuvert = null;
+  history.pushState(null, '', 'federation-accueil.html');
+  renderTab();
+}
+function carteMembrePeintre(m){
+  return `
+  <div class="card" style="cursor:pointer" onclick="ouvrirFichePeintre('${m.numero_membre}')">
+    ${m.photo_url ? `<img src="${escapeHtml(m.photo_url)}" style="width:52px;height:52px;object-fit:cover;border-radius:50%;margin-bottom:8px">` : ''}
+    <div class="t">${escapeHtml(m.prenom||'')} ${escapeHtml(m.nom||'')}</div>
+    <div class="s">${escapeHtml(ROLES_PUBLICS[m.role_public]||m.role_public||'')} — ${escapeHtml(m.ville_intervention||'')}</div>
+    ${(m.tags_specialites||[]).length ? `<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:5px">${(m.tags_specialites||[]).slice(0,3).map(t=>`<span class="chip">${escapeHtml(t)}</span>`).join('')}</div>` : ''}
+  </div>`;
+}
+function renderPubPeintres(){
+  if(state.peintreOuvert) return renderFichePeintre();
+  const c = pagePublique('peintres')?.contenu;
+  if(!state.annuaire.charge && !state.annuaire.chargement) chargerAnnuaire();
+  const liste = state.annuaire.resultats || state.annuaire.membres;
+  return `
+  ${c ? `<div class="section">
+    <div class="treeTitle">${titreHtml(c.titre)}</div>
+    <div class="sectionSub">${escapeHtml(c.intro)}</div>
+  </div>` : ''}
+
+  <div class="section">
+    <div class="tiny muted" style="margin-bottom:6px">Chercher un peintre près d'une ville</div>
+    <div style="display:flex;gap:8px;max-width:420px;margin-bottom:6px">
+      <input id="annuaireRechercheVille" class="input" placeholder="Ex : Lyon" value="${escapeHtml(state.annuaire.rechercheVille)}" onkeydown="if(event.key==='Enter') rechercherVilleAnnuaire()">
+      <button class="actionBtn" ${state.annuaire.rechercheEnCours?'disabled':''} onclick="rechercherVilleAnnuaire()">${state.annuaire.rechercheEnCours?'Recherche…':'Chercher'}</button>
+    </div>
+    ${state.annuaire.rechercheErreur ? `<div class="tiny" style="color:var(--red,#b42318)">${escapeHtml(state.annuaire.rechercheErreur)}</div>` : ''}
+    ${state.annuaire.resultats ? `<div class="tiny muted">${state.annuaire.resultats.length} résultat(s) dans le rayon d'intervention déclaré autour de "${escapeHtml(state.annuaire.rechercheVille)}". <a href="#" onclick="event.preventDefault();state.annuaire.resultats=null;state.annuaire.rechercheVille='';renderTab()">Réinitialiser</a></div>` : ''}
+  </div>
+
+  <div class="section">
+    ${state.annuaire.chargement ? '<div class="sectionSub">Chargement…</div>' :
+      liste.length ? `<div class="cardGrid">${liste.map(carteMembrePeintre).join('')}</div>` :
+      '<div class="sectionSub">Aucun peintre à afficher pour l\'instant.</div>'}
+  </div>
+
+  <div class="section">
+    <div class="treeTitle" style="font-size:18px">Carte des réalisations</div>
+    <div class="sectionSub" style="margin-bottom:10px">Des chantiers réels, situés là où ils ont été peints.</div>
+    ${currentUser ? `<div style="margin-bottom:10px"><a class="actionBtn" style="text-decoration:none;display:inline-block" href="realisation-ajout.html">+ Ajouter une réalisation</a></div>` : ''}
+    <iframe src="carte-realisations.html" style="width:100%;height:520px;border:1px solid var(--line);border-radius:14px" loading="lazy"></iframe>
+  </div>`;
+}
+function renderFichePeintre(){
+  const m = state.annuaire.membres.find(x=>x.numero_membre===state.peintreOuvert);
+  if(!m){
+    if(!state.annuaire.charge && !state.annuaire.chargement) chargerAnnuaire();
+    return `<div class="section"><div class="sectionSub">Chargement de la fiche…</div></div>`;
+  }
+  return `
+  <div class="section">
+    <a href="#" onclick="event.preventDefault();fermerFichePeintre()" class="tiny muted">← Retour à l'annuaire</a>
+  </div>
+  <div class="section" style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap">
+    ${m.photo_url ? `<img src="${escapeHtml(m.photo_url)}" style="width:120px;height:120px;object-fit:cover;border-radius:50%">` : ''}
+    <div style="flex:1;min-width:220px">
+      <div class="treeTitle">${escapeHtml(m.prenom||'')} ${escapeHtml(m.nom||'')}${m.nom_atelier?` — ${escapeHtml(m.nom_atelier)}`:''}</div>
+      <div class="sectionSub">${escapeHtml(ROLES_PUBLICS[m.role_public]||m.role_public||'')} · ${escapeHtml(m.ville_intervention||'')}</div>
+      <div class="tiny muted" style="margin-top:6px"><span class="chip">Membre de la Fédération${m.membre_depuis?' depuis '+new Date(m.membre_depuis).getFullYear():''}</span></div>
+      ${m.presentation ? `<div style="margin-top:14px;white-space:pre-wrap">${escapeHtml(m.presentation)}</div>` : ''}
+      ${(m.tags_specialites||[]).length ? `<div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px">${(m.tags_specialites||[]).map(t=>`<span class="chip">${escapeHtml(t)}</span>`).join('')}</div>` : ''}
+      ${m.annees_experience ? `<div class="tiny muted" style="margin-top:8px">${m.annees_experience} ans d'expérience déclarés</div>` : ''}
+      <div class="tiny muted" style="margin-top:8px">Intervient dans un rayon de ${m.rayon_intervention_km||100} km autour de ${escapeHtml(m.ville_intervention||'')}${m.accueil_atelier?' · accueille en atelier':''}</div>
+      ${m.accueille_stagiaires || m.ouvert_reconversion ? `<div class="tiny muted" style="margin-top:4px">${[m.accueille_stagiaires?'Accueille des stagiaires/apprentis':'',m.ouvert_reconversion?'Ouvert à la reconversion':''].filter(Boolean).join(' · ')}</div>` : ''}
+      ${m.collaborations ? `<div class="tiny" style="margin-top:10px"><b>Collaborations :</b> ${escapeHtml(m.collaborations)}</div>` : ''}
+      <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">
+        <button class="actionBtn" onclick="handleDemanderDevis('${m.user_id}')">Demander un devis à ce peintre</button>
+        ${m.contact_public ? `<span class="tiny muted" style="align-self:center">${escapeHtml(m.contact_public)}</span>` : ''}
+      </div>
+      <div id="devisMsg" class="tiny" style="margin-top:8px"></div>
+    </div>
+  </div>
+  ${renderRealisationsMembre(m)}`;
+}
+// Réalisations signées (peintres) et contributions (collaborateur d'une réalisation d'un autre membre) —
+// les contributions viennent directement du champ « Collaborateurs » de chaque réalisation, sans double saisie.
+function renderRealisationsMembre(m){
+  const toutes = state.annuaire.realisations || [];
+  const siennes = toutes.filter(r => r.peintre_user_id === m.user_id);
+  const contribs = toutes.filter(r => (r.collaborateurs||[]).includes(m.user_id));
+  const ligne = (r, avecPeintre) => {
+    const p = state.annuaire.membres.find(x => x.user_id === r.peintre_user_id);
+    return `<a class="card" style="display:block;text-decoration:none;color:inherit" href="carte-realisations.html?r=${encodeURIComponent(r.id)}" target="_blank" rel="noopener">
+      <div class="t">${escapeHtml(r.enseigne)}</div>
+      <div class="s">${escapeHtml(r.ville||'')}${avecPeintre && p ? ` — avec ${escapeHtml(p.prenom||'')} ${escapeHtml(p.nom||'')}` : ''}</div></a>`;
+  };
+  const estPeintre = m.role_public === 'peintre_dirigeant';
+  return `
+  ${estPeintre || siennes.length ? `<div class="section">
+    <div class="treeTitle" style="font-size:18px">Réalisations</div>
+    ${siennes.length ? `<div class="cardGrid">${siennes.map(r => ligne(r,false)).join('')}</div>` : '<div class="sectionSub">Aucune réalisation publiée pour l\'instant.</div>'}
+  </div>` : ''}
+  ${!estPeintre || contribs.length ? `<div class="section">
+    <div class="treeTitle" style="font-size:18px">Contributions</div>
+    ${contribs.length ? `<div class="cardGrid">${contribs.map(r => ligne(r,true)).join('')}</div>` : '<div class="sectionSub">Aucune contribution référencée pour l\'instant.</div>'}
+  </div>` : ''}`;
+}
+async function handleDemanderDevis(userId){
+  const msgEl = document.getElementById('devisMsg');
+  if(msgEl) msgEl.textContent = 'Recherche de l\'atelier…';
+  const { data, error } = await sb.from('members').select('establishment_id').eq('user_id', userId).in('role',['gerant','admin']).limit(1).maybeSingle();
+  if(error || !data){ if(msgEl) msgEl.textContent = "Cet atelier n'a pas encore de formulaire de devis en ligne."; return; }
+  window.location.href = `devis-client.html?est=${encodeURIComponent(data.establishment_id)}`;
+}
+
+function renderPubVousEtes(i){
+  const c = pagePublique('vousetes')?.contenu; if(!c) return '';
+  const t = c.tabs[i]; if(!t) return '';
+  return `
+  <div class="section">
+    <div class="tiny muted" style="margin-bottom:4px">Vous êtes... — ${escapeHtml(t.label)}</div>
+    <div class="treeTitle">${escapeHtml(t.titre)}</div>
+    <div class="sectionSub">${escapeHtml(t.texte)}</div>
+  </div>
+  ${renderCta(t.cta, (t.cta_style||'').includes('secondary'))}`;
+}
+
+// Une seule page "Devenir membre" — les 3 rôles (Peintre/Graphiste/Régisseur) sont des
+// onglets internes (changement d'état local, pas une nouvelle destination de menu).
+let devenirRoleActif = 'tab_peintre';
+function choisirRoleDevenir(cle){ devenirRoleActif = cle; renderTab(); }
+function renderPubDevenir(){
+  const c = pagePublique('devenir')?.contenu; if(!c) return `<div class="sectionSub">Chargement...</div>`;
+  const roles = ['tab_peintre','tab_graphiste','tab_regisseur'].filter(k=>c[k]);
+  const t = c[devenirRoleActif] || c[roles[0]];
+  if(!t) return `<div class="sectionSub">Chargement...</div>`;
+  return `
+  <div class="section" style="width:100vw;max-width:100vw;margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw)">
+    <div style="max-width:836px;margin:0 auto;padding:0 32px">
+      <div class="treeTitle" style="font-size:18px">Constellation des gestes</div>
+      <div class="sectionSub" style="margin-bottom:10px">D'un métier à l'autre : ce qui se transmet déjà, et le chemin pour aller plus loin (avec un comparatif personnalisé et une simulation de reconversion).</div>
+    </div>
+    <iframe src="constellation-des-gestes.html" style="width:100%;height:700px;border:none;display:block" loading="lazy" onload="ajusterHauteurConstellation(this)"></iframe>
+  </div>
+  <div class="section" style="margin-top:28px;padding-top:20px;border-top:1px solid var(--line)">
+    <div class="treeTitle">${titreHtml(c.titre)}</div>
+    <div class="sectionSub">${escapeHtml(c.intro)}</div>
+  </div>
+  <div class="pageTabs" style="margin:0 0 20px 0">
+    ${roles.map(r=>`<button class="pageTab ${r===devenirRoleActif?'active':''}" onclick="choisirRoleDevenir('${r}')">${escapeHtml(c[r].label)}</button>`).join('')}
+  </div>
+  <div class="section">
+    <div class="treeTitle" style="font-size:19px">${escapeHtml(t.titre)}</div>
+  </div>
+  <div class="cardGrid">
+    ${t.cartes.map(cc=>`<div class="card"><div class="t">${escapeHtml(cc.titre)}</div><div class="s">${escapeHtml(cc.texte)}</div></div>`).join('')}
+  </div>
+  <div class="section" style="margin-top:20px">
+    <div class="sectionSub">${escapeHtml(c.conclusion)}</div>
+    <div class="toolbar">${renderCta(c.cta1)}${renderCta(c.cta2, true)}</div>
+  </div>`;
+}
+
+function renderPubRse(){
+  const c = pagePublique('rse')?.contenu; if(!c) return '';
+  return `
+  <div class="section"><div class="treeTitle">${titreHtml(c.titre)}</div></div>
+  <div class="cardGrid">${c.cartes.map(cc=>`<div class="card"><div class="t">${escapeHtml(cc.titre)}</div><div class="s">${escapeHtml(cc.texte)}</div></div>`).join('')}</div>
+  <div class="section" style="margin-top:24px">
+    <div class="treeTitle" style="font-size:18px">${escapeHtml(c.mecenat_titre)}</div>
+    <div class="sectionSub">${escapeHtml(c.mecenat_texte)}</div>
+  </div>`;
+}
+
+function renderPubRecits(){
+  const c = pagePublique('recits')?.contenu; if(!c) return '';
+  return `
+  <div class="section">
+    <div class="treeTitle">${titreHtml(c.titre)}</div>
+    <div class="sectionSub">${escapeHtml(c.intro)}</div>
+  </div>
+  ${c.recits.map(r=>`<div class="note"><b>${escapeHtml(r.auteur)}</b> — ${escapeHtml(r.texte)}</div>`).join('')}`;
+}
+
+function renderPubContact(){
+  const c = pagePublique('contact')?.contenu; if(!c) return '';
+  return `
+  <div class="section">
+    <div class="treeTitle">${titreHtml(c.titre)}</div>
+    <div class="sectionSub">${escapeHtml(c.texte)}</div>
+  </div>
+  <div class="tiny muted">Formulaire de contact — bientôt disponible. En attendant, écris à strignau@gmail.com.</div>`;
+}
+
+function renderGuides(){
+  const g = slug => state.guides.find(x=>x.slug===slug);
+  const cadre = g('comment_on_travaille'), metier = g('comment_on_peint');
+  return `
+  <div class="section">
+    <div class="treeTitle">Référentiels métier</div>
+    <div class="sectionSub">Le Guide du comment on travaille et le Guide du comment on peint — tous deux intouchables, gérés uniquement par le comité référentiel de la Fédération.</div>
+  </div>
+  <div class="toggleBar">
+    <a class="toggleBtn active" href="guide-production-mindmap.html">Consulter le référentiel</a>
+    <a class="toggleBtn" href="guide-production-mindmap.html?mode=piloter">🔒 Piloter (comité référentiel)</a>
+  </div>
+  <div class="refGrid">
+    ${[cadre,metier].filter(Boolean).map(guide=>`
+      <div class="refCard ${guide.slug==='comment_on_travaille'?'cadre':'metier'}">
+        <span class="tag">${escapeHtml(guide.titre)}</span>
+        <p>${escapeHtml(guide.description||'')}</p>
+        ${(guide.sections||[]).map(s=>`<div class="treeLine"><span>${escapeHtml(s.titre)}</span><span class="lockPill">verrouillé — comité Fédération</span></div>`).join('')}
+      </div>`).join('')}
+  </div>
+  <div class="note">Le contenu réel (processus, situations de travail, niveaux) se consulte et se pilote dans le référentiel ci-dessus. Les rubriques listées par carte (charte, RSE, etc.) restent à rédiger par le comité référentiel — pas encore éditables ici.</div>
+  `;
+}
+
+function renderCreerAtelier(){
+  return `
+  <div class="section" style="max-width:520px">
+    <div class="treeTitle">Créer un atelier</div>
+    <div class="sectionSub">Donne un nom à ton atelier pour commencer. Il sera automatiquement rattaché à la Fédération, et ce sera le même atelier que dans MAMAIN si tu l'utilises aussi.</div>
+    <input id="obName" class="input" placeholder="Nom de ton atelier" style="margin-bottom:14px">
+    <div class="tiny muted" style="margin-bottom:6px">Tu travailles seul·e ou en équipe ?</div>
+    <div style="margin-bottom:16px">
+      <label class="tiny"><input type="radio" name="obMode" value="diag" checked> Seul·e pour l'instant</label><br>
+      <label class="tiny"><input type="radio" name="obMode" value="diagplus"> En équipe</label>
+    </div>
+    <button class="actionBtn" onclick="handleCreateAtelier()">Créer mon atelier</button>
+    <div id="obMsg" class="tiny" style="margin-top:14px"></div>
+  </div>`;
+}
+async function handleCreateAtelier(){
+  const name=document.getElementById('obName').value.trim();
+  if(!name) return alert('Merci de donner un nom à ton atelier.');
+  if(!state.federation) return alert("La Fédération n'a pas pu être chargée, recharge la page.");
+  const mode=document.querySelector('input[name="obMode"]:checked').value;
+  const msgEl=document.getElementById('obMsg'); msgEl.textContent='Création en cours…';
+  try{
+    const { data, error } = await sb.rpc('create_atelier', { p_name: name, p_mode: mode, p_federation_id: state.federation.id });
+    if(error) throw error;
+    setCurrentEstId(data.id);
+    window.location.href = 'atelier-compte.html?est='+data.id;
+  }catch(err){
+    msgEl.textContent="La création de l'atelier a échoué : "+(err.message||err);
+  }
+}
+
+/* =========================================================================
+   INVITATIONS EN ATTENTE — affichées avant la coquille si besoin
+   ========================================================================= */
+function renderInvitations(){
+  document.querySelector('.app').innerHTML = `
+  <div class="content" style="max-width:600px;margin:0 auto">
+    <div class="treeTitle">Invitations en attente</div>
+    <div class="sectionSub">On t'a invité·e à rejoindre ${state.myInvitations.length>1?'ces ateliers':'cet atelier'}. Accepte pour y avoir accès, ou refuse si ce n'est pas pour toi.</div>
+    <div>
+      ${state.myInvitations.map(inv=>`
+        <div class="portalItem">
+          <div class="portalTitle">${escapeHtml(inv.establishment?inv.establishment.name:'Atelier')}</div>
+          <div class="portalMeta">Rôle proposé : ${escapeHtml(roleLabel(inv.role))}</div>
+          <div class="toolbar" style="margin-top:8px">
+            <button class="actionBtn" onclick="handleAcceptInvitation('${inv.id}')">Accepter</button>
+            <button class="ghostBtn" onclick="handleDeclineInvitation('${inv.id}')">Refuser</button>
+          </div>
+        </div>`).join('')}
+    </div>
+  </div>`;
+}
+async function handleAcceptInvitation(id){
+  const inv = state.myInvitations.find(i=>i.id===id); if(!inv) return;
+  try{
+    // La personne peut déjà être membre de cet atelier (ajoutée autrement, ou une invitation en
+    // double) — pas de policy UPDATE sur members (le rôle n'est pas modifiable par la personne
+    // elle-même), donc pas d'upsert possible : on vérifie d'abord, on n'insère que si nécessaire.
+    const { data: dejaMembre, error: eCheck } = await sb.from('members').select('id')
+      .eq('user_id', currentUser.id).eq('establishment_id', inv.establishment_id).maybeSingle();
+    if(eCheck) throw eCheck;
+    if(!dejaMembre){
+      const { error: e1 } = await sb.from('members').insert({ user_id: currentUser.id, establishment_id: inv.establishment_id, role: inv.role, email: currentUser.email });
+      if(e1) throw e1;
+    }
+    const { error: e2 } = await sb.from('invitations').update({ status:'accepted' }).eq('id', inv.id);
+    if(e2) console.error(e2);
+    await afterLogin();
+  }catch(err){ alert("Impossible d'accepter l'invitation : "+(err.message||err)); }
+}
+async function handleDeclineInvitation(id){
+  const inv = state.myInvitations.find(i=>i.id===id); if(!inv) return;
+  if(!await confirmer('Refuser cette invitation ?')) return;
+  try{
+    const { error } = await sb.from('invitations').update({ status:'declined' }).eq('id', inv.id);
+    if(error) throw error;
+    await afterLogin();
+  }catch(err){ alert('Erreur : '+(err.message||err)); }
+}
+
+/* =========================================================================
+   ROUTAGE
+   ========================================================================= */
+async function afterLogin(){
+  document.querySelector('.app').innerHTML = `<div style="padding:24px" class="tiny">Chargement…</div>`;
+  try{
+    await loadFederationPublic();
+    await chargerRoles();
+    await loadMyFederationIdentity();
+    await loadKpis();
+    await loadMyData();
+    if(state.myInvitations.length){ renderInvitations(); return; }
+    await loadGuides();
+    const paramsTab = new URLSearchParams(window.location.search);
+    if(paramsTab.get('tab')==='devenir'){ state.tab='pub-devenir'; renderTab(); return; }
+    // Un membre qui n'a qu'un seul atelier n'a rien à choisir à la toute première
+    // connexion : on l'amène directement sur l'accueil de cet atelier plutôt que sur la
+    // vue d'ensemble Fédération (réservée en pratique au comité, qui gère plusieurs
+    // ateliers). Marqué en sessionStorage pour ne le faire qu'une fois par session — sinon
+    // cliquer "Ma Fédération" depuis l'Atelier renvoyait systématiquement vers l'Atelier,
+    // rendant la page Fédération inatteignable.
+    if(currentUser.email!==COMITE_EMAIL_FEDERATION && state.myMemberships.length===1 && !sessionStorage.getItem('redirigeVersAtelierFait')){
+      sessionStorage.setItem('redirigeVersAtelierFait','1');
+      window.location.href = 'atelier-compte.html?est='+state.myMemberships[0].establishment_id;
+      return;
+    }
+    state.tab='accueil';
+    renderTab();
+  }catch(e){
+    console.error(e);
+    document.body.innerHTML = `<div class="errBox">Impossible de charger tes données : ${escapeHtml(e.message||String(e))}\n\nRecharge la page.</div>`;
+  }
+}
+async function initApp(){
+  let authErrorMsg=null;
+  const isRecovery = window.location.hash.includes('type=recovery');
+  if(window.location.hash.includes('error=')){
+    const params=new URLSearchParams(window.location.hash.slice(1));
+    const desc=params.get('error_description');
+    authErrorMsg = desc ? decodeURIComponent(desc.replace(/\+/g,' ')) : "Ce lien de connexion est invalide ou a déjà été utilisé.";
+    history.replaceState(null, '', window.location.pathname + window.location.search);
+  }
+  try{
+    const {data:{session}, error} = await sb.auth.getSession();
+    if(error) throw error;
+    if(isRecovery){ inPasswordRecovery=true; renderResetPassword(); }
+    else if(session){ currentUser=session.user; await afterLogin(); }
+    else if(authErrorMsg){ renderLogin(authErrorMsg); }
+    else { await renderPublicHome(); }
+  }catch(e){
+    console.error(e);
+    renderLogin('Erreur de connexion : '+(e.message||e));
+  }
+  sb.auth.onAuthStateChange(async (event, session)=>{
+    if(inPasswordRecovery){ return; }
+    if(session && (!currentUser || currentUser.id!==session.user.id)){ currentUser=session.user; await afterLogin(); }
+    if(!session && currentUser){ currentUser=null; await renderPublicHome(); }
+  });
+}
+initApp();
+</script>
+<script src="therese-widget.js"></script>
+</body>
+</html>

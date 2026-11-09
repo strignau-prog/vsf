@@ -1,0 +1,865 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <script src="boite-message.js"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Stock — Atelier</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="atelier-nav.js"></script>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600;700&display=swap">
+  <style>
+    /* V0 — même système typo/couleurs que tout le projet, voir atelier-compte.html. */
+    :root{
+      --bg:#fff; --ink:#1c1a17; --muted:#55504a; --line:#e4e0d9; --soft:#f7f5f2;
+      --accent:#a8461f;
+      --red:var(--ink); --amber:var(--ink); --green:var(--ink);
+      --redBg:var(--soft); --amberBg:var(--soft); --greenBg:var(--soft);
+      --blue:var(--ink); --blueBg:var(--soft);
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif}
+    body{font-size:16px;line-height:1.25;font-variant-numeric:tabular-nums}
+    h1,h2,.brand,.treeTitle{font-family:Fraunces,Georgia,serif;font-weight:600}
+    button,input,select,textarea{font:inherit;color:inherit}
+    button{cursor:pointer;background:none;border:none;padding:0}
+    .app{display:grid;grid-template-rows:auto auto 1fr;min-height:100vh}
+    nav.topnav{background:#1c1a17;color:#fff;display:flex;align-items:center;gap:4px;padding:0 20px;height:52px;font-size:14px}
+    nav.topnav a.brand{color:#fff;text-decoration:none;font-weight:600;margin-right:24px;font-size:15px;font-family:Fraunces,Georgia,serif}
+    nav.topnav .menuItem{position:relative;height:100%;display:flex;align-items:center}
+    nav.topnav .menuItem>span,nav.topnav .menuItem>a.topLink{padding:0 14px;cursor:pointer;color:#d7dbe4;text-decoration:none}
+    nav.topnav .menuItem:hover>span,nav.topnav .menuItem>a.topLink:hover{color:#fff}
+    nav.topnav .dropdown{display:none;position:absolute;top:100%;left:0;background:#fff;color:var(--ink);min-width:220px;box-shadow:0 8px 24px rgba(0,0,0,.18);border-radius:0 0 10px 10px;overflow:hidden;z-index:50}
+    nav.topnav .menuItem:hover .dropdown{display:block}
+    nav.topnav .dropdown a{display:block;padding:10px 16px;color:var(--ink);text-decoration:none;font-size:13.5px;border-bottom:1px solid var(--line)}
+    nav.topnav .dropdown a:last-child{border-bottom:none}
+    nav.topnav .dropdown a:hover{background:var(--soft)}
+    nav.topnav .navToggle{display:none;margin-left:auto;background:none;border:none;color:#fff;font-size:20px;cursor:pointer}
+    @media (max-width:820px){
+      nav.topnav{flex-wrap:wrap;height:auto;padding:10px 16px}
+      nav.topnav .navToggle{display:block}
+      nav.topnav .menuItem{display:none;width:100%;height:auto;flex-direction:column;align-items:stretch}
+      nav.topnav.navOpen .menuItem{display:flex}
+      nav.topnav .menuItem>span,nav.topnav .menuItem>a.topLink{padding:12px 0 4px;cursor:pointer;display:block}
+      nav.topnav .dropdown{position:static;box-shadow:none;border-radius:0;background:transparent;min-width:0}
+      nav.topnav .menuItem.open .dropdown{display:block}
+      nav.topnav .dropdown a{color:#fff;padding:10px 0 10px 14px;border-bottom:1px solid rgba(255,255,255,.12)}
+      nav.topnav .dropdown a:hover{background:rgba(255,255,255,.06)}
+    }
+    .topbar{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--line);padding:10px 18px;display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:center;z-index:20}
+    .brand{font-weight:700;font-size:22px;letter-spacing:.02em}
+    .brand small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+    .nav{display:flex;flex-wrap:wrap;gap:8px}
+    .nav button{border:1px solid var(--line);border-radius:999px;padding:8px 14px;background:#fff}
+    .nav button.active{background:#111;color:#fff;border-color:#111}
+    @media (max-width:700px){ .topbar{grid-template-columns:1fr;row-gap:8px} .toolbar{flex-wrap:wrap} }
+    .main{padding:20px 24px 60px 24px;max-width:1100px;margin:0 auto}
+    .section{margin:0 0 22px 0}
+    .toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px}
+    .miniBtn,.ghostBtn,.actionBtn{border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 14px;font-size:14px}
+    .actionBtn{background:#111;color:#fff;border-color:#111}
+    .ghostBtn{color:var(--muted)}
+    .dangerBtn{color:var(--red)}
+    .miniBtn:hover,.ghostBtn:hover,.actionBtn:hover{opacity:.85}
+    .input,.select,.textarea{border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:#fff;width:100%}
+    .grid2{display:grid;gap:10px;grid-template-columns:1fr 1fr}
+    .grid3{display:grid;gap:10px;grid-template-columns:1fr 1fr 1fr}
+    .grid4{display:grid;gap:10px;grid-template-columns:1fr 1fr 1fr 1fr}
+    .grid5{display:grid;gap:10px;grid-template-columns:1fr 1fr 1fr 1fr auto}
+    .field label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
+    .treeTitle{font-weight:700;font-size:21px;margin:0 0 10px 0}
+    .muted{color:var(--muted)}
+    .tiny{font-size:12.5px;line-height:1.35}
+    .table{width:100%;border-collapse:collapse}
+    .table th{text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);padding:6px 8px;border-bottom:1px solid var(--line)}
+    .table td{padding:8px;border-bottom:1px solid var(--line);font-size:14.5px;vertical-align:top}
+    .chip{display:inline-flex;align-items:center;padding:3px 9px;font-size:12.5px;border:1px solid var(--line);background:#fff;border-radius:999px;white-space:nowrap}
+    .chip.red,.chip.amber,.chip.green,.chip.blue{border-color:var(--line);background:var(--soft);color:var(--ink);font-weight:700}
+    .card{border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:12px}
+    .cardHead{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px}
+    .errBox{padding:24px;color:var(--red);font-family:monospace;white-space:pre-wrap}
+    @media (max-width:760px){.grid2,.grid3,.grid4,.grid5{grid-template-columns:1fr}.table{font-size:13px}}
+  </style>
+  <link rel="stylesheet" href="charte-vsf.css">
+<script src="acces-entreprise.js" defer></script>
+</head>
+<body>
+<div class="app"></div>
+<script>
+function arrondir(n, dec=3){ const f=Math.pow(10,dec); return Math.round((n+Number.EPSILON)*f)/f; }
+function euros(n){ return (n==null || n==='') ? '—' : arrondir(n,2).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' €'; }
+function escapeHtml(s){ return String(s??'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])) }
+function toggleMenuItem(el){ el.parentElement.classList.toggle('open'); }
+function toggleNav(){ document.querySelector('nav.topnav').classList.toggle('navOpen'); }
+function uid(p='id'){ return p+'-'+Math.random().toString(16).slice(2,9) }
+function todayStr(){ return new Date().toISOString().slice(0,10) }
+
+/* =========================================================================
+   STOCK RÉEL DE TRISTAN — importé directement depuis "Stock peinture (7).xlsx"
+   (465 pots) et "Besoin" (5 besoins en cours), pour pouvoir tester avec de
+   vraies données dès l'ouverture. Modifiable ensuite normalement ; un bouton
+   permet de revenir à cet état d'origine si besoin.
+   ========================================================================= */
+const STOCK_INITIAL_TSV = "P0002\t\tTOLLENS\tBLANC\t1,00\t\t1,00\t23/12/2025\t35,25\t0,00\tTOLLENS | CROSS | ACRYLIQUE | VELOUTE | 9001\t🔴 Vide\nP0003\t\tTOLLENS\tBLANC\t1,00\t\t1,00\t23/12/2025\t35,25€\t1,00\tTOLLENS | CROSS | ACRYLIQUE | VELOUTE | BLANC CAL\t🟢 Plein\nP0004\t\tTOLLENS\tBLANC\t1,00\t\t1,00\t23/12/2025\t35,25€\t1,00\tTOLLENS | CROSS | ACRYLIQUE | | CR4032-4 VIN BLANC\t🟢 Plein\nP0005\t\tTOLLENS\tBLANC\t1,00\t\t0,25\t23/12/2025\t35,25€\t0,25\tTOLLENS | CROSS | ACRYLIQUE | VELOUTE | 049 BLANC DE LA COTE\t🟡 Entamé\nP0006\t\tTOLLENS\tBLANC\t1,00\t\t0,50\t\t35,25€\t0,50\tTOLLENS | CROSS | ACRYLIQUE | VELOUTE | BLANC CAL\t🟡 Entamé\nP0007\t\tTOLLENS\tBLANC\t1,00\t\t0,25\t\t35,25€\t0,25\tTOLLENS | CROSS | ACRYLIQUE | VELOUTE | BLANC CAL\t🟡 Entamé\nP0008\t\tTOLLENS\tBLANC\t1,00\t\t0,25\t\t35,25€\t0,25\tTOLLENS | CROSS | ACRYLIQUE | VELOUTE | RAL 9003\t🟡 Entamé\nP0009\t\tTOLLENS\tBLANC\t1,00\t\t0,75\t\t35,25€\t0,75\tTOLLENS | CROSS | ACRYLIQUE | VELOUTE | T2166-2 NŒUD DE PECHEUR\t🟡 Entamé\nP0010\t\tTOLLENS\tBLANC\t1,00\t\t0,25\t\t35,25€\t0,25\tTOLLENS | CROSS | ACRYLIQUE | VELOUTE | CR4046-1 GRISOU\t🟡 Entamé\nP0011\t\tUNIKALO\tBLANC\t0,75\t\t0,50\t\t22,53€\t0,50\tUNIKALO | KAREA D2 | | | BLANC\t🟡 Entamé\nP0012\t\tUNIKALO\tBLANC\t0,75\t\t0,25\t\t22,53€\t0,25\tUNIKALO | KAREA D2 | | | BLANC\t🟡 Entamé\nP0013\t\tUNIKALO\tBLANC\t0,75\t\t1,00\t\t21,53€\t1,00\tUNIKALO | UNISTOP BOIS SATIN | | | BLANC\t🟢 Plein\nP0014\t\tTOLLENS\tBLANC\t1,00\t\t0,25\t\t35,25€\t0,25\tTOLLENS | CROSS | | VELOUTE | BLANC CAL\t🟡 Entamé\nP0015\t\tTHEODORE\tBLANC\t1,00\t\t1,00\t\t18,00€\t1,00\tTHEODORE | TECHNIPRIME | | | BLANC\t🟢 Plein\nP0016\t\tUNIKALO\tBLANC\t0,75\t\t0,75\t\t22,53€\t0,00\tUNIKALO | AQUAPRIM FINITION | | | BLANC\t🔴 Vide\nP0017\t\tST LUC\tBLANC\t1,00\t\t0,50\t\t10,00€\t0,50\tST LUC | | | | BLANC\t🟡 Entamé\nP0018\t\tPUBLIDECOR\tBLANC\t1,00\t\t1,00\t\t10,00€\t1,00\tPUBLIDECOR | | ACRYLIQUE | | BLANC\t🟢 Plein\nP0019\t\tPUBLIDECOR\tBLANC\t1,00\t\t1,00\t\t10,00€\t1,00\tPUBLIDECOR | | ACRYLIQUE | | BLANC\t🟢 Plein\nP0020\t\tLUCITE\tBLANC\t1,00\t\t0,25\t\t33,79€\t0,25\tLUCITE | | | | 044 B\t🟡 Entamé\nP0021\t\tLUCITE\tBLANC\t1,00\t\t0,25\t\t29,78€\t0,25\tLUCITE | PRIMAIRE BOIS | | | BLANC\t🟡 Entamé\nP0022\t\tECAR\tBLANC\t1,00\t\t1,00\t\t24,14€\t1,00\tECAR | PEINTURE BACHE | AVEC DURCISSEUR | AVEC DILUANT | BLANC BACHE\t🟢 Plein\nP0023\t\tUNIKALO\tBLANC\t0,75\t\t0,50\t\t22,53€\t0,50\tUNIKALO | KREA D2 | | | BLANC\t🟡 Entamé\nP0024\t\tUNIKALO\tBLANC\t0,75\t\t1,00\t\t22,06€\t1,00\tUNIKALO | | GLYCERO | | BLANC\t🟢 Plein\nP0025\t\tUNIKALO\tBLANC\t0,75\t\t0,75\t\t14,02€\t0,75\tUNIKALO | PROTECPRIM 330 | | | BLANC\t🟡 Entamé\nP0026\t\tKERIA\tBLANC\t1,00\t\t0,50\t\t15,60€\t0,50\tKERIA | COWITHANE | PU | | BLANC\t🟡 Entamé\nP0027\t\tINTERNATIONAL\tBLANC\t0,75\t\t1,00\t\t29,45€\t1,00\tINTERNATIONAL | TOP LAC PLUS | GLYCERO | | BLANC\t🟢 Plein\nP0028\t\tINTERNATIONAL\tBLANC\t0,75\t\t1,00\t\t29,45€\t1,00\tINTERNATIONAL | TOP LAC PLUS | GLYCERO | | BLANC\t🟢 Plein\nP0029\t\tINTERNATIONAL\tBLANC\t0,75\t\t0,25\t\t29,45€\t0,25\tINTERNATIONAL | TOP LAC PLUS | GLYCERO | | BLANC\t🟡 Entamé\nP0030\t\tUNIKALO\tBLANC\t0,75\t\t1,00\t\t14,02€\t1,00\tUNIKALO | ADPRIM MICRO | GLYCERO | | PRIMAIRE BOIS\t🟢 Plein\nP0031\t\tUNIKALO\tBLANC\t0,75\t\t1,00\t\t14,02€\t1,00\tUNIKALO | ADPRIM MICRO | GLYCERO | | PRIMAIRE BOIS\t🟢 Plein\nP0032\t\tUNIKALO\tBLANC\t0,75\t\t1,00\t\t22,06€\t1,00\tUNIKALO | JOORDAN | GLYCERO | BRILLANT | BLANC\t🟢 Plein\nP0033\t\tNEPTUNE\tBLANC\t0,75\t\t1,00\t\t86,42€\t1,00\tNEPTUNE | NEPTOFIX BOIS | | | BLANC\t🟢 Plein\nP0034\t\tNEPTUNE\tBLANC\t0,75\t\t0,25\t\t86,42€\t0,25\tNEPTUNE | NEPTOFIX BOIS | | | BLANC\t🟡 Entamé\nP0035\t\tKERIA\tBLANC\t0,75\t\t0,25\t\t15,60€\t0,25\tKERIA | | | | BLANC\t🟡 Entamé\nP0036\t\tTOLLENS\tBLANC\t1,00\t\t1,00\t\t44,08€\t1,00\tTOLLENS | TOLPRIM U | PRIMAIRE M ETAL | | BLANC\t🟢 Plein\nP0037\t\tLAURAGEAIS\tBLANC\t1,00\t\t1,00\t\t\t1,00\tLAURAGEAIS | | PU | SATIN | MILLE-O BLANC PUR\t🟢 Plein\nP0038\t\tKERLY PRIM EXTRA\tBLANC\t1,00\t\t0,25\t\t\t0,25\tKERLY PRIM EXTRA | | | | BLANC\t🟡 Entamé\nP0039\t\tUNIKALO\tBLANC\t0,75\t\t0,50\t\t22,06€\t0,50\tUNIKALO | JOORDAN | | | BLANC\t🟡 Entamé\nP0040\t\tONE SHOT\tBLANC\t0,24\t\t0,50\t\t21,00€\t0,50\tONE SHOT | | | | 103 L BLANC POLAIRE\t🟡 Entamé\nP0041\t\tONE SHOT\tBLANC\t0,24\t\t0,25\t\t21,00€\t0,25\tONE SHOT | | | | 103 L BLANC POLAIRE\t🟡 Entamé\nP0042\t\tONE SHOT\tBLANC\t0,24\t\t0,25\t\t21,00€\t0,25\tONE SHOT | | | | 103 L BLANC POLAIRE\t🟡 Entamé\nP0043\t\tONE SHOT\tBLANC\t0,24\t\t0,25\t\t21,00€\t0,25\tONE SHOT | | | | 103 L BLANC POLAIRE\t🟡 Entamé\nP0044\t\tCRAFT MASTER\tBLANC\t0,25\t\t1,00\t\t26,00€\t1,00\tCRAFT MASTER | | | | WHITE\t🟢 Plein\nP0045\t\tCRAFT MASTER\tBLANC\t0,25\t\t1,00\t\t26,00€\t1,00\tCRAFT MASTER | | | | WHITE\t🟢 Plein\nP0046\t\tCRAFT MASTER\tBLANC\t0,25\t\t1,00\t\t26,00€\t1,00\tCRAFT MASTER | | | | WHITE\t🟢 Plein\nP0047\t\tPAINTSTRIPING\tBLANC\t0,12\t\t1,00\t\t13,00€\t1,00\tPAINTSTRIPING | | | | WHITE\t🟢 Plein\nP0048\t\tONE SHOT\tBLANC\t0,24\t\t0,75\t\t21,00€\t0,75\tONE SHOT | | | | TINTING WHITE 4002\t🟡 Entamé\nP0049\t\tUNIKALO\tBLANC\t1,00\t\t0,75\t\t14,02€\t0,75\tUNIKALO | ADPRIM | GLYCERO | | BLANC\t🟡 Entamé\nP0050\t\tNEPTUNE\tBLANC\t0,75\t\t0,50\t\t86,42€\t0,50\tNEPTUNE | PRIMAIRE | ALKYDE URETHANNE | | BLANC\t🟡 Entamé\nP0051\t\tTOLLENS\tNOIR\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | ACRYLIQUE | VELOUTÉ | RAL 9005\t🟢 Plein\nP0052\t\tTOLLENS\tNOIR\t1,00\t\t0,50\t\t38,19€\t0,50\tTOLLENS | CROSS | ACRYLIQUE | VELOUTÉ | NOIR\t🟡 Entamé\nP0053\t\tTOLLENS\tNOIR\t3,00\t\t0,25\t\t38,19€\t0,25\tTOLLENS | CROSS | ACRYLIQUE | VELOUTÉ | RAL 9005\t🟡 Entamé\nP0054\t\tTOLLENS\tNOIR\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | ACRYLIQUE | VELOUTÉ | RAL 9005\t🟢 Plein\nP0055\t\tTOLLENS\tNOIR\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | ACRYLIQUE | VELOUTÉ | RAL 9005\t🟢 Plein\nP0056\t\tUNIKALO\tNOIR\t3,00\t\t0,50\t\t22,53€\t0,50\tUNIKALO | KREA EXTREME | | | RAL 9005\t🟡 Entamé\nP0057\t\tTOLLENS\tNOIR\t1,00\t\t0,25\t\t38,19€\t0,25\tTOLLENS | CROSS | | VELOUTE | NOIR\t🟡 Entamé\nP0058\t\tTOLLENS\tNOIR\t1,00\t\t0,25\t\t38,19€\t0,25\tTOLLENS | CROSS | | VELOUTE | RAL 9005\t🟡 Entamé\nP0059\t\tUNIKALO\tNOIR\t0,75\t\t1,00\t\t22,53€\t1,00\tUNIKALO | AQUAPRIM FINITION | | | RAL 9004\t🟢 Plein\nP0060\t\tUNIKALO\tNOIR\t0,75\t\t1,00\t\t22,53€\t1,00\tUNIKALO | AQUAPRIM FINITION | | | RAL 9004\t🟢 Plein\nP0061\t\tUNIKALO\tNOIR\t0,75\t\t0,50\t\t21,00€\t0,50\tUNIKALO | UNISTOPBOIS | | | RAL 9005\t🟡 Entamé\nP0062\t\tUNIKALO\tNOIR\t0,75\t\t1,00\t\t22,53€\t1,00\tUNIKALO | KREA EXTREME | | | RAL 9005\t🟢 Plein\nP0063\t\tUNIKALO\tNOIR\t0,75\t\t0,25\t\t22,53€\t0,25\tUNIKALO | KREA EXTREME | | | RAL 9005\t🟡 Entamé\nP0064\t\tUNIKALO\tNOIR\t0,75\t\t0,25\t\t22,53€\t0,25\tUNIKALO | KREA EXTREME | | | RAL 9005\t🟡 Entamé\nP0065\t\tUNIKALO\tNOIR\t0,75\t\t0,50\t\t21,00€\t0,50\tUNIKALO | ODELAC SATIN | | | UNIK110-7C\t🟡 Entamé\nP0066\t\tONE SHOT\tNOIR\t0,24\t\t1,00\t\t21,00€\t1,00\tONE SHOT | | | | 195 L MEDIUM GREY\t🟢 Plein\nP0067\t\tONE SHOT\tNOIR\t0,24\t\t1,00\t\t21,00€\t1,00\tONE SHOT | | | | 195 L MEDIUM GREY\t🟢 Plein\nP0068\t\tONE SHOT\tNOIR\t0,24\t\t1,00\t\t21,00€\t1,00\tONE SHOT | | | | 199 L NOIR\t🟢 Plein\nP0069\t\tONE SHOT\tNOIR\t0,24\t\t1,00\t\t21,00€\t1,00\tONE SHOT | | | | 199 L NOIR\t🟢 Plein\nP0070\t\tONE SHOT\tNOIR\t0,24\t\t0,25\t\t21,00€\t0,25\tONE SHOT | | | | 199 L NOIR\t🟡 Entamé\nP0071\t\tONE SHOT\tNOIR\t0,24\t\t1,00\t\t21,00€\t1,00\tONE SHOT | | | | 199 L NOIR\t🟢 Plein\nP0072\t\tONE SHOT\tNOIR\t0,24\t\t0,75\t\t21,00€\t0,75\tONE SHOT | | | | 199 L NOIR\t🟡 Entamé\nP0073\t\tONE SHOT\tNOIR\t0,24\t\t0,25\t\t21,00€\t0,25\tONE SHOT | | | | 199 L NOIR\t🟡 Entamé\nP0074\t\tONE SHOT\tNOIR\t0,24\t\t0,25\t\t21,00€\t0,25\tONE SHOT | | | | 199 L NOIR\t🟡 Entamé\nP0075\t\tONE SHOT\tNOIR\t0,24\t\t0,25\t\t21,00€\t0,25\tONE SHOT | | | | 199 L NOIR\t🟡 Entamé\nP0076\t\tONE SHOT\tNOIR\t0,24\t\t0,25\t\t21,00€\t0,25\tONE SHOT | | | | TINTING BLACK 4001\t🟡 Entamé\nP0077\t\tONE SHOT\tNOIR\t0,12\t\t0,25\t\t16,50€\t0,25\tONE SHOT | | | | 199 L NOIR\t🟡 Entamé\nP0078\t\tONE SHOT\tNOIR\t0,12\t\t0,25\t\t16,50€\t0,25\tONE SHOT | | | | 199 L NOIR\t🟡 Entamé\nP0079\t\tONE SHOT\tNOIR\t0,12\t\t1,00\t\t16,50€\t1,00\tONE SHOT | | | | 195 L MEDIUM GREY\t🟢 Plein\nP0080\t\tONE SHOT\tNOIR\t0,12\t\t0,75\t\t16,50€\t0,75\tONE SHOT | | | | 110 L CUIVRE METALLISE\t🟡 Entamé\nP0081\t\tCRAFTMASTER\tNOIR\t0,25\t\t0,50\t\t18,33€\t0,50\tCRAFTMASTER | | | | BLACK\t🟡 Entamé\nP0082\t\tPAINTSTRIPING\tNOIR\t0,12\t\t1,00\t\t13,50€\t1,00\tPAINTSTRIPING | | | | BLACK C 12\t🟢 Plein\nP0083\t\tTOLLENS\tGRIS\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | ACRYLIQUE | VELOUTE | T2139-5 POUDRE DE BRONZE\t🟢 Plein\nP0084\t\tLUCITE\tGRIS\t1,00\t\t0,25\t\t33,79€\t0,25\tLUCITE | | | | RAL 7035\t🟡 Entamé\nP0085\t\tTOLLENS\tGRIS\t1,00\t\t0,75\t\t38,19€\t0,00\tTOLLENS | CROSS | ACRYLIQUE | VELOUTE | RAL 7031\t🔴 Vide\nP0086\t\tTOLLENS\tGRIS\t1,00\t\t0,25\t\t38,19€\t0,25\tTOLLENS | CROSS | ACRYLIQUE | VELOUTE | GRIS CRAYONNE\t🟡 Entamé\nP0087\t\tTOLLENS\tGRIS\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | ACRYLIQUE | VELOUTE | RAL 7035\t🟢 Plein\nP0088\t\tTHEODORE\tGRIS\t1,00\t\t1,00\t\t\t1,00\tTHEODORE | | | | RAL 7016\t🟢 Plein\nP0089\t\tWINCO\tGRIS\t0,50\t\t1,00\t\t\t1,00\tWINCO | | | SATIN | ANGORA\t🟢 Plein\nP0090\t\tUNIKALO\tGRIS\t0,75\t\t1,00\t\t22,53€\t1,00\tUNIKALO | AQUAPRIM | | | CH11007 KAOLIN\t🟢 Plein\nP0091\t\tUNIKALO\tGRIS\t0,75\t\t0,75\t\t22,53€\t0,75\tUNIKALO | AQUAPRIM | | | RAL 7016\t🟡 Entamé\nP0092\t\tUNIKALO\tGRIS\t3,00\t\t1,00\t\t14,02€\t1,00\tUNIKALO | K FIX S | PRIMAIRE | | GRIS ?\t🟢 Plein\nP0093\t\tONIP\tGRIS\t3,00\t\t\t\t\t0,00\tONIP | IMPRESSION POLYVALENTE | | | ONIPRIM GRIS\t🔴 Vide\nP0094\t\tTOLLENS\tGRIS\t1,00\t\t1,00\t\t\t1,00\tTOLLENS | CROSS | | VELOUTE | RAL 7000\t🟢 Plein\nP0095\t\tRONIN\tGRIS\t0,13\t\t1,00\t\t\t1,00\tRONIN | | | | L 180 LIGHT GREY\t🟢 Plein\nP0096\t\tTOLLENS\tGRIS\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VE | RAL 7021\t🟢 Plein\nP0097\t\tUNIKALO\tGRIS\t0,75\t\t0,25\t\t22,52€\t0,25\tUNIKALO | ODELAC SATIN | | | RAL 7016\t🟡 Entamé\nP0098\t\tTOLLENS\tCREME BEIGE\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTE | T2058-4 CHASSELAS\t🟢 Plein\nP0099\t\tTOLLENS\tCREME BEIGE\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTE | CR4155-4 SOLEIL POUDRÉ\t🟢 Plein\nP0100\t\tTOLLENS\tCREME BEIGE\t1,00\t\t0,50\t\t38,19€\t0,50\tTOLLENS | CROSS | | VELOUTE | 4154-4 DORURE\t🟡 Entamé\nP0101\t\tTOLLENS\tCREME BEIGE\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTE | T2165-1 COING DE VRANGEA\t🟢 Plein\nP0102\t\tTOLLENS\tCREME BEIGE\t1,00\t\t0,50\t\t38,19€\t0,50\tTOLLENS | CROSS | | VELOUTE | CR4078-4 ADODE\t🟡 Entamé\nP0103\t\tTOLLENS\tCREME BEIGE\t1,00\t\t0,75\t\t38,19€\t0,75\tTOLLENS | CROSS | | VELOUTE | CR4177-6\t🟡 Entamé\nP0104\t\tTOLLENS\tCREME BEIGE\t1,00\t\t0,50\t\t38,19€\t0,50\tTOLLENS | CROSS | | VELOUTE | CR4165-4 TOMATE SECHEE\t🟡 Entamé\nP0105\t\tTOLLENS\tCREME BEIGE\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTE | T2111-4 SUCRE ROUX\t🟢 Plein\nP0106\t\tTOLLENS\tCREME BEIGE\t1,00\t\t0,75\t\t38,19€\t0,75\tTOLLENS | CROSS | | VELOUTE | 2111-6 BABYLONE\t🟡 Entamé\nP0107\t\tTOLLENS\tCREME BEIGE\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTE | RAL1019\t🟢 Plein\nP0108\t\tTOLLENS\tCREME BEIGE\t1,00\t\t0,75\t\t38,19€\t0,75\tTOLLENS | CROSS | | VELOUTE | R4078-2 COGNAC\t🟡 Entamé\nP0109\t\tTOLLENS\tCREME BEIGE\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTE | T2111-3 AFGHAN\t🟢 Plein\nP0110\t\tUNIKALO\tCREME BEIGE\t0,75\t\t0,25\t\t22,53€\t0,25\tUNIKALO | AQUAPRIM FINITION | | | UNIK D 270 BOUCHON\t🟡 Entamé\nP0111\t\tUNIKALO\tCREME BEIGE\t0,75\t\t0,25\t\t22,53€\t0,25\tUNIKALO | AQUAPRIM FINITION | | | UNIK D 323 JUKEBOX\t🟡 Entamé\nP0112\t\tUNIKALO\tCREME BEIGE\t0,75\t\t1,00\t\t22,53€\t1,00\tUNIKALO | AQUAPRIM FINITION | | | UNIK D 270 BOUCHON\t🟢 Plein\nP0113\t\tLUCITE\tCREME BEIGE\t1,00\t\t0,75\t\t33,79€\t0,75\tLUCITE | SPECIAL BOIS | | | 067D LUCITE 152\t🟡 Entamé\nP0114\t\tLAURAGEAIS\tCREME BEIGE\t1,00\t\t0,75\t\t\t0,75\tLAURAGEAIS | PU BOISERIE | | SATIN | SATIN'MILL O\t🟡 Entamé\nP0115\t\tTOLLENS\tCREME BEIGE\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTE | RAL 1001\t🟢 Plein\nP0116\t\tTOLLENS\tCREME BEIGE\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTE | CR4177-5 AMPHORE\t🟢 Plein\nP0117\t\tTOLLENS\tCREME BEIGE\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTE | T2168-1 DUNE PILA\t🟢 Plein\nP0118\t\tTOLLENS\tCREME BEIGE\t1,00\t\t0,25\t\t38,19€\t0,25\tTOLLENS | CROSS | | VELOUTE | CR4027-2 BRIOCHE\t🟡 Entamé\nP0119\t\tTOLLENS\tCREME BEIGE\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTE | RAL 1013\t🟢 Plein\nP0120\t\tTOLLENS\tCREME BEIGE\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTE | CR4013-4 HOUMOUS\t🟢 Plein\nP0121\t\tTOLLENS\tCREME BEIGE\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTE | RAL 1015\t🟢 Plein\nP0122\t\tTOLLENS\tCREME BEIGE\t1,00\t\t0,75\t\t38,19€\t0,75\tTOLLENS | CROSS | | VELOUTE | T2190-6 PARIS BREST\t🟡 Entamé\nP0123\t\tTOLLENS\tCREME BEIGE\t1,00\t\t0,50\t\t38,19€\t0,50\tTOLLENS | CROSS | | VELOUTE | T2188-4 ECLAT DE VERRE\t🟡 Entamé\nP0124\t\tTOLLENS\tCREME BEIGE\t1,00\t\t0,75\t\t38,19€\t0,75\tTOLLENS | CROSS | | VELOUTE | T2111-1 THE AU LAIT\t🟡 Entamé\nP0125\t\tTOLLENS\tCREME BEIGE\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTE | T2167-2 POUDRE DE SCHIST\t🟢 Plein\nP0126\t\tTOLLENS\tCREME BEIGE\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTE | RAL 1001\t🟢 Plein\nP0127\t\tTOLLENS\tCREME BEIGE\t1,00\t\t0,50\t\t38,19€\t0,50\tTOLLENS | CROSS | | VELOUTE | T2166-1 LAINE BRUTE\t🟡 Entamé\nP0128\t\tTOLLENS\tCREME BEIGE\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTE | CR4177-5 AMPHORE\t🟢 Plein\nP0129\t\tTOLLENS\tCREME BEIGE\t1,00\t\t0,75\t\t38,19€\t0,75\tTOLLENS | CROSS | | VELOUTE | T2169-1 TRENCH\t🟡 Entamé\nP0130\t\tTOLLENS\tCREME BEIGE\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTE | T2164-4 CUIR SELLIER\t🟢 Plein\nP0131\t\tTOLLENS\tCREME BEIGE\t3,00\t\t1,50\t\t38,19€\t1,50\tTOLLENS | CROSS | | VELOUTE | CR4071-2 ARACHIDE\t🟢 Plein\nP0132\t\tUNIKALO\tCREME BEIGE\t0,75\t\t1,00\t\t22,53€\t1,00\tUNIKALO | UNISTOP BOIS SATIN | | | RAL 1015\t🟢 Plein\nP0133\t\tUNIKALO\tCREME BEIGE\t0,75\t\t1,00\t\t22,53€\t1,00\tUNIKALO | | | | UNIK036-3B\t🟢 Plein\nP0134\t\tUNIKALO\tCREME BEIGE\t0,75\t\t1,00\t\t22,53€\t1,00\tUNIKALO | UNISTOP BOIS SATIN KREA | | | UNIK 035-2A\t🟢 Plein\nP0135\t\tTOLLENS\tCREME BEIGE\t1,00\t\t1,00\t\t33,00€\t1,00\tTOLLENS | TOL ALL STAR | | | CH10177 JAUNE ANCHERE\t🟢 Plein\nP0136\t\tTOLLENS\tCREME BEIGE\t1,00\t\t1,00\t\t33,00€\t1,00\tTOLLENS | TOL ALL STAR | | | CR4069-3 BABER\t🟢 Plein\nP0137\t\tUNIKALO\tCREME BEIGE\t1,00\t\t1,00\t\t22,53€\t1,00\tUNIKALO | UNISTOP BOIS EVO | | | ZOLP F 251-2\t🟢 Plein\nP0138\t\tUNIKALO\tCREME BEIGE\t0,75\t\t0,25\t\t22,06€\t0,25\tUNIKALO | | GLYCERO | BRILLANT | CH10177 JAUNE ANCHERE\t🟡 Entamé\nP0139\t\tUNIKALO\tCREME BEIGE\t0,75\t\t1,00\t\t22,06€\t1,00\tUNIKALO | JOORDAN | GLYCERO | | CLG 30\t🟢 Plein\nP0140\t\tDULUXE VALENTINE\tCREME BEIGE\t0,50\t\t0,25\t\t\t0,25\tDULUXE VALENTINE | | GLYCERO | SATIN | EBEN\t🟡 Entamé\nP0141\t\tONIP\tCREME BEIGE\t1,00\t\t1,00\t\t\t1,00\tONIP | ALKYDE PUR BIRLLANT | | | 106,2\t🟢 Plein\nP0142\t\tINTERNATIONAL\tCREME BEIGE\t0,75\t\t1,00\t\t33,33€\t1,00\tINTERNATIONAL | INTERLAC 665 | PU | | PIERRE\t🟢 Plein\nP0143\t\tONE SHOT\tCREME BEIGE\t0,24\t\t0,25\t\t21,00€\t0,25\tONE SHOT | | | | 116 L IVOIRE\t🟡 Entamé\nP0144\t\tONE SHOT\tCREME BEIGE\t0,24\t\t0,25\t\t21,00€\t0,25\tONE SHOT | | | | 116 L IVOIRE\t🟡 Entamé\nP0145\t\tONE SHOT\tCREME BEIGE\t0,24\t\t0,25\t\t21,00€\t0,25\tONE SHOT | | | | 116 L IVOIRE\t🟡 Entamé\nP0146\t\tONE SHOT\tCREME BEIGE\t0,24\t\t0,25\t\t21,00€\t0,25\tONE SHOT | | | | 116 L IVOIRE\t🟡 Entamé\nP0147\t\tONE SHOT\tCREME BEIGE\t0,24\t\t0,25\t\t21,00€\t0,25\tONE SHOT | | | | 117 L HAVANE\t🟡 Entamé\nP0148\t\tONE SHOT\tCREME BEIGE\t0,24\t\t1,00\t\t21,00€\t1,00\tONE SHOT | | | | 117 L HAVANE\t🟢 Plein\nP0149\t\tONE SHOT\tCREME BEIGE\t0,24\t\t0,50\t\t21,00€\t0,50\tONE SHOT | | | | 117 L HAVANE\t🟡 Entamé\nP0150\t\tONE SHOT\tCREME BEIGE\t0,24\t\t0,25\t\t21,00€\t0,25\tONE SHOT | | | | 118 L CHAMOIS\t🟡 Entamé\nP0151\t\tONE SHOT\tCREME BEIGE\t0,24\t\t0,25\t\t21,00€\t0,25\tONE SHOT | | | | 118 L CHAMOIS\t🟡 Entamé\nP0152\t\tONE SHOT\tCREME BEIGE\t0,24\t\t1,00\t\t21,00€\t1,00\tONE SHOT | | | | 118 L CHAMOIS\t🟢 Plein\nP0153\t\tONE SHOT\tCREME BEIGE\t0,24\t\t0,50\t\t21,00€\t0,50\tONE SHOT | | | | 118 L CHAMOIS\t🟡 Entamé\nP0154\t\tAS HANDOVER\tCREME BEIGE\t0,25\t\t0,50\t\t24,00€\t0,50\tAS HANDOVER | | | | IVORY\t🟡 Entamé\nP0155\t\tAS HANDOVER\tCREME BEIGE\t0,25\t\t0,25\t\t24,00€\t0,25\tAS HANDOVER | | | | IVORY\t🟡 Entamé\nP0156\t\tPAINTRSTRIPING\tCREME BEIGE\t0,12\t\t1,00\t\t22,50€\t1,00\tPAINTRSTRIPING | | | | IVOIRE C4\t🟢 Plein\nP0157\t\tTOLLENS\tCREME BEIGE\t1,00\t\t0,50\t\t38,19€\t0,50\tTOLLENS | CROSS | | VELOUTE | RAL 1013\t🟡 Entamé\nP0158\t\tTOLLENS\tCREME BEIGE\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTE | RAL 1001\t🟢 Plein\nP0159\t\tTOLLENS\tCREME BEIGE\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | | RAL 1013\t🟢 Plein\nP0160\t\tLUCITE\tCREME BEIGE\t1,00\t\t1,00\t\t33,79€\t1,00\tLUCITE | | | | 067 B\t🟢 Plein\nP0161\t\tTOLLENS\tCREME BEIGE\t1,00\t\t0,50\t\t38,19€\t0,50\tTOLLENS | CROSS | ACRYLIQUE | | T2162 ROCOCO\t🟡 Entamé\nP0162\t\tUNIKALO\tCREME BEIGE\t3,00\t\t0,75\t\t22,53€\t0,75\tUNIKALO | | | | CH1077 BEIGE KAOLIN\t🟡 Entamé\nP0163\t\tTOLLENS\tJAUNE\t1,00\t\t0,50\t\t38,19€\t0,50\tTOLLENS | CROSS | | VELOUTE | T2061-4 JAUNE VIF\t🟡 Entamé\nP0164\t\tUNIKALO\tJAUNE\t0,75\t\t0,50\t\t\t0,50\tUNIKALO | KREA ETREME | | | RAL 1037\t🟡 Entamé\nP0165\t\tTOLLENS\tJAUNE\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTE | T2063-3 CANNEL\t🟢 Plein\nP0166\t\tUNIKALO\tJAUNE\t0,75\t\t0,50\t\t\t0,50\tUNIKALO | UNISTOP BOIS | | | UNIK125-8 D\t🟡 Entamé\nP0167\t\tLUCITE\tJAUNE\t1,00\t\t0,25\t\t33,79€\t0,25\tLUCITE | | | | RAL 1021\t🟡 Entamé\nP0168\t\tLUCITE\tJAUNE\t1,00\t\t1,00\t\t33,79€\t1,00\tLUCITE | | | | RAL 1016\t🟢 Plein\nP0169\t\tTOLLENS\tJAUNE\t1,00\t\t1,00\t\t38,19€\t0,00\tTOLLENS | CROSS | | VELOUTE | T2053-6 BANANE PLANTIN\t🔴 Vide\nP0170\t\tTOLLENS\tJAUNE\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTE | CR4159-4 BIZANTIN\t🟢 Plein\nP0171\t\tUNIKALO\tJAUNE\t0,75\t\t1,00\t\t22,53€\t1,00\tUNIKALO | AQUAPRIM | | | UNIK D270 BOUCHON\t🟢 Plein\nP0172\t\tUNIKALO\tJAUNE\t0,75\t\t1,00\t\t24,52€\t1,00\tUNIKALO | ALKYDE | | | UNIK 126-6D\t🟢 Plein\nP0173\t\tUNIKALO\tJAUNE\t0,75\t\t1,00\t\t22,53€\t1,00\tUNIKALO | UNISTOP BOIS EVO | | | RAL 1021\t🟢 Plein\nP0174\t\tONE SHOT\tJAUNE\t0,24\t\t1,00\t\t24,79€\t1,00\tONE SHOT | | | | 191 L IMITATION GOLD\t🟢 Plein\nP0175\t\tONE SHOT\tJAUNE\t0,24\t\t1,00\t\t29,13€\t1,00\tONE SHOT | POSTER | | | AMARILLO CROMO ZZ3002\t🟢 Plein\nP0176\t\tONE SHOT\tJAUNE\t0,24\t\t1,00\t\t29,13€\t1,00\tONE SHOT | | | | 132 L LEMON YELLOW\t🟢 Plein\nP0177\t\tONE SHOT\tJAUNE\t0,24\t\t1,00\t\t29,13€\t1,00\tONE SHOT | | | | 132 L LEMON YELLOW\t🟢 Plein\nP0178\t\tONE SHOT\tJAUNE\t0,24\t\t0,25\t\t29,13€\t0,25\tONE SHOT | | | | 132 L LEMON YELLOW\t🟡 Entamé\nP0179\t\tONE SHOT\tJAUNE\t0,12\t\t0,75\t\t18,96€\t0,75\tONE SHOT | | | | 130 L JAUNE PRIMEVER\t🟡 Entamé\nP0180\t\tONE SHOT\tJAUNE\t0,12\t\t0,25\t\t18,96€\t0,25\tONE SHOT | | | | 130 L JAUNE PRIMEVER\t🟡 Entamé\nP0181\t\tONE SHOT\tJAUNE\t0,12\t\t0,25\t\t18,96€\t0,25\tONE SHOT | | | | 111 L LAITON METALLISE\t🟡 Entamé\nP0182\t\tONE SHOT\tJAUNE\t0,12\t\t0,50\t\t18,96€\t0,50\tONE SHOT | | | | 191 L IMITATION GOLD\t🟡 Entamé\nP0183\t\tCRAFTMASTER\tJAUNE\t0,25\t\t1,00\t\t18,33€\t1,00\tCRAFTMASTER | | | | GOLD COLOUR\t🟢 Plein\nP0184\t\tTOLLENS\tORANGE\t1,00\t\t0,50\t\t38,19€\t0,50\tTOLLENS | CROSS | | VELOUTE | RAL 2004\t🟡 Entamé\nP0185\t\tTOLLENS\tORANGE\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTE | RAL 2004\t🟢 Plein\nP0186\t\tTOLLENS\tORANGE\t1,00\t\t0,75\t\t38,19€\t0,75\tTOLLENS | CROSS | | VELOUTE | RAL 2004\t🟡 Entamé\nP0187\t\tTOLLENS\tORANGE\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTE | CR4163-3 CORAIL\t🟢 Plein\nP0188\t\tTOLLENS\tORANGE\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTE | 7 207 0003 GLOSSY\t🟢 Plein\nP0189\t\tTOLLENS\tORANGE\t1,00\t\t0,50\t\t38,19€\t0,50\tTOLLENS | CROSS | | VELOUTE | CR4164-3 HALLOWEEN\t🟡 Entamé\nP0190\t\tUNIKALO\tORANGE\t0,75\t\t1,00\t\t22,53€\t1,00\tUNIKALO | KREA EXTREM | | | RAL 2000\t🟢 Plein\nP0191\t\tLUCITE\tORANGE\t1,00\t\t0,25\t\t33,79€\t0,25\tLUCITE | MULTIFONCTION | | | 166C\t🟡 Entamé\nP0192\t\tLUCITE\tORANGE\t1,00\t\t0,75\t\t33,79€\t0,75\tLUCITE | MURALE SPECIALE | | | 166C\t🟡 Entamé\nP0193\t\tUNIKALO\tORANGE\t0,75\t\t1,00\t\t27,53€\t1,00\tUNIKALO | JOORDAN | | B90 BRILLANT | CR4165-6 BUBINGA\t🟢 Plein\nP0194\t\tUNIKALO\tORANGE\t0,75\t\t1,00\t\t27,53€\t1,00\tUNIKALO | JOORDAN | | | CR4165-6 BUBINGA\t🟢 Plein\nP0195\t\tONE SHOT\tORANGE\t0,12\t\t0,50\t\t19,79€\t0,50\tONE SHOT | | | | 124 L ORANGE\t🟡 Entamé\nP0196\t\tONE SHOT\tORANGE\t0,12\t\t0,50\t\t19,79€\t0,50\tONE SHOT | | | | 124 L ORANGE\t🟡 Entamé\nP0197\t\tONE SHOT\tORANGE\t0,12\t\t1,00\t\t19,79€\t1,00\tONE SHOT | | | | 124 L ORANGE\t🟢 Plein\nP0198\t\tONE SHOT\tORANGE\t0,12\t\t1,00\t\t19,79€\t1,00\tONE SHOT | | | | 124 L ORANGE\t🟢 Plein\nP0199\t\tONE SHOT\tORANGE\t0,12\t\t1,00\t\t19,79€\t1,00\tONE SHOT | | | | 124 L ORANGE\t🟢 Plein\nP0200\t\tONE SHOT\tORANGE\t0,12\t\t1,00\t\t19,79€\t1,00\tONE SHOT | | | | 124 L ORANGE\t🟢 Plein\nP0201\t\tONE SHOT\tORANGE\t0,24\t\t1,00\t\t26,63€\t1,00\tONE SHOT | | | | 124 L ORANGE\t🟢 Plein\nP0202\t\tONE SHOT\tORANGE\t0,24\t\t1,00\t\t26,63€\t1,00\tONE SHOT | | | | 124 L ORANGE\t🟢 Plein\nP0203\t\tALPHANAMEL\tORANGE\t1,00\t\t0,50\t\t21,00€\t0,50\tALPHANAMEL | | | | TIDWELL'S ORANGE\t🟡 Entamé\nP0204\t\tTOLLENS\tORANGE\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTE | T2068-4 ORANGE POP\t🟢 Plein\nP0205\t\tCRAFTMASTER\tORANGE\t0,25\t\t1,00\t\t18,33€\t1,00\tCRAFTMASTER | | | | ORANGE CHROME\t🟢 Plein\nP0206\t\tCRAFTMASTER\tORANGE\t0,13\t\t1,00\t\t13,00€\t1,00\tCRAFTMASTER | | | | GOLF TANGERINE\t🟢 Plein\nP0207\t\tTOLLENS\tROUGE\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTE | GEISHA\t🟢 Plein\nP0208\t\tTOLLENS\tROUGE\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTE | RAL 3013\t🟢 Plein\nP0209\t\tTOLLENS\tROUGE\t1,00\t\t0,25\t\t38,19€\t0,25\tTOLLENS | CROSS | | VELOUTE | RAL 3013\t🟡 Entamé\nP0210\t\tTOLLENS\tROUGE\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTE | RAL 3013\t🟢 Plein\nP0211\t\tTOLLENS\tROUGE\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTE | RAL 3013\t🟢 Plein\nP0212\t\tTOLLENS\tROUGE\t3,00\t\t0,25\t\t38,19€\t0,25\tTOLLENS | CROSS | | VELOUTE | RAL 3020\t🟡 Entamé\nP0213\t\tTOLLENS\tROUGE\t3,00\t\t0,50\t\t38,19€\t0,50\tTOLLENS | CROSS | | VELOUTE | ROUGE ROSE\t🟡 Entamé\nP0214\t\tTOLLENS\tROUGE\t3,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTE | CR4185-1 CARMEN\t🟢 Plein\nP0215\t\tUNIKALO\tROUGE\t0,75\t\t0,50\t\t22,53€\t0,50\tUNIKALO | KREA EXTREM | | | UNIK132-5D\t🟡 Entamé\nP0216\t\tUNIKALO\tROUGE\t0,75\t\t0,75\t\t22,53€\t0,75\tUNIKALO | FINITION | | | RAL 3020\t🟡 Entamé\nP0217\t\tUNIKALO\tROUGE\t0,75\t\t0,50\t\t22,53€\t0,50\tUNIKALO | KREA EXTREM | | | RAL 3020\t🟡 Entamé\nP0218\t\tUNIKALO\tROUGE\t0,75\t\t0,25\t\t22,53€\t0,25\tUNIKALO | KREA EXTREM | | | RAL 3031\t🟡 Entamé\nP0219\t\tUNIKALO\tROUGE\t0,75\t\t1,00\t\t22,53€\t1,00\tUNIKALO | KREA EXTREM | | | RAL 3000\t🟢 Plein\nP0220\t\tUNIKALO\tROUGE\t3,00\t\t0,50\t\t19,15€\t0,50\tUNIKALO | AQUAPRIM | | | ROUGE BRANDIVY\t🟡 Entamé\nP0221\t\tUNIKALO\tROUGE\t0,75\t\t0,50\t\t22,53€\t0,50\tUNIKALO | JOORDAN | | GLYCERO | RAL 3011\t🟡 Entamé\nP0222\t\tUNIKALO\tROUGE\t0,75\t\t0,50\t\t21,00€\t0,50\tUNIKALO | UNISTOP BOIS EVOLUTION | | | RAL 3020\t🟡 Entamé\nP0223\t\tPAINTSTRIPPING\tROUGE\t0,12\t\t1,00\t\t21,00€\t1,00\tPAINTSTRIPPING | | | | C8 RED\t🟢 Plein\nP0224\t\tONE SHOT\tROUGE\t0,12\t\t1,00\t\t21,00€\t1,00\tONE SHOT | | | | 165 L ROUGE RUBIS\t🟢 Plein\nP0225\t\tONE SHOT\tROUGE\t0,24\t\t1,00\t\t27,50€\t1,00\tONE SHOT | | | | 104 L ROUGE VIF\t🟢 Plein\nP0226\t\tONE SHOT\tROUGE\t0,24\t\t0,50\t\t27,50€\t0,50\tONE SHOT | | | | 104 L ROUGE VIF\t🟡 Entamé\nP0227\t\tONE SHOT\tROUGE\t0,24\t\t0,75\t\t27,50€\t0,75\tONE SHOT | | | | 104 L ROUGE VIF\t🟡 Entamé\nP0228\t\tONE SHOT\tROUGE\t0,24\t\t0,25\t\t27,50€\t0,25\tONE SHOT | | | | 104 L ROUGE VIF\t🟡 Entamé\nP0229\t\tONE SHOT\tROUGE\t0,24\t\t0,75\t\t27,50€\t0,75\tONE SHOT | | | | 100 L VERMILLON\t🟡 Entamé\nP0230\t\tONE SHOT\tROUGE\t0,24\t\t0,50\t\t27,50€\t0,50\tONE SHOT | | | | 100 L VERMILLON\t🟡 Entamé\nP0231\t\tONE SHOT\tROUGE\t0,24\t\t1,00\t\t27,50€\t1,00\tONE SHOT | | | | 106 L CRAMOISI\t🟢 Plein\nP0232\t\tONE SHOT\tROUGE\t0,24\t\t0,25\t\t27,50€\t0,25\tONE SHOT | | | | 104 L ROUGE VIF\t🟡 Entamé\nP0233\t\tONE SHOT\tROUGE\t0,24\t\t0,25\t\t27,50€\t0,25\tONE SHOT | | | | 106 L CRAMOISI\t🟡 Entamé\nP0234\t\tONE SHOT\tROUGE\t0,24\t\t0,25\t\t27,50€\t0,25\tONE SHOT | | | | 102 L FIRE RED\t🟡 Entamé\nP0235\t\tONE SHOT\tROUGE\t0,24\t\t1,00\t\t27,50€\t1,00\tONE SHOT | | | | ROJO BRILLANT ZZ3005\t🟢 Plein\nP0236\t\tCRAFTMASTER\tROUGE\t0,13\t\t0,75\t\t13,00€\t0,75\tCRAFTMASTER | | | | ROSO CORSA\t🟡 Entamé\nP0237\t\tONE SHOT\tROUGE\t0,24\t\t1,00\t\t27,50€\t1,00\tONE SHOT | | | | 106 L CRAMOISI\t🟢 Plein\nP0238\t\tTOLLENS\tROSE\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTE | T2077-3 NAYADE\t🟢 Plein\nP0239\t\tTOLLENS\tROSE\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | TOL ALL STAR | | | T2082-2 BALIVERNE\t🟢 Plein\nP0240\t\tTOLLENS\tROSE\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTE | 4171-6 YAOURT AU FRUIT\t🟢 Plein\nP0241\t\tTOLLENS\tROSE\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTE | T2082-6 BONBON SUCRE\t🟢 Plein\nP0242\t\tTOLLENS\tROSE\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTE | T2083-5 INDEMODABLE RO\t🟢 Plein\nP0243\t\tTOLLENS\tROSE\t1,00\t\t0,75\t\t38,19€\t0,75\tTOLLENS | CROSS | | VELOUTE | CR4173-2 LOUNGE\t🟡 Entamé\nP0244\t\tUNIKALO\tROSE\t0,75\t\t1,00\t\t22,53€\t1,00\tUNIKALO | AQUAPRIM FINITION | | | CH10397 ROSE LOUIJIA\t🟢 Plein\nP0245\t\tUNIKALO\tROSE\t0,75\t\t0,50\t\t22,53€\t0,50\tUNIKALO | AQUAPRIM MICROCOLAR | | | UNIK 133-7 D\t🟡 Entamé\nP0246\t\tUNIKALO\tROSE\t0,75\t\t0,50\t\t21,00€\t0,50\tUNIKALO | JOORDAN | MARRON ? | | TOL T 2120-1\t🟡 Entamé\nP0247\t\tUNIKALO\tROSE\t0,75\t\t0,25\t\t22,53€\t0,25\tUNIKALO | AQUAPRIM FINITION | | | UNIK D 340 SCRAMBLER\t🟡 Entamé\nP0248\t\tTOLLENS\tROSE\t1,00\t\t0,75\t\t38,19€\t0,75\tTOLLENS | CROSS | | VELOUTE | CR4180-4 TERRA SIGILLATA\t🟡 Entamé\nP0249\t\tUNIKALO\tROSE\t0,75\t\t1,00\t\t21,00€\t1,00\tUNIKALO | JOORDAN | | | CH10397 ROSE LOUIJIA\t🟢 Plein\nP0250\t\tONE SHOT\tROSE\t0,12\t\t0,50\t\t18,96€\t0,50\tONE SHOT | | | | 120 L CORAL\t🟡 Entamé\nP0251\t\tONE SHOT\tROSE\t0,24\t\t1,00\t\t23,96€\t1,00\tONE SHOT | | | | 120 L CORAL\t🟢 Plein\nP0252\t\tONE SHOT\tROSE\t0,24\t\t1,00\t\t23,96€\t1,00\tONE SHOT | | | | 168 L SALMON PINK\t🟢 Plein\nP0253\t\tONE SHOT\tROSE\t0,24\t\t1,00\t\t23,96€\t1,00\tONE SHOT | | | | 120 L CORAL\t🟢 Plein\nP0254\t\tONE SHOT\tROSE\t0,24\t\t1,00\t\t23,96€\t1,00\tONE SHOT | | | | 120 L CORAL\t🟢 Plein\nP0255\t\tONE SHOT\tROSE\t0,24\t\t1,00\t\t23,96€\t1,00\tONE SHOT | | | | 168 L SALMON PINK\t🟢 Plein\nP0256\t\tTOLLENS\tVIOLET\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTE | CR4180-6 VIN CHAUD\t🟢 Plein\nP0257\t\tTOLLENS\tVIOLET\t1,00\t\t0,50\t\t38,19€\t0,50\tTOLLENS | CROSS | | VELOUTE | RAL 4004\t🟡 Entamé\nP0258\t\tTOLLENS\tVIOLET\t1,00\t\t0,75\t\t38,19€\t0,75\tTOLLENS | CROSS | | VELOUTE | T2080-6 ROUGE A LEVRE\t🟡 Entamé\nP0259\t\tTOLLENS\tVIOLET\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTE | T20807-5 BABOUCHE\t🟢 Plein\nP0260\t\tTOLLENS\tVIOLET\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTE | T2090-3 PRUNE DE DAMAS\t🟢 Plein\nP0261\t\tMARCUS INDUSTRIE\tVIOLET\t2,00\t\t0,50\t\t32,00€\t0,50\tMARCUS INDUSTRIE | PU ACRYLIQUE | | | RAL 4001\t🟡 Entamé\nP0262\t\tONE SHOT\tVIOLET\t0,12\t\t0,50\t\t24,13€\t0,50\tONE SHOT | | | | 163 L MAGENTA\t🟡 Entamé\nP0263\t\tONE SHOT\tVIOLET\t0,12\t\t0,50\t\t24,13€\t0,50\tONE SHOT | | | | 164 L DARK MAGENTA\t🟡 Entamé\nP0264\t\tONE SHOT\tVIOLET\t0,24\t\t1,00\t\t31,63€\t1,00\tONE SHOT | | | | 163 L MAGENTA\t🟢 Plein\nP0265\t\tONE SHOT\tVIOLET\t0,24\t\t1,00\t\t31,63€\t1,00\tONE SHOT | | | | 164 L DARK MAGENTA\t🟢 Plein\nP0266\t\tONE SHOT\tVIOLET\t0,24\t\t1,00\t\t31,63€\t1,00\tONE SHOT | | | | 162 L PURPLE\t🟢 Plein\nP0267\t\tONE SHOT\tVIOLET\t0,24\t\t1,00\t\t31,63€\t1,00\tONE SHOT | | | | 162 L PURPLE\t🟢 Plein\nP0268\t\tONE SHOT\tVIOLET\t0,24\t\t0,75\t\t31,63€\t0,75\tONE SHOT | | | | 162 L PURPLE\t🟡 Entamé\nP0269\t\tONE SHOT\tVIOLET\t0,24\t\t1,00\t\t31,63€\t1,00\tONE SHOT | | | | 161 L PROPER PURPLE\t🟢 Plein\nP0270\t\tONE SHOT\tVIOLET\t0,24\t\t1,00\t\t31,63€\t1,00\tONE SHOT | | | | 164 L DARK MAGENTA\t🟢 Plein\nP0271\t\tONE SHOT\tVIOLET\t0,24\t\t0,50\t\t31,63€\t0,50\tONE SHOT | | | | 161 L PROPER PURPLE\t🟡 Entamé\nP0272\t\tTOLLENS\tVIOLET\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | TOL ALL STAR | | | RAL 4001\t🟢 Plein\nP0273\t\ttollens\tBLEU\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTÉ | T2010-5 CALCÉDOINE\t🟢 Plein\nP0274\t\ttollens\tBLEU\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTÉ | RAL 6027\t🟢 Plein\nP0275\t\ttollens\tBLEU\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTÉ | CR4100-1 TRANSAT\t🟢 Plein\nP0276\t\ttollens\tBLEU\t1,00\t\t0,50\t\t38,19€\t0,50\tTOLLENS | CROSS | | VELOUTÉ | T2300-5 BLEU ATLANTIDE\t🟡 Entamé\nP0277\t\ttollens\tBLEU\t1,00\t\t0,50\t\t38,19€\t0,00\tTOLLENS | CROSS | | VELOUTÉ | RAL 5011\t🔴 Vide\nP0278\t\ttollens\tBLEU\t1,00\t\t0,50\t\t38,19€\t0,50\tTOLLENS | CROSS | | VELOUTÉ | RAL 5022\t🟡 Entamé\nP0279\t\ttollens\tBLEU\t1,00\t\t0,50\t\t38,19€\t0,50\tTOLLENS | CROSS | | VELOUTÉ | RAL 5007\t🟡 Entamé\nP0280\t\ttollens\tBLEU\t1,00\t\t0,25\t\t38,19€\t0,25\tTOLLENS | CROSS | | VELOUTÉ | CR4096-4 BLEU LUZIEN\t🟡 Entamé\nP0281\t\ttollens\tBLEU\t1,00\t\t1,00\t\t38,19€\t0,00\tTOLLENS | CROSS | | VELOUTÉ | RAL 5002\t🔴 Vide\nP0282\t\ttollens\tBLEU\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTÉ | ERREUR BASE TEINTE / APPROCHANT RAL 5014\t🟢 Plein\nP0283\t\ttollens\tBLEU\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTÉ | BLEU BIZANCE\t🟢 Plein\nP0284\t\ttollens\tBLEU\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTÉ | RAL 5000\t🟢 Plein\nP0285\t\ttollens\tBLEU\t1,00\t\t0,50\t\t38,19€\t0,50\tTOLLENS | CROSS | | VELOUTÉ | 166C LES COULEURS D'ONIP\t🟡 Entamé\nP0286\t\tTHEODORE\tBLEU\t1,00\t\t1,00\t\t23,00€\t1,00\tTHEODORE | TECHNI MIX | VELOUR | | CR4096-5 ABYSSE (COULEUR IDEM VELOUR HD)\t🟢 Plein\nP0287\t\ttollens\tBLEU\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTE | 165 B LES COULEURS D'ONIP\t🟢 Plein\nP0288\t\ttollens\tBLEU\t1,00\t\t0,25\t\t38,19€\t0,25\tTOLLENS | CROSS | | VELOUTE | T2016-3 FLEUVE BLEU\t🟡 Entamé\nP0289\t\ttollens\tBLEU\t1,00\t\t0,25\t\t38,19€\t0,25\tTOLLENS | CROSS | | VELOUTE | T2023-6\t🟡 Entamé\nP0290\t\ttollens\tBLEU\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTE | CR4104-3 CHUTE NIAGARA\t🟢 Plein\nP0291\t\ttollens\tBLEU\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTE | CR4105-5 TOIT PARISIEN\t🟢 Plein\nP0292\t\ttollens\tBLEU\t1,00\t\t0,25\t\t38,19€\t0,25\tTOLLENS | CROSS | | VELOUTE | RAL5022\t🟡 Entamé\nP0293\t\ttollens\tBLEU\t1,00\t\t0,25\t\t38,19€\t0,25\tTOLLENS | CROSS | | VELOUTE | XXX101-6 BLEU PETROLE\t🟡 Entamé\nP0294\t\ttollens\tBLEU\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTE | RAL5009\t🟢 Plein\nP0295\t\ttollens\tBLEU\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTE | T2007-5 VIOLET…..\t🟢 Plein\nP0296\t\ttollens\tBLEU\t1,00\t\t0,25\t\t38,19€\t0,25\tTOLLENS | CROSS | | VELOUTE | RAL 5001\t🟡 Entamé\nP0297\t\ttollens\tBLEU\t1,00\t\t0,50\t\t38,19€\t0,50\tTOLLENS | CROSS | | VELOUTE | RAL 5003\t🟡 Entamé\nP0298\t\ttollens\tBLEU\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTE | RAL 5011\t🟢 Plein\nP0299\t\ttollens\tBLEU\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTE | T2003-4 INDIGO\t🟢 Plein\nP0300\t\ttollens\tBLEU\t1,00\t\t0,50\t\t38,19€\t0,50\tTOLLENS | CROSS | | VELOUTE | T2020-5 AIKIDO\t🟡 Entamé\nP0301\t\ttollens\tBLEU\t1,00\t\t0,50\t\t38,19€\t0,50\tTOLLENS | CROSS | | VELOUTE | 3T25499\t🟡 Entamé\nP0302\t\tONIP\tBLEU\t1,00\t\t0,25\t\t32,00€\t0,25\tONIP | LAQUE FRANCAISE | ALKYDE | SATIN | 165E COULEURS ONIP\t🟡 Entamé\nP0303\t\tONIP\tBLEU\t1,00\t\t1,00\t\t32,00€\t1,00\tONIP | LAQUE FRANCAISE | ALKYDE | SATIN | 154D COULEURS ONIP\t🟢 Plein\nP0304\t\tONIP\tBLEU\t1,00\t\t1,00\t\t32,00€\t1,00\tONIP | LAQUE FRANCAISE | ALKYDE | SATIN | 163E\t🟢 Plein\nP0305\t\tLUCITE\tBLEU\t1,00\t\t1,00\t\t33,79€\t1,00\tLUCITE | MAISON DU PEINTRE | SPECIAL BOIS | | 163E\t🟢 Plein\nP0306\t\tLUCITE\tBLEU\t1,00\t\t1,00\t\t33,79€\t1,00\tLUCITE | MAISON DU PEINTRE | PEINTURE MULTIFONCTION FACADE | MAT VELOUTE | RAL 5024\t🟢 Plein\nP0307\t\tLUCITE\tBLEU\t1,00\t\t1,00\t\t33,79€\t1,00\tLUCITE | MAISON DU PEINTRE | SPECIAL BOIS | | 154D COULEURS ONIP\t🟢 Plein\nP0308\t\tLUCITE\tBLEU\t1,00\t\t0,25\t\t33,79€\t0,25\tLUCITE | MAISON DU PEINTRE | SPECIAL BOIS | | BLEU OUTREMER EQUIVALENT\t🟡 Entamé\nP0309\t\tLUCITE\tBLEU\t1,00\t\t0,50\t\t33,79€\t0,50\tLUCITE | MAISON DU PEINTRE | PEINTURE MULTIFONCTION FACADE | MAT VELOUTE | RAL 5020\t🟡 Entamé\nP0310\t\tLUCITE\tBLEU\t1,00\t\t1,00\t\t33,79€\t1,00\tLUCITE | MAISON DU PEINTRE | PEINTURE MULTIFONCTION FACADE | MAT VELOUTE | RAL 5022\t🟢 Plein\nP0311\t\tLUCITE\tBLEU\t1,00\t\t0,50\t\t33,79€\t0,50\tLUCITE | MAISON DU PEINTRE | | MAT SATINE | 147E\t🟡 Entamé\nP0312\t\tUNIKALO\tBLEU\t0,75\t\t1,00\t\t22,53€\t1,00\tUNIKALO | K'AREA EXTREM | TS | | UNIK 089-5C\t🟢 Plein\nP0313\t\tUNIKALO\tBLEU\t0,75\t\t1,00\t\t22,53€\t1,00\tUNIKALO | K'AREA EXTREM | TS | | RAL 5001\t🟢 Plein\nP0314\t\tUNIKALO\tBLEU\t0,75\t\t1,00\t\t28,30€\t1,00\tUNIKALO | O2 LAQUE BRILLANT | | | RAL5005\t🟢 Plein\nP0315\t\tUNIKALO\tBLEU\t0,75\t\t1,00\t\t28,30€\t1,00\tUNIKALO | O2 LAQUE BRILLANT | | | RAL5002\t🟢 Plein\nP0316\t\tUNIKALO\tBLEU\t0,75\t\t1,00\t\t22,00€\t1,00\tUNIKALO | UNISTOP BOIS | ACRYLIQUE | SATIN | UNI 072-2A\t🟢 Plein\nP0317\t\tUNIKALO\tBLEU\t0,75\t\t0,50\t\t21,53€\t0,50\tUNIKALO | AQUAPRIM | | | UNIK D 317 MINUIT\t🟡 Entamé\nP0318\t\tUNIKALO\tBLEU\t0,75\t\t0,50\t\t22,00€\t0,50\tUNIKALO | UNISTOPBOIS | | SATIN | RAL 5017\t🟡 Entamé\nP0319\t\tUNIKALO\tBLEU\t0,75\t\t1,00\t\t22,00€\t1,00\tUNIKALO | UNISTOPBOIS | | SATIN | UNIK F 11151\t🟢 Plein\nP0320\t\tUNIKALO\tBLEU\t3,00\t\t1,00\t\t21,53€\t1,00\tUNIKALO | AQUAPRIM FINITION | | | UNIK 050-7C BLEU CLAIR\t🟢 Plein\nP0321\t\tUNIKALO\tBLEU\t3,00\t\t0,75\t\t21,53€\t0,75\tUNIKALO | AQUAPRIM FINITION | | | UNIK 050-7C BLEU CLAIR\t🟡 Entamé\nP0322\t\ttollens\tBLEU\t3,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTE | CR4112-2 FIDJI\t🟢 Plein\nP0323\t\ttollens\tBLEU\t3,00\t\t1,00\t\t23,60€\t1,00\tTOLLENS | ELASTOP | | | CR4102-5 BLEU ARUBA\t🟢 Plein\nP0324\t\ttollens\tBLEU\t3,00\t\t0,25\t\t38,19€\t0,25\tTOLLENS | CROSS | | VELOUTE | RAL 5015\t🟡 Entamé\nP0325\t\ttollens\tBLEU\t3,00\t\t0,25\t\t38,19€\t0,25\tTOLLENS | CROSS | | VELOUTE | BLEU VERT CANARD ?\t🟡 Entamé\nP0326\t\tSEIGNEURIE\tBLEU\t1,00\t\t1,00\t\t\t1,00\tSEIGNEURIE | TEXWOOD PREMIUM | | | RAL 5011\t🟢 Plein\nP0327\t\tTHEOLAUR PEINTURE\tBLEU\t1,00\t\t0,75\t\t\t0,75\tTHEOLAUR PEINTURE | ECLAMAT SUPER | | | CH2 0635\t🟡 Entamé\nP0328\t\tKIRIA INDUSTRIE\tBLEU\t1,00\t\t0,50\t\t\t0,50\tKIRIA INDUSTRIE | COWITHANE | #NOM? | SATIN | CH2 0630\t🟡 Entamé\nP0329\t\tV33\tBLEU\t0,50\t\t0,50\t\t\t0,50\tV33 | CLIMAT EXTREME | PEINTURE BOIS | | RAL 5003\t🟡 Entamé\nP0330\t\tFARROW AND BALL\tBLEU\t0,75\t\t1,00\t\t\t1,00\tFARROW AND BALL | | | | PITCH BLUE N°220\t🟢 Plein\nP0331\t\tLITTLE GREEN\tBLEU\t1,00\t\t1,00\t\t\t1,00\tLITTLE GREEN | LA MAISON VERLINDE | | | TLG12 HICKS BLUE 208\t🟢 Plein\nP0332\t\ttollens\tBLEU\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTE | CR4103-1 TOPAZE BLEU\t🟢 Plein\nP0333\t\ttollens\tBLEU\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTE | 110,30,16 ?\t🟢 Plein\nP0334\t\tONE SHOT\tBLEU\t0,95\t\t1,00\t\t33,29€\t1,00\tONE SHOT | CROMAFLO 6000 | | |\t🟢 Plein\nP0335\t\tONE SHOT\tBLEU\t0,95\t\t1,00\t\t27,50€\t1,00\tONE SHOT | REDUCTEUR ZZ6001 | LOW | |\t🟢 Plein\nP0336\t\tONE SHOT\tBLEU\t0,95\t\t0,50\t\t27,50€\t0,50\tONE SHOT | REDUCTEUR ZZ6002 | SPEED | |\t🟡 Entamé\nP0337\t\tONE SHOT\tBLEU\t0,24\t\t1,00\t\t29,13€\t1,00\tONE SHOT | | | | ULTRA BLUE ZZ3016\t🟢 Plein\nP0338\t\tONE SHOT\tBLEU\t0,12\t\t0,75\t\t20,79€\t0,75\tONE SHOT | | | | AQUA 049L\t🟡 Entamé\nP0339\t\tONE SHOT\tBLEU\t0,12\t\t0,50\t\t20,79€\t0,50\tONE SHOT | | | | AQUA 049L\t🟡 Entamé\nP0340\t\tONE SHOT\tBLEU\t0,12\t\t1,00\t\t20,79€\t1,00\tONE SHOT | | | | 153 L PROCESS BLUE\t🟢 Plein\nP0341\t\tONE SHOT\tBLEU\t0,12\t\t1,00\t\t20,79€\t1,00\tONE SHOT | | | | 153 L PROCESS BLUE CYAN\t🟢 Plein\nP0342\t\tONE SHOT\tBLEU\t0,12\t\t0,50\t\t20,79€\t0,50\tONE SHOT | | | | 154 L PICKUP BLUE\t🟡 Entamé\nP0343\t\tONE SHOT\tBLEU\t0,12\t\t0,75\t\t20,79€\t0,75\tONE SHOT | | | | 154 L PICKUP BLUE / BLUE PAON\t🟡 Entamé\nP0344\t\tONE SHOT\tBLEU\t0,12\t\t1,00\t\t20,79€\t1,00\tONE SHOT | | | | 154 L PICKUP BLUE / BLUE PAON\t🟢 Plein\nP0345\t\tONE SHOT\tBLEU\t0,12\t\t0,25\t\t20,79€\t0,25\tONE SHOT | | | | 158 L DARK BLUE\t🟡 Entamé\nP0346\t\tONE SHOT\tBLEU\t0,12\t\t0,50\t\t20,79€\t0,50\tONE SHOT | | | | 155 L BLUE REFLEX\t🟡 Entamé\nP0347\t\tONE SHOT\tBLEU\t0,12\t\t0,25\t\t20,79€\t0,25\tONE SHOT | | | | 152 L BLUE PALE\t🟡 Entamé\nP0348\t\tONE SHOT\tBLEU\t0,24\t\t1,00\t\t29,13€\t1,00\tONE SHOT | | | | 154 L PICKUP BLUE\t🟢 Plein\nP0349\t\tONE SHOT\tBLEU\t0,24\t\t1,00\t\t29,13€\t1,00\tONE SHOT | | | | 154 L PICKUP BLUE\t🟢 Plein\nP0350\t\tONE SHOT\tBLEU\t0,24\t\t1,00\t\t29,13€\t1,00\tONE SHOT | | | | 154 L PICKUP BLUE\t🟢 Plein\nP0351\t\tONE SHOT\tBLEU\t0,24\t\t1,00\t\t29,13€\t1,00\tONE SHOT | | | | 158 L DARK BLUE\t🟢 Plein\nP0352\t\tONE SHOT\tBLEU\t0,24\t\t1,00\t\t29,13€\t1,00\tONE SHOT | | | | 158 L DARK BLUE\t🟢 Plein\nP0353\t\tONE SHOT\tBLEU\t0,24\t\t0,50\t\t29,13€\t0,50\tONE SHOT | | | | 158 L DARK BLUE\t🟡 Entamé\nP0354\t\tONE SHOT\tBLEU\t0,24\t\t0,50\t\t29,13€\t0,50\tONE SHOT | | | | 155 L BLUE REFLEX\t🟡 Entamé\nP0355\t\tONE SHOT\tBLEU\t0,24\t\t1,00\t\t29,13€\t1,00\tONE SHOT | | | | 152 L BLUE PALE\t🟢 Plein\nP0356\t\tONE SHOT\tBLEU\t0,24\t\t0,25\t\t29,13€\t0,25\tONE SHOT | | | | 158 L DARK BLUE\t🟡 Entamé\nP0357\t\tONE SHOT\tBLEU\t0,24\t\t1,00\t\t29,13€\t1,00\tONE SHOT | | | | 153 L\t🟢 Plein\nP0358\t\tONE SHOT\tBLEU\t0,24\t\t0,25\t\t29,13€\t0,25\tONE SHOT | | | | 152 L BLUE PALE\t🟡 Entamé\nP0359\t\tCRAFTMASTER\tBLEU\t0,13\t\t1,00\t\t19,00€\t1,00\tCRAFTMASTER | | | | GOLF SKY BLUE\t🟢 Plein\nP0360\t\tUNIKALO\tBLEU\t0,75\t\t1,00\t\t15,60€\t1,00\tUNIKALO | AD PRIM | | | RAL 5005\t🟢 Plein\nP0361\t\tKERIA\tBLEU\t1,00\t\t0,25\t\t\t0,25\tKERIA | | | | CH10840\t🟡 Entamé\nP0362\t\tONE SHOT\tBLEU\t0,24\t\t1,00\t\t29,13€\t1,00\tONE SHOT | | | | 155 L REFLEX BLUE\t🟢 Plein\nP0363\t\tRONAN\tBLEU\t0,13\t\t0,25\t\t21,00€\t0,25\tRONAN | | | | L152 LIGHT BLUE\t🟡 Entamé\nP0364\t\ttollens\tBLEU\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTÉ | RAL 5018\t🟢 Plein\nP0365\t\ttollens\tBLEU\t1,00\t\t0,50\t\t38,19€\t0,50\tTOLLENS | CROSS | | VELOUTÉ | T2005-4 DELPHINIUM\t🟡 Entamé\nP0366\t\tLUCITE\tBLEU\t1,00\t\t0,25\t\t29,78€\t0,25\tLUCITE | SPECIAL BOIS | | | BASE 0 3102\t🟡 Entamé\nP0367\t\tONE SHOT\tBLEU\t0,24\t\t0,50\t\t29,13€\t0,50\tONE SHOT | | | | 158 L DARK BLUE\t🟡 Entamé\nP0368\t\tONE SHOT\tBLEU\t0,12\t\t1,00\t\t20,79€\t1,00\tONE SHOT | | | | 152 L BLUE PALE\t🟢 Plein\nP0369\t\tUNIKALO\tBLEU\t3,00\t\t0,25\t\t\t0,25\tUNIKALO | | | | BLEU FONCE ASFODEL\t🟡 Entamé\nP0370\t\tUNIKALO\tBLEU\t0,75\t\t0,50\t\t\t0,50\tUNIKALO | AQUAPRIM FINITION | | | RAL 5008\t🟡 Entamé\nP0371\t\tTOLLENS\tBLEU\t1,00\t\t1,00\t\t\t1,00\tTOLLENS | CROSS | | VELOUTE | T 2018-6 BLEU LUZIEN\t🟢 Plein\nP0372\t\tTOLLENS\tVERT\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | | CROSS | VELOUTE | RAL 6002\t🟢 Plein\nP0373\t\tTOLLENS\tVERT\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | | CROSS | VELOUTE | RAL 6027\t🟢 Plein\nP0374\t\tTOLLENS\tVERT\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | | CROSS | VELOUTE | T2025-2 CREEK\t🟢 Plein\nP0375\t\tTOLLENS\tVERT\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | | CROSS | VELOUTE | CR4037-6 ABSYNTHE\t🟢 Plein\nP0376\t\tTOLLENS\tVERT\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | | CROSS | VELOUTE | CH20805 VERT BAMBOU\t🟢 Plein\nP0377\t\tTOLLENS\tVERT\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | | CROSS | VELOUTE | 180E\t🟢 Plein\nP0378\t\tTOLLENS\tVERT\t1,00\t\t0,25\t\t38,19€\t0,25\tTOLLENS | | CROSS | VELOUTE | T2038-5 VERTE IMPERIAL\t🟡 Entamé\nP0379\t\tTOLLENS\tVERT\t1,00\t\t0,50\t\t38,19€\t0,50\tTOLLENS | | CROSS | VELOUTE | CR4125-3 HAÏTI\t🟡 Entamé\nP0380\t\tTOLLENS\tVERT\t1,00\t\t0,25\t\t38,19€\t0,25\tTOLLENS | | CROSS | VELOUTE | CH10965 VERT BAMBOU\t🟡 Entamé\nP0381\t\tTOLLENS\tVERT\t1,00\t\t0,50\t\t38,19€\t0,50\tTOLLENS | | CROSS | VELOUTE | T2025-5 VOYAGE\t🟡 Entamé\nP0382\t\tTOLLENS\tVERT\t1,00\t\t0,25\t\t38,19€\t0,25\tTOLLENS | | CROSS | VELOUTE | T2037-4 ACHE\t🟡 Entamé\nP0383\t\tTOLLENS\tVERT\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | | CROSS | VELOUTE | T2308-6 VERT LEKEITIO\t🟢 Plein\nP0384\t\tTOLLENS\tVERT\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | | CROSS | VELOUTE | RAL 6002\t🟢 Plein\nP0385\t\tTOLLENS\tVERT\t1,00\t\t0,50\t\t38,19€\t0,50\tTOLLENS | | CROSS | VELOUTE | T2041-5 FOUGERE\t🟡 Entamé\nP0386\t\tTOLLENS\tVERT\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | | CROSS | VELOUTE | CR4126-6 TIGE\t🟢 Plein\nP0387\t\tTOLLENS\tVERT\t1,00\t\t0,50\t\t38,19€\t0,50\tTOLLENS | | CROSS | VELOUTE | RAL 6019\t🟡 Entamé\nP0388\t\tTOLLENS\tVERT\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | | CROSS | VELOUTE | CR4124-1 DARGELING\t🟢 Plein\nP0389\t\tTOLLENS\tVERT\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | | CROSS | VELOUTE | CR4125-3 HAÏTI\t🟢 Plein\nP0390\t\tTOLLENS\tVERT\t1,00\t\t0,25\t\t38,19€\t0,25\tTOLLENS | | CROSS | VELOUTE | T2033-5\t🟡 Entamé\nP0391\t\tTOLLENS\tVERT\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | | CROSS | VELOUTE | CRF091-3 OXYDE DE CUIVRE\t🟢 Plein\nP0392\t\tTOLLENS\tVERT\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | | CROSS | VELOUTE | T2023-2 SAPIN\t🟢 Plein\nP0393\t\tTOLLENS\tVERT\t1,00\t\t0,50\t\t38,19€\t0,50\tTOLLENS | | CROSS | VELOUTE | T2036-2 FEUILLE DE BLETE\t🟡 Entamé\nP0394\t\tTOLLENS\tVERT\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | | CROSS | VELOUTE | RAL 6019\t🟢 Plein\nP0395\t\tTOLLENS\tVERT\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | | CROSS | VELOUTE | T2046-6 ORTIE\t🟢 Plein\nP0396\t\tTOLLENS\tVERT\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | | CROSS | VELOUTE | T2041-6 VERT BOUTEILLE\t🟢 Plein\nP0397\t\tLUCITE\tVERT\t1,00\t\t0,25\t\t33,79€\t0,25\tLUCITE | SPECIAL BOIS | | | RAL 6012\t🟡 Entamé\nP0398\t\tLUCITE\tVERT\t1,00\t\t1,00\t\t29,78€\t1,00\tLUCITE | MICROPOREUX | | | 042E\t🟢 Plein\nP0399\t\tLUCITE\tVERT\t1,00\t\t0,25\t\t33,79€\t0,25\tLUCITE | | | | CH10960 VERT DANA CHROMATIQUE\t🟡 Entamé\nP0400\t\tUNIKALO\tVERT\t0,75\t\t1,00\t\t22,53€\t1,00\tUNIKALO | KREA EXTREM | | | UNIK090-3 B\t🟢 Plein\nP0401\t\tUNIKALO\tVERT\t0,75\t\t0,50\t\t22,53€\t0,50\tUNIKALO | KREA EXTREM | | | RAL 6001\t🟡 Entamé\nP0402\t\tUNIKALO\tVERT\t0,75\t\t1,00\t\t22,53€\t1,00\tUNIKALO | KREA EXTREM | | | F2206\t🟢 Plein\nP0403\t\tUNIKALO\tVERT\t0,75\t\t0,25\t\t22,53€\t0,25\tUNIKALO | KREA EXTREM | | | UNIK 149-3D\t🟡 Entamé\nP0404\t\tUNIKALO\tVERT\t0,75\t\t0,25\t\t21,50€\t0,25\tUNIKALO | AQUAPRIM FINITION | | | UNIK D308 MOUSSE\t🟡 Entamé\nP0405\t\tUNIKALO\tVERT\t0,75\t\t1,00\t\t21,50€\t1,00\tUNIKALO | AQUAPRIM FINITION | | | CR4120-3 ALUVION\t🟢 Plein\nP0406\t\tUNIKALO\tVERT\t0,75\t\t1,00\t\t21,50€\t1,00\tUNIKALO | AQUAPRIM FINITION | | | CH20758 VERT ROTALA\t🟢 Plein\nP0407\t\tUNIKALO\tVERT\t0,75\t\t0,50\t\t19,00€\t0,50\tUNIKALO | UNISTOP BOIS | | | UNIK 072-5B\t🟡 Entamé\nP0408\t\tUNIKALO\tVERT\t0,75\t\t0,50\t\t19,00€\t0,50\tUNIKALO | UNISTOP BOIS | | | UNIK 072-7C\t🟡 Entamé\nP0409\t\tUNIKALO\tVERT\t0,75\t\t1,00\t\t19,00€\t1,00\tUNIKALO | UNISTOP BOIS | | | UNIK F2206\t🟢 Plein\nP0410\t\tV33\tVERT\t2,50\t\t0,50\t\t\t0,50\tV33 | CLIMAT EXTREME | | | RAL 6005\t🟡 Entamé\nP0411\t\tTOLLENS\tVERT\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | TOLL ALL STAR | | | 3T22187\t🟢 Plein\nP0412\t\tTOLLENS\tVERT\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | TOLL ALL STAR | | SATIN | 1149 VERLINDE\t🟢 Plein\nP0413\t\tUNIKALO\tVERT\t0,75\t\t1,00\t\t22,53€\t1,00\tUNIKALO | | | | TOLL T2046-6\t🟢 Plein\nP0414\t\tUNIKALO\tVERT\t0,75\t\t1,00\t\t22,53€\t1,00\tUNIKALO | | | | TOLL T2046-4\t🟢 Plein\nP0415\t\tUNIKALO\tVERT\t0,75\t\t0,50\t\t22,53€\t0,50\tUNIKALO | | | | UNIK075-6\t🟡 Entamé\nP0416\t\tV33\tVERT\t0,50\t\t0,50\t\t\t0,50\tV33 | DIRECT PROTECT | | SATIN | GARRIGUE\t🟡 Entamé\nP0417\t\tNEPTUNE\tVERT\t0,75\t\t1,00\t\t\t1,00\tNEPTUNE | NEPTOLUX | | | VERT JARDIN 176\t🟢 Plein\nP0418\t\tONE SHOT\tVERT\t0,18\t\t0,50\t\t16,96€\t0,50\tONE SHOT | | | | 141 L SUBLIME GREEN\t🟡 Entamé\nP0419\t\tONE SHOT\tVERT\t0,18\t\t1,00\t\t16,96€\t1,00\tONE SHOT | | | | 142 L VERT EMERAUDE\t🟢 Plein\nP0420\t\tONE SHOT\tVERT\t0,18\t\t0,25\t\t16,96€\t0,25\tONE SHOT | | | | 144 L VERT MOYEN\t🟡 Entamé\nP0421\t\tONE SHOT\tVERT\t0,18\t\t0,25\t\t16,96€\t0,25\tONE SHOT | | | | 157 L\t🟡 Entamé\nP0422\t\tONE SHOT\tVERT\t0,18\t\t1,00\t\t16,96€\t1,00\tONE SHOT | | | | 142 L VERT EMERAUDE\t🟢 Plein\nP0423\t\tONE SHOT\tVERT\t0,18\t\t0,25\t\t16,96€\t0,25\tONE SHOT | | | | 143 L PROCESS GREEN\t🟡 Entamé\nP0424\t\tONE SHOT\tVERT\t0,18\t\t0,50\t\t16,96€\t0,50\tONE SHOT | | | | 142 L VERT EMERAUDE\t🟡 Entamé\nP0425\t\tONE SHOT\tVERT\t0,24\t\t1,00\t\t24,13€\t1,00\tONE SHOT | | | | 142 L VERT EMERAUDE\t🟢 Plein\nP0426\t\tONE SHOT\tVERT\t0,24\t\t0,25\t\t24,13€\t0,25\tONE SHOT | | | | 142 L VERT EMERAUDE\t🟡 Entamé\nP0427\t\tONE SHOT\tVERT\t0,24\t\t0,25\t\t24,13€\t0,25\tONE SHOT | | | | 148 L DARK GREEN\t🟡 Entamé\nP0428\t\tCRAFTMASTER\tVERT\t0,13\t\t0,50\t\t13,00€\t0,50\tCRAFTMASTER | | | | BRITISH RACING GREEN\t🟡 Entamé\nP0429\t\tONE SHOT\tVERT\t0,24\t\t0,50\t\t24,13€\t0,50\tONE SHOT | | | | 148 L DARK GREEN\t🟡 Entamé\nP0430\t\tRONAN\tVERT\t0,13\t\t0,50\t\t14,50€\t0,50\tRONAN | | | | PROCESS GREEN\t🟡 Entamé\nP0431\t\tTOLLENS\tVERT\t1,00\t\t0,75\t\t38,19€\t0,75\tTOLLENS | CROSS | ACRYLIQUE | VELOUTÉ | CR4135-6 VERT WAGON\t🟡 Entamé\nP0432\t\tTOLLENS\tVERT\t1,00\t\t1,00\t\t\t1,00\tTOLLENS | CROSS | ACRYLIQUE | VELOUTÉ | CR 4138-6 BRONTOSAURE\t🟢 Plein\nP0433\t\tTOLLENS\tVERT\t1,00\t\t1,00\t\t\t1,00\tTOLLENS | CROSS | ACRYLIQUE | VELOUTÉ | UNIK F1169 (VERT KAKI)\t🟢 Plein\nP0434\t\tTOLLENS\tMARRON\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTE | CR 4092-2 NOTE CACAOTE\t🟢 Plein\nP0435\t\tTOLLENS\tMARRON\t1,00\t\t0,75\t\t38,19€\t0,75\tTOLLENS | CROSS | | VELOUTE | T2160-2 MUSC\t🟡 Entamé\nP0436\t\tTOLLENS\tMARRON\t1,00\t\t1,00\t\t38,19€\t1,00\tTOLLENS | CROSS | | VELOUTE | T2124-5 OUISTITI\t🟢 Plein\nP0437\t\tTOLLENS\tMARRON\t3,00\t\t0,75\t\t38,19€\t0,75\tTOLLENS | CROSS | | VELOUTE | CR 4092-2 NOTE CACAOTE\t🟡 Entamé\nP0438\t\tUNIKALO\tMARRON\t0,75\t\t0,25\t\t21,00€\t0,00\tUNIKALO | AQUAPRIM FINITION | | | UNIK D 325 PIN UP\t🔴 Vide\nP0439\t\tONE SHOT\tMARRON\t0,12\t\t0,50\t\t14,13€\t0,50\tONE SHOT | | | | 114 L MEDIUM BROWN\t🟡 Entamé\nP0440\t\tONE SHOT\tMARRON\t0,12\t\t0,25\t\t14,13€\t0,25\tONE SHOT | | | | 108 L MAROON\t🟡 Entamé\nP0441\t\tONE SHOT\tMARRON\t0,12\t\t0,50\t\t14,13€\t0,50\tONE SHOT | | | | 108 L MAROON\t🟡 Entamé\nP0442\t\tONE SHOT\tMARRON\t0,12\t\t0,50\t\t14,13€\t0,50\tONE SHOT | | | | 114 L MEDIUM BROWN\t🟡 Entamé\nP0443\t\tONE SHOT\tMARRON\t0,12\t\t0,75\t\t14,13€\t0,75\tONE SHOT | | | | 114 L MEDIUM BROWN\t🟡 Entamé\nP0444\t\tONE SHOT\tMARRON\t0,12\t\t1,00\t\t14,13€\t1,00\tONE SHOT | | | | 115 L DARK BROWN\t🟢 Plein\nP0445\t\tONE SHOT\tMARRON\t0,24\t\t0,75\t\t21,00€\t0,75\tONE SHOT | | | | 117 L HAVANE\t🟡 Entamé\nP0446\t\tONE SHOT\tMARRON\t0,24\t\t0,75\t\t21,00€\t0,75\tONE SHOT | | | | 108 L MAROON\t🟡 Entamé\nP0447\t\tONE SHOT\tMARRON\t0,24\t\t0,50\t\t21,00€\t0,50\tONE SHOT | | | | 108 L MAROON\t🟡 Entamé\nP0448\t\tONE SHOT\tMARRON\t0,24\t\t0,75\t\t21,00€\t0,75\tONE SHOT | | | | 114 L MEDIUM BROWN\t🟡 Entamé\nP0449\t\tONE SHOT\tMARRON\t0,24\t\t1,00\t\t21,00€\t1,00\tONE SHOT | | | | 114 L MEDIUM BROWN\t🟢 Plein\nP0450\t\tCRAFT MASTER\tMARRON\t0,24\t\t1,00\t\t18,33€\t1,00\tCRAFT MASTER | | | | RAW SIENNA\t🟢 Plein\nP0451\t\tTHEODORE\tMARRON\t0,50\t\t0,50\t\t24,52€\t0,50\tTHEODORE | GLYCERO | | | TON BOIS 641\t🟡 Entamé\nP0452\t\tONE SHOT\tMARRON\t0,24\t\t1,00\t\t21,00€\t1,00\tONE SHOT | | | | 115 L DARK BROWN\t🟢 Plein\nP0453\t\tONE SHOT\tMARRON\t0,12\t\t0,75\t\t14,13€\t0,75\tONE SHOT | | | | 108 L MAROON\t🟡 Entamé\nP0454\t\tTOLLENS\tMARRON\t1,00\t\t2,00\t\t\t2,00\tTOLLENS | CROSS | | VELOUTE | T 2164-5 BRANDY\t🟢 Plein\nP0455\t\tTOLLENS\tMARRON\t1,00\t\t2,00\t\t\t2,00\tTOLLENS | CROSS | | VELOUTE | T 2125-3 BOIS D’AZOBÉ\t🟢 Plein\nP0456\tRC000027\ttollens\tBLEU\t1,00\t19/07/2026\t1,00\t\t10,00€\t0,00\tTOLLENS | CROSS | | VELOUTÉ | RAL 5011\tRéservé\nP0457\tRC000027\ttollens\tBLEU\t1,00\t19/07/2026\t1,00\t\t10,00€\t0,00\tTOLLENS | CROSS | | VELOUTÉ | RAL 5011\tRéservé\nP0458\tRC000027\ttollens\tBLEU\t1,00\t19/07/2026\t1,00\t\t10,00€\t0,50\tTOLLENS | CROSS | | VELOUTÉ | RAL 5011\tRéservé\nP0459\tRC000028\ttollens\tBLEU\t1,00\t19/07/2026\t1,00\t\t21,00€\t0,00\tTOLLENS | CROSS | | VELOUTÉ | RAL 5002\tRéservé\nP0460\tRC000030\tTOLLENS\tGRIS\t1,00\t19/07/2026\t1,00\t\t10,80€\t0,00\tTOLLENS | CROSS | ACRYLIQUE | VELOUTE | RAL 7031\tRéservé\nP0461\tRC000030\tTOLLENS\tGRIS\t1,00\t19/07/2026\t1,00\t\t10,80€\t0,00\tTOLLENS | CROSS | ACRYLIQUE | VELOUTE | RAL 7031\tRéservé\nP0462\tRC000030\tTOLLENS\tGRIS\t1,00\t19/07/2026\t1,00\t\t10,80€\t0,00\tTOLLENS | CROSS | ACRYLIQUE | VELOUTE | RAL 7031\tRéservé\nP0463\tRC000030\tTOLLENS\tGRIS\t1,00\t19/07/2026\t1,00\t\t10,80€\t0,00\tTOLLENS | CROSS | ACRYLIQUE | VELOUTE | RAL 7031\tRéservé\nP0464\tRC000030\tTOLLENS\tGRIS\t1,00\t19/07/2026\t1,00\t\t10,80€\t0,75\tTOLLENS | CROSS | ACRYLIQUE | VELOUTE | RAL 7031\tRéservé\nP0465\tRC000031\tUNIKALO\tBLANC\t0,75\t19/07/2026\t0,75\t\t15,00€\t0,50\tUNIKALO | AQUAPRIM FINITION | | | BLANC\tRéservé\nP0466\tRC000029\tUNIKALO\tMARRON\t0,75\t19/07/2026\t0,75\t\t14,00€\t0,50\tUNIKALO | AQUAPRIM FINITION | | | UNIK D 325 PIN UP\tRéservé\n";
+const BESOIN_INITIAL_TSV = "A\tTOLLENS | CROSS | ACRYLIQUE | VELOUTE | 9001\t1,00\nA\tTOLLENS | CROSS | | VELOUTÉ | RAL 5011\t3,00\nA\tTOLLENS | CROSS | | VELOUTÉ | RAL 5002\t2,00\nB\tUNIKALO | AQUAPRIM FINITION | | | UNIK D 325 PIN UP\t0,50\nC\tTOLLENS | CROSS | ACRYLIQUE | VELOUTE | RAL 7031\t5,00\n";
+
+function parseFrNum(s){ if(!s) return 0; const c = String(s).replace('€','').replace(/\s/g,'').replace(',', '.'); const n = parseFloat(c); return isNaN(n) ? 0 : n; }
+function parseFrDate(s){ if(!s) return ''; const m = String(s).trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/); if(!m) return ''; return m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0'); }
+function parseStatut(s){ return String(s||'').replace(/^[^\wÀ-ÿ]+/,'').trim() || 'Plein'; }
+
+const THEMES_CONNUS = ["BLANC","BLEU","CREME BEIGE","GRIS","JAUNE","MARRON","NOIR","ORANGE","ROSE","ROUGE","VERT","VIOLET"];
+
+function statutDepuisStock(stockRestant, contenanceInitiale){
+  if(stockRestant<=0) return 'Vide';
+  if(stockRestant<contenanceInitiale) return 'Entamé';
+  return 'Plein';
+}
+/* La "Clé produit" ne se tape plus jamais à la main : elle est reconstruite
+   automatiquement à partir des 5 champs séparés (Marque, Désignation article,
+   Type, Finition, RAL/Référence couleur), exactement dans l'ordre où ton
+   fichier Excel la construisait déjà. */
+function normaliserCle(s){ return String(s||'').replace(/\s+/g,' ').trim(); }
+/* Clé utilisée UNIQUEMENT pour faire correspondre stock et besoins (pas pour l'affichage) :
+   insensible à la casse, car "TOLLENS" et "tollens" doivent désigner le même produit,
+   même si ton fichier d'origine mélange les deux selon les colonnes. */
+function cleMatching(s){ return normaliserCle(s).toUpperCase(); }
+function calculerCleProduit(pot){
+  return normaliserCle([pot.marque, pot.designationArticle, pot.type, pot.finition, pot.ralReference]
+    .map(s=>(s||'').trim()).join(' | '));
+}
+function designationCourte(cleProduit){
+  const segments = String(cleProduit||'').split('|').map(s=>s.trim()).filter(Boolean);
+  return segments.length ? segments[segments.length-1] : '';
+}
+
+function parseStockInitial(tsv){
+  const pots = [];
+  for(const line of tsv.split('\n')){
+    if(!line.trim()) continue;
+    const c = line.split('\t');
+    const idArticle = (c[0]||'').trim();
+    if(!idArticle) continue;
+    const marque = (c[2]||'').trim();
+    const contenanceInitiale = parseFrNum(c[4]) || 1;
+    const stockRestant = parseFrNum(c[6]);
+    // La clé produit importée était déjà construite comme
+    // "Marque | Désignation article | Type | Finition | RAL/Référence" —
+    // on la ré-éclate ici une fois pour toutes en champs séparés et modifiables.
+    const segments = (c[10]||'').split('|').map(s=>s.trim());
+    pots.push({
+      idArticle,
+      idReservation: (c[1]||'').trim(),
+      marque,
+      fournisseur: marque,
+      themeCouleur: (c[3]||'').trim(),
+      designationArticle: segments[1]||'',
+      type: segments[2]||'',
+      finition: segments[3]||'',
+      ralReference: segments[4]||'',
+      contenanceInitiale,
+      dateReception: parseFrDate(c[5]),
+      stockRestant,
+      dateOuverture: parseFrDate(c[7]),
+      valeurAchat: parseFrNum(c[8]),
+      quantiteDisponibleL: parseFrNum(c[9]),
+      // Le "Statut pot" importé de ton fichier reflétait parfois une disponibilité déjà
+      // réservée (formules non recalculées), pas l'état physique réel du pot. Recalculé
+      // ici à partir du stock restant pour être toujours cohérent avec ce qui s'affiche.
+      statutPot: statutDepuisStock(stockRestant, contenanceInitiale)
+    });
+  }
+  return pots;
+}
+function parseBesoinInitial(tsv){
+  const besoins = [];
+  for(const line of tsv.split('\n')){
+    if(!line.trim()) continue;
+    const c = line.split('\t');
+    if(!(c[0]||'').trim()) continue;
+    besoins.push({ id: uid('b'), chantier:(c[0]||'').trim(), cleProduit:(c[1]||'').trim(), quantiteDemandee: parseFrNum(c[2]), statut:'' });
+  }
+  return besoins;
+}
+
+/* =========================================================================
+   SUPABASE — cet outil suppose qu'on est déjà connecté au niveau Fédération
+   (federation-accueil.html) et qu'on gère un atelier précis. pots/besoins/
+   commandes vivent maintenant dans Supabase, plus en localStorage. La
+   logique métier ci-dessous (FIFO, génération de commande...) reste
+   inchangée — seule la persistance change.
+   ========================================================================= */
+const SUPABASE_URL = 'https://uuuigousvpijskbdhcal.supabase.co';
+const SUPABASE_KEY = 'sb_publishable__YuNj5XCo5YF8lwhwTu5OQ_RDM1Eesp';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+});
+const STORAGE = { currentEst: 'ac_current_est_v1' };
+function getCurrentEstId(){
+  const fromUrl = new URLSearchParams(window.location.search).get('est');
+  if(fromUrl) return fromUrl;
+  return localStorage.getItem(STORAGE.currentEst) || '';
+}
+let ESTABLISHMENT_ID = '';
+function estUrl(page){ return page+'?est='+encodeURIComponent(ESTABLISHMENT_ID); }
+
+function defaultStore(){ return { pots: parseStockInitial(STOCK_INITIAL_TSV), besoins: parseBesoinInitial(BESOIN_INITIAL_TSV), commandes: [], compteurReservation: 0 }; }
+
+function dbPotToJs(row){
+  return { idArticle:row.id_article, idReservation:row.id_reservation||'',
+    marque:row.marque||'', fournisseur:row.fournisseur||'', themeCouleur:row.theme_couleur||'',
+    designationArticle:row.designation_article||'', type:row.type||'', finition:row.finition||'', ralReference:row.ral_reference||'',
+    contenanceInitiale:row.contenance_initiale, dateReception:row.date_reception||'', stockRestant:row.stock_restant,
+    dateOuverture:row.date_ouverture||'', valeurAchat:row.valeur_achat, quantiteDisponibleL:row.quantite_disponible_l,
+    statutPot:row.statut_pot||'Plein' };
+}
+function jsPotToDbInsert(p){
+  return { establishment_id:ESTABLISHMENT_ID, id_article:p.idArticle, id_reservation:p.idReservation||'',
+    marque:p.marque||'', fournisseur:p.fournisseur||'', theme_couleur:p.themeCouleur||'',
+    designation_article:p.designationArticle||'', type:p.type||'', finition:p.finition||'', ral_reference:p.ralReference||'',
+    contenance_initiale:p.contenanceInitiale, date_reception:p.dateReception||null, stock_restant:p.stockRestant,
+    date_ouverture:p.dateOuverture||null, valeur_achat:p.valeurAchat, quantite_disponible_l:p.quantiteDisponibleL,
+    statut_pot:p.statutPot||'Plein' };
+}
+function dbBesoinToJs(row){
+  return { id:row.id, chantier:row.chantier||'', cleProduit:row.cle_produit||'', quantiteDemandee: row.quantite_demandee==null?'':row.quantite_demandee, statut:row.statut||'' };
+}
+function dbCommandeToJs(row){
+  return { cleProduit:row.cle_produit, besoinTotal:row.besoin_total, stockAffecte:row.stock_affecte,
+    quantiteACommander:row.quantite_a_commander, chantiers:row.chantiers||[], potsReserves:row.pots_reserves||[],
+    fournisseur:row.fournisseur||'', idReservation:row.id_reservation||'', dateCommande:row.date_commande||'' };
+}
+function jsCommandeToDbInsert(c){
+  return { establishment_id:ESTABLISHMENT_ID, cle_produit:c.cleProduit, besoin_total:c.besoinTotal, stock_affecte:c.stockAffecte,
+    quantite_a_commander:c.quantiteACommander, chantiers:c.chantiers||[], pots_reserves:c.potsReserves||[],
+    fournisseur:c.fournisseur||'', id_reservation:c.idReservation||'', date_commande:c.dateCommande||null };
+}
+
+async function chargerStore(estId){
+  const [potsRes, besoinsRes, commandesRes, compteurRes] = await Promise.all([
+    sb.from('stock_pots').select('*').eq('establishment_id', estId),
+    sb.from('chantier_besoins').select('*').eq('establishment_id', estId),
+    sb.from('commandes_fournisseur').select('*').eq('establishment_id', estId),
+    sb.from('stock_compteurs').select('compteur_reservation').eq('establishment_id', estId).maybeSingle()
+  ]);
+  if(potsRes.error) throw potsRes.error;
+  if(besoinsRes.error) throw besoinsRes.error;
+  if(commandesRes.error) throw commandesRes.error;
+  if(compteurRes.error) throw compteurRes.error;
+  return {
+    pots: (potsRes.data||[]).map(dbPotToJs),
+    besoins: (besoinsRes.data||[]).map(dbBesoinToJs),
+    commandes: (commandesRes.data||[]).map(dbCommandeToJs),
+    compteurReservation: compteurRes.data ? compteurRes.data.compteur_reservation : 0
+  };
+}
+
+async function dbInsertPot(p){ const { error } = await sb.from('stock_pots').insert(jsPotToDbInsert(p)); if(error) alert('Erreur sauvegarde pot : '+error.message); }
+async function dbDeletePot(idArticle){ const { error } = await sb.from('stock_pots').delete().eq('establishment_id', ESTABLISHMENT_ID).eq('id_article', idArticle); if(error) alert('Erreur suppression pot : '+error.message); }
+async function dbUpdatePot(idArticle, patch){ const { error } = await sb.from('stock_pots').update(patch).eq('establishment_id', ESTABLISHMENT_ID).eq('id_article', idArticle); if(error) alert('Erreur mise à jour pot : '+error.message); }
+async function dbDeleteBesoin(id){ const { error } = await sb.from('chantier_besoins').delete().eq('id', id); if(error) alert('Erreur suppression besoin : '+error.message); }
+async function dbUpdateBesoin(id, patch){ const { error } = await sb.from('chantier_besoins').update(patch).eq('id', id); if(error) alert('Erreur mise à jour besoin : '+error.message); }
+async function dbUpdateCommande(cleProduit, patch){ const { error } = await sb.from('commandes_fournisseur').update(patch).eq('establishment_id', ESTABLISHMENT_ID).eq('cle_produit', cleProduit); if(error) alert('Erreur mise à jour commande : '+error.message); }
+
+async function syncPotsQuantiteDisponible(){
+  const rows = store.pots.map(p=>({ establishment_id:ESTABLISHMENT_ID, id_article:p.idArticle, quantite_disponible_l:p.quantiteDisponibleL }));
+  if(!rows.length) return;
+  const { error } = await sb.from('stock_pots').upsert(rows, { onConflict:'establishment_id,id_article' });
+  if(error) alert('Erreur synchro stock : '+error.message);
+}
+async function syncBesoinsStatut(){
+  const rows = store.besoins.map(b=>({ id:b.id, statut:b.statut||'' }));
+  if(!rows.length) return;
+  const { error } = await sb.from('chantier_besoins').upsert(rows, { onConflict:'id' });
+  if(error) alert('Erreur synchro besoins : '+error.message);
+}
+async function syncCommandesRemplace(){
+  const { error: e1 } = await sb.from('commandes_fournisseur').delete().eq('establishment_id', ESTABLISHMENT_ID);
+  if(e1) return alert('Erreur remplacement commandes : '+e1.message);
+  if(store.commandes.length){
+    const { error: e2 } = await sb.from('commandes_fournisseur').insert(store.commandes.map(jsCommandeToDbInsert));
+    if(e2) alert('Erreur remplacement commandes : '+e2.message);
+  }
+}
+async function syncCompteur(){
+  const { error } = await sb.from('stock_compteurs').upsert({ establishment_id:ESTABLISHMENT_ID, compteur_reservation:store.compteurReservation }, { onConflict:'establishment_id' });
+  if(error) alert('Erreur synchro compteur : '+error.message);
+}
+
+let store = { pots: [], besoins: [], commandes: [], compteurReservation: 0 };
+let alertePeintureAReserver = null;
+let view = 'stock';
+
+/* =========================================================================
+   MOTEUR — portage direct de Code.gs / Commande.gs / Moteur.gs de Tristan.
+   Même algorithme FIFO (pots ouverts les plus anciens d'abord, puis pots
+   pleins les plus anciens), même principe de regroupement des commandes,
+   même logique de réception créant de nouveaux pots.
+
+   Différence assumée par rapport à l'original : un pot est considéré
+   "entamé" si son stock restant est strictement inférieur à SA PROPRE
+   contenance initiale (l'original comparait à 1 L en dur, ce qui suppose
+   des pots d'1 L partout — ici ça marche aussi avec des pots de 0,5 L etc.)
+   ========================================================================= */
+function construireIndexStock(){
+  const index = {};
+  for(const pot of store.pots){
+    const cle = cleMatching(calculerCleProduit(pot));
+    if(!cle || pot.quantiteDisponibleL<=0) continue;
+    (index[cle] = index[cle] || []).push(pot);
+  }
+  for(const cle in index){
+    index[cle].sort((a,b)=>{
+      const ouvertA = a.stockRestant>0 && a.stockRestant<a.contenanceInitiale;
+      const ouvertB = b.stockRestant>0 && b.stockRestant<b.contenanceInitiale;
+      if(ouvertA!==ouvertB) return ouvertA ? -1 : 1;
+      if(ouvertA && ouvertB){
+        const c = (a.dateOuverture||'9999-99-99').localeCompare(b.dateOuverture||'9999-99-99');
+        if(c!==0) return c;
+        return a.quantiteDisponibleL - b.quantiteDisponibleL;
+      }
+      return (a.dateReception||'9999-99-99').localeCompare(b.dateReception||'9999-99-99');
+    });
+  }
+  return index;
+}
+
+function reserverBesoin(cleProduit, quantiteDemandee, indexStock){
+  const resultat = { reservations: [], quantiteReservee: 0, manque: quantiteDemandee };
+  const pots = indexStock[cleProduit];
+  if(!pots || !pots.length) return resultat;
+  let reste = quantiteDemandee;
+  for(const pot of pots){
+    if(reste<=0.000001) break;
+    if(pot.quantiteDisponibleL<=0) continue;
+    const prise = Math.min(pot.quantiteDisponibleL, reste);
+    resultat.reservations.push({ idPot: pot.idArticle, quantiteReservee: prise });
+    pot.quantiteDisponibleL = arrondir(pot.quantiteDisponibleL - prise);
+    reste -= prise;
+    resultat.quantiteReservee += prise;
+  }
+  resultat.quantiteReservee = arrondir(resultat.quantiteReservee);
+  resultat.manque = arrondir(Math.max(0, reste));
+  return resultat;
+}
+
+function genererIdReservation(){
+  store.compteurReservation++;
+  return 'RC' + String(store.compteurReservation).padStart(6,'0');
+}
+
+async function genererCommande(){
+  for(const pot of store.pots) pot.quantiteDisponibleL = arrondir(Math.max(0, pot.stockRestant));
+  for(const b of store.besoins) b.statut = '';
+
+  // Un fournisseur déjà renseigné à la main sur une commande existante est préservé
+  // (le recalcul ne doit pas écraser une correction manuelle de Tristan).
+  const fournisseurManuel = {};
+  for(const c of store.commandes){ if(c.fournisseur) fournisseurManuel[cleMatching(c.cleProduit)] = c.fournisseur; }
+
+  const fournisseurParProduit = {};
+  for(const pot of store.pots){
+    const cle = cleMatching(calculerCleProduit(pot));
+    const f = pot.fournisseur || pot.marque;
+    if(cle && f && !fournisseurParProduit[cle]) fournisseurParProduit[cle] = f;
+  }
+
+  const indexStock = construireIndexStock();
+  const commandesParProduit = {};
+  let nombreBesoinsTraites = 0;
+
+  for(const b of store.besoins){
+    const cleBesoinAffichage = normaliserCle(b.cleProduit);
+    const cleBesoin = cleMatching(b.cleProduit);
+    if(!cleBesoin || !(b.quantiteDemandee>0)) continue;
+    const resultat = reserverBesoin(cleBesoin, b.quantiteDemandee, indexStock);
+
+    resultat.reservations.forEach(r=>{
+      const pot = store.pots.find(p=>p.idArticle===r.idPot);
+      if(pot) pot.quantiteDisponibleL = arrondir(Math.max(0, pot.quantiteDisponibleL));
+    });
+
+    if(!commandesParProduit[cleBesoin]) commandesParProduit[cleBesoin] = {
+      cleProduit: cleBesoinAffichage, besoinTotal:0, stockAffecte:0, quantiteACommander:0, chantiers:[], potsReserves:[],
+      fournisseur: fournisseurManuel[cleBesoin] || fournisseurParProduit[cleBesoin] || '', idReservation: ''
+    };
+    const s = commandesParProduit[cleBesoin];
+    s.besoinTotal = arrondir(s.besoinTotal + b.quantiteDemandee);
+    s.stockAffecte = arrondir(s.stockAffecte + resultat.quantiteReservee);
+    s.quantiteACommander = arrondir(s.quantiteACommander + resultat.manque);
+    if(b.chantier && !s.chantiers.includes(b.chantier)) s.chantiers.push(b.chantier);
+    resultat.reservations.forEach(r=> s.potsReserves.push(r.idPot + ' (' + arrondir(r.quantiteReservee) + ' L)'));
+
+    b.statut = 'Réservé';
+    nombreBesoinsTraites++;
+  }
+
+  Object.values(commandesParProduit).forEach(s=>{ if(s.quantiteACommander>0) s.idReservation = genererIdReservation(); });
+
+  store.commandes = Object.values(commandesParProduit).sort((a,b)=>{
+    const c = (a.fournisseur||'').localeCompare(b.fournisseur||'');
+    return c!==0 ? c : a.cleProduit.localeCompare(b.cleProduit);
+  });
+
+  await Promise.all([syncPotsQuantiteDisponible(), syncBesoinsStatut(), syncCommandesRemplace(), syncCompteur()]);
+  return nombreBesoinsTraites;
+}
+
+async function annulerReservations(){
+  for(const b of store.besoins) b.statut = '';
+  store.commandes = [];
+  await Promise.all([syncBesoinsStatut(), syncCommandesRemplace()]);
+}
+
+function prochainIdArticle(){
+  let plusGrand = 0, largeur = 4;
+  for(const p of store.pots){
+    const m = String(p.idArticle||'').match(/^P(\d+)$/i);
+    if(m){ largeur = Math.max(largeur, m[1].length); plusGrand = Math.max(plusGrand, Number(m[1])); }
+  }
+  return { suivant: plusGrand+1, largeur };
+}
+
+async function receptionnerCommande(cleProduit, contenance, nombrePots, prixTotalHT, dateReception){
+  const commande = store.commandes.find(c=>c.cleProduit===cleProduit);
+  if(!commande) return;
+  let { suivant, largeur } = prochainIdArticle();
+  const valeurUnitaire = arrondir(prixTotalHT / nombrePots, 2);
+  let quantiteRestante = commande.quantiteACommander;
+  const nouveauxPotsReserves = [];
+  const nouveauxPots = [];
+
+  const potModele = store.pots.find(p=>cleMatching(calculerCleProduit(p))===cleMatching(cleProduit)) || {};
+
+  for(let i=0;i<nombrePots;i++){
+    const idArticle = 'P' + String(suivant).padStart(largeur,'0'); suivant++;
+    const quantiteReservee = arrondir(Math.min(contenance, quantiteRestante));
+    const quantiteDisponible = arrondir(contenance - quantiteReservee);
+    const nouveauPot = {
+      idArticle, themeCouleur: potModele.themeCouleur||'', marque: potModele.marque||'',
+      designationArticle: potModele.designationArticle||'', type: potModele.type||'',
+      finition: potModele.finition||'', ralReference: potModele.ralReference||'',
+      fournisseur: potModele.fournisseur || commande.fournisseur || '',
+      contenanceInitiale: contenance, stockRestant: contenance, quantiteDisponibleL: quantiteDisponible,
+      dateReception, dateOuverture: '', valeurAchat: valeurUnitaire, idReservation: commande.idReservation,
+      statutPot: quantiteReservee>0 ? 'Réservé' : 'Plein'
+    };
+    store.pots.push(nouveauPot);
+    nouveauxPots.push(nouveauPot);
+    if(quantiteReservee>0){
+      nouveauxPotsReserves.push(idArticle + ' (' + quantiteReservee + ' L)');
+      quantiteRestante = arrondir(Math.max(0, quantiteRestante - quantiteReservee));
+    }
+  }
+
+  commande.potsReserves = [...commande.potsReserves, ...nouveauxPotsReserves];
+  commande.quantiteACommander = quantiteRestante;
+  commande.dateCommande = dateReception;
+  render();
+
+  const { error: e1 } = await sb.from('stock_pots').insert(nouveauxPots.map(jsPotToDbInsert));
+  if(e1) alert('Erreur enregistrement des pots reçus : '+e1.message);
+  await dbUpdateCommande(cleProduit, { pots_reserves: commande.potsReserves, quantite_a_commander: commande.quantiteACommander, date_commande: commande.dateCommande });
+}
+
+/* =========================================================================
+   ÉCRANS
+   ========================================================================= */
+function statutChip(statut){
+  const map = { 'Plein':'green', 'Entamé':'amber', 'Vide':'red', 'Réservé':'blue' };
+  return `<span class="chip ${map[statut]||''}">${escapeHtml(statut||'—')}</span>`;
+}
+
+let potEnEdition = null; // null | idArticle du pot en cours de saisie verticale
+
+async function ajouterPot(){
+  const idArticle = 'P' + String(prochainIdArticle().suivant).padStart(prochainIdArticle().largeur,'0');
+  const nouveauPot = { idArticle,
+    themeCouleur:'', marque:'', designationArticle:'', type:'', finition:'', ralReference:'', fournisseur:'',
+    contenanceInitiale:1, stockRestant:1, quantiteDisponibleL:1,
+    dateReception: todayStr(), dateOuverture:'', valeurAchat:0, idReservation:'', statutPot:'Plein' };
+  store.pots.unshift(nouveauPot);
+  potEnEdition = idArticle;
+  render();
+  await dbInsertPot(nouveauPot);
+}
+function modifierPot(id){ potEnEdition = id; render(); }
+function fermerEditionPot(){ potEnEdition = null; render(); }
+async function supprimerPot(id){
+  if(!await confirmer('Supprimer ce pot ?')) return;
+  store.pots = store.pots.filter(p=>p.idArticle!==id);
+  if(potEnEdition===id) potEnEdition = null;
+  render();
+  await dbDeletePot(id);
+}
+const POT_CHAMP_TO_COLONNE = { themeCouleur:'theme_couleur', marque:'marque', designationArticle:'designation_article',
+  type:'type', finition:'finition', ralReference:'ral_reference', fournisseur:'fournisseur',
+  contenanceInitiale:'contenance_initiale', stockRestant:'stock_restant', dateReception:'date_reception',
+  dateOuverture:'date_ouverture', valeurAchat:'valeur_achat', statutPot:'statut_pot' };
+async function majPot(id, champ, valeur){
+  const p = store.pots.find(x=>x.idArticle===id); if(!p) return;
+  const patch = {};
+  if(['contenanceInitiale','stockRestant','valeurAchat'].includes(champ)){ p[champ] = Number(valeur)||0; patch[POT_CHAMP_TO_COLONNE[champ]] = p[champ]; }
+  else { p[champ] = valeur; if(POT_CHAMP_TO_COLONNE[champ]) patch[POT_CHAMP_TO_COLONNE[champ]] = (champ==='dateReception'||champ==='dateOuverture') ? (valeur||null) : valeur; }
+  if(champ==='stockRestant' || champ==='contenanceInitiale'){
+    p.quantiteDisponibleL = arrondir(Math.max(0, p.stockRestant));
+    const nouveauStatut = statutDepuisStock(p.stockRestant, p.contenanceInitiale);
+    if(nouveauStatut==='Entamé' && p.statutPot!=='Entamé' && !p.dateOuverture) p.dateOuverture = todayStr();
+    p.statutPot = nouveauStatut;
+    patch.quantite_disponible_l = p.quantiteDisponibleL;
+    patch.statut_pot = p.statutPot;
+    patch.date_ouverture = p.dateOuverture||null;
+  }
+  render();
+  await dbUpdatePot(id, patch);
+}
+
+async function ajouterBesoin(){
+  const { data, error } = await sb.from('chantier_besoins').insert({ establishment_id:ESTABLISHMENT_ID, chantier:'', cle_produit:'', quantite_demandee:null, statut:'' }).select().single();
+  if(error) return alert('Erreur ajout besoin : '+error.message);
+  store.besoins.push(dbBesoinToJs(data));
+  render();
+}
+async function supprimerBesoin(id){
+  store.besoins = store.besoins.filter(b=>b.id!==id);
+  render();
+  await dbDeleteBesoin(id);
+}
+const BESOIN_CHAMP_TO_COLONNE = { chantier:'chantier', cleProduit:'cle_produit', quantiteDemandee:'quantite_demandee', statut:'statut' };
+async function majBesoin(id, champ, valeur){
+  const b = store.besoins.find(x=>x.id===id); if(!b) return;
+  b[champ] = champ==='quantiteDemandee' ? (valeur===''?'':Number(valeur)) : valeur;
+  render();
+  const patch = { [BESOIN_CHAMP_TO_COLONNE[champ]]: champ==='quantiteDemandee' ? (b[champ]===''?null:b[champ]) : b[champ] };
+  await dbUpdateBesoin(id, patch);
+}
+
+async function lancerCalcul(){
+  const n = await genererCommande();
+  render();
+  alert('Calcul terminé.\n\n' + n + ' besoin(s) recalculé(s) depuis le stock physique.');
+}
+async function lancerAnnulation(){
+  if(!await confirmer('Annuler toutes les réservations et commandes en cours ? Le stock réel ne sera pas modifié.')) return;
+  await annulerReservations(); render();
+}
+
+async function ouvrirReception(cleProduit){
+  const commande = store.commandes.find(c=>c.cleProduit===cleProduit); if(!commande) return;
+  const nombrePots = Number(await demander('Nombre de pots reçus pour "' + cleProduit + '" :', '1'));
+  if(!nombrePots || nombrePots<=0) return;
+  const contenance = Number(await demander('Contenance de chaque pot reçu (L) :', '1'));
+  if(!contenance || contenance<=0) return;
+  const prixTotalHT = Number(await demander('Prix total HT des ' + nombrePots + ' pot(s) reçus :', '0'));
+  if(isNaN(prixTotalHT) || prixTotalHT<0) return;
+  const dateReception = await demander('Date de réception (AAAA-MM-JJ) :', todayStr()) || todayStr();
+  await receptionnerCommande(cleProduit, contenance, nombrePots, prixTotalHT, dateReception);
+  render();
+}
+
+function listeClesProduitUniques(){
+  return [...new Set(store.pots.map(p=>calculerCleProduit(p)).filter(Boolean))].sort();
+}
+function datalistClesProduit(){
+  return `<datalist id="listeCleProduits">${listeClesProduitUniques().map(c=>`<option value="${escapeHtml(c)}">`).join('')}</datalist>`;
+}
+
+function optionsThemeHtml(selected){
+  const themes = THEMES_CONNUS.includes(selected) || !selected ? THEMES_CONNUS : [...THEMES_CONNUS, selected];
+  return `<option value="">—</option>` + themes.map(t=>`<option value="${escapeHtml(t)}" ${t===selected?'selected':''}>${escapeHtml(t)}</option>`).join('');
+}
+
+function renderFormulairePot(p){
+  const cle = calculerCleProduit(p);
+  return `
+  <div class="card" style="border-color:#111;margin-bottom:16px">
+    <div class="cardHead">
+      <div class="treeTitle" style="margin:0">Pot ${escapeHtml(p.idArticle)}</div>
+      <button class="ghostBtn" onclick="fermerEditionPot()">Fermer ✕</button>
+    </div>
+    <div class="tiny muted" style="margin-bottom:14px">Remplis chaque champ séparément — la "Clé produit" qui sert à faire correspondre les besoins au stock se construit toute seule en dessous, plus besoin de taper de "|".</div>
+
+    <div class="field"><label>Thème couleur</label><select class="select" onchange="majPot('${p.idArticle}','themeCouleur',this.value)">${optionsThemeHtml(p.themeCouleur)}</select></div>
+    <div class="field"><label>Marque</label><input class="input" value="${escapeHtml(p.marque)}" onchange="majPot('${p.idArticle}','marque',this.value)" placeholder="Ex : TOLLENS"></div>
+    <div class="field"><label>Désignation article (gamme)</label><input class="input" value="${escapeHtml(p.designationArticle)}" onchange="majPot('${p.idArticle}','designationArticle',this.value)" placeholder="Ex : CROSS"></div>
+    <div class="field"><label>Type</label><input class="input" value="${escapeHtml(p.type)}" onchange="majPot('${p.idArticle}','type',this.value)" placeholder="Ex : Acrylique"></div>
+    <div class="field"><label>Finition</label><input class="input" value="${escapeHtml(p.finition)}" onchange="majPot('${p.idArticle}','finition',this.value)" placeholder="Ex : Velouté"></div>
+    <div class="field"><label>RAL / Référence couleur</label><input class="input" value="${escapeHtml(p.ralReference)}" onchange="majPot('${p.idArticle}','ralReference',this.value)" placeholder="Ex : RAL 5011"></div>
+
+    <div class="field" style="background:var(--soft);border-radius:10px;padding:10px 12px">
+      <label style="margin-bottom:2px">Clé produit (générée automatiquement)</label>
+      <div style="font-weight:700">${escapeHtml(cle || '—')}</div>
+    </div>
+
+    <div class="grid2" style="margin-top:14px">
+      <div class="field"><label>Fournisseur</label><input class="input" value="${escapeHtml(p.fournisseur||'')}" onchange="majPot('${p.idArticle}','fournisseur',this.value)" placeholder="= marque si vide"></div>
+      <div class="field"><label>Contenance initiale (L)</label><input class="input" type="number" step="0.01" value="${p.contenanceInitiale}" onchange="majPot('${p.idArticle}','contenanceInitiale',this.value)"></div>
+      <div class="field"><label>Stock restant (L)</label><input class="input" type="number" step="0.01" value="${p.stockRestant}" onchange="majPot('${p.idArticle}','stockRestant',this.value)"></div>
+      <div class="field"><label>Statut</label><div style="padding-top:8px">${statutChip(p.statutPot)}</div></div>
+      <div class="field"><label>Date de réception</label><input class="input" type="date" value="${p.dateReception||''}" onchange="majPot('${p.idArticle}','dateReception',this.value)"></div>
+      <div class="field"><label>Date d'ouverture</label><input class="input" type="date" value="${p.dateOuverture||''}" onchange="majPot('${p.idArticle}','dateOuverture',this.value)"></div>
+      <div class="field"><label>Valeur d'achat (€)</label><input class="input" type="number" step="0.01" value="${p.valeurAchat}" onchange="majPot('${p.idArticle}','valeurAchat',this.value)"></div>
+    </div>
+
+    <div class="toolbar" style="margin-top:14px;margin-bottom:0">
+      <button class="actionBtn" onclick="fermerEditionPot()">Terminé</button>
+      <button class="ghostBtn dangerBtn" onclick="supprimerPot('${p.idArticle}')">Supprimer ce pot</button>
+    </div>
+  </div>`;
+}
+
+function renderStock(){
+  const potEdite = potEnEdition ? store.pots.find(p=>p.idArticle===potEnEdition) : null;
+  return `
+  <div class="section">
+    <div class="toolbar" style="justify-content:space-between">
+      <div class="treeTitle" style="margin:0">Pots en stock (${store.pots.length})</div>
+      <button class="actionBtn" onclick="ajouterPot()">+ Nouveau pot</button>
+    </div>
+
+    ${potEdite ? renderFormulairePot(potEdite) : ''}
+
+    <div style="overflow-x:auto">
+    <table class="table">
+      <tr><th>ID</th><th>Thème</th><th>Désignation</th><th>Fournisseur</th><th>Stock restant / Contenance (L)</th><th>Statut</th><th></th></tr>
+      ${store.pots.map(p=>`
+      <tr${p.idArticle===potEnEdition?' style="background:var(--soft)"':''}>
+        <td>${escapeHtml(p.idArticle)}</td>
+        <td>${escapeHtml(p.themeCouleur||'—')}</td>
+        <td>
+          <div style="font-weight:700">${escapeHtml(designationCourte(calculerCleProduit(p))||'—')}</div>
+          <div class="tiny muted">${escapeHtml(calculerCleProduit(p))}</div>
+        </td>
+        <td>${escapeHtml(p.fournisseur||p.marque||'—')}</td>
+        <td>${p.stockRestant} / ${p.contenanceInitiale}</td>
+        <td>${statutChip(p.statutPot)}</td>
+        <td style="white-space:nowrap">
+          <button class="miniBtn" onclick="modifierPot('${p.idArticle}')">Modifier</button>
+          <button class="ghostBtn dangerBtn" onclick="supprimerPot('${p.idArticle}')">✕</button>
+        </td>
+      </tr>`).join('') || `<tr><td colspan="7" class="tiny muted">Aucun pot pour l'instant.</td></tr>`}
+    </table>
+    </div>
+    <p class="tiny muted" style="margin-top:10px">Le statut (Plein/Entamé/Vide) est calculé automatiquement à partir du "Stock restant" comparé à la contenance. Clique "Modifier" pour ouvrir la fiche complète d'un pot.</p>
+  </div>`;
+}
+
+function renderBesoins(){
+  return `
+  <div class="section">
+    ${alertePeintureAReserver ? `<div class="tiny" style="background:var(--soft);border-radius:10px;padding:10px 14px;margin-bottom:12px">${escapeHtml(alertePeintureAReserver)} <button class="ghostBtn" style="padding:2px 8px" onclick="alertePeintureAReserver=null;render()">Masquer</button></div>` : ''}
+    ${datalistClesProduit()}
+    <div class="toolbar" style="justify-content:space-between">
+      <div class="treeTitle" style="margin:0">Besoins chantier (${store.besoins.length})</div>
+      <div class="toolbar" style="margin:0">
+        <button class="ghostBtn" onclick="lancerAnnulation()">Annuler les réservations</button>
+        <button class="actionBtn" onclick="lancerCalcul()">Calculer / Générer commande</button>
+      </div>
+    </div>
+    <div style="overflow-x:auto">
+    <table class="table">
+      <tr><th>Chantier</th><th>Clé produit</th><th>Besoin (L)</th><th>Statut</th><th></th></tr>
+      ${store.besoins.map(b=>`
+      <tr>
+        <td><input class="input" style="min-width:100px" value="${escapeHtml(b.chantier)}" onchange="majBesoin('${b.id}','chantier',this.value)"></td>
+        <td><input class="input" style="min-width:280px" list="listeCleProduits" value="${escapeHtml(b.cleProduit)}" onchange="majBesoin('${b.id}','cleProduit',this.value)" placeholder="Tape pour chercher dans le stock existant..."></td>
+        <td><input class="input" type="number" step="0.01" style="width:90px" value="${b.quantiteDemandee}" onchange="majBesoin('${b.id}','quantiteDemandee',this.value)"></td>
+        <td>${statutChip(b.statut)}</td>
+        <td><button class="ghostBtn dangerBtn" onclick="supprimerBesoin('${b.id}')">✕</button></td>
+      </tr>`).join('') || `<tr><td colspan="5" class="tiny muted">Aucun besoin pour l'instant.</td></tr>`}
+    </table>
+    </div>
+    <button class="ghostBtn" style="margin-top:10px" onclick="ajouterBesoin()">+ Ajouter un besoin</button>
+    <p class="tiny muted" style="margin-top:10px">Le champ "Clé produit" doit correspondre exactement à une clé du stock (${listeClesProduitUniques().length} produits différents en stock) — commence à taper et choisis dans la liste proposée par le navigateur.</p>
+  </div>`;
+}
+
+async function majCommandeFournisseur(cleProduit, valeur){
+  const c = store.commandes.find(x=>x.cleProduit===cleProduit); if(!c) return;
+  c.fournisseur = valeur;
+  await dbUpdateCommande(cleProduit, { fournisseur: valeur });
+}
+
+function renderBarreCouverture(c){
+  const total = c.besoinTotal || 0.000001;
+  const pctCouvert = Math.max(0, Math.min(100, (c.stockAffecte/total)*100));
+  const pctManque = Math.max(0, 100 - pctCouvert);
+  return `
+  <div style="display:flex;height:14px;border-radius:999px;overflow:hidden;background:var(--redBg);margin:10px 0">
+    <div style="width:${pctCouvert}%;background:var(--green)" title="Pris sur stock : ${c.stockAffecte} L"></div>
+    <div style="width:${pctManque}%;background:var(--red)" title="À commander : ${c.quantiteACommander} L"></div>
+  </div>`;
+}
+
+function renderCommande(){
+  const commandes = [...store.commandes].sort((a,b)=> (b.quantiteACommander>0) - (a.quantiteACommander>0));
+  const nbACommander = store.commandes.filter(c=>c.quantiteACommander>0).length;
+  return `
+  <div class="section">
+    <div class="toolbar" style="justify-content:space-between">
+      <div class="treeTitle" style="margin:0">Commandes fournisseur (${store.commandes.length})</div>
+      ${store.commandes.length ? `<span class="chip ${nbACommander>0?'red':'green'}">${nbACommander>0 ? nbACommander+' produit(s) à commander' : 'Tout est couvert par le stock'}</span>` : ''}
+    </div>
+    ${commandes.map(c=>{
+      const couvert = c.quantiteACommander<=0;
+      return `
+      <div class="card" style="border-color:${couvert?'var(--line)':'var(--ink)'};${couvert?'opacity:.7':''}">
+        <div class="cardHead">
+          <div><b>${escapeHtml(designationCourte(c.cleProduit)||c.cleProduit)}</b><div class="tiny muted">${escapeHtml(c.cleProduit)}</div><div class="tiny muted">Chantiers : ${escapeHtml(c.chantiers.join(' | ')||'—')}</div></div>
+          <div style="text-align:right">
+            <div class="chip blue">${escapeHtml(c.idReservation||'sans réservation')}</div>
+            ${!couvert?`<div style="margin-top:6px"><button class="actionBtn" onclick="ouvrirReception('${c.cleProduit.replace(/'/g,"\\'")}')">Réceptionner</button></div>`:''}
+          </div>
+        </div>
+
+        ${renderBarreCouverture(c)}
+        <div class="toolbar" style="margin:0 0 4px 0">
+          <span class="chip green">Pris sur stock : ${c.stockAffecte} L</span>
+          ${couvert
+            ? `<span class="chip green">✓ Entièrement couvert — rien à commander</span>`
+            : `<span class="chip red">⚠ À commander : ${c.quantiteACommander} L</span>`}
+          <span class="tiny muted">(besoin total : ${c.besoinTotal} L)</span>
+        </div>
+
+        <div class="field" style="max-width:260px;margin-top:10px"><label>Fournisseur</label>
+          <input class="input" value="${escapeHtml(c.fournisseur||'')}" onchange="majCommandeFournisseur('${c.cleProduit.replace(/'/g,"\\'")}', this.value)" placeholder="Nom du fournisseur à contacter">
+        </div>
+        <div class="tiny muted" style="margin-top:6px">Pots réservés : ${escapeHtml(c.potsReserves.join(' | ')||'aucun')}</div>
+      </div>`;}).join('') || `<div class="tiny muted">Aucune commande en cours — lance un calcul depuis l'onglet Besoins.</div>`}
+  </div>`;
+}
+
+async function reinitialiserDonneesOrigine(){
+  if(!await confirmer("Réinitialiser avec le stock et les besoins d'origine ?\n\nTout ce que tu as modifié, ajouté ou calculé depuis sera perdu.")) return;
+  store = defaultStore();
+  potEnEdition = null;
+  render();
+
+  const { error: eDelP } = await sb.from('stock_pots').delete().eq('establishment_id', ESTABLISHMENT_ID);
+  const { error: eDelB } = await sb.from('chantier_besoins').delete().eq('establishment_id', ESTABLISHMENT_ID);
+  const { error: eDelC } = await sb.from('commandes_fournisseur').delete().eq('establishment_id', ESTABLISHMENT_ID);
+  if(eDelP||eDelB||eDelC) return alert('Erreur lors de la réinitialisation.');
+
+  const potsRows = store.pots.map(jsPotToDbInsert);
+  for(let i=0;i<potsRows.length;i+=200){
+    const { error } = await sb.from('stock_pots').insert(potsRows.slice(i,i+200));
+    if(error) return alert('Erreur réinitialisation stock : '+error.message);
+  }
+  const besoinsRows = store.besoins.map(b=>({ establishment_id:ESTABLISHMENT_ID, chantier:b.chantier, cle_produit:b.cleProduit, quantite_demandee: b.quantiteDemandee===''?null:b.quantiteDemandee, statut:'' }));
+  if(besoinsRows.length){
+    const { data, error } = await sb.from('chantier_besoins').insert(besoinsRows).select();
+    if(error) return alert('Erreur réinitialisation besoins : '+error.message);
+    store.besoins = data.map(dbBesoinToJs);
+  }
+  await syncCompteur();
+  render();
+}
+
+function render(){
+  document.querySelector('.app').innerHTML = `
+  <nav class="topnav">
+    ${navAtelierHtml(ESTABLISHMENT_ID, { actif:'atelier' })}
+  </nav>
+  <div class="topbar">
+    <div class="brand">STOCK<small>Atelier — peinture</small></div>
+    <div class="nav">
+      <button class="${view==='stock'?'active':''}" onclick="view='stock';render()">Stock</button>
+      <button class="${view==='besoins'?'active':''}" onclick="view='besoins';render()">Besoins</button>
+      <button class="${view==='commande'?'active':''}" onclick="view='commande';render()">Commande</button>
+      <button class="${view==='consommation'?'active':''}" onclick="view='consommation';render()">Consommation annuelle</button>
+    </div>
+    <div class="toolbar" style="margin:0">
+      <button class="ghostBtn" onclick="reinitialiserDonneesOrigine()">Réinitialiser avec le stock d'origine</button>
+    </div>
+  </div>
+  <div class="main">
+    ${view==='stock' ? renderStock() : view==='besoins' ? renderBesoins() : view==='commande' ? renderCommande() : renderConsommation()}
+  </div>`;
+}
+
+/* =========================================================================
+   CONSOMMATION ANNUELLE (Partie 2, item 9) — peinture consommée cumulée sur
+   l'année, à partir des pots réels (contenance_initiale - stock_restant).
+   Volontairement PAS de détail par projet ici : chantier_besoins ne relie
+   aujourd'hui les pots à aucun projet de façon fiable (texte libre, pas une
+   vraie clé) — un chiffre global mais juste plutôt qu'un détail qui aurait
+   de bonnes chances d'être faux silencieusement.
+   ========================================================================= */
+let anneeConsommation = new Date().getFullYear();
+function renderConsommation(){
+  const anneesDisponibles = [...new Set(store.pots.filter(p=>p.dateOuverture).map(p=>Number(p.dateOuverture.slice(0,4))))].sort((a,b)=>b-a);
+  if(!anneesDisponibles.includes(anneeConsommation) && anneesDisponibles.length) anneeConsommation = anneesDisponibles[0];
+  const potsAnnee = store.pots.filter(p=>p.dateOuverture && Number(p.dateOuverture.slice(0,4))===anneeConsommation);
+  const parTheme = {};
+  let totalL = 0;
+  for(const p of potsAnnee){
+    const consomme = Math.max(0, Number(p.contenanceInitiale||0) - Number(p.stockRestant||0));
+    totalL += consomme;
+    const cle = p.themeCouleur || p.marque || 'Non renseigné';
+    parTheme[cle] = (parTheme[cle]||0) + consomme;
+  }
+  const lignes = Object.entries(parTheme).sort((a,b)=>b[1]-a[1]);
+  return `
+  <div class="treeTitle">Consommation annuelle</div>
+  <div class="sectionSub">Peinture consommée (pots ouverts dans l'année), tous chantiers confondus — pas encore de détail par projet, voir la note ci-dessous.</div>
+  <div class="toolbar" style="margin-bottom:14px">
+    <select class="input" style="max-width:120px" onchange="anneeConsommation=Number(this.value);render()">
+      ${anneesDisponibles.length ? anneesDisponibles.map(a=>`<option value="${a}" ${a===anneeConsommation?'selected':''}>${a}</option>`).join('') : `<option>${anneeConsommation}</option>`}
+    </select>
+  </div>
+  <div class="statCard" style="margin-bottom:16px">
+    <div class="statNum">${totalL.toFixed(1)} L</div>
+    <div class="tiny muted">consommés en ${anneeConsommation}, ${potsAnnee.length} pot${potsAnnee.length>1?'s':''} ouvert${potsAnnee.length>1?'s':''}</div>
+  </div>
+  ${lignes.length ? `
+  <table class="tableau">
+    <thead><tr><th>Teinte / thème</th><th>Litres consommés</th></tr></thead>
+    <tbody>
+      ${lignes.map(([cle,l])=>`<tr><td>${escapeHtml(cle)}</td><td>${l.toFixed(1)} L</td></tr>`).join('')}
+    </tbody>
+  </table>` : `<p class="tiny muted">Aucun pot ouvert enregistré pour ${anneeConsommation}.</p>`}
+  <div class="note" style="margin-top:16px">Le détail par chantier n'est pas encore fiable : le champ "chantier" de l'onglet Besoins est du texte libre, pas relié à un vrai projet. Dis-le-moi si tu veux qu'on corrige ce lien pour débloquer un détail par projet plus tard.</div>
+  `;
+}
+
+async function initApp(){
+  document.querySelector('.app').innerHTML = `<div style="padding:24px" class="tiny muted">Chargement…</div>`;
+  try{
+    const { data:{ session }, error } = await sb.auth.getSession();
+    if(error) throw error;
+    if(!session){ location.replace('federation-accueil.html'); return; }
+    const estId = getCurrentEstId();
+    if(!estId){ location.replace('federation-accueil.html'); return; }
+    const { data: membre, error: e1 } = await sb.from('members').select('id').eq('user_id', session.user.id).eq('establishment_id', estId).maybeSingle();
+    if(e1) throw e1;
+    if(!membre){ location.replace('federation-accueil.html'); return; }
+    ESTABLISHMENT_ID = estId;
+    store = await chargerStore(estId);
+    await creerBesoinDepuisUrl();
+    render();
+  }catch(e){
+    console.error(e);
+    document.querySelector('.app').innerHTML = `<div class="errBox">Impossible de charger le stock : ${escapeHtml(e.message||String(e))}\n\nRecharge la page.</div>`;
+  }
+}
+
+// Arrivée depuis "Réserver la peinture" (fiche projet, étape BAT) : la quantité en litres est
+// déjà calculée depuis le m² à peindre — on pré-remplit un nouveau besoin au lieu de la
+// redemander à l'aveugle. Le produit/couleur reste à choisir à la main (l'ERP ne le connaît pas).
+async function creerBesoinDepuisUrl(){
+  const params = new URLSearchParams(window.location.search);
+  const chantier = params.get('besoinChantier');
+  const quantite = params.get('besoinQuantite');
+  if(!chantier || !quantite) return;
+  const { data, error } = await sb.from('chantier_besoins').insert({
+    establishment_id: ESTABLISHMENT_ID, chantier, cle_produit:'', quantite_demandee: Number(quantite)||null, statut:''
+  }).select().single();
+  if(error){ alert('Impossible de créer le besoin peinture : '+error.message); return; }
+  store.besoins.push(dbBesoinToJs(data));
+  alertePeintureAReserver = `Besoin ajouté pour "${chantier}" (${quantite} L calculés depuis le m²). Choisis le produit/couleur ci-dessous, puis clique "Lancer le calcul" pour voir les pots disponibles.`;
+  view = 'besoins';
+}
+initApp();
+</script>
+<script src="therese-widget.js"></script>
+</body>
+</html>

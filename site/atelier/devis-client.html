@@ -1,0 +1,2101 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <script src="boite-message.js"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Demande de devis — Atelier Tristan Gesret</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="moteur-devis.js"></script>
+  <script src="societes-api.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Fjalla+One&family=Source+Code+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* Charte graphique reprise du site vitrine etsgesret.fr : rouge #A60000, kraft #C4AE8F,
+       papier #F6F4F2, noir ; titres Fjalla One en capitales, texte Source Code Pro ; papier
+       déchiré entre les sections ; boutons à cadre "enseigne" (SVG du site). */
+    :root{
+      --t-champ:17px;   /* titre d'un champ à compléter = même taille que « Particulier / Professionnel » */
+      --bg:#fff; --ink:#000; --muted:#4a4540; --line:#D9D9D9; --soft:#F6F4F2;
+      --accent:#A60000; --kraft:#C4AE8F; --terre:#a8461f;
+      --f-titre:'Fjalla One',Impact,sans-serif; --f-texte:'Source Code Pro',ui-monospace,Menlo,Consolas,monospace;
+      --red:var(--accent); --amber:var(--ink); --green:var(--ink);
+      --redBg:var(--soft); --amberBg:var(--soft); --greenBg:var(--soft);
+      --blue:var(--ink); --blueBg:var(--soft);
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:var(--f-texte)}
+    body{font-size:15px;line-height:1.45;font-weight:500;font-variant-numeric:tabular-nums;overflow-x:hidden}
+    button,input,select,textarea{font:inherit;color:inherit}
+    button{cursor:pointer}
+    .wrap{max-width:760px;margin:0 auto;padding:32px 20px 80px 20px}
+    /* En-tête : logo centré (version blanche sur la photo d'accueil), réseaux à droite. */
+    .siteHeader{position:absolute;top:0;left:0;right:0;z-index:20;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:14px 24px}
+    .siteHeader.clair{position:relative;background:#fff;border-bottom:1px solid var(--line)}
+    .siteHeader .retour{font-family:var(--f-titre);text-transform:uppercase;letter-spacing:.04em;font-size:14px;color:#fff;text-decoration:none}
+    .siteHeader.clair .retour{color:var(--ink)}
+    .siteHeader .retour:hover{color:var(--accent)}
+    .siteHeader .logo img{height:78px;display:block}
+    .siteHeader .reseaux{display:flex;gap:14px;justify-content:flex-end}
+    .siteHeader .reseaux img{width:22px;height:22px;display:block}
+    @media (max-width:640px){ .siteHeader{padding:10px 14px} .siteHeader .logo img{height:56px} .siteHeader .reseaux{display:none} }
+    /* Bandes pleines : photo d'accueil, puis papier blanc / kraft déchiré qui recouvre la bande
+       précédente, comme sur le site. */
+    /* L'image du papier déchiré n'est opaque qu'à partir de la déchirure : la couleur pleine
+       est donc posée juste en dessous (décalée de 5vw), jamais sur toute la bande. */
+    #app>.bandeFull{position:relative;width:100%;margin-top:-3.2rem;padding-top:3.2rem;background-repeat:no-repeat}
+    /* Alternance blanc / kraft calculée sur l'ordre réel des bandes affichées (la bande
+       "Support(s)" n'apparaît qu'après l'estimation : pas deux bandes kraft de suite). */
+    #app>.bandeFull:nth-of-type(odd){background-image:url(https://www.etsgesret.fr/Front/img/global/torn_bg_white_home.png),linear-gradient(#fff,#fff);background-position:top center,0 5vw;background-size:100% auto,100% calc(100% - 5vw)}
+    #app>.bandeFull:nth-of-type(even){background-image:url(https://www.etsgesret.fr/Front/img/global/torn_bg_secondary_home.png),linear-gradient(var(--kraft),var(--kraft));background-position:top center,0 5vw;background-size:100% auto,100% calc(100% - 5vw)}
+    #app>.bandeFull.heroBand:nth-of-type(n){margin-top:0;padding-top:118px;padding-bottom:calc(max(3.2rem,7vw) + 8px);box-sizing:border-box;background-color:#222;background-image:url(https://www.etsgesret.fr/media/cache/slide_1900/Front/img/homepage/hero-bg.jpg);background-size:cover;background-position:center bottom;min-height:clamp(315px,36vw,484px);display:flex;align-items:center;color:#fff;overflow:hidden;isolation:isolate;z-index:0}
+    #app>.bandeFull.heroBand::before{content:'';position:absolute;inset:0;background:linear-gradient(rgba(0,0,0,.34),rgba(0,0,0,.52));pointer-events:none;z-index:1}   /* léger voile en haut : le logo reste lisible sur l'image / la vidéo */
+    /* Vidéo d'en-tête (voir VIDEO_ENTETE) : en boucle, sans son, sans clic ; l'image du bandeau sert de poster tant qu'elle n'est pas prête */
+    .heroVideo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 38%;z-index:0}
+    @media (prefers-reduced-motion:reduce){ .heroVideo{display:none} }
+    #app>.bandeFull.heroBand .bandeContenu{width:100%;padding:0 20px}   /* le texte est centré entre le bas du logo et la déchirure beige : le bandeau réserve la place du logo (haut) et de la déchirure (bas) */
+    @media (max-width:640px){ #app>.bandeFull.heroBand:nth-of-type(n){padding-top:92px} }   /* titre centré à la verticale dans la partie visible du bandeau (hors déchirure beige du bas) */   /* bandeau d'accueil réduit d'environ 20 % : les premiers champs à compléter apparaissent plus haut */
+    .bandeContenu{position:relative;z-index:1;max-width:1320px;margin:0 auto;padding:34px 20px 70px}
+    .hero{margin-bottom:0;text-align:center}
+    /* Texte d'accueil : sous le bandeau, sur le fond beige de la charte, avant « Coordonnées » */
+    .heroBand .hero h1{color:#fff;text-shadow:0 2px 16px rgba(0,0,0,.55);font-size:clamp(32px,5.2vw,52px);margin-bottom:8px}
+    .heroBand .hero p{font-size:16px;line-height:1.5}
+    .heroBand .hero p + p{margin-top:6px}
+    .heroBand .hero .heroSignature{margin-top:10px}
+    .heroBand .hero p{color:#fff;text-shadow:0 1px 10px rgba(0,0,0,.6)}
+    .heroBand .hero .heroSignature span{text-shadow:0 2px 12px rgba(0,0,0,.6)}
+    /* « Coordonnées » suit aussitôt la déchirure */
+    #app>.bandeFull.heroBand + .bandeFull .bandeContenu{padding-top:6px}
+    /* Le bandeau se prolonge SOUS toute la hauteur de la déchirure beige : plus d'interstice blanc dans ses creux (la bande beige est descendue d'autant, « Coordonnées » avec elle) */
+    #app>.bandeFull.heroBand + .bandeFull{margin-top:calc(-1 * max(3.2rem,7vw));padding-top:max(3.2rem,7vw)}
+    /* Titre en blanc sur l'image / la vidéo, au-dessus de la déchirure */
+    .heroTitre{font-family:var(--f-titre);font-weight:400;text-transform:uppercase;font-size:clamp(34px,6vw,58px);line-height:1.08;margin:0;text-align:center;color:#fff;text-shadow:0 2px 16px rgba(0,0,0,.5)}
+    .hero h1{font-family:var(--f-titre);font-weight:400;text-transform:uppercase;font-size:clamp(34px,6vw,58px);line-height:1.08;margin:0 0 10px 0;color:var(--ink)}
+    .hero p{font-size:17px;line-height:1.55;margin:0 auto;max-width:760px;color:var(--ink)}
+    .hero p + p{margin-top:8px}
+    .hero .heroSignature{margin-top:14px;font-size:18px}
+    .hero .heroSignature span{font-family:var(--f-titre);font-size:30px;letter-spacing:.03em}
+    .radioGroup.enLigne{display:flex;flex-wrap:wrap;gap:6px 30px;margin-bottom:14px}
+    .section{padding:0}
+    /* Boutons à cadre d'enseigne (SVG du site) : noir au repos, rouge au survol. */
+    .rubanBtnWrap{text-align:center;margin:26px 0}
+    .rubanBtn,.actionBtn.cadre{position:relative;display:inline-flex;align-items:center;justify-content:center;min-width:290px;height:58px;padding:0 76px;background:none;border:none;color:var(--ink);font-family:var(--f-titre);font-weight:400;text-transform:uppercase;letter-spacing:.04em;font-size:19px;cursor:pointer;text-decoration:none;transition:color .35s ease}
+    .rubanBtn::before,.actionBtn.cadre::before,.rubanBtn::after,.actionBtn.cadre::after{content:'';position:absolute;left:-6%;right:-6%;top:-6px;bottom:-6px;background-repeat:no-repeat;background-position:center;background-size:100% 100%;transition:opacity .45s ease;pointer-events:none}
+    .rubanBtn::before,.actionBtn.cadre::before{background-image:url(charte-gesret/btn-frame-black.svg);opacity:1}
+    .rubanBtn::after,.actionBtn.cadre::after{background-image:url(charte-gesret/btn-frame-red.svg);opacity:0}
+    .rubanBtn:hover:not(:disabled),.actionBtn.cadre:hover:not(:disabled){color:var(--accent);opacity:1;background:none;border-color:transparent}
+    .rubanBtn:hover:not(:disabled)::before,.actionBtn.cadre:hover:not(:disabled)::before{opacity:0}
+    .rubanBtn:hover:not(:disabled)::after,.actionBtn.cadre:hover:not(:disabled)::after{opacity:1}
+    .rubanBtn:disabled,.actionBtn.cadre:disabled{opacity:.5;cursor:not-allowed}
+    /* Le bouton à cadre n'a JAMAIS de fond ni de bordure propres, quel que soit l'état (survol, clic, envoi en cours = désactivé) : seul le cadre SVG dessine la forme.
+       Sans cela, la règle générale « .actionBtn:hover » (fond rouge) reprenait le dessus dès que le bouton se désactivait au clic. */
+    .actionBtn.cadre,.actionBtn.cadre:hover,.actionBtn.cadre:focus,.actionBtn.cadre:active,.actionBtn.cadre:disabled{background:none;border:none;border-radius:0;-webkit-user-select:none;user-select:none}
+    .actionBtn.cadre:focus-visible{outline:2px dashed var(--ink);outline-offset:10px}
+    .section h2{font-family:var(--f-titre);font-weight:400;font-size:clamp(28px,4vw,40px);line-height:1.1;text-transform:uppercase;letter-spacing:.01em;color:var(--ink);margin:0 0 22px 0;padding-bottom:10px;position:relative}
+    .section h2::after{content:'';position:absolute;left:0;bottom:0;width:64px;height:4px;background:var(--accent)}
+    /* Pied de page : kraft, coordonnées réelles de l'atelier. */
+    #app{position:relative}
+    .siteFooter{position:relative;margin-top:0;padding:3.4rem 20px 28px;background:var(--kraft) url(https://www.etsgesret.fr/media/cache/slide_800/Front/img/global/secondary-bg.jpg) center/cover;color:var(--ink)}
+    .siteFooter .cols{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 1.3fr 1fr;gap:34px;align-items:start}
+    .siteFooter img.logo{width:100%;max-width:230px;display:block;margin:0 auto}
+    .siteFooter .titre{font-family:var(--f-titre);text-transform:uppercase;font-size:21px;margin:0 0 10px}
+    .siteFooter a{color:var(--ink);text-decoration:none}
+    .siteFooter a:hover{color:var(--accent)}
+    .siteFooter ul{list-style:none;margin:0;padding:0;line-height:1.9}
+    .siteFooter .copy{max-width:1100px;margin:26px auto 0;font-size:12.5px;opacity:.85;text-align:center}
+    .siteFooter.min{padding:1.1rem 20px 1.2rem}
+    .siteFooter.min .copy{margin:0 auto}
+    @media (max-width:760px){ .siteFooter .cols{grid-template-columns:1fr;text-align:center} }
+    .grid2{display:grid;gap:12px;grid-template-columns:1fr 1fr}
+    .grid3{display:grid;gap:12px;grid-template-columns:1fr 1fr 1fr}
+    .field{margin-bottom:12px}
+    .field label{display:block;font-size:14px;margin-bottom:5px}
+    .field>label{font-size:var(--t-champ);line-height:1.25;margin-bottom:6px}
+    .field label .req{color:var(--red)}
+    .input,.select,.textarea{width:100%;border:1.5px solid var(--ink);border-radius:4px;padding:11px 13px;background:#fff;font-size:16px;font-weight:500}   /* 16 px minimum : en dessous, iPhone zoome et décale la page */
+    .input:focus,.select:focus,.textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(166,0,0,.15)}
+    .field label{font-weight:600}
+    .fieldAuto{position:relative}
+    .sugBox{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid var(--line);border-radius:12px;margin-top:4px;max-height:220px;overflow-y:auto;z-index:20;box-shadow:0 8px 24px rgba(0,0,0,.10)}
+    .sugItem{padding:10px 13px;cursor:pointer;font-size:14.5px;border-bottom:1px solid var(--line)}
+    .sugItem:last-child{border-bottom:none}
+    .sugItem:hover{background:var(--soft,#f5f4f2)}
+    .textarea{min-height:80px;resize:vertical}
+    .checkRow{display:flex;align-items:flex-start;gap:8px;margin:8px 0;font-size:15px}
+    .tiles{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));margin-top:6px}
+    .tile{border:2px solid var(--ink);border-radius:6px;padding:14px 10px;text-align:center;cursor:pointer;background:#fff;transition:border-color .1s ease}
+    .tile:hover{border-color:var(--accent)}
+    .tile{transition:border-color .12s ease,box-shadow .12s ease,transform .12s ease,background .12s ease}
+    /* Une case choisie doit se voir tout de suite : cadre rouge épais, fond teinté, léger soulèvement et pastille ✓ */
+    .tile.selected{border-color:var(--accent);background:#fdeceb;box-shadow:0 0 0 3px var(--accent),0 10px 22px rgba(166,0,0,.22);transform:translateY(-3px)}
+    .tileNiveau.selected::after{content:'✓';position:absolute;top:-11px;right:-11px;width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;font-size:17px;line-height:28px;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.3)}
+    .tileNiveau{position:relative}
+    .tile .preview{font-size:20px;margin-bottom:8px;min-height:28px;display:flex;align-items:center;justify-content:center;word-break:break-word}
+    .tile .label{font-size:12.5px;color:var(--muted);line-height:1.25}
+    .tiles3{grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+    /* Les 9 pictos de supports occupent toute la largeur du contenu, espacés régulièrement : 9 colonnes sur grand écran, 3 × 3 en dessous (jamais de dernière ligne bancale) */
+    .tilesSupports{grid-template-columns:repeat(9,minmax(0,1fr));gap:clamp(12px,1.7vw,24px);margin-top:12px}
+    @media (max-width:1099px){ .tilesSupports{grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(10px,2.4vw,20px)} }
+    .tileSupport{position:relative;padding:clamp(14px,1.4vw,22px) 8px clamp(10px,1vw,16px)}
+    .tileSupport .preview{font-size:30px;min-height:clamp(64px,6.4vw,96px);margin-bottom:clamp(8px,1vw,14px)}
+    .pictoImg{display:block;height:auto;width:auto;max-width:100%;object-fit:contain;user-select:none;-webkit-user-drag:none}
+    .tileSupport .pictoImg{height:clamp(60px,5.8vw,90px);max-width:100%;width:auto}
+    .tileSupport .label{font-weight:600;color:var(--ink)}
+    .tileSupport.selected::after{content:'✓';position:absolute;top:-11px;right:-11px;width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;font-size:17px;line-height:28px;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.3)}
+    /* 9e carte « support improbable » : hors estimation, c'est une porte vers le contact humain. */
+    .tileImprobable{position:relative}
+    .bulleImprobable{display:none;position:absolute;left:50%;bottom:calc(100% + 9px);transform:translateX(-50%);width:max-content;max-width:190px;background:var(--ink);color:#fff;padding:9px 12px;border-radius:6px;font-size:12.5px;line-height:1.35;text-align:center;z-index:30;box-shadow:0 8px 20px rgba(0,0,0,.25)}
+    .bulleImprobable::after{content:'';position:absolute;left:50%;top:100%;margin-left:-6px;border:6px solid transparent;border-top-color:var(--ink)}
+    .bulleImprobable .bulleBtn{display:none;margin-top:8px;background:#fff;color:var(--ink);border-radius:4px;padding:6px 12px;font-weight:700;text-decoration:none}
+    .tileImprobable.ouvert .bulleImprobable{display:block}
+    @media (hover:hover){ .tileImprobable:hover .bulleImprobable,.tileImprobable:focus-visible .bulleImprobable{display:block} }
+    @media (hover:none){ .bulleImprobable .bulleBtn{display:inline-block} }
+    .tileNiveau{padding:16px 14px 14px;display:flex;flex-direction:column;align-items:center;gap:8px}
+    .badgeNiveau{display:inline-block;color:#fff;font-family:var(--f-texte);font-weight:700;font-size:11px;letter-spacing:.06em;border-radius:999px;padding:3px 11px}
+    .nomNiveau{font-family:var(--f-titre);text-transform:uppercase;font-size:19px;line-height:1.15}
+    .exemplesNiveau{display:flex;flex-direction:column;gap:4px;align-items:center;padding:6px 10px 10px;color:#1c1a17;overflow:hidden}
+    .exempleNiveau{display:flex;align-items:flex-start;justify-content:center;min-height:196px;padding:0 0 6px}   /* sommet de la lettre toujours à la même distance du titre du niveau */
+    .exempleImg{display:block;height:auto;max-width:100%;user-select:none;-webkit-user-drag:none}
+    .exempleE{font-family:var(--f-titre);font-weight:700;font-size:96px;line-height:1;padding:4px 22px 18px 8px;color:#111;overflow:visible}
+    .formuleNiveau{font-family:'Snell Roundhand','Segoe Script','Brush Script MT','Lucida Handwriting',cursive;font-style:italic;font-size:22px;line-height:1.2;color:#3a3226;margin-top:-6px}
+    .enrichissements{margin-top:12px;padding:12px 14px;border:1.5px dashed var(--ink);border-radius:8px;background:#fff}
+    .supportColTitre{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:8px}
+    .apercuMini{width:100%;font-family:var(--f-titre);font-size:48px;line-height:1.12;white-space:normal;overflow-wrap:anywhere;overflow:hidden;padding:2px 6px 4px 0;color:#111}
+    .apercuMini .apTxt{display:inline-block}
+    .apercuMini.f-script{font-family:'Snell Roundhand','Segoe Script','Brush Script MT','Lucida Handwriting',cursive;font-weight:400}
+    .apercuMini.f-min{font-family:Arial,Helvetica,sans-serif;font-weight:700}
+    .apercuMini.f-empat{font-family:Georgia,'Times New Roman',Times,serif;font-weight:700;letter-spacing:.01em}
+    .choixForme{margin-top:8px}
+    .choixForme .libForme{font-size:12px;color:var(--muted);width:100%}
+    .mentionRendu{font-size:11px;color:var(--muted);line-height:1.3;margin-top:2px}
+    .supportPrix .ecarter{padding:3px 8px;font-size:12px;margin-bottom:6px}
+    .prixLigne{font-size:19px;font-weight:700}
+    /* QCM compact — remplace les menus déroulants trop longs à ouvrir (matière, état, hauteur
+       du chantier, taille des lettres) : un clic choisit l'option directement. */
+    .qcm{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+    .qcmOpt{border:1.5px solid var(--ink);background:#fff;border-radius:4px;padding:6px 11px;font-size:12.5px;color:var(--ink);cursor:pointer}
+    .qcmOpt:hover{border-color:var(--accent)}
+    .qcmOpt.sel{border-color:var(--accent);background:var(--accent);color:#fff;font-weight:700}
+    /* Support / Aperçu / Estimation en tête (3 colonnes), Variables juste en dessous sur toute
+       la largeur — plus de colonne étroite pour les QCM, qui ont besoin de place pour s'étaler
+       horizontalement plutôt que de s'empiler en hauteur. */
+    .supportBlock{border:1.5px solid var(--ink);border-radius:8px;padding:16px 18px;margin-bottom:14px;background:#fff}
+    .supportBlock.principal{border-color:var(--accent);border-width:2px}
+    .supportTopRow{display:grid;grid-template-columns:140px 1fr 200px;gap:24px;align-items:start}
+    .supportIdentite{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px}
+    .supportIdentite .picto{font-size:30px;line-height:1}
+    .supportIdentite .nom{font-size:15px;font-weight:700}
+    .supportEstim{text-align:right}
+    .supportEstim .checkRow{justify-content:flex-end;margin-top:8px}
+    .supportVariablesFull{margin-top:20px;padding-top:16px;border-top:1px solid var(--line)}
+    .varPairGrid{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-bottom:16px}
+    .varGroupLabel{font-weight:600;font-size:15px;margin-bottom:8px}
+    .supportChecksRow{display:flex;flex-wrap:wrap;gap:10px 24px;margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}
+    @media (max-width:900px){ .supportTopRow{grid-template-columns:1fr} .supportApercu,.supportEstim{border-top:1px solid var(--line);padding-top:12px;margin-top:4px} .supportIdentite{flex-direction:row;justify-content:center} .supportEstim{text-align:center} .supportEstim .checkRow{justify-content:center} .varPairGrid{grid-template-columns:1fr} }
+    /* Bloc support resserré : titre + texte + variables à gauche, prix centré à droite (aligné sur
+       l'estimatif total flottant quand le bloc est au milieu de l'écran). */
+    html,body{max-width:100%;overflow-x:hidden;overflow-x:clip;touch-action:manipulation}
+    input,select,textarea{font-size:16px}
+    #app,.bandeContenu,.section,.supportBlock,.repDetail,.supportGrid,.supportMain,.supportVars,.field,.ligneTexte,.saisieTexte,.rendu{min-width:0;max-width:100%}
+    .qcmOpt{max-width:100%;white-space:normal;text-align:left}
+    .dims .input{flex:1 1 0;min-width:0;width:auto}
+    .supportMain{min-width:0}
+    .supportGrid{display:grid;grid-template-columns:minmax(0,1fr) 200px;gap:22px;align-items:stretch}
+    .supportPrix{align-self:center;display:flex;flex-direction:column;align-items:flex-end;text-align:right;gap:4px;border-left:1px solid var(--line);padding-left:18px;min-height:120px;justify-content:center}
+    .supportPrixLabel{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+    .supportPrix .prixLigne{font-size:26px;line-height:1.1}
+    .prixAttente{font-size:13px;color:var(--ink);font-weight:600}
+    .resteListe{list-style:none;margin:2px 0 0;padding:0;font-size:13px;color:var(--accent);font-weight:700}
+    .resteListe li::before{content:'→ '}
+    .supportEntete{display:flex;align-items:center;flex-wrap:wrap;gap:6px 12px;margin-bottom:8px}
+    .supportEntete .picto{font-size:26px;line-height:1}
+    .supportEntete .pictoImg{height:38px;max-width:64px}
+    .supportEntete .nom{font-size:16px;font-weight:700}
+    .veux{margin-top:8px;display:flex;align-items:center;gap:6px;font-size:14.5px;font-weight:600;cursor:pointer;justify-content:flex-end}
+    .ligneTexte{display:grid;grid-template-columns:minmax(0,36%) minmax(0,1fr);gap:18px;align-items:start;margin-bottom:6px}
+    .ligneTexte .input{margin:0 0 4px}
+    .apercuMini.dore{color:#9a7412;text-shadow:0 1px 0 #f3dc8a,0 0 6px rgba(212,175,55,.45)}
+    .supportVars{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(250px,100%),1fr));gap:2px 22px;padding-top:6px;border-top:1px solid var(--line)}
+    .supportVars .field{margin-bottom:6px}
+    .supportVars .field label{font-size:13px;margin-bottom:2px}
+    .supportVars .field>label{font-size:var(--t-champ);margin-bottom:4px}
+    .supportVars .qcm{margin-top:3px;gap:5px}
+    .supportVars .qcmOpt{padding:5px 9px}
+    .dims{display:flex;align-items:center;gap:8px}
+    .dims .input{width:130px}
+    /* Obligatoire pour obtenir l'estimatif : fond rosé tant que c'est vide, ✓ vert dès que c'est rempli ; le reste est marqué « facultatif » */
+    .field.oblig>label::after{content:' ✓';color:#2f7d4f;font-size:var(--t-champ);font-weight:700}
+    .field.oblig.manque{background:#fbe9e6;border-left:4px solid var(--accent);padding:6px 10px 8px;border-radius:4px}
+    .field.oblig.manque>label::after{content:' — OBLIGATOIRE pour voir l\'estimatif';color:var(--accent);font-size:13px;font-weight:700}
+    .field.facultatif>label::after{content:' · facultatif';color:var(--muted);font-size:13px;font-weight:500}
+    .supportChecksTitre{font-size:12px;color:var(--muted);margin:2px 0 0}
+    .supportVars .field.pleineLargeur{grid-column:1/-1}
+    /* Autres supports : une ligne chacun, toute la ligne se coche */
+    .listeAjouts{display:flex;flex-direction:column;gap:8px}
+    .ligneAjout{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:14px;padding:10px 16px;border:1.5px solid var(--line);border-radius:8px;background:#fff;cursor:pointer;transition:border-color .12s ease,box-shadow .12s ease,background .12s ease}
+    .ajBloc{display:grid;gap:0}
+    .ajDetail{margin:-6px 6px 0;padding:18px 14px 12px;border:1.5px solid var(--accent);border-top:none;border-radius:0 0 8px 8px;background:#fff;display:grid;gap:10px}
+    .ajDetail .field{margin:0}
+    .ligneAjout:hover{border-color:var(--ink)}
+    .ligneAjout.on{border-color:var(--accent);background:#fdeceb;box-shadow:0 0 0 2px var(--accent)}
+    .ligneAjout .ajCase{width:26px;height:26px;accent-color:var(--accent);flex:none;cursor:pointer;margin-left:6px}
+    .ajPicto{display:flex;align-items:center;justify-content:center;width:64px}
+    .ajPicto .pictoImg{height:44px;width:auto;max-width:64px}
+    .ajTexte{display:flex;flex-direction:column;gap:1px;min-width:0}
+    .ajTexte b{font-size:15px}
+    .ajTexte span{font-size:13px;color:var(--muted);line-height:1.3}
+    .ajPrix{font-weight:700;font-size:14px;white-space:nowrap;text-align:right}
+    @media (max-width:640px){ .ligneAjout{grid-template-columns:auto 1fr auto;gap:6px 10px;padding:10px 12px} .ajPicto{width:48px} .ajPicto .pictoImg{height:34px} }
+    .formatFixe{display:flex;flex-direction:column;gap:2px;font-size:14px;line-height:1.35}
+    .formatFixe span{font-size:12.5px;color:var(--muted)}
+    .finEnvoi{text-align:center;padding:10px 0 4px}
+    .finEnvoi p{font-size:16px;max-width:640px;margin:0 auto 22px;line-height:1.5}
+    .finEnvoi .actionBtn.cadre{width:min(100%,400px);min-width:0;height:84px;font-size:22px;padding:0 62px;line-height:1.15;text-align:center;text-wrap:balance}
+    @media (max-width:640px){ .finEnvoi .actionBtn.cadre{height:auto;min-height:76px;padding:16px 50px;font-size:19px} }
+    .petitsPlus .checkRow{margin:9px 0}
+    .partiesVeh{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(200px,100%),1fr));gap:8px;margin-top:6px}
+    .partVeh{border:1px solid var(--line);border-radius:6px;padding:0 10px;background:#fff}
+    .partVeh.on{border-color:var(--accent)}
+    .partVeh .checkRow{margin:7px 0}
+    .partVeh .checkRow label{cursor:pointer}
+    .partVeh .lienTexte{display:block;margin:-3px 0 7px 26px;padding:0;border:0;background:none;font:inherit;font-size:12px;color:var(--accent);text-decoration:underline;cursor:pointer;text-align:left}
+    .partVeh .petitChamp{margin:0 0 8px;padding:6px 8px}
+    .supportChecks{display:flex;flex-wrap:wrap;gap:0 22px;align-items:center}
+    .supportChecks .checkRow{margin:4px 0;font-size:14px}
+    @media (max-width:900px){ .supportGrid{grid-template-columns:minmax(0,1fr)} .supportPrix{align-items:flex-start;text-align:left;border-left:0;border-top:1px solid var(--line);padding:10px 0 0;min-height:0;order:2} .veux{justify-content:flex-start} .ligneTexte{grid-template-columns:1fr} }
+    .consigne{font-weight:700;font-size:16px;margin:8px 0 4px}
+    /* « Voir l'estimation » : l'étape clé du parcours, bien plus grosse. */
+    .rubanBtn{min-width:400px;height:84px;padding:0 110px;font-size:27px}
+    @media (max-width:640px){ .rubanBtn{min-width:0;width:94%;height:72px;padding:0 24px;font-size:22px} }
+    .repPicto{font-size:24px;line-height:1;flex:none}
+    .repPicto .pictoImg{height:32px;max-width:56px}
+    .repRow{border:1.5px solid var(--ink);border-radius:8px;margin-bottom:10px;background:#fff}
+    .repRow.ouvert{border-color:var(--accent)}
+    .repRowHead{display:flex;align-items:center;gap:14px;padding:14px 18px;cursor:pointer}
+    .repRowHead:hover{background:var(--soft)}
+    .repNom{font-weight:700;font-size:15.5px;flex:1}
+    .repStatut{font-size:13px;color:var(--muted)}
+    .repStatut.sel{color:var(--accent);font-weight:600}
+    .repRond{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:12px;flex:none;color:#fff}
+    .repRond.checked{background:var(--accent);border-color:var(--accent)}
+    .repChevron{color:var(--muted);font-size:18px;flex:none;width:14px;text-align:center}
+    .repDetail{padding:16px 18px 18px 18px;border-top:1px solid var(--line)}
+    .blocUniforme{border:1.5px solid var(--ink);border-radius:8px;padding:18px;margin-bottom:16px;background:#fff}
+    @media (max-width:640px){ .repRowHead{flex-wrap:wrap} .repNom{flex-basis:100%;order:-1} }
+    .ghostBtn{border:1.5px solid var(--ink);background:#fff;border-radius:4px;padding:8px 14px;font-size:14px;color:var(--ink)}
+    .ghostBtn:hover{background:var(--soft);border-color:var(--accent);color:var(--accent)}
+    a.ghostBtn{display:inline-block;text-decoration:none}
+    .rappelDiscret{margin:18px 0 0;text-align:center}
+    .rappelDiscret .ghostBtn{border-width:1px;font-size:13px;color:var(--muted)}
+    .actionBtn{border:2px solid var(--ink);background:var(--ink);color:#fff;border-radius:4px;padding:13px 24px;font-family:var(--f-titre);font-weight:400;text-transform:uppercase;letter-spacing:.04em;font-size:18px;transition:background .3s ease,border-color .3s ease}
+    .actionBtn:hover{background:var(--accent);border-color:var(--accent)}
+    .actionBtn.secondary{background:#fff;color:var(--ink)}
+    .actionBtn.secondary:hover{background:#fff;color:var(--accent)}
+    .radioGroup label{display:flex;align-items:center;gap:8px;padding:8px 0;font-size:var(--t-champ)}
+    .msg{margin-top:14px;font-size:14px}
+    .confirm{max-width:520px;margin:15vh auto;text-align:center}
+    .confirm h1{font-size:26px}
+    .confirm p{color:var(--muted);line-height:1.5}
+    .apercuGrid{display:grid;grid-template-columns:2fr 1fr;gap:24px;align-items:start}
+    .apercuForm{display:flex;flex-direction:column;gap:14px}
+    .apercuPreview{text-align:center}
+    @media (max-width:900px){.apercuGrid{grid-template-columns:1fr}}
+    @media (max-width:640px){.grid2,.grid3{grid-template-columns:1fr}}
+    /* Estimatif flottant : à droite, centré verticalement, il suit le défilement. Les bandes
+       gardent une marge à droite pour qu'il ne recouvre jamais un champ ; sur petit écran il
+       devient un bandeau en bas de l'écran, que l'on déplie pour le détail. */
+    .estimatif{position:fixed;right:18px;top:50%;transform:translateY(-50%);width:324px;max-height:calc(100vh - 28px);overflow-y:auto;background:#fff;border:2px solid var(--ink);border-top:6px solid var(--accent);border-radius:6px;box-shadow:0 16px 44px rgba(0,0,0,.30);z-index:60;padding:14px 16px 16px}
+    .estEntete{display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .estEntete>div{flex:1}
+    .estPalette{display:block;width:96px;height:auto;margin:0 auto 6px;transform:rotate(-3deg);user-select:none;-webkit-user-drag:none}
+    .estTitre{font-family:var(--f-titre);text-transform:uppercase;letter-spacing:.05em;font-size:15px;color:var(--muted)}
+    .estMontant{font-family:var(--f-titre);font-size:29px;line-height:1.1;margin:2px 0 1px;text-align:right}
+    .estNote{font-size:12px;color:var(--muted);line-height:1.35;text-align:right}
+    .estAvert{font-size:13px;line-height:1.4;color:var(--muted);margin:0 0 10px}
+    .aideFab{font-weight:400;color:var(--muted);font-size:.92em}
+    .estToggle{display:none;border:2px solid var(--ink);background:#fff;border-radius:6px;padding:12px 14px;min-height:46px;font-size:15px;font-weight:700;line-height:1.2;cursor:pointer;width:100%}
+    .estToggle:hover{border-color:var(--accent);color:var(--accent)}
+    .estListe{list-style:none;margin:12px 0 0;padding:10px 0 0;border-top:1px solid var(--line);font-size:12px;color:#7a756e}
+    .estListe li{position:relative;padding:2px 0 2px 16px;line-height:1.3;display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+    .estListe .estLib{flex:1;min-width:0;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+    .estListe .estPrix{flex:none;text-align:right;white-space:nowrap;font-weight:600}
+    .estListe li::before{content:'✓';position:absolute;left:0;color:#a9a39a;font-weight:700}
+    .estBoutons{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+    .estBtn{display:block;width:100%;text-align:center;text-decoration:none;border-radius:4px;line-height:1.25}
+    .estBtn.principal{border:2px solid var(--ink);background:var(--ink);color:#fff;padding:12px 12px;font-family:var(--f-titre);text-transform:uppercase;letter-spacing:.04em;font-size:16px;transition:background .3s ease,border-color .3s ease}
+    .estBtn.principal:hover{background:var(--accent);border-color:var(--accent)}
+    .estBtn.secondaire{border:1.5px solid var(--ink);background:#fff;color:var(--ink);padding:9px 10px;font-size:13px}
+    .estBtn.secondaire:hover{border-color:var(--accent);color:var(--accent)}
+    .estBtn.discret{border:none;background:none;color:var(--muted);padding:4px;font-size:13px;text-decoration:underline}
+    .estBtn.discret:hover{color:var(--accent)}
+    @media (min-width:1100px){ body.avecEstimatif #app>.bandeFull:not(.heroBand){padding-right:362px} body.avecEstimatif .siteFooter{padding-right:362px} }
+    @media (max-width:1099px){
+      body.avecEstimatif{padding-bottom:170px}
+      /* Pendant la saisie (clavier ouvert) le bandeau « Estimatif total » s'efface : il recouvrait le champ en cours */
+      body.saisieEnCours .estimatif{display:none}
+      .estimatif{top:auto;bottom:var(--barre-bas,0px);left:0;right:0;width:auto;transform:none;border-width:2px 0 0;border-top:6px solid var(--accent);border-radius:12px 12px 0 0;max-height:78vh;padding:10px 14px calc(14px + env(safe-area-inset-bottom));box-sizing:border-box}
+      .estEntete{display:block}
+      .estEntete>div{display:grid;grid-template-columns:auto 1fr;align-items:baseline;gap:0 10px;min-width:0}
+      .estTitre{font-size:14px}
+      .estPalette{display:none}   /* bandeau du bas sur téléphone : on garde la place pour le montant */
+      .estMontant{font-size:26px;text-align:right;white-space:nowrap}
+      .estNote{grid-column:1 / -1;text-align:right;font-size:12px;overflow-wrap:anywhere}
+      .estToggle{display:block;width:100%;min-height:54px;font-size:15px;padding:12px 6px;margin-top:10px;box-sizing:border-box;white-space:normal}
+      .estCorps{display:none}
+      .estimatif.ouvert .estCorps{display:block}
+    }
+    /* Grande flèche tout en bas : elle mène le visiteur vers le bloc ESTIMATIF TOTAL pour qu'il décide de la suite. */
+    .flecheDecision{display:flex;align-items:center;justify-content:center;gap:26px;margin:30px 0 6px;padding:22px 26px;border:3px dashed var(--accent);border-radius:14px;background:#fff;cursor:pointer}
+    .flecheDecision .msg1{font-family:var(--f-titre);text-transform:uppercase;font-size:30px;line-height:1.1;color:var(--accent)}
+    .flecheDecision .msg2{font-size:15px;line-height:1.45;margin-top:8px;color:var(--ink)}
+    .flecheDecision svg{flex:none;width:150px;height:112px;fill:var(--accent);animation:poussee 1.7s ease-in-out infinite}
+    .flecheDecision .surPetit{display:none}
+    @keyframes poussee{0%,100%{transform:translateX(0)}50%{transform:translateX(14px)}}
+    @keyframes pousseeBas{0%,100%{transform:rotate(90deg) translateX(0)}50%{transform:rotate(90deg) translateX(12px)}}
+    @media (max-width:1099px){
+      .flecheDecision{flex-direction:column;text-align:center;gap:12px}
+      .flecheDecision svg{width:110px;height:82px;animation-name:pousseeBas}
+      .flecheDecision .surGrand{display:none} .flecheDecision .surPetit{display:inline}
+    }
+    @media (prefers-reduced-motion:reduce){ .flecheDecision svg{animation:none} }
+    .modalFond{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px}
+    .modal{background:#fff;border:2px solid var(--ink);border-top:6px solid var(--accent);border-radius:6px;max-width:460px;width:100%;padding:24px 24px 20px}
+    .modal h3{font-family:var(--f-titre);font-weight:400;text-transform:uppercase;font-size:28px;margin:0 0 10px}
+    .modal p{margin:0 0 18px;line-height:1.5}
+    .modalBtns{display:flex;flex-direction:column;gap:10px}
+    .modalBtns .actionBtn{font-size:15px;padding:11px 14px}
+  </style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+/* =========================================================================
+   MÊMES LISTES D'OPTIONS que devis-interne.html (copie volontairement
+   identique) — mais ce formulaire n'affiche et ne calcule jamais de prix au
+   client, donc pas de tarif/plancher journalier/modificateurs ici, juste les
+   libellés qui structurent le formulaire. Le calcul réel se fait ensuite côté
+   atelier dans devis-interne.html à partir de ces mêmes champs.
+   États dangereux/impossibles et "Support autre"/"Matière autre" retirés
+   (la ligne libre du devis interne couvre déjà les cas hors catalogue).
+   ========================================================================= */
+const BASE_DEFAUT = {
+  "Enseigne principale": {}, "Enseigne drapeau": {}, "Vitrines": {}, "Jambages": {},
+  "Pignon": {}, "Véhicule": {}, "Stop-trottoir": {}, "Ardoises": {}
+};
+const COEF_MATIERE_DEFAUT = { "Bois peint":1, "Enduit lisse":1, "Bois brut":1, "Verre":1, "Enduit texturé":1, "Carrosserie":1, "Métal":1 };
+const COEF_ETAT_DEFAUT = { "Lisse et propre":1, "Légèrement granuleux":1, "Très rugueux / crépi / pierre":1, "Texturé (enduit sablé type granite, crépi)":1, "Je ne sais pas — voir photos":1 };
+const COEF_HAUTEUR_DEFAUT = { "En rez-de-chaussée":1, "Hauteur moyenne — échafaudage mobile":1, "Grande hauteur — nacelle":1 };
+const TAILLE_LETTRES_DEFAUT = { "Petites (plus long à réaliser)":1, "Moyennes":1, "Grandes":1 };
+const COEF_FORME_DEFAUT = { "Lettres capitales / majuscules":1, "Lettres minuscules":1, "Lettres bâton / sans empattement":1, "Lettres script / manuscrites":1, "Lettres anciennes / traditionnelles":1, "Lettres très décoratives":1, "Reproduction d'une typographie existante":1, "Reproduction d'un logo existant":1, "Je souhaite être conseillé.e":1 };
+const COEF_EFFET_DEFAUT = { "Aucun effet particulier / lettrage simple":1, "Filet / contour autour des lettres":1, "Dorure":1, "Dégradé":1, "Patine / effet vieilli":1, "Effet ancien / enseigne d'époque":1, "Décor ou illustration autour du texte":1, "Je souhaite être conseillé.e":1 };
+
+// États proposés au client (clés = celles des réglages tarifs, qui portent le coût du primaire) ; libellés affichés plus parlants.
+const ETATS_CLIENT = ["Lisse et propre","Légèrement granuleux","Texturé (enduit sablé type granite, crépi)","Très rugueux / crépi / pierre"];
+const LIBELLE_ETAT = { "Légèrement granuleux":"Légèrement granuleux et propre", "Texturé (enduit sablé type granite, crépi)":"Texturé et propre", "Très rugueux / crépi / pierre":"Très texturé et propre" };
+const ETAT_PAR_MATIERE = { "Bois":["Lisse et propre","Légèrement granuleux"], "Enduit ciment":ETATS_CLIENT, "Enduit chaux":ETATS_CLIENT, "Métal":["Lisse et propre"], "Verre":["Lisse et propre"], "Carrosserie":["Lisse et propre"] };
+// L'état n'est demandé que là où il change vraiment le travail ; partout ailleurs il est posé d'office (« Lisse et propre »).
+const ETAT_A_CHOISIR = ["Enseigne principale","Jambages","Pignon"];
+function etatOptionsPourMatiere(matiere){ return ETAT_PAR_MATIERE[matiere] || ETATS_CLIENT; }
+function etatOptionsPourSupport(sup){
+  if(sup.matiere) return etatOptionsPourMatiere(sup.matiere);
+  const matieres = COMPATIBILITES[sup.support] || [];
+  const autorises = new Set();
+  matieres.forEach(m => etatOptionsPourMatiere(m).forEach(e => autorises.add(e)));
+  if(!autorises.size) autorises.add("Lisse et propre");
+  return ETATS_CLIENT.filter(e => autorises.has(e));
+}
+
+function clone(o){ return JSON.parse(JSON.stringify(o)); }
+const BASE = BASE_DEFAUT;
+const COEF_MATIERE = COEF_MATIERE_DEFAUT;
+const COEF_ETAT = COEF_ETAT_DEFAUT;
+const COEF_HAUTEUR = COEF_HAUTEUR_DEFAUT;
+const TAILLE_LETTRES = TAILLE_LETTRES_DEFAUT;
+const COEF_FORME = COEF_FORME_DEFAUT;
+const COEF_EFFET = COEF_EFFET_DEFAUT;
+
+const SUPABASE_URL = 'https://uuuigousvpijskbdhcal.supabase.co';
+const SUPABASE_KEY = 'sb_publishable__YuNj5XCo5YF8lwhwTu5OQ_RDM1Eesp';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// Sur estimation.etsgesret.fr (adresse publique du formulaire), l'atelier est connu d'avance : pas besoin de ?est=.
+const ATELIER_PAR_DEFAUT = 'ee1643c8-dcec-4dec-a113-12057457a138';
+const ESTABLISHMENT_ID = new URLSearchParams(window.location.search).get('est') || (location.hostname === 'estimation.etsgesret.fr' ? ATELIER_PAR_DEFAUT : '');
+
+const COMPATIBILITES = {
+  "Enseigne principale": ["Bois","Enduit ciment","Enduit chaux","Métal","Verre"],
+  "Enseigne drapeau": ["Bois","Métal"],
+  "Vitrines": ["Verre"],
+  "Jambages": ["Bois","Enduit ciment","Enduit chaux"],
+  "Pignon": ["Bois","Enduit ciment","Enduit chaux"],
+  "Véhicule": ["Carrosserie"],
+  "Stop-trottoir": ["Bois","Métal"],
+  "Ardoises": []
+};
+// Ce formulaire n'affiche jamais de prix ni le vrai catalogue MEG au client — juste les
+// libellés des options qu'il peut cocher. Le rattachement au catalogue réel (avec prix) se
+// fait ensuite côté atelier dans devis-interne.html.
+const OPTIONS_CLIENT_LABELS = {
+  "flyers": "Flyers",
+  "urbanisme": "Accompagnement pour les démarches urbanisme / Architectes des Bâtiments de France",
+  "mini_charte": "Création d'une mini-charte graphique",
+};
+function escapeHtml(s){ return String(s??'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])) }
+function uid(p='id'){ return p+'-'+Math.random().toString(16).slice(2,9) }
+
+/* =========================================================================
+   VIGNETTES VISUELLES — forme des lettres et effet, sans aucun <select>.
+   Rendu purement en CSS (pas d'images) : chaque vignette illustre son style.
+   ========================================================================= */
+
+/* =========================================================================
+   EFFET SOUHAITÉ — 3 niveaux tirés du vocabulaire métier de l'atelier
+   (VOCABOLAIRE_LETTRAGE_GROS_DOSSIER.pdf). Noms exacts et couleurs de badge du PDF.
+   Recettes text-shadow testées : surtout ne pas élargir les décalages (au-delà de 2px,
+   les traits fins d'un script attaché disparaissent sous l'épaisseur — c'est le rendu en
+   script, le plus exigeant des trois styles, qui fait foi). La terre cuite est fixée ici
+   (#a8461f) et non reprise de --accent, devenu le rouge de la charte du site.
+   Les trois niveaux alimentent le calcul existant (voir flagsEffet / effetPourCalcul) :
+   le tarif et l'envoi à l'atelier restent inchangés.
+   ========================================================================= */
+// Grand « E » des trois cartes (rendu du PDF « Vocabulaire lettrage ») : relief = empilement de décalages beige, ombre = décalages gris clair.
+const decalages = (de, a, couleur) => Array.from({length: a - de + 1}, (_, k) => `${de + k}px ${de + k}px 0 ${couleur}`).join(',');
+const NIVEAUX_EFFET = [
+  { cle:'1', badge:'#938163', nom:'Aplat', formule:'Aplat', cssE:'', image:'effet-1-aplat', largeurImg:112,
+    desc:"Une seule couleur. Deux passages au pinceau pour former une lettre bien opaque.",
+    css:'' },
+  { cle:'2', badge:'#1f2549', nom:'Aplat + Épaisseur', formule:'Aplat + Épaisseur', image:'effet-2-aplat-epaisseur', largeurImg:126, cssE:'text-shadow:' + decalages(1, 7, '#c4ae8f') + ';',
+    desc:"Une finition plus travaillée : les lettres prennent du relief et de l'épaisseur.",
+    css:'text-shadow:1px 1px 0 rgba(28,26,23,.6),2px 2px 0 rgba(28,26,23,.6),4px 4px 0 rgba(28,26,23,.2);' },
+  { cle:'3', badge:'#a61c17', nom:'Épaisseur bicolore + ombre portée', formule:'Aplat + Épaisseur + Ombre', image:'effet-3-bicolore-ombre', largeurImg:144, cssE:'text-shadow:' + decalages(1, 6, '#b19a74') + ',' + decalages(7, 15, '#dcdce1') + ';',
+    desc:"Pour un effet de relief maximum.",
+    css:'text-shadow:1px 1px 0 var(--terre),2px 2px 0 var(--terre),3px 3px 2px rgba(28,26,23,.28);' },
+];
+// La dorure se choisit support par support (case « Dorure » de chaque bloc) ; ici restent les enrichissements globaux du niveau 3.
+const ENRICHISSEMENTS_N3 = ['Dégradé','Patine / effet vieilli'];
+const STYLES_APERCU_EFFET = [
+  { texte:'LETTRES', css:"font-family:Arial,Helvetica,sans-serif;font-weight:500;font-size:25px;letter-spacing:.02em" },
+  { texte:'Lettres', css:"font-family:'Segoe Script','Brush Script MT','Snell Roundhand',cursive;font-size:29px" },
+  { texte:'lettres', css:"font-family:Arial,Helvetica,sans-serif;font-weight:500;font-size:25px" },
+];
+function niveauEffet(){ return NIVEAUX_EFFET.find(n => n.cle === state.rendu.niveau) || null; }
+// Valeur de l'ancien champ "effet" (clés du tarif de l'atelier) déduite du choix du visiteur :
+// niveaux 1 et 2 = pas d'enrichissement ; niveau 3 = l'enrichissement au coefficient le plus
+// élevé parmi ceux cochés (Dorure > Dégradé > Patine). Le détail complet part dans la demande.
+function effetPourCalcul(){
+  const n = state.rendu.niveau;
+  if(!n) return '';
+  if(n === '3'){
+    const e = state.rendu.enrichissements;
+    for(const cle of ENRICHISSEMENTS_N3) if(e.includes(cle)) return cle;
+  }
+  return "Aucun effet particulier / lettrage simple";
+}
+// Ce que le visiteur cochait support par support (relief, plusieurs couleurs, ombre) vient
+// désormais uniquement du niveau choisi une fois.
+function flagsEffet(){
+  const n = state.rendu.niveau;
+  // Niveau 1 = aplat (0 %) ; niveau 2 = + relief (+30 %) ; niveau 3 = + relief et plusieurs couleurs (+30 % +15 % = +45 %). Valeurs : modificateurs « relief » et « couleurs » des réglages tarifs.
+  return { relief: n==='2' || n==='3', couleursMultiples: n==='3', ombreSupplementaire: false };
+}
+function descriptionEffet(){
+  const n = niveauEffet(); if(!n) return '';
+  const plus = state.rendu.niveau==='3' && state.rendu.enrichissements.length ? ' + ' + state.rendu.enrichissements.join(' + ') : '';
+  return `Niveau ${n.cle} — ${n.nom}${plus}`;
+}
+function majEffetDerive(){
+  state.rendu.effet = effetPourCalcul();
+  for(const s of state.supports){ if(s._prixAffiche!=null) s._dirty = true; }
+}
+function choisirNiveauEffet(cle){
+  state.rendu.niveau = cle;
+  if(cle !== '3') state.rendu.enrichissements = [];
+  majEffetDerive(); render();
+  tenterEstimation();
+}
+// Plus de bouton « Je précise mon projet » : dès qu'on choisit son effet de lettrage, la section « Votre support » s'ouvre juste en dessous.
+function tenterEstimation(){ if(!state.estimationVisible && !state.rendu.enCours && state.rendu.niveau) genererRendu(); }
+// Si l'effet avait été choisi avant le lettrage ou le support, la suite s'ouvre dès que le dernier élément manquant est renseigné.
+function tenterEstimationSiPret(){ if(!state.estimationVisible && state.rendu.niveau && state.principalId && state.projet.nomProjet.trim()) tenterEstimation(); }
+function basculerEnrichissement(nom, coche){
+  const e = new Set(state.rendu.enrichissements);
+  if(coche) e.add(nom); else e.delete(nom);
+  state.rendu.enrichissements = ENRICHISSEMENTS_N3.filter(x => e.has(x));
+  majEffetDerive(); render();
+}
+function renderEffetsHtml(){
+  const cartes = NIVEAUX_EFFET.map(n => `
+    <div class="tile tileNiveau ${state.rendu.niveau===n.cle?'selected':''}" onclick="choisirNiveauEffet('${n.cle}')">
+      <span class="badgeNiveau" style="background:${n.badge}">NIVEAU ${n.cle}</span>
+      <div class="nomNiveau">${escapeHtml(n.nom)}</div>
+      <div class="exempleNiveau"><img class="exempleImg" src="pictos-estimation/${n.image}.png" alt="" draggable="false" style="width:${n.largeurImg}px"></div>
+      <div class="label">${escapeHtml(n.desc)}</div>
+    </div>`).join('');
+  const enrich = '';   // plus d'enrichissements facultatifs sous le niveau 3 (Dégradé, Patine : supprimés)
+  return `<p class="consigne">Choisissez l'un des 3 niveaux</p><div class="tiles tiles3">${cartes}</div>${enrich}`;
+}
+
+
+/* =========================================================================
+   ÉTAT DU FORMULAIRE
+   ========================================================================= */
+// Supports à format imposé : pas de dimensions ni de matière à saisir ; le prix part d'un tarif de fabrication fixe (voir moteur-devis.js, « format standard »).
+const FORMATS_FIXES = {
+  "Enseigne drapeau": { longueurCm:60,  hauteurCm:60,  matiere:'Bois', description:"60 × 60 cm — potence métal et panneau bois", cleFabrication: FORMAT_DRAPEAU_STANDARD },
+  "Stop-trottoir":    { longueurCm:70,  hauteurCm:100, matiere:'Bois', description:"70 × 100 cm — contreplaqué supermarine 15 mm, quincaillerie inox", cleFabrication: FORMAT_STOP_TROTTOIR_STANDARD },
+};
+// Les 8 supports du catalogue, aucun coché au départ (le client choisit ; voir « Cochez votre/vos supports à peindre »).
+function supportsDeDepart(){
+  return Object.keys(BASE_DEFAUT).map(nom => ({ ...nouveauSupportVide(nom), base:true, inclus:false, explore:false }));
+}
+const state = {
+  envoye: false,
+  numeroEnvoye: null,
+  numeroProjetEnvoye: null,
+  coordonnees: { nom:'', adresse:'', ville:'', telephone:'', email:'', typeClient:'particulier', raisonSociale:'', siret:'' },
+  projet: { objectif:'', nomProjet:'', photos:[] },
+  // Un bloc par support du catalogue, toujours en base — aucun n'est coché d'office : le client choisit
+  // (et peut écarter n'importe lequel, même le premier choisi) ; les autres apparaissent en répertoire compact,
+  // et un clic ouvre leur détail (voir renderRepertoireRow / toggleSupportOuvert). Le client
+  // peut aussi dupliquer un support (deux Vitrines avec un texte différent, par ex. — voir
+  // dupliquerSupport).
+  supports: supportsDeDepart(),
+  supportOuvert: null, // (ancien répertoire) id du support ouvert — plus utilisé : un seul support principal, les autres sont des lignes à cocher
+  principalId: null,   // id du support principal choisi (un seul) ; ses variables s'ouvrent après « Voir l'estimation »
+  optionsChoisies: [],
+  envieChoisies: [], // produits dérivés cochés en plus (point 5), ajoutés à l'estimation
+  acces: ESTABLISHMENT_ID ? 'verif' : 'ouvert', // 'verif' | 'ouvert' | 'ferme' — interrupteur « formulaire public » réglé par l'atelier
+  estimationVisible: false, // rien du tout (support principal compris) ne s'affiche avant le clic sur "Voir l'estimation"
+  organisation: { dateSouhaitee:'', contraintes:'' },
+  deplacement: null,        // { km (aller-retour), prixHT } calculé depuis l'adresse du chantier
+  improbableOuvert: false,  // info-bulle tactile de la carte « support improbable »
+  refusOuvert: false,       // boîte « Pas pour moi cette fois-ci »
+  estimatifOuvert: false,   // détail de l'estimatif déplié (petit écran)
+  rendu: { photoLieu:null, forme:'', effet:'', niveau:'', enrichissements:[], imageUrl:'', enCours:false, erreur:'' },
+  // Point 2 (formulaire unique interne/externe) — même schéma de formulaire, juste un bloc
+  // en plus visible seulement en session atelier connectée. Jamais envoyé par un visiteur public.
+  interne: { actif:false, verifie:false, note:'', priorite:'normale', origineContact:'' },
+};
+
+const OPTIONS_CLIENT = Object.keys(OPTIONS_CLIENT_LABELS);
+
+/* =========================================================================
+   ESTIMATION EN TEMPS RÉEL — ordre de grandeur, jamais un devis ferme. Réutilise
+   exactement le moteur de calcul de l'atelier (moteur-devis.js), avec les VRAIS
+   réglages tarifs de cet atelier (chargés en lecture seule) — pas une formule
+   séparée à maintenir en double. Les supports "hors catalogue" (BASE_DEFAUT plus
+   haut) ne servent qu'à construire les listes déroulantes, jamais au calcul.
+   ========================================================================= */
+let reglagesEstimation = null; // forme identique à `reglages` dans devis-interne.html
+// Estimation EN LIGNE seulement (le devis interne garde son propre réglage « remise particulier ») : un particulier paie 15 % de moins que le professionnel
+// (consigne de Tristan, 28/10/2026) ; réglable via parametres_estimation.remiseParticulierPct.
+const REMISE_PARTICULIER_ESTIMATION_DEFAUT = 15;
+// Supports facturés au mot dans l'estimation en ligne : Vitrines = 130 € HT par mot (prix plat, jambages = 95 € par mot dans le moteur).
+const PRIX_PAR_MOT_ESTIMATION = { "Vitrines":130 };
+const FOURCHETTE_ESTIMATION_PCT_DEFAUT = 30; // ± autour du prix calculé ; réglable (Réglages tarifs → parametres_estimation.fourchettePct)
+function fourchettePct(){ const v = Number(reglagesEstimation?.fourchettePct); return Number.isFinite(v) && v >= 0 ? v : FOURCHETTE_ESTIMATION_PCT_DEFAUT; }
+async function chargerReglagesEstimation(estId){
+  try{
+    // Les visiteurs n'ont pas le droit de lire la table des tarifs : la fonction estimation_publique (SQL, voir
+    // migration_estimation_publique.sql) leur renvoie les réglages utiles ET l'état de l'interrupteur ouvert/fermé.
+    let data = null, viaRpc = false;
+    try{
+      const r = await sb.rpc('estimation_publique', { p_establishment_id: estId });
+      if(!r.error && r.data){ viaRpc = true; state.acces = r.data.ouverte === false ? 'ferme' : 'ouvert'; data = r.data.reglages || null; }
+    }catch(e){ /* fonction pas encore installée : lecture directe ci-dessous (suffisante pour un membre connecté) */ }
+    if(!viaRpc){
+      const r = await sb.from('devis_reglages').select('*').eq('establishment_id', estId).maybeSingle();
+      if(r.error) throw r.error;
+      data = r.data;
+    }
+    if(!data){ reglagesEstimation = null; return; }
+    reglagesEstimation = {
+      base: data.base || null, tarifJournalier: data.tarif_journalier || null, coefMatiere: data.coef_matiere || null,
+      etatSupport: data.etat_support || null, hauteurOptions: data.hauteur_options || null, tailleLettres: data.taille_lettres_options || null,
+      coefForme: data.coef_forme || null, coefEffet: data.coef_effet || null, modificateurs: data.modificateurs || [],
+      heuresParJour: data.heures_par_jour ?? 7, exposantSurface: data.exposant_surface ?? 1,
+      appliquerMinimumHT: data.appliquer_minimum_ht, remiseParticulierPct: data.parametres_estimation?.remiseParticulierPct ?? REMISE_PARTICULIER_ESTIMATION_DEFAUT,
+      tempsParCaractereH: data.temps_par_caractere_h ?? 0.05,
+      produitsDerives: data.produits_derives || [],
+      tvaPct: data.tva_pct ?? 20,
+      prixParKm: data.prix_par_km ?? 0.60,
+      // Paramètres réglables (colonne parametres_estimation) ; absents tant que la migration n'est pas passée : valeurs par défaut du code.
+      prixParMot: { ...PRIX_PAR_MOT_ESTIMATION, ...(data.parametres_estimation?.prixParMot || {}) },
+      coefEstimation: data.parametres_estimation?.coefEstimation || undefined,
+      fabricationSupport: data.parametres_estimation?.fabricationSupport || undefined,
+      forfaitsProjet: data.parametres_estimation?.forfaitsProjet || undefined,
+      empriseLettrage: data.parametres_estimation?.empriseLettrage || undefined,
+      fabricationDrapeau: data.parametres_estimation?.fabricationDrapeau || undefined,
+      fourchettePct: data.parametres_estimation?.fourchettePct,
+    };
+  }catch(e){ console.warn('Réglages tarifs indisponibles — estimation désactivée :', e.message); reglagesEstimation = null; }
+  finally{ if(state.acces === 'verif') state.acces = 'ouvert'; }
+}
+function ctxEstimation(){
+  const r = reglagesEstimation;
+  if(!r || !r.base || !r.tarifJournalier || !r.coefMatiere || !r.etatSupport || !r.hauteurOptions || !r.tailleLettres || !r.coefForme || !r.coefEffet) return null;
+  return { BASE:r.base, TARIF_JOURNALIER:r.tarifJournalier, COEF_MATIERE:r.coefMatiere, ETAT_SUPPORT:r.etatSupport,
+    HAUTEUR_OPTIONS:r.hauteurOptions, TAILLE_LETTRES:r.tailleLettres, COEF_FORME:r.coefForme, COEF_EFFET:r.coefEffet,
+    MODIFICATEURS:r.modificateurs, reglages:r };
+}
+// Pictogramme générique par type de support — juste un repère visuel sur chaque bloc,
+// jamais une photo/rendu réel.
+// Illustrations de la charte (dossier pictos-estimation/, déployé avec la page) : une par type de support.
+const pictoImg = fichier => `<img class="pictoImg" src="pictos-estimation/${fichier}.png" alt="" draggable="false">`;
+const ICONE_SUPPORT = {
+  "Enseigne principale":pictoImg('hotel'), "Enseigne drapeau":pictoImg('boucher'), "Vitrines":pictoImg('cafe'), "Jambages":pictoImg('mairie'),
+  "Pignon":pictoImg('bar'), "Véhicule":pictoImg('pain'), "Stop-trottoir":pictoImg('stop-trottoir'), "Ardoises":pictoImg('menu')
+};
+// Prix d'une ligne "support" (calculé à la volée, avec les vraies variables de CE support) —
+// utilisé aussi bien pour un support déjà ajouté que pour prévisualiser une suggestion de
+// la galerie d'envie avant de l'ajouter.
+// Jambages : le client indique les dimensions du SUPPORT ; l'emprise du lettrage est estimée à environ 20 % de sa surface
+// (même proportions) et sera précisée plus tard, au stade du croquis ou du BAT. Pour les autres supports, ce sont les dimensions du lettrage.
+// Fabrication du support cochée par le visiteur : panneau bois à créer (découpe, ponçage, apprêt, fond). Prix fixe HT lu dans les réglages (772 € par défaut).
+const FABRICATION_CLIENT = 'Panneau bois seul';
+// Le client donne les dimensions du SUPPORT (jamais celles du lettrage, trop difficiles à estimer) ; la surface de lettrage est déduite en en prenant une part :
+// Enseigne principale : le lettrage fait 80 % de chaque dimension du support (0,8 × 0,8 = 0,64 de sa surface) ; les lettres d'une enseigne font en général
+// 15 cm de large × 25 cm de haut, donc elles ne remplissent jamais tout le panneau. Jambages : 20 % de la surface (validé). Les autres supports : à valider avec Tristan.
+// Réglable par support dans Réglages tarifs (parametres_estimation.empriseLettrage) ; les valeurs enregistrées passent avant celles-ci.
+const EMPRISE_LETTRAGE_SUR_SUPPORT_DEFAUT = { "Enseigne principale":0.64, "Enseigne drapeau":0.50, "Vitrines":0.50, "Jambages":0.20, "Pignon":0.30, "Stop-trottoir":0.50, "Ardoises":0.50 };
+function empriseLettrage(){ return { ...EMPRISE_LETTRAGE_SUR_SUPPORT_DEFAUT, ...(reglagesEstimation?.empriseLettrage || {}) }; }
+const HAUTEUR_ECHAFAUDAGE = 'Hauteur moyenne — échafaudage mobile';
+// Description courte de chaque support (lignes « Ajouter d'autres supports ») et valeurs standard pour en donner un prix moyen sans rien demander au client.
+const SUPPORTS_INFOS = {
+  "Enseigne principale": { def:"Votre enseigne de façade : lettres peintes sur la devanture ou sur un panneau.", std:{ longueurCm:300, hauteurCm:60, matiere:'Bois' } },
+  "Enseigne drapeau":    { def:"Enseigne perpendiculaire à la façade, peinte sur ses deux faces.",                std:{ longueurCm:60, hauteurCm:60, matiere:'Bois' } },
+  "Vitrines":            { def:"Lettrage ou décor peint sur vos vitrines.",                                       std:{ longueurCm:150, hauteurCm:100, matiere:'Verre' } },
+  "Jambages":            { def:"Mots peints sur les côtés des vitrines ou des portes.",                           std:{ longueurCm:40, hauteurCm:120, matiere:'Enduit ciment', tailleLettres:'Moyennes' } },
+  "Pignon":              { def:"Grand lettrage ou fresque sur un mur pignon.",                                    std:{ longueurCm:400, hauteurCm:300, matiere:'Enduit ciment' } },
+  "Véhicule":            { def:"Lettrage sur la carrosserie : latérales, capot, portes…",                         std:{ parties:['lateral_droit','lateral_gauche'] } },
+  "Stop-trottoir":       { def:"Panneau posé sur le trottoir, peint sur ses deux faces.",                         std:{ longueurCm:70, hauteurCm:100, matiere:'Bois' } },
+  "Ardoises":            { def:"Ardoise ou menu peint à la main.",                                                std:{ longueurCm:40, hauteurCm:60 } },
+};
+const estDrapeau = s => s.support === 'Enseigne drapeau';
+
+// Un support « moyen » (ajouté d'un clic dans la liste) : variables standard, jamais détaillées par le client.
+function supportEffectif(s){
+  if(!s.moyen) return s;
+  const std = (SUPPORTS_INFOS[s.support] || {}).std || {};
+  const e = { ...s, matiere: s.matiere || std.matiere || '', longueurCm: s.longueurCm || std.longueurCm || '', hauteurCm: s.hauteurCm || std.hauteurCm || '',
+              tailleLettres: s.tailleLettres || std.tailleLettres || '', etat:'Lisse et propre', hauteurChantier:'En rez-de-chaussée' };
+  if(std.parties && !partiesVehiculeChoisies(s).length) e.parties = Object.fromEntries(std.parties.map(c => [c, { coche:true }]));
+  return e;
+}
+function cleFabricationDrapeau(){
+  const tarifs = reglagesEstimation?.fabricationSupport || FABRICATION_SUPPORT_DEFAUT;
+  return Object.keys(tarifs).find(k => /drapeau/i.test(k)) || '';
+}
+// Enseigne drapeau : le support est fourni par l'atelier (panneau complet) sauf si le client coche « J'ai déjà le support en bon état et propre ».
+function fabricationPour(s){
+  if(estDrapeau(s)) return s.supportExistant ? '' : FORMAT_DRAPEAU_STANDARD;
+  if(s.support === 'Stop-trottoir') return FORMAT_STOP_TROTTOIR_STANDARD;
+  return s.fabrication ? FABRICATION_CLIENT : '';
+}
+// Toutes les variables d'une ligne de calcul à partir de ce que le client a renseigné — utilisée pour le prix ET pour l'envoi à l'atelier.
+function ligneCalculPour(s0){
+  const s = supportEffectif(s0), drapeau = estDrapeau(s);
+  return { ...s, surfaceSupportM2: (Number(s.longueurCm) && Number(s.hauteurCm)) ? Number(s.longueurCm) * Number(s.hauteurCm) / 10000 : 0, ...dimensionsPourCalcul(s), ...flagsEffet(), forme: s.forme || state.rendu.forme, effet: s.dorure ? 'Dorure' : state.rendu.effet,
+    doreePct: s.dorure ? (s.doreePct ?? 100) : null, fabricationSupport: fabricationPour(s), etat: s.etat || 'Lisse et propre',
+    hauteurChantier: drapeau ? HAUTEUR_ECHAFAUDAGE : s.hauteurChantier,          // enseigne drapeau : échafaudage mobile chiffré d'office
+    tailleLettres: s.support === 'Jambages' ? s.tailleLettres : '', empattements:false, texteAPeindre: textePourCalcul(s) };
+}
+// Véhicule : le client coche seulement les PARTIES à lettrer (vocabulaire de la planche « Les voitures »). Les dimensions du lettrage sont
+// celles d'une berline moyenne (longueur ≈ 4,50 m) : c'est un estimatif, le détail se précise au croquis ou au BAT. Le moteur de calcul reçoit une seule
+// ligne : la surface totale de lettrage (somme des parties) est convertie en carré équivalent, le temps de mise en route n'étant compté qu'une fois.
+// l × h = emprise moyenne du lettrage sur la partie, en cm (modifiable ici si l'atelier veut affiner).
+const PARTIES_VEHICULE = [
+  { cle:'lateral_droit',        label:'Latérale droite',          l:200, h:40 },
+  { cle:'lateral_gauche',       label:'Latérale gauche',          l:200, h:40 },
+  { cle:'porte_droite',         label:'Porte droite',             l:70,  h:25 },
+  { cle:'porte_gauche',         label:'Porte gauche',             l:70,  h:25 },
+  { cle:'vitre_laterale_droite',  label:'Vitre latérale droite',  l:50,  h:20 },
+  { cle:'vitre_laterale_gauche',  label:'Vitre latérale gauche',  l:50,  h:20 },
+  { cle:'aile_arriere_droite',  label:'Aile arrière droite',      l:60,  h:30 },
+  { cle:'aile_arriere_gauche',  label:'Aile arrière gauche',      l:60,  h:30 },
+  { cle:'capot',                label:'Capot',                    l:90,  h:40 },
+  { cle:'tablier',              label:'Tablier',                  l:80,  h:20 },
+  { cle:'traverse_arriere',     label:'Traverse arrière',         l:100, h:20 },
+  { cle:'vitre_arriere',        label:'Vitre arrière',            l:80,  h:25 },
+  { cle:'porte_arriere_gauche', label:'Porte arrière gauche',     l:70,  h:30 },
+  { cle:'porte_arriere_droite', label:'Porte arrière droite',     l:70,  h:30 },
+];
+const estVehicule = s => s.support === 'Véhicule';
+function partiesVehiculeChoisies(s){
+  return PARTIES_VEHICULE.filter(d => s.parties && s.parties[d.cle] && s.parties[d.cle].coche).map(d => ({ ...d, ...s.parties[d.cle] }));
+}
+function partiesVehiculeCompletes(s){ return partiesVehiculeChoisies(s).length > 0; }
+function surfaceVehiculeCm2(s){
+  return partiesVehiculeChoisies(s).reduce((somme, x) => somme + x.l * x.h, 0);
+}
+// Texte d'une partie : celui que le client a précisé pour elle, sinon le texte principal du support.
+const texteLigne = s => String(s.texteAPeindre || state.projet.nomProjet || '').trim();
+const texteDePartie = (s, x) => String(x.texte || '').trim() || texteLigne(s);
+// Texte envoyé au moteur de calcul : celui de chaque partie cochée mis bout à bout (un nom répété sur les deux côtés compte deux fois).
+function textePourCalcul(s){
+  const ch = estVehicule(s) ? partiesVehiculeChoisies(s) : [];
+  return ch.length ? ch.map(x => texteDePartie(s, x)).join(' / ') : (s.texteAPeindre || state.projet.nomProjet);
+}
+function resumeVehicule(s){
+  return partiesVehiculeChoisies(s).map(x => `${x.label} (≈ ${x.l} × ${x.h} cm) — « ${texteDePartie(s, x)} »`).join(' ; ');
+}
+function majPartieVehicule(id, cle, coche){
+  const s = state.supports.find(x=>x.id===id); if(!s) return;
+  s.parties = s.parties || {};
+  const x = s.parties[cle] = s.parties[cle] || {};
+  x.coche = !!coche; if(!coche) x.ouvert = false;
+  if(s._prixAffiche!=null) s._dirty = true;
+  render();
+}
+function basculerTextePartie(id, cle){
+  const s = state.supports.find(x=>x.id===id); if(!s || !s.parties || !s.parties[cle]) return;
+  s.parties[cle].ouvert = !s.parties[cle].ouvert;
+  render();
+  if(s.parties[cle].ouvert){ const i = document.getElementById('pt-' + id + '-' + cle); if(i) i.focus(); }
+}
+function saisirTextePartie(id, cle, valeur){   // à la frappe : on mémorise seulement ; le prix se met à jour à la validation du champ
+  const s = state.supports.find(x=>x.id===id); if(!s || !s.parties || !s.parties[cle]) return;
+  s.parties[cle].texte = valeur;
+}
+function validerTextePartie(id, cle){
+  const s = state.supports.find(x=>x.id===id); if(!s) return;
+  if(s._prixAffiche!=null) s._dirty = true;
+  setTimeout(render, 0);   // après le déplacement du focus (Tab), pour ne pas le perdre
+}
+function partiesVehiculeHtml(s){
+  const court = v => v.length > 16 ? v.slice(0, 15) + '…' : v;
+  return `<div class="partiesVeh">${PARTIES_VEHICULE.map(d => {
+    const x = (s.parties && s.parties[d.cle]) || {};
+    const coche = !!x.coche, propre = String(x.texte || '').trim();
+    return `<div class="partVeh${coche?' on':''}"><div class="checkRow"><input type="checkbox" id="pv-${s.id}-${d.cle}" ${coche?'checked':''} onchange="majPartieVehicule('${s.id}','${d.cle}', this.checked)"><label for="pv-${s.id}-${d.cle}">${d.label}</label></div>${coche ? `
+      <button type="button" class="lienTexte" onclick="basculerTextePartie('${s.id}','${d.cle}')">✎ ${propre ? '« ' + escapeHtml(court(propre)) + ' »' : 'autre texte'}</button>
+      ${x.ouvert ? `<input class="input petitChamp" id="pt-${s.id}-${d.cle}" placeholder="Texte pour cette partie" value="${escapeHtml(x.texte || '')}" oninput="saisirTextePartie('${s.id}','${d.cle}', this.value)" onchange="validerTextePartie('${s.id}','${d.cle}')" onkeydown="if(event.key==='Enter'){this.blur()}">` : ''}` : ''}</div>`;
+  }).join('')}</div>`;
+}
+// Emprise estimée du lettrage = le bloc de texte (largeur × hauteur) que le nombre de lettres permet de poser sur le support : lettres de taille « type »
+// (enseigne principale : environ 15 cm de large × 25 cm de haut, d'après Tristan), réduites si le support est trop petit, sur 1 à 3 lignes (celle qui garde les plus grandes lettres).
+// Marges : 90 % de la longueur, 80 % de la hauteur du support. Estimation à préciser au croquis ou au BAT ; sans texte, on retombe sur une part de la surface du support.
+const LETTRES_TYPE = { "Enseigne principale":{ w:15, h:25 }, "Enseigne drapeau":{ w:8, h:12 }, "Vitrines":{ w:8, h:12 }, "Pignon":{ w:40, h:60 }, "Stop-trottoir":{ w:6, h:9 }, "Ardoises":{ w:3, h:5 } };
+function empriseEstimee(s){
+  const t = LETTRES_TYPE[s.support];
+  if(!t || !s.longueurCm || !s.hauteurCm) return null;
+  const n = String(textePourCalcul(s) || '').replace(/\s/g, '').length; if(!n) return null;
+  const aw = Number(s.longueurCm) * 0.9, ah = Number(s.hauteurCm) * 0.8, pas = t.w * 1.2, inter = 1.15;
+  let meilleur = null;
+  for(let k = 1; k <= 3; k++){
+    const parLigne = Math.ceil(n / k), sc = Math.min(1, aw / (parLigne * pas), ah / (k * t.h * inter));
+    if(!meilleur || sc > meilleur.sc + 1e-6) meilleur = { k, parLigne, sc };
+  }
+  const { k, parLigne, sc } = meilleur;
+  return { longueurCm: Math.round(Math.min(aw, parLigne * pas * sc)), hauteurCm: Math.round(Math.min(ah, (k * t.h + (k - 1) * t.h * (inter - 1)) * sc)),
+           lettres: n, lignes: k, largeurLettre: Math.round(t.w * sc), hauteurLettre: Math.round(t.h * sc) };
+}
+const phraseEmprise = e => `${e.longueurCm} × ${e.hauteurCm} cm — ${e.lettres} lettre${e.lettres > 1 ? 's' : ''} d'environ ${e.largeurLettre} × ${e.hauteurLettre} cm sur ${e.lignes} ligne${e.lignes > 1 ? 's' : ''}`;
+// Emprise utilisée par le calcul (part de la surface du support), avec en information la hauteur de lettres que le nombre de lettres permet de poser.
+function phraseEmpriseCalcul(s){
+  const part = empriseLettrage()[s.support];
+  if(!part || !s.longueurCm || !s.hauteurCm) return '';
+  const d = dimensionsPourCalcul(s), e = empriseEstimee(s), pct = Math.round(Math.sqrt(part) * 100);
+  return `${d.longueurCm} × ${d.hauteurCm} cm (${pct} % de chaque dimension du support)` + (e ? ` — ${e.lettres} lettre${e.lettres > 1 ? 's' : ''} : lettres jusqu'à environ ${e.hauteurLettre} cm de haut possibles sur ${e.lignes} ligne${e.lignes > 1 ? 's' : ''}` : '');
+}
+function texteEmprise(s){
+  // Jamais de dimensions interprétées : seules celles saisies par le client sont montrées ; la taille du lettrage se précise à la maquette.
+  return `Nous préciserons ensemble la taille du lettrage au moment de la maquette.`;
+}
+function dimensionsPourCalcul(s){
+  if(estVehicule(s)){
+    const cm2 = surfaceVehiculeCm2(s);
+    if(!cm2) return { longueurCm: '', hauteurCm: '' };
+    const c = Math.round(Math.sqrt(cm2));
+    return { longueurCm: c, hauteurCm: c };
+  }
+  const part = empriseLettrage()[s.support];
+  if(!part || !s.longueurCm || !s.hauteurCm) return { longueurCm: s.longueurCm, hauteurCm: s.hauteurCm };
+  const k = Math.sqrt(part);
+  return { longueurCm: Math.round(s.longueurCm * k), hauteurCm: Math.round(s.hauteurCm * k) };
+}
+// Calage de l'estimation en ligne sur les prix moyens validés par Tristan (28/10/2026) : enseigne principale ≈ 890 € HT, véhicule ≈ 1 500 € HT, pignon ≈ 2 800 € HT
+// sur leurs dimensions standard et un nom d'environ 11 lettres. Le coefficient ne s'applique qu'à la part variable (jamais à la fabrication du support) ;
+// réglable via parametres_estimation.coefEstimation. Le devis interne n'est pas concerné.
+const COEF_ESTIMATION_DEFAUT = { "Enseigne principale":1.305, "Véhicule":1.385, "Pignon":1.677 };   // calculés sur un nom de 11 lettres : 682 → 890 €, 1 083 → 1 500 €, 1 670 → 2 800 € (pro, HT)
+function coefEstimation(support){ const v = Number({ ...COEF_ESTIMATION_DEFAUT, ...(reglagesEstimation?.coefEstimation || {}) }[support]); return v > 0 ? v : 1; }
+function calculSupport(s){
+  const ctx = ctxEstimation(); if(!ctx || !s.support) return null;
+  const c = calculerLigne(ligneCalculPour(s), state.coordonnees.typeClient, ctx);
+  const k = c ? coefEstimation(s.support) : 1;
+  if(!c || k === 1) return c;
+  const fab = (Number(c.fabricationHT) || 0) * (c.quantite || 1);
+  return { ...c, prixHT: Math.round(((c.prixHT - fab) * k + fab) * 100) / 100 };
+}
+function prixLigneSupport(s){ const c = calculSupport(s); return c ? c.prixHT : null; }
+// Part FIXE d'un support (fabrication du support : prix arrêté, sans marge d'incertitude) : la fourchette ne s'applique qu'au reste.
+function fixeLigneSupport(s){ const c = calculSupport(s); return c ? (Number(c.fabricationHT) || 0) * (c.quantite || 1) : 0; }
+function estimationFixeHT(){
+  return state.supports.filter(s => s.inclus && supportComplet(s) && s._prixAffiche != null).reduce((t, s) => t + fixeLigneSupport(s), 0);
+}
+// Ce qui est demandé au client pour voir le prix : la matière (si le support en a), l'état (là où il compte), les dimensions du SUPPORT — ou les parties du véhicule.
+function supportComplet(s){
+  if(s.moyen) return true;
+  if((COMPATIBILITES[s.support]||[]).length && !s.matiere) return false;
+  if(ETAT_A_CHOISIR.includes(s.support) && etatOptionsPourSupport(s).length > 1 && !s.etat) return false;
+  return estVehicule(s) ? partiesVehiculeCompletes(s) : !!(s.longueurCm && s.hauteurCm);
+}
+// Prix moyen d'un support (variables standard) : fourchette affichée sur la ligne « Ajouter d'autres supports ».
+function prixMoyenSupport(s){ return prixLigneSupport({ ...s, moyen:true }); }
+function fourchetteTexte(prixHT, fixeHT){
+  if(prixHT == null) return '';
+  const ttc = state.coordonnees.typeClient === 'particulier', k = ttc ? 1 + (reglagesEstimation?.tvaPct ?? 20)/100 : 1, f = fourchettePct()/100;
+  const arr = v => Math.round(v / 10) * 10, fixe = (fixeHT || 0) * k, variable = prixHT * k - fixe;
+  return `≈ ${arr(variable * (1 - f) + fixe).toLocaleString('fr-FR')} – ${arr(variable * (1 + f) + fixe).toLocaleString('fr-FR')} € ${ttc ? 'TTC' : 'HT'}`;
+}
+// « Envie d'un petit plus ? » : cases à cocher. Prix indicatifs seulement quand ils sont arrêtés (null = sur devis, rien n'est ajouté au total) ;
+// un prix enregistré dans Réglages tarifs (produits dérivés, même clé) passe avant.
+const PETITS_PLUS = [
+  { cle:'logo_seul',        label:"Création d'un logo seul",                                                          prixHT:null },
+  { cle:'mini_charte',      label:"Création d'une mini charte graphique (couleurs, typo...)",                         prixHT:250 },
+  { cle:'charte_complete',  label:"Création d'une charte graphique complète (déclinaison sur supports prints et conseils)", prixHT:null },
+  { cle:'carte_visite',     label:"Carte de visite",                                                                  prixHT:80 },
+  { cle:'menus',            label:"Création de menus...",                                                             prixHT:null },
+  { cle:'flyers',           label:"Flyers",                                                                           prixHT:null },
+  { cle:'urbanisme',        label:"Accompagnement pour les démarches d'urbanisme : Architectes des Bâtiments de France", prixHT:null },
+  { cle:'photos',           label:"Réalisation de photos par un professionnel, avec Tristan",                         prixHT:300 },
+  { cle:'video',            label:"Réalisation d'une vidéo par un professionnel, avec Tristan",                       prixHT:300 },
+];
+function petitPlusParCle(cle){
+  const d = PETITS_PLUS.find(x => x.cle === cle); if(!d) return null;
+  const enreg = (reglagesEstimation?.produitsDerives || []).find(x => x.cle === cle);
+  const prix = enreg && enreg.prixHT != null ? Number(enreg.prixHT) : d.prixHT;
+  return { cle, label: d.label, prixHT: prix };
+}
+function toggleEnvie(cle, coche){
+  if(coche){ if(!state.envieChoisies.includes(cle)) state.envieChoisies.push(cle); }
+  else { state.envieChoisies = state.envieChoisies.filter(c=>c!==cle); }
+  render();
+}
+// Estimation totale HT (avant fourchette) : somme des blocs support cochés "C'est ça que je
+// veux" (et dont le prix a été affiché au moins une fois) + produits dérivés cochés.
+// Le total reprend les prix AFFICHÉS (mis à jour via le bouton dédié de chaque ligne), pas un
+// recalcul direct — pour rester cohérent avec ce que le client voit sur chaque bloc support.
+// Forfaits inclus d'office dans tout estimatif, une seule fois par projet (et non par support) : PRIX FIXES — le client voit toujours
+// pour la maquette 290 € (particulier) ou 490 € (professionnel), et 250 € pour la préparation des poncifs, sans remise ni majoration ; pour un
+// particulier, ces montants sont les montants TTC affichés. Modifiables plus tard par réglage (reglagesEstimation.forfaitsProjet).
+const FORFAITS_PROJET_DEFAUT = [
+  { cle:'maquette', label:'Création de la maquette', prixAffiche:{ particulier:290, professionnel:390 } },   // valeurs de repli ; les prix réels se règlent dans Réglages tarifs
+  { cle:'poncifs',  label:'Préparation des poncifs', prixAffiche:250 },
+];
+// Montant HT équivalent d'un prix fixe affiché (le total est calculé en HT puis converti en TTC pour un particulier).
+// Prix affiché d'un forfait pour le type de client en cours (un nombre, ou { particulier, professionnel }).
+function prixForfaitAffiche(f){
+  const v = f.prixAffiche ?? f.prixHT;
+  return Number(v && typeof v === 'object' ? v[state.coordonnees.typeClient] : v) || 0;
+}
+function forfaitHT(f){
+  const affiche = prixForfaitAffiche(f);
+  return state.coordonnees.typeClient === 'particulier' ? affiche / (1 + (reglagesEstimation?.tvaPct ?? 20) / 100) : affiche;
+}
+function forfaitsProjet(){
+  const l = reglagesEstimation?.forfaitsProjet;
+  return (Array.isArray(l) && l.length) ? l : FORFAITS_PROJET_DEFAUT;
+}
+function estimationTotaleHT(){
+  const ctx = ctxEstimation(); if(!ctx) return null;
+  let total = 0;
+  for(const s of state.supports){
+    if(s.inclus && supportComplet(s) && s._prixAffiche!=null) total += s._prixAffiche;
+  }
+  if(!total) return 0;   // le trajet et les petits plus ne s'affichent jamais seuls
+  for(const f of forfaitsProjet()) total += forfaitHT(f);
+  for(const cle of state.envieChoisies){
+    const p = petitPlusParCle(cle);
+    if(p) total += Number(p.prixHT)||0;
+  }
+  if(state.deplacement) total += state.deplacement.prixHT;
+  return arrondir(total, 0);
+}
+
+/* =========================================================================
+   DÉPLACEMENT — distance routière atelier <-> chantier (API Adresse pour situer les deux
+   adresses, OSRM pour l'itinéraire : deux services publics gratuits, sans clé), aller-retour
+   x prix au km des réglages tarifs. Même calcul que le devis interne. Best-effort : si un
+   service ne répond pas, l'estimatif s'affiche sans trajet.
+   ========================================================================= */
+const ATELIER_ADRESSE_DEFAUT = "16 rue de l'Industrie, 56390 Grand-Champ";
+let atelierAdresse = null, deplacementTimer = null, deplacementJeton = 0;
+async function geocoderAdresse(adresse){
+  try{
+    const r = await fetch('https://api-adresse.data.gouv.fr/search/?q='+encodeURIComponent(adresse)+'&limit=1');
+    const data = await r.json();
+    const f = data.features && data.features[0];
+    return f ? { lon:f.geometry.coordinates[0], lat:f.geometry.coordinates[1] } : null;
+  }catch(e){ return null; }
+}
+async function adresseAtelier(){
+  if(atelierAdresse) return atelierAdresse;
+  try{
+    const { data } = await sb.from('establishments').select('adresse').eq('id', ESTABLISHMENT_ID).maybeSingle();
+    if(data && data.adresse) atelierAdresse = data.adresse;
+  }catch(e){ /* repli sur l'adresse de l'atelier ci-dessus */ }
+  return atelierAdresse || ATELIER_ADRESSE_DEFAUT;
+}
+function planifierDeplacement(){ clearTimeout(deplacementTimer); deplacementTimer = setTimeout(calculerDeplacement, 600); }
+async function calculerDeplacement(){
+  const jeton = ++deplacementJeton;
+  const c = state.coordonnees;
+  if(c.adresse.trim().length < 4){ state.deplacement = null; majPanneau(); return; }
+  try{
+    const [origine, destination] = await Promise.all([adresseAtelier().then(geocoderAdresse), geocoderAdresse([c.adresse, c.ville].filter(Boolean).join(' '))]);
+    if(jeton !== deplacementJeton) return;
+    if(!origine || !destination){ state.deplacement = null; }
+    else {
+      const r = await fetch(`https://router.project-osrm.org/route/v1/driving/${origine.lon},${origine.lat};${destination.lon},${destination.lat}?overview=false`);
+      const data = await r.json();
+      if(jeton !== deplacementJeton) return;
+      if(data.code === 'Ok' && data.routes && data.routes.length){
+        const km = arrondir(data.routes[0].distance/1000*2, 1);
+        state.deplacement = { km, prixHT: arrondir(km * (reglagesEstimation?.prixParKm ?? 0.60), 2) };
+      } else state.deplacement = null;
+    }
+  }catch(e){ if(jeton === deplacementJeton) state.deplacement = null; }
+  majPanneau();
+}
+
+/* =========================================================================
+   REMPLISSAGE SEMI-AUTOMATIQUE — adresse (API Adresse, gouv.fr) et société
+   par SIRET (API Recherche d'entreprises, gouv.fr). Deux API publiques
+   françaises, gratuites, sans clé. Best-effort : une erreur réseau ne bloque
+   jamais la saisie manuelle, elle laisse juste le champ vide.
+   ========================================================================= */
+let adresseSuggestions = [];
+let adresseTimer = null;
+function chercherAdresse(valeur){
+  state.coordonnees.adresse = valeur;
+  state.adresseSiegePropose = false; const hint = document.getElementById('hintSiege'); if(hint) hint.remove();
+  clearTimeout(adresseTimer);
+  if(valeur.trim().length < 4){ adresseSuggestions = []; renderSuggestionsAdresse(); return; }
+  adresseTimer = setTimeout(async ()=>{
+    try{
+      const r = await fetch('https://api-adresse.data.gouv.fr/search/?q='+encodeURIComponent(valeur)+'&limit=5');
+      const data = await r.json();
+      adresseSuggestions = (data.features||[]).map(f=>({
+        label: f.properties.label, nom: f.properties.name || f.properties.label,
+        // Ville du chantier = code postal + commune, sinon le code postal disparaissait
+        // complètement (ni dans "Adresse", ni dans "Ville").
+        ville: [f.properties.postcode, f.properties.city].filter(Boolean).join(' ')
+      }));
+    }catch(e){ adresseSuggestions = []; }
+    renderSuggestionsAdresse();
+  }, 300);
+}
+function choisirAdresse(i){
+  const s = adresseSuggestions[i]; if(!s) return;
+  state.adresseSiegePropose = false;
+  state.coordonnees.adresse = s.nom;
+  state.coordonnees.ville = s.ville;
+  adresseSuggestions = [];
+  planifierDeplacement();
+  render();
+}
+function renderSuggestionsAdresse(){
+  const el = document.getElementById('sugAdresse'); if(!el) return;
+  el.innerHTML = adresseSuggestions.map((s,i)=>`<div class="sugItem" onclick="choisirAdresse(${i})">${escapeHtml(s.label)}</div>`).join('');
+}
+
+let siretTimer = null;
+function chercherSiret(valeur){
+  state.coordonnees.siret = valeur;
+  clearTimeout(siretTimer);
+  const chiffres = valeur.replace(/\D/g,'');
+  if(chiffres.length !== 14) return;
+  siretTimer = setTimeout(async ()=>{
+    try{
+      const soc = await societeParSiretApi(chiffres);
+      if(soc){
+        if(!state.coordonnees.raisonSociale){ state.coordonnees.raisonSociale = soc.nom; render(); }
+        preremplirAdresseSiege(soc);
+      }
+    }catch(e){ /* recherche best-effort, pas de blocage si l'API est indisponible */ }
+  }, 400);
+}
+
+// Sens inverse : taper le nom de la société propose des résultats (avec SIRET), pour
+// remplir le SIRET sans avoir à aller le chercher soi-même.
+let societeSuggestions = [];
+let societeTimer = null, societeRequete = 0, societeStatut = '';   // statut : '' | 'recherche' | 'vide' | 'erreur'
+function chercherSociete(valeur){
+  state.coordonnees.raisonSociale = valeur;
+  clearTimeout(societeTimer);
+  const numero = ++societeRequete;   // une réponse arrivée en retard pour un ancien texte est ignorée
+  if(valeur.trim().length < 3){ societeSuggestions = []; societeStatut = ''; renderSuggestionsSociete(); return; }
+  societeTimer = setTimeout(async ()=>{
+    societeStatut = 'recherche'; renderSuggestionsSociete();
+    try{
+      const r = await chercherSocietesApi(valeur.trim());
+      if(numero !== societeRequete) return;
+      societeSuggestions = r; societeStatut = r.length ? '' : 'vide';
+    }catch(e){ if(numero !== societeRequete) return; societeSuggestions = []; societeStatut = 'erreur'; }
+    renderSuggestionsSociete();
+  }, 450);
+}
+function choisirSociete(i){
+  const s = societeSuggestions[i]; if(!s) return;
+  state.coordonnees.raisonSociale = s.nom;
+  if(s.siret) state.coordonnees.siret = s.siret;
+  societeSuggestions = []; societeStatut = '';
+  render();
+  preremplirAdresseSiege(s);
+}
+// Adresse du siège proposée dans « Adresse du chantier » — seulement si ce champ est encore vide (on n'écrase jamais une saisie), et toujours modifiable :
+// taper le début d'une autre adresse relance la recherche habituelle. Mise en forme par la même base d'adresses que la saisie manuelle.
+async function adresseDuSiege(soc){
+  if(!soc.adresseSiege) return null;
+  try{
+    const r = await fetch('https://api-adresse.data.gouv.fr/search/?q=' + encodeURIComponent(soc.adresseSiege) + '&limit=1');
+    const data = await r.json(); const f = (data.features || [])[0];
+    if(f) return { nom: f.properties.name || f.properties.label, ville: [f.properties.postcode, f.properties.city].filter(Boolean).join(' ') };
+  }catch(e){ /* repli ci-dessous */ }
+  return soc.rue ? { nom: soc.rue, ville: [soc.cp, soc.commune].filter(Boolean).join(' ') } : null;
+}
+async function preremplirAdresseSiege(soc){
+  if((state.coordonnees.adresse || '').trim()) return;
+  const a = await adresseDuSiege(soc);
+  if(!a || (state.coordonnees.adresse || '').trim()) return;
+  state.coordonnees.adresse = a.nom; state.coordonnees.ville = a.ville; state.adresseSiegePropose = true;
+  planifierDeplacement();
+  render();
+}
+function renderSuggestionsSociete(){
+  const el = document.getElementById('sugSociete'); if(!el) return;
+  const msg = { recherche:'Recherche en cours…', vide:'Aucune entreprise trouvée : vérifiez le nom, ou saisissez le SIRET à droite.', erreur:"Le service de recherche d'entreprises ne répond pas pour le moment : saisissez le SIRET à droite, ou continuez sans." }[societeStatut];
+  if(msg && !societeSuggestions.length){ el.innerHTML = `<div class="sugItem" style="cursor:default;color:var(--muted)">${msg}</div>`; return; }
+  el.innerHTML = societeSuggestions.map((s,i)=>`<div class="sugItem" onclick="choisirSociete(${i})">${escapeHtml(s.nom)}${s.siret?' <span class="tiny" style="color:var(--muted)">('+escapeHtml(s.siret)+')</span>':''}</div>`).join('');
+}
+
+
+// Trois façons de lettrer (aperçu + coefficient « forme » du tarif) : le choix modifie le rendu visuel.
+const FORMES_APERCU = [
+  { cle:'Lettres capitales / majuscules', label:'MAJUSCULE', classe:'f-maj' },
+  { cle:'Lettres script / manuscrites',   label:'Script',    classe:'f-script', style:"font-family:'Snell Roundhand','Segoe Script','Brush Script MT','Lucida Handwriting',cursive;font-size:20px;line-height:1" },
+  { cle:'Lettres minuscules',             label:'Minuscule', classe:'f-min' },
+];
+function classeForme(s){ const f = FORMES_APERCU.find(x=>x.cle===s.forme); return f ? f.classe : ''; }
+function texteApercu(s, brut){
+  const t = brut || state.projet.nomProjet || '…';
+  if(s.forme === 'Lettres capitales / majuscules') return t.toUpperCase();
+  if(s.forme === 'Lettres minuscules') return t.toLowerCase();
+  return t;
+}
+function choisirForme(id, cle){
+  const s = state.supports.find(x=>x.id===id); if(!s) return;
+  s.forme = (s.forme === cle) ? '' : cle;
+  if(s._prixAffiche!=null) s._dirty = true;
+  render();
+}
+// Aperçu du lettrage : le texte occupe toute la largeur du bloc (jusqu'au bord droit de la colonne « État »),
+// et sa taille diminue quand le texte s'allonge (mesure à 100 px, puis réduction proportionnelle).
+function ajusterApercus(){
+  // Une ligne tant que la taille reste lisible (>= 44 px) ; sinon le texte passe sur 2, 3... jusqu'à 8 lignes, chacune
+  // à la plus grande taille qui tient. La taille ne tombe donc jamais à l'illisible.
+  const mobile = innerWidth < 640, MAX_PX = mobile ? 40 : 110, SEUIL_LISIBLE = mobile ? 26 : 44, INTERLIGNE = 1.12;
+  document.querySelectorAll('.apercuMini').forEach(el=>{
+    if(!el.clientWidth) return;
+    el.style.minHeight = '0'; el.style.lineHeight = String(INTERLIGNE);
+    const tient = (f, n) => { el.style.fontSize = f + 'px'; return el.scrollHeight <= Math.ceil(f * INTERLIGNE * n) + 8 && el.scrollWidth <= el.clientWidth + 1; };
+    const meilleur = n => { let lo = 12, hi = MAX_PX, ok = 12; while(lo <= hi){ const m = (lo + hi) >> 1; if(tient(m, n)){ ok = m; lo = m + 1; } else hi = m - 1; } return ok; };
+    let f = 12;
+    for(let n = 1; n <= 8; n++){ f = meilleur(n); if(f >= SEUIL_LISIBLE || n === 8) break; }
+    el.style.fontSize = f + 'px';
+  });
+}
+function majApercu(id, valeur){
+  const s = state.supports.find(x=>x.id===id); if(!s) return;
+  s.texteAPeindre = valeur;
+  const el = document.getElementById('ap-'+id);
+  if(el){ el.querySelector('.apTxt').textContent = texteApercu(s, valeur); ajusterApercus(); }
+}
+function majSupport(id, champ, valeur){
+  const s = state.supports.find(x=>x.id===id);
+  if(!s) return;
+  if(champ==='matiere'){
+    s.matiere = valeur;
+    const opts = etatOptionsPourSupport(s);
+    if(!opts.includes(s.etat)) s.etat = (ETAT_A_CHOISIR.includes(s.support) && opts.length > 1) ? '' : opts[0];
+  }
+  else if(champ==='longueurCm' || champ==='hauteurCm'){ s[champ] = valeur===''?'':Number(valeur); }
+  else if(champ==='deposePose'){ s.deposePose = !!valeur; }
+  else { s[champ] = valeur; }
+  // L'estimation affichée ne se recalcule jamais toute seule à la frappe — seul le bouton
+  // "Afficher l'estimation" / "Actualiser" de la ligne (voir actualiserPrixSupport) la calcule,
+  // qu'elle soit cochée ou non. On marque juste ici qu'un prix déjà affiché est devenu périmé.
+  if(s._prixAffiche!=null) s._dirty = true;
+  // Dimensions : le « change » part au moment où le curseur quitte la case (Tab) — on redessine juste après, quand le focus est arrivé dans la case suivante, pour qu'il y reste.
+  if(champ === 'longueurCm' || champ === 'hauteurCm') setTimeout(render, 0); else render();
+}
+
+function nouveauSupportVide(support){
+  const nom = support || 'Enseigne principale', matieres = COMPATIBILITES[nom] || [], fmt = FORMATS_FIXES[nom];
+  return { id: uid('s'), support:nom, inclus:false, explore:false, moyen:false, supportExistant:false, texteAPeindre:'', dorure:false,
+    matiere: fmt ? fmt.matiere : (matieres.length === 1 ? matieres[0] : ''), etat: ETAT_A_CHOISIR.includes(nom) ? '' : 'Lisse et propre',
+    longueurCm: fmt ? fmt.longueurCm : '', hauteurCm: fmt ? fmt.hauteurCm : '', hauteurChantier:'En rez-de-chaussée', forme:'', effet:'', tailleLettres:'', deposePose:false, empattements:false,
+    relief:false, couleursMultiples:false, ombreSupplementaire:false, _prixAffiche:null, _dirty:false };
+}
+// Tous les supports du catalogue sont toujours en base (voir state.supports) — cocher
+// "C'est ça que je veux" décide juste de l'inclusion dans le total et l'envoi ; le calcul du
+// prix de la ligne est une action séparée et explicite (voir actualiserPrixSupport).
+const URL_CONTACT = 'https://www.etsgesret.fr/contact';
+// 9e carte : jamais un support à chiffrer. Avec une souris, un clic ouvre la page de contact ; au
+// toucher (pas de survol), un premier tap affiche l'info-bulle et son bouton, un second ouvre le contact.
+function tuileImprobable(){
+  return `<div class="tile tileSupport tileImprobable ${state.improbableOuvert?'ouvert':''}" role="link" tabindex="0" aria-label="Support improbable (phare, moulin, soucoupe volante…) — nous contacter" onclick="clicImprobable()" onkeydown="if(event.key==='Enter')clicImprobable()">
+    <div class="bulleImprobable">Ça aussi, on adore. Contactez-nous !<br><a class="bulleBtn" href="${URL_CONTACT}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Contactez-nous</a></div>
+    <div class="preview">${pictoImg('ufo')}</div>
+    <div class="label">Autre</div>
+  </div>`;
+}
+function clicImprobable(){
+  const tactile = window.matchMedia && matchMedia('(hover:none)').matches;
+  if(tactile && !state.improbableOuvert){ state.improbableOuvert = true; render(); return; }
+  state.improbableOuvert = false;
+  window.open(URL_CONTACT, '_blank', 'noopener');
+  render();
+}
+// Fait descendre l'écran jusqu'au bloc du support qui vient de s'ouvrir, CENTRÉ dans la partie visible de l'écran.
+// La page change encore de hauteur juste après un clic (rendu, calcul du trajet, polices, aperçu) : on revise donc la cible
+// plusieurs fois pendant ~3 s, tant que le visiteur n'a pas repris la main (molette, toucher, clavier, clic).
+let derniereInteraction = 0;
+['wheel','touchstart','keydown','mousedown'].forEach(ev => window.addEventListener(ev, () => { derniereInteraction = Date.now(); }, { passive:true }));
+function allerAuSupport(id, debut){
+  debut = debut || Date.now();
+  const viser = (doux, seuil) => {
+    if(derniereInteraction > debut) return;
+    const el = document.getElementById('sb-'+id); if(!el) return;
+    const r = el.getBoundingClientRect();
+    const barreBas = (innerWidth < 1100 && document.body.classList.contains('avecEstimatif')) ? 92 : 0;   // panneau fixé en bas sur petit écran
+    const visible = innerHeight - barreBas;
+    const cible = r.height > visible * 0.92 ? r.top + scrollY - 16 : r.top + scrollY - (visible - r.height) / 2;
+    if(seuil === undefined || Math.abs(cible - scrollY) > seuil) window.scrollTo({ top: Math.max(0, cible), behavior: 'smooth' });
+  };
+  // Un seul mouvement fluide, lancé quand la page a fini de se mettre en place ; ensuite on ne corrige que si la page a vraiment bougé.
+  setTimeout(() => viser(true), 280);
+  setTimeout(() => viser(true, 90), 1400);
+  return debut;
+}
+function toggleSupportInclus(id, coche){
+  const s = state.supports.find(x=>x.id===id); if(!s) return;
+  s.inclus = coche;
+  if(coche) s.explore = true;
+  render();
+  if(coche && state.estimationVisible) allerAuSupport(id);
+}
+// Un seul support principal à la fois : le choisir ouvre ses variables plus bas (après « Voir l'estimation ») et retire l'ancien principal.
+// S'il avait été ajouté comme support « moyen », il devient le principal (variables détaillées).
+function choisirSupportPrincipal(id){
+  const s = state.supports.find(x=>x.id===id); if(!s) return;
+  for(const x of state.supports){ if(x.id === state.principalId && x.id !== id){ x.inclus = false; x.moyen = false; } }
+  state.principalId = id; s.inclus = true; s.moyen = false; s.explore = true;
+  render();
+  if(state.estimationVisible) allerAuSupport(id); else tenterEstimationSiPret();
+}
+// Autres supports : une ligne à cocher, estimés sur des variables standard — pas de détail à renseigner.
+function ajouterSupportMoyen(id, coche){
+  const s = state.supports.find(x=>x.id===id); if(!s || id === state.principalId) return;
+  s.inclus = !!coche; s.moyen = !!coche;
+  render();
+}
+// Répertoire "Voir les autres supports" (point 3) : un seul détail ouvert à la fois — en
+// ouvrir un referme automatiquement celui qui était ouvert (voir renderRepertoireRow).
+function toggleSupportOuvert(id){
+  const s = state.supports.find(x=>x.id===id); if(!s) return;
+  const ouvre = state.supportOuvert !== id;
+  if(!ouvre){ state.supportOuvert = null; }
+  else { state.supportOuvert = id; s.explore = true; }
+  render();
+  if(ouvre) allerAuSupport(id);
+}
+// Duplication (un même support peut revenir plusieurs fois, avec un texte différent ou pas —
+// ex : deux Vitrines). Seules les copies (base:false) peuvent être retirées, pas les 8 lignes
+// de départ du catalogue.
+function dupliquerSupport(id){
+  const i = state.supports.findIndex(x=>x.id===id); if(i<0) return;
+  const copie = { ...nouveauSupportVide(state.supports[i].support), base:false };
+  state.supports.splice(i+1, 0, copie);
+  render();
+}
+function retirerSupport(id){
+  const s = state.supports.find(x=>x.id===id);
+  if(!s || s.base) return;
+  state.supports = state.supports.filter(x=>x.id!==id);
+  render();
+}
+function actualiserPrixSupport(id){
+  const s = state.supports.find(x=>x.id===id); if(!s || !supportComplet(s)) return;
+  s._prixAffiche = prixLigneSupport(s);
+  s._dirty = false;
+  render();
+}
+function actualiserToutesLesEstimations(){
+  for(const s of state.supports){
+    if(s.inclus && supportComplet(s)){ s._prixAffiche = prixLigneSupport(s); s._dirty = false; }
+    else if(s.inclus){ s._prixAffiche = null; s._dirty = false; }
+  }
+}
+function toggleOption(code){
+  const i = state.optionsChoisies.indexOf(code);
+  if(i>=0) state.optionsChoisies.splice(i,1); else state.optionsChoisies.push(code);
+  render();
+}
+
+/* =========================================================================
+   PHOTOS / FICHIERS — importés directement dans le formulaire (au lieu de
+   demander un envoi par email à part). Stockés en base64 avec la demande ;
+   plafonnés en taille pour rester raisonnable en attendant un vrai stockage
+   de fichiers (Supabase Storage, une fois le module Compte débloqué).
+   ========================================================================= */
+const MAX_FICHIERS = 5;
+const MAX_TAILLE_OCTETS = 3 * 1024 * 1024; // 3 Mo par fichier
+
+function lireFichier(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve({ nom: file.name, type: file.type, tailleKo: Math.round(file.size/1024), dataUrl: reader.result });
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function ajouterFichiers(inputEl){
+  const fichiers = Array.from(inputEl.files);
+  inputEl.value = '';
+  for(const f of fichiers){
+    if(state.projet.photos.length >= MAX_FICHIERS){ alert(`Vous avez déjà ${MAX_FICHIERS} fichiers joints, c'est le maximum.`); break; }
+    if(f.size > MAX_TAILLE_OCTETS){ alert(`"${f.name}" dépasse 3 Mo — réduisez sa taille avant de l'ajouter, ou envoyez-le à peinture@etsgesret.fr.`); continue; }
+    try{ const lu = await lireFichier(f); state.projet.photos.push(lu); render(); }
+    catch(e){ alert(`Impossible de lire "${f.name}".`); }
+  }
+}
+function retirerFichier(index){ state.projet.photos.splice(index,1); render(); }
+
+/* =========================================================================
+   RENDU IA — accélérateur de signature, pas un rendu réaliste. Génère un
+   croquis d'intention (jamais photoréaliste, même avec une vraie photo du
+   lieu) via l'edge function devis-rendu-ia. Ajouté automatiquement aux
+   fichiers envoyés avec la demande, comme n'importe quelle photo jointe.
+   ========================================================================= */
+async function choisirPhotoLieu(inputEl){
+  const f = inputEl.files[0]; inputEl.value='';
+  if(!f) return;
+  if(f.size > MAX_TAILLE_OCTETS){ alert(`"${f.name}" dépasse 3 Mo — réduisez sa taille avant de l'ajouter.`); return; }
+  try{ state.rendu.photoLieu = await lireFichier(f); render(); }
+  catch(e){ alert(`Impossible de lire "${f.name}".`); }
+}
+function retirerPhotoLieu(){ state.rendu.photoLieu = null; render(); }
+
+async function genererRendu(){
+  if(!state.principalId){ alert("Choisissez d'abord votre support à peindre (section « Votre projet »)."); return; }
+  if(!state.projet.nomProjet.trim()){ alert("Indiquez d'abord le lettrage à peindre, dans la section « Votre projet »."); return; }
+  if(!ESTABLISHMENT_ID) return;
+  // Le chiffrage s'affiche tout de suite (indépendant du rendu visuel, plus lent / pas
+  // toujours disponible) — jamais avant ce clic explicite (point 1, revu après test réel).
+  state.estimationVisible = true;
+  actualiserToutesLesEstimations();
+  calculerDeplacement();
+  state.rendu.enCours = true; state.rendu.erreur=''; render();
+  // L'écran descend tout seul jusqu'au bloc du support choisi, centré (au lieu de rester sur les effets).
+  const premierSupport = state.supports.find(x=>x.id===state.principalId);
+  const debutDefilement = premierSupport ? allerAuSupport(premierSupport.id) : 0;
+  try{
+    const { data, error } = await sb.functions.invoke('devis-rendu-ia', { body: {
+      nomEnseigne: state.projet.nomProjet,
+      texteAPeindre: state.projet.nomProjet,
+      forme: state.rendu.forme, effet: descriptionEffet() || state.rendu.effet,
+      photoLieuDataUrl: state.rendu.photoLieu ? state.rendu.photoLieu.dataUrl : null,
+      establishmentId: ESTABLISHMENT_ID,
+    }});
+    if(error) throw error;
+    if(data && data.erreur) throw new Error(data.erreur);
+    state.rendu.imageUrl = data.imageUrl;
+    state.projet.photos = state.projet.photos.filter(p=>p.nom !== 'Aperçu généré (croquis IA)');
+    state.projet.photos.push({ nom:'Aperçu généré (croquis IA)', type:'image/png', tailleKo: Math.round(data.imageUrl.length*0.75/1024), dataUrl: data.imageUrl });
+  }catch(err){
+    console.warn('Aperçu dessiné indisponible :', err);
+    state.rendu.erreur = '';   // aucun message au visiteur : l'aperçu dessiné est un plus, l'estimation s'affiche de toute façon
+  }
+  state.rendu.enCours = false;
+  render();
+  if(premierSupport) allerAuSupport(premierSupport.id, debutDefilement);   // recadre si le rendu a de nouveau changé la page
+}
+
+/* =========================================================================
+   ENVOI — crée un devis en statut "brouillon" via une fonction Supabase dédiée
+   (soumettre_devis_client), en passant chaque support choisi par le calcul
+   BASE×COEF, exactement comme côté atelier. Le client ne voit jamais le prix.
+   ========================================================================= */
+function validerFormulaire(){
+  const manquants = [];
+  if(state.coordonnees.typeClient==='professionnel' && !state.coordonnees.raisonSociale.trim()) manquants.push("Dénomination de l'entreprise");
+  if(!state.coordonnees.nom.trim()) manquants.push("Nom - Prénom du contact");
+  if(!state.coordonnees.adresse.trim()) manquants.push("Adresse du chantier");
+  if(!state.coordonnees.ville.trim()) manquants.push("Ville du chantier");
+  if(!state.coordonnees.telephone.trim()) manquants.push("Téléphone");
+  if(!state.coordonnees.email.trim()) manquants.push("Email");
+  if(!state.projet.nomProjet.trim()) manquants.push("Nom de l'enseigne ou du lettrage à peindre");
+  if(!state.principalId) manquants.push("Votre support à peindre (à choisir dans « Support à peindre »)");
+  return manquants;
+}
+
+// Refus explicite : jamais déduit d'un abandon silencieux. Le bouton « Pas pour moi cette fois-ci »
+// ouvre une boîte à trois issues — garder ce qui a été renseigné (carte « Rejeté client », même
+// incomplet), tout supprimer (rien n'est envoyé), ou annuler.
+// Remet à zéro les supports, les effets et les options, mais garde les coordonnées (nom, téléphone, email, adresse, ville,
+// type de client) ET le projet (nom de l'enseigne, objectif, fichiers joints).
+async function recommencerEstimatif(){
+  if(!await confirmer("Recommencer l'estimatif ?\n\nVos coordonnées, le nom de l'enseigne et votre objectif sont conservés. Les supports, les effets et les options sont remis à zéro.")) return;
+  state.supports = supportsDeDepart();
+  state.supportOuvert = null; state.principalId = null; state.optionsChoisies = []; state.envieChoisies = [];
+  state.organisation = { dateSouhaitee:'', contraintes:'' };
+  state.deplacement = null; state.estimationVisible = false; state.estimatifOuvert = false; state.improbableOuvert = false;
+  state.rendu = { photoLieu:null, forme:'', effet:'', niveau:'', enrichissements:[], imageUrl:'', enCours:false, erreur:'' };
+  render();
+  setTimeout(()=>{ const h = document.getElementById('sectionSupports'); if(h) h.scrollIntoView({ behavior:'smooth', block:'center' }); }, 80);
+}
+function declinerDemande(){ state.refusOuvert = true; render(); }
+function fermerRefus(){ state.refusOuvert = false; render(); }
+async function refusGarder(){
+  state.refusOuvert = false; render();
+  await envoyerDemande('rejete_client', true);
+}
+function refusSupprimer(){
+  state.refusOuvert = false;
+  state.coordonnees = { nom:'', adresse:'', ville:'', telephone:'', email:'', typeClient:'particulier', raisonSociale:'', siret:'' };
+  state.projet = { objectif:'', nomProjet:'', photos:[] };
+  state.rendu.photoLieu = null; state.deplacement = null;
+  state.envoye = true; state.etapeEnvoyee = 'supprime';
+  render(); window.scrollTo(0, 0);
+}
+// Prévient l'atelier par mail qu'une fiche projet vient d'être créée (edge function notifier-nouvelle-demande).
+// Silencieux côté visiteur : si l'envoi du mail échoue, la demande n'en est pas moins enregistrée.
+function notifierNouvelleDemande(devisId){
+  if(!devisId) return;
+  // Silencieux pour le visiteur ; deux nouvelles tentatives si l'appel échoue (réseau coupé, serveur occupé). Le filet de sécurité de Supabase
+  // (rattrapage toutes les 10 minutes) renvoie de toute façon l'alerte d'une demande restée sans mail.
+  const essayer = (n) => {
+    try{
+      sb.functions.invoke('notifier-nouvelle-demande', { body:{ devisId } }).then(({ error })=>{
+        if(error){ console.warn('Mail de notification non envoyé :', error.message); if(n < 3) setTimeout(() => essayer(n + 1), 4000 * n); }
+      }).catch(()=>{ if(n < 3) setTimeout(() => essayer(n + 1), 4000 * n); });
+    }catch(e){ /* sans effet pour le visiteur */ }
+  };
+  essayer(1);
+}
+// Estimation telle que le client l'a vue (supports retenus, petits plus, trajet) : jointe à la demande, car le serveur ne chiffre pas
+// les lignes « calculées » ; elle sert au mail d'alerte et reste consultable dans les notes du devis.
+function estimationPourEnvoi(){
+  const totalHT = estimationTotaleHT();
+  if(!totalHT) return null;
+  const lignes = [];
+  for(const s of state.supports){
+    if(s.inclus && supportComplet(s) && s._prixAffiche != null){
+      const texte = s.texteAPeindre || state.projet.nomProjet;
+      lignes.push({ libelle: s.support + (texte ? ' « ' + String(texte).slice(0, 40) + ' »' : '') + (s.dorure && (s.doreePct ?? 100) < 100 ? ' — dorure sur ' + (s.doreePct ?? 100) + ' % du lettrage' : '') + (fabricationPour(s) ? ' — fabrication du support incluse' : '') + (s.moyen ? ' — estimation moyenne' : ''), prixHT: Math.round(s._prixAffiche * 100) / 100,
+                    kind: 'support', support: s.support, fixeHT: Math.round(fixeLigneSupport(s) * 100) / 100 });
+    }
+  }
+  // Les forfaits (maquette, poncifs), les petits plus et le trajet restent des lignes à part : le client peut décocher un support dans le mail sans les perdre.
+  if(lignes.length) for(const f of forfaitsProjet()) lignes.push({ libelle: `${f.label} (prix fixe ${prixForfaitAffiche(f)} €)`, prixHT: Math.round(forfaitHT(f) * 100) / 100, kind: 'forfait', nom: f.label });
+  for(const cle of state.envieChoisies){
+    const pd = petitPlusParCle(cle);
+    if(pd) lignes.push({ libelle: pd.label + (pd.prixHT == null ? ' (sur devis)' : ''), prixHT: Number(pd.prixHT) || 0, kind: 'plus', nom: pd.label, surDevis: pd.prixHT == null });
+  }
+  if(state.deplacement) lignes.push({ libelle: `Déplacement (${state.deplacement.km} km aller-retour)`, prixHT: state.deplacement.prixHT, kind: 'trajet', nom: 'Déplacement' });
+  return { totalHT: Math.round(totalHT * 100) / 100, fixeHT: Math.round(estimationFixeHT() * 100) / 100, tvaPct: reglagesEstimation?.tvaPct ?? 20, particulier: state.coordonnees.typeClient === 'particulier',
+           fourchettePct: fourchettePct(), effet: descriptionEffet() || '', lignes };
+}
+// Jeton secret propre à la demande : il figure dans les boutons du mail envoyé au client et prouve que le clic vient bien de lui.
+function nouveauJeton(){ return Array.from(crypto.getRandomValues(new Uint8Array(24))).map(b => b.toString(16).padStart(2, '0')).join(''); }
+// Bouton unique : tout est obligatoire (coordonnées, projet, support complet) ; la demande est enregistrée (fiche « Estimation envoyée — en attente du client »),
+// l'atelier est alerté tout de suite, et le client reçoit son estimation par mail avec les 3 boutons de réponse.
+async function recevoirEstimation(){
+  const manquants = validerFormulaire();
+  const p = state.supports.find(x => x.id === state.principalId);
+  if(p && !supportComplet(p)) manquants.push("Les informations de votre support (section « Votre support »)");
+  if(state.coordonnees.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(state.coordonnees.email.trim())) manquants.push("Une adresse e-mail valide (l'estimation vous y est envoyée)");
+  if(manquants.length){ alert("Merci de compléter avant de recevoir l'estimation :\n\n— " + manquants.join("\n— ")); return; }
+  state.jeton = state.jeton || nouveauJeton();
+  await envoyerDemande('estimation_envoyee', true);
+}
+async function envoyerDemande(etape, sansValidation){
+  etape = etape || 'qualification';
+  if(!sansValidation){
+    const manquants = validerFormulaire();
+    if(manquants.length){ alert("Merci de compléter avant d'envoyer :\n\n— " + manquants.join("\n— ")); return; }
+  }
+  if(!ESTABLISHMENT_ID){ alert("Ce formulaire n'est relié à aucun atelier — contactez la personne qui vous l'a envoyé."); return; }
+
+  const lignes = [];
+  for(const s of state.supports.filter(s=>s.inclus)){
+    // Forme/effet ne sont demandés qu'une fois (section Effet de relief) — appliqués à tous les supports.
+    const l = ligneCalculPour(s);
+    lignes.push({ type:'calculee', moyen: !!s.moyen, support:s.support, matiere:l.matiere, etat:l.etat, hauteurChantier:l.hauteurChantier, forme:l.forme, effet:l.effet, doreePct:l.doreePct,
+      fabricationSupport:l.fabricationSupport, longueurCm:l.longueurCm, hauteurCm:l.hauteurCm, texteAPeindre:l.texteAPeindre, deposePose:!!s.deposePose,
+      tailleLettres:l.tailleLettres, empattements:false, relief:l.relief, couleursMultiples:l.couleursMultiples, ombreSupplementaire:false, prixRetenuMode:'sheet' });
+  }
+  // Options cochées par le client : envoyées en ligne libre (le client ne voit ni prix ni
+  // catalogue MEG réel) — l'atelier leur rattache ensuite le bon article et le bon prix.
+  for(const code of state.optionsChoisies){
+    lignes.push({ type:'manuelle', libelle: OPTIONS_CLIENT_LABELS[code] || code, prixHT: 0 });
+  }
+  // Maquette et poncifs : forfaits du projet, inclus dans l'estimatif vu par le client — ils partent donc aussi avec la demande.
+  if(estimationTotaleHT() > 0) for(const f of forfaitsProjet()) lignes.push({ type:'manuelle', libelle: `${f.label} (prix fixe ${prixForfaitAffiche(f)} €)`, prixHT: Math.round(forfaitHT(f) * 100) / 100 });
+  // Petits plus cochés (prix forfaitaires des réglages) et trajet estimé : ils figurent dans
+  // l'estimatif vu par le client, ils partent donc aussi avec la demande.
+  for(const cle of state.envieChoisies){
+    const p = petitPlusParCle(cle);
+    if(p) lignes.push({ type:'manuelle', libelle: p.label + (p.prixHT == null ? ' (sur devis)' : ''), prixHT: Number(p.prixHT)||0 });
+  }
+  if(state.deplacement) lignes.push({ type:'manuelle', libelle:`Déplacement estimé (${state.deplacement.km} km aller-retour)`, prixHT: state.deplacement.prixHT });
+
+  const boutons = document.querySelectorAll('.actionBtn'); boutons.forEach(b=>b.disabled=true);
+  try{
+    const params = {
+      p_establishment_id: ESTABLISHMENT_ID,
+      p_client_nom: state.coordonnees.nom, p_client_telephone: state.coordonnees.telephone,
+      p_client_email: state.coordonnees.email, p_client_adresse: state.coordonnees.adresse,
+      p_client_ville: state.coordonnees.ville,
+      p_client_type: state.coordonnees.typeClient,
+      p_raison_sociale: state.coordonnees.raisonSociale || null,
+      p_siret: state.coordonnees.siret || null,
+      p_nom_projet: state.projet.nomProjet,
+      p_notes_client: { ...(etape==='rejete_client' ? { abandon: true, motifAbandon: 'refus' } : {}), ...(etape==='estimation_envoyee' ? { jeton: state.jeton, envoiEstimationClient: true } : {}), lignesCalculees: lignes.filter(l=>l.type==='calculee'), raisonSociale: state.coordonnees.raisonSociale || '', siret: state.coordonnees.siret || '', objectif: state.projet.objectif + (descriptionEffet() ? `${state.projet.objectif?'\n\n':''}[Effet souhaité] ${descriptionEffet()}` : '') + (state.supports.filter(x=>x.inclus&&empriseLettrage()[x.support]&&x.longueurCm&&x.hauteurCm).map(x=>`\n\n[${x.support}] Dimensions du support indiquées : ${x.longueurCm} × ${x.hauteurCm} cm.${FORMATS_FIXES[x.support] ? ' Format standard imposé (non modifiable par le client).' : ''}`).join('')) + (state.supports.filter(x=>x.inclus&&x.moyen).map(x=>`\n\n[Support complémentaire] ${x.support} — estimation moyenne ${(x.longueurCm&&x.hauteurCm&&!FORMATS_FIXES[x.support]) || x.texteAPeindre ? '(le client a précisé le texte et/ou les dimensions)' : 'sur des dimensions standard (cochée sans détail)'}, à préciser avec le client.`).join('')) + (state.supports.filter(x=>x.inclus&&estVehicule(x)&&!x.moyen&&partiesVehiculeCompletes(x)).map(x=>`\n\n[Véhicule] Parties à peindre cochées (dimensions standard d'une berline moyenne, à préciser au croquis), avec leur texte : ${resumeVehicule(x)}. Surface totale de lettrage estimée : ${(surfaceVehiculeCm2(x)/10000).toFixed(2)} m².`).join('')) + (state.supports.some(x=>x.inclus&&x.dorure) ? `\n\n[Dorure souhaitée] ${state.supports.filter(x=>x.inclus&&x.dorure).map(x=>x.support + (x.texteAPeindre?' ('+x.texteAPeindre+')':'')).join(', ')}` : ''), texteAPeindre: state.projet.nomProjet,
+        dateSouhaitee: state.organisation.dateSouhaitee, contraintes: state.organisation.contraintes, estimationAffichee: estimationPourEnvoi() },
+      // La photo du lieu, demandée en fin de formulaire, part aussi avec la demande.
+      p_photos: state.rendu.photoLieu ? [...state.projet.photos, { ...state.rendu.photoLieu, nom: 'Photo du lieu — ' + state.rendu.photoLieu.nom }] : state.projet.photos,
+      p_lignes: lignes,
+      p_etape: etape
+    };
+    let { data, error } = await sb.rpc('soumettre_devis_client', params);
+    // L'étape « Estimation envoyée — en attente du client » doit exister dans le Kanban (migration_estimation_envoyee.sql) ; sinon on retombe sur « À qualifier » pour ne jamais perdre une demande.
+    if(error && etape === 'estimation_envoyee'){ params.p_etape = 'qualification'; ({ data, error } = await sb.rpc('soumettre_devis_client', params)); }
+    if(error) throw error;
+    if(etape==='qualification' || etape==='estimation_envoyee' || (etape==='rejete_client' && coordonneesExploitables())) notifierNouvelleDemande(data.devis_id);   // mail à l'atelier (refus : seulement s'il a laissé un téléphone ou un e-mail)
+    state.envoye = true;
+    state.numeroEnvoye = data.numero;
+    state.numeroProjetEnvoye = data.numero_projet;
+    state.etapeEnvoyee = etape; state.emailEnvoye = state.coordonnees.email;
+    state.devisIdEnvoye = data.devis_id || null;
+    // Bloc "Informations internes" — jamais envoyé par le formulaire public, écrit ici en
+    // mise à jour directe (droits normaux de la session atelier connectée) une fois le devis
+    // créé, plutôt que d'ajouter ces champs à la fonction publique elle-même.
+    if(state.interne.actif && data.devis_id && (state.interne.note || state.interne.origineContact || state.interne.priorite!=='normale')){
+      const { error: eInt } = await sb.from('devis').update({
+        note_interne: state.interne.note.trim() || null,
+        priorite: state.interne.priorite,
+        origine_contact: state.interne.origineContact.trim() || null,
+      }).eq('id', data.devis_id);
+      if(eInt) console.error('Enregistrement des informations internes échoué :', eInt.message);
+    }
+    render();
+  }catch(err){
+    alert("L'envoi a échoué : "+(err.message||err));
+    boutons.forEach(b=>b.disabled=false);
+  }
+}
+
+/* =========================================================================
+   AFFICHAGE
+   ========================================================================= */
+function optionsSelectHtml(list, selected, placeholder){
+  let h = `<option value="">${placeholder||'—'}</option>`;
+  for(const k of list) h += `<option value="${escapeHtml(k)}" ${k===selected?'selected':''}>${escapeHtml(k)}</option>`;
+  return h;
+}
+// QCM compact (boutons à cocher) à la place d'un menu déroulant trop long à ouvrir — un clic
+// choisit directement l'option, sans avoir à dérouler une longue liste.
+// Libellés affichés pour la taille des lettres ; la valeur envoyée et utilisée par le tarif reste
+// la clé d'origine (réglages de l'atelier).
+function libelleQcm(champ, opt){
+  if(champ === 'etat') return LIBELLE_ETAT[opt] || opt;
+  if(champ === 'tailleLettres'){
+    if(/^Petites/i.test(opt)) return 'Petites (inf. 3 cm)';
+    if(/^Moyennes/i.test(opt)) return 'Moyennes (entre 3 et 8 cm)';
+    if(/^Grandes/i.test(opt)) return 'Grandes (sup. 8 cm)';
+  }
+  return opt;
+}
+function qcmHtml(supportId, champ, list, selected){
+  // Tab parcourt les cases une à une, dans l'ordre où elles s'affichent ; ← → ↑ ↓ déplacent aussi le choix, comme un groupe de boutons radio.
+  const tabIndex = i => 0;   // chaque case est atteinte par Tab dans l'ordre de lecture (gauche → droite, puis ligne suivante)
+  return `<div class="qcm" role="radiogroup">${list.map((opt, i) => `<button type="button" role="radio" aria-checked="${opt===selected}" tabindex="${tabIndex(i)}" class="qcmOpt ${opt===selected?'sel':''}" onclick="majSupport('${supportId}','${champ}','${opt.replace(/'/g,"\\'")}')">${escapeHtml(libelleQcm(champ, opt))}</button>`).join('')}</div>`;
+}
+
+function nomSupportAffiche(s, occurrence, totalMemeType){
+  return escapeHtml(s.support) + (totalMemeType>1 ? ` n°${occurrence}` : '');
+}
+// Bande Support / Aperçu / Estimation + Variables — contenu compact, pleine largeur, partagée
+// entre les blocs des supports retenus et le détail ouvert d'une ligne du répertoire (voir
+// renderRepertoireRow). La case "C'est ça que je veux !" est toujours visible, y compris sur
+// le premier support : décocher le retire de la demande.
+function renderSupportRow(s, occurrence, totalMemeType){
+  const styleEff = niveauEffet() ? niveauEffet().css : '';
+  // Texte propre à CETTE ligne — par défaut celui du projet, mais chaque support peut avoir le sien.
+  const texte = s.texteAPeindre || state.projet.nomProjet || '…';
+  // Particulier : prix TTC ; Pro : HT. Même taux que Réglages tarifs (20 % par défaut).
+  const estTTC = state.coordonnees.typeClient === 'particulier';
+  const tauxTva = reglagesEstimation?.tvaPct ?? 20;
+  const complet = supportComplet(s);
+  // Ce qu'il reste à renseigner pour voir le prix : dit clairement, champ par champ (voir .field.manque).
+  const manques = [];
+  const fmtFixe = FORMATS_FIXES[s.support];
+  const optsMatiere = fmtFixe ? [] : (COMPATIBILITES[s.support] || []), optsEtat = etatOptionsPourSupport(s);
+  const demandeEtat = ETAT_A_CHOISIR.includes(s.support) && optsEtat.length > 1;
+  if(optsMatiere.length && !s.matiere) manques.push('Matière du support');
+  if(demandeEtat && !s.etat) manques.push('État du support');
+  const dim = estVehicule(s) ? partiesVehiculeCompletes(s) : !!(s.longueurCm && s.hauteurCm);
+  if(!dim) manques.push(estVehicule(s) ? 'Parties du véhicule à peindre (cochez au moins une)' : 'Dimensions du support');
+  const boutonEstimHtml = (complet && (s._prixAffiche==null || s._dirty))
+    ? `<button type="button" class="ghostBtn" onclick="actualiserPrixSupport('${s.id}')" style="margin-top:6px;border-color:var(--accent);color:var(--accent)">${s._prixAffiche==null?'Afficher l\'estimation':'↻ Actualiser'}</button>`
+    : '';
+  const prixHtml = complet
+    ? (s._prixAffiche!=null ? `<div class="prixLigne">≈ ${Math.round(estTTC ? prixAfficheAvecForfaits(s)*(1+tauxTva/100) : prixAfficheAvecForfaits(s)).toLocaleString('fr-FR')} € ${estTTC?'TTC':'HT'}</div>` : '') + boutonEstimHtml
+    : `<div class="prixAttente">Pour voir le prix, il reste à renseigner :</div><ul class="resteListe">${manques.map(m=>`<li>${m}</li>`).join('')}</ul>`;
+  return `
+  <div class="supportGrid" ${manques.length ? '' : 'style="grid-template-columns:minmax(0,1fr)"'}>
+    <div class="supportMain">
+      <div class="ligneTexte">
+        <div class="saisieTexte">
+        <div class="supportEntete">
+          <span class="picto">${ICONE_SUPPORT[s.support]||'🎨'}</span>
+          <span class="nom">${nomSupportAffiche(s, occurrence, totalMemeType)}</span>
+        </div>
+          <!-- Le texte à peindre est déjà saisi plus haut (nom de l'enseigne ou du lettrage) : pas de second champ ici. -->
+          <div class="qcm choixForme"><span class="libForme">Style des lettres</span>${FORMES_APERCU.map(f=>`<button type="button" class="qcmOpt ${s.forme===f.cle?'sel':''}" ${f.style ? `style="${f.style}"` : ''} onclick="choisirForme('${s.id}','${f.cle}')">${f.label}</button>`).join('')}</div>
+        </div>
+        <div class="rendu">
+          <div class="apercuMini ${classeForme(s)} ${s.dorure?'dore':''}" id="ap-${s.id}" style="${styleEff}"><span class="apTxt">${escapeHtml(texteApercu(s, s.texteAPeindre))}</span></div>
+          <div class="mentionRendu">Rendu non contractuel, typographie à valider ensemble plus tard sur maquette</div>
+        </div>
+      </div>
+      <div class="supportVars">
+        ${estVehicule(s) ? `<div class="field oblig${dim?'':' manque'} pleineLargeur"><label>Parties du véhicule à peindre <span class="aideFab">— cochez simplement les endroits à peindre</span></label>${partiesVehiculeHtml(s)}<div class="tiny" style="color:var(--muted);margin-top:4px">Estimation sur la base d'une berline moyenne — les dimensions exactes se précisent ensemble au croquis.</div></div>` : `${fmtFixe ? `<div class="field"><label>Format</label><div class="formatFixe"><b>Format standard : ${fmtFixe.description}</b><span>Taille fixe : nous la précisons ensemble si besoin, au croquis.</span></div></div>` : `<div class="field oblig${dim?'':' manque'}"><label>Dimensions du support <span class="aideFab">— longueur × hauteur, en cm</span></label>
+          <div class="dims"><input class="input" type="number" min="0" placeholder="Longueur (cm)" value="${s.longueurCm??''}" onchange="majSupport('${s.id}','longueurCm', this.value)"><span>×</span><input class="input" type="number" min="0" placeholder="Hauteur (cm)" value="${s.hauteurCm??''}" onchange="majSupport('${s.id}','hauteurCm', this.value)"></div>
+          <div class="tiny" style="color:var(--muted);margin-top:4px">${texteEmprise(s)}</div></div>`}`}
+        ${optsMatiere.length ? `<div class="field oblig${s.matiere?'':' manque'}"><label>Matière du support</label>${qcmHtml(s.id, 'matiere', optsMatiere, s.matiere)}${s.matiere==='Enduit chaux' ? `<div class="tiny" style="color:var(--muted);margin-top:4px">Une sous-couche adaptée à l'enduit à la chaux est comptée dans l'estimatif.</div>` : ''}</div>` : ''}
+        ${demandeEtat ? `<div class="field oblig${s.etat?'':' manque'}"><label>État du support</label>${qcmHtml(s.id, 'etat', optsEtat, s.etat)}</div>` : ''}
+        ${s.support==='Jambages' ? `<div class="field"><label>Taille des lettres</label>${qcmHtml(s.id, 'tailleLettres', Object.keys(TAILLE_LETTRES), s.tailleLettres)}</div>` : ''}
+        ${(estDrapeau(s) || s.support === 'Stop-trottoir') ? '' : `<div class="field"><label>Hauteur du chantier</label>${qcmHtml(s.id, 'hauteurChantier', Object.keys(COEF_HAUTEUR), s.hauteurChantier)}</div>`}
+        <div class="field supportChecks">
+          <div class="checkRow"><input type="checkbox" id="dor-${s.id}" ${s.dorure?'checked':''} onchange="majSupport('${s.id}','dorure', this.checked)"><label for="dor-${s.id}">Dorure des lettres</label></div>
+          ${s.support==='Enseigne principale' ? `<div class="checkRow"><input type="checkbox" id="fab-${s.id}" ${s.fabrication?'checked':''} onchange="majSupport('${s.id}','fabrication', this.checked)"><label for="fab-${s.id}">Fabrication du support ? <span class="aideFab">(panneau neuf à découper, poncer et apprêter par l'atelier)</span></label></div>` : ''}
+          ${estDrapeau(s) ? `<div class="checkRow"><input type="checkbox" id="sex-${s.id}" ${s.supportExistant?'checked':''} onchange="majSupport('${s.id}','supportExistant', this.checked)"><label for="sex-${s.id}">J'ai déjà le support en bon état et propre</label></div>` : ''}
+          <div class="checkRow"><input type="checkbox" id="dp-${s.id}" ${s.deposePose?'checked':''} onchange="majSupport('${s.id}','deposePose', this.checked)"><label for="dp-${s.id}">Dépose / pose d'un élément à prévoir</label></div>
+        </div>
+      </div>
+    </div>
+    ${manques.length ? `<div class="supportPrix">
+      <div class="supportPrixLabel">À renseigner</div>
+      <ul class="resteListe">${manques.map(m=>`<li>${m}</li>`).join('')}</ul>
+    </div>` : ''}
+  </div>`;
+}
+// Une ligne du répertoire "Voir les autres supports" — compacte, avec indicateur d'état ;
+// un clic ouvre son détail (même bande à 4 colonnes que le support principal), un seul ouvert
+// à la fois (toggleSupportOuvert).
+// Une ligne « Ajouter d'autres supports » : picto, nom, définition, et tout à droite la fourchette moyenne ; toute la ligne se coche. Aucune variable à renseigner.
+function renderLigneAjout(s){
+  const info = SUPPORTS_INFOS[s.support] || { def:'' };
+  // Une fois coché, le support peut être précisé : son texte, et ses dimensions (sauf format fixe et véhicule). Laissé vide = estimation moyenne.
+  const fmt = FORMATS_FIXES[s.support];
+  const detail = s.moyen ? `<div class="ajDetail">
+    <div class="field"><label>Texte à peindre <span class="aideFab">— vide : « ${escapeHtml(state.projet.nomProjet || 'votre lettrage')} »</span></label><input class="input" value="${escapeHtml(s.texteAPeindre || '')}" onchange="majSupport('${s.id}','texteAPeindre', this.value)"></div>
+    ${estVehicule(s) ? '' : (fmt ? `<div class="tiny" style="color:var(--muted)">Format standard : ${escapeHtml(fmt.description)}</div>` : `<div class="field"><label>Dimensions du support <span class="aideFab">— longueur × hauteur, en cm (facultatif)</span></label>
+      <div class="dims"><input class="input" type="number" min="0" placeholder="Longueur (cm)" value="${s.longueurCm ?? ''}" onchange="majSupport('${s.id}','longueurCm', this.value)"><span>×</span><input class="input" type="number" min="0" placeholder="Hauteur (cm)" value="${s.hauteurCm ?? ''}" onchange="majSupport('${s.id}','hauteurCm', this.value)"></div></div>`)}
+  </div>` : '';
+  return `
+  <div class="ajBloc">
+  <label class="ligneAjout ${s.moyen?'on':''}">
+    <span class="ajPicto">${ICONE_SUPPORT[s.support]||''}</span>
+    <span class="ajTexte"><b>${escapeHtml(s.support)}</b><span>${escapeHtml(info.def)}</span></span>
+    <input type="checkbox" class="ajCase" ${s.moyen?'checked':''} aria-label="Ajouter ${escapeHtml(s.support)}" onchange="ajouterSupportMoyen('${s.id}', this.checked)">
+  </label>${detail}
+  </div>`;
+}
+function renderRepertoireRow(s, occurrence, totalMemeType){
+  const ouvert = state.supportOuvert === s.id;
+  const statut = s.inclus ? {label:'Sélectionné', cls:'sel'} : (s.explore ? {label:'Écarté', cls:'ecarte'} : {label:'Non exploré', cls:'non'});
+  return `
+  <div class="repRow ${ouvert?'ouvert':''}" id="sb-${s.id}">
+    <div class="repRowHead" onclick="toggleSupportOuvert('${s.id}')">
+      <span class="repPicto">${ICONE_SUPPORT[s.support]||'🎨'}</span>
+      <span class="repNom">${nomSupportAffiche(s, occurrence, totalMemeType)}</span>
+      <span class="repStatut ${statut.cls}">${statut.label}</span>
+      <span class="repRond ${s.inclus?'checked':''}">${s.inclus?'✓':''}</span>
+      <span class="repChevron">${ouvert?'⌄':'›'}</span>
+    </div>
+    ${ouvert ? `<div class="repDetail">${renderSupportRow(s, occurrence, totalMemeType)}</div>` : ''}
+  </div>`;
+}
+
+function renderConfirmation(){
+  if(state.etapeEnvoyee==='supprime'){
+    return `<div class="confirm">
+      <h1>C'est noté</h1>
+      <p>Vos données n'ont pas été conservées. N'hésitez pas à revenir si votre projet évolue.</p>
+    </div>`;
+  }
+  if(state.etapeEnvoyee==='rejete_client'){
+    return `<div class="confirm">
+      <h1>C'est noté</h1>
+      <p>Merci pour le temps passé sur ce formulaire — on ne donne pas suite pour l'instant. N'hésitez pas à revenir si votre projet évolue.</p>
+    </div>`;
+  }
+  if(state.etapeEnvoyee==='estimation_envoyee'){
+    return `<div class="confirm">
+      <h1>C'est parti !</h1>
+      <p>L'estimation de votre projet ${state.numeroProjetEnvoye?`(<b>projet n°${escapeHtml(String(state.numeroProjetEnvoye))}</b>) `:''}vient de partir dans votre boîte mail${state.emailEnvoye ? ` (<b>${escapeHtml(state.emailEnvoye)}</b>)` : ''}, depuis <b>peinture@etsgesret.fr</b>.</p>
+      <p>Elle arrive en quelques minutes. Si vous ne la voyez pas, regardez vos courriers indésirables.</p>
+      <p class="msg">Dans ce mail, un clic suffit pour nous dire si l'estimatif vous convient, si vous préférez être rappelé·e, ou si ce n'est pas pour vous cette fois-ci.</p>
+      ${state.interne.actif ? `<p style="margin-top:24px"><a class="input" style="display:inline-block;width:auto;text-decoration:none;text-align:center" href="client-projet.html?est=${encodeURIComponent(ESTABLISHMENT_ID)}">← Retour Client/Projet</a></p>` : ''}
+    </div>`;
+  }
+  return `<div class="confirm">
+    <h1>Merci !</h1>
+    <p>Votre demande ${state.numeroProjetEnvoye?`(<b>projet n°${escapeHtml(String(state.numeroProjetEnvoye))}</b>) `:''}a bien été envoyée à l'Atelier Tristan Gesret, avec les fichiers joints. ${state.etapeEnvoyee==='a_approfondir' ? "On vous appelle rapidement pour en discuter." : "On revient vers vous rapidement avec un devis chiffré et détaillé."}</p>
+    <p class="msg">Un autre fichier à ajouter, ou un souci pour joindre les vôtres ? Envoyez-le à <b>peinture@etsgesret.fr</b>.</p>
+    ${state.interne.actif ? `<p style="margin-top:24px"><a class="input" style="display:inline-block;width:auto;text-decoration:none;text-align:center" href="client-projet.html?est=${encodeURIComponent(ESTABLISHMENT_ID)}">← Retour Client/Projet</a></p>` : ''}
+  </div>`;
+}
+
+function renderFormulaireFerme(){
+  return `<div class="confirm">
+    <h1>Formulaire momentanément fermé</h1>
+    <p>Notre formulaire d'estimation en ligne n'est pas disponible pour le moment. Vous pouvez nous écrire à <b>peinture@etsgesret.fr</b> ou nous appeler au <b>06 79 39 04 14</b>.</p>
+    <p style="margin-top:20px"><a class="actionBtn" style="display:inline-block;text-decoration:none" href="https://www.etsgesret.fr/contact">Nous contacter</a></p>
+  </div>`;
+}
+function renderAtelierManquant(){
+  return `<div class="confirm">
+    <h1>Lien incomplet</h1>
+    <p>Ce formulaire doit être ouvert depuis le lien fourni par votre atelier — celui-ci n'indique pas à quel atelier envoyer la demande.</p>
+  </div>`;
+}
+
+/* Habillage aux couleurs et éléments du site vitrine etsgesret.fr (logo, réseaux, coordonnées
+   réelles de l'atelier). Les coordonnées et le logo sont ceux de l'atelier Gesret : si d'autres
+   ateliers utilisent ce formulaire, il faudra les rendre propres à chaque atelier. */
+// Vidéo de l'en-tête : chemin du fichier dans le dossier du site (ex. 'video-entete.mp4'), vide tant qu'il n'y en a pas. Lecture automatique, en boucle, sans son.
+// Uniquement sur estimation.etsgesret.fr (?video dans l'adresse pour la prévisualiser ailleurs). Fichier converti en MP4 H.264 sans son (voir video-entete.mp4).
+const VIDEO_ENTETE = (location.hostname === 'estimation.etsgesret.fr' || new URLSearchParams(location.search).has('video')) ? 'video-entete.mp4' : '';
+function enTeteSite(clair){
+  const c = clair ? 'black' : 'white';
+  const rs = [['instagram','https://www.instagram.com/etsgesret/?hl=fr'],['facebook','https://www.facebook.com/etsgesret/?locale=fr_FR'],['linkedin','https://fr.linkedin.com/company/ets-gesret-peinture-en-lettres'],['youtube','https://www.youtube.com/@etsgesret']];
+  return `<header class="siteHeader ${clair?'clair':''}">
+    <a class="retour" href="https://www.etsgesret.fr/">← etsgesret.fr</a>
+    <a class="logo" href="https://www.etsgesret.fr/"><img src="charte-gesret/logo-dentele${clair?'':'-light'}.svg" alt="Gesret"></a>
+    <div class="reseaux">${rs.map(([n,u])=>`<a href="${u}" target="_blank" rel="noopener" aria-label="${n}"><img src="charte-gesret/${n}-${c}.svg" alt="${n}"></a>`).join('')}</div>
+  </header>`;
+}
+// Pied de page : au début, seulement la ligne de copyright ; le grand pied (logo, contact, prestations) n'apparaît qu'après
+// « Voir l'estimation » (ou une fois la demande envoyée). Le téléphone n'y figure plus.
+function piedSite(){
+  const complet = !!(state.estimationVisible || state.envoye);
+  const copy = `<p class="copy">© 2026 Ets. Gesret — Peintres et fiers de lettres&nbsp;! — <a href="https://www.etsgesret.fr/contenu/mentions-legales">Mentions légales</a></p>`;
+  return `<footer class="siteFooter min">${copy}</footer>`;   // plus de grand pied (contact, prestations) sous le bouton : seulement la ligne de copyright
+  if(!complet) return `<footer class="siteFooter min">${copy}</footer>`;
+  return `<footer class="siteFooter">
+    <div class="cols">
+      <div><img class="logo" src="charte-gesret/logo-gesret-full.svg" alt="Gesret"></div>
+      <div>
+        <p class="titre">Nous contacter</p>
+        <a href="mailto:peinture@etsgesret.fr">peinture@etsgesret.fr</a>
+        <p style="margin:10px 0 0">16 rue de l'Industrie<br>56390 Grand-Champ</p>
+      </div>
+      <div>
+        <p class="titre">Nos prestations</p>
+        <ul>
+          <li><a href="https://www.etsgesret.fr/prestations/enseignes-peintes">Enseignes peintes</a></li>
+          <li><a href="https://www.etsgesret.fr/prestations/vitrines-peintes">Vitrines peintes</a></li>
+          <li><a href="https://www.etsgesret.fr/prestations/dorure">Dorure</a></li>
+          <li><a href="https://www.etsgesret.fr/prestations/murs-grand-format">Murs grand format</a></li>
+          <li><a href="https://www.etsgesret.fr/prestations/vehicules-et-bateaux">Véhicules et bateaux</a></li>
+          <li><a href="https://www.etsgesret.fr/prestations/creation-graphique">Création graphique</a></li>
+        </ul>
+      </div>
+    </div>
+    ${copy}
+  </footer>`;
+}
+
+function render(){
+  document.body.classList.toggle('avecEstimatif', false);   // plus de bloc d'estimatif flottant : l'estimation est envoyée par mail
+  // Le chiffrage suit les variables en direct : plus besoin de cliquer « Actualiser » ligne par ligne.
+  if(state.estimationVisible) actualiserToutesLesEstimations();
+  if(!ESTABLISHMENT_ID){ document.getElementById('app').innerHTML = `${enTeteSite(true)}<div class="wrap">${renderAtelierManquant()}</div>${piedSite()}`; return; }
+  if(state.envoye){
+    document.getElementById('app').innerHTML = `${enTeteSite(true)}<div class="wrap">${renderConfirmation()}</div>${piedSite()}`;
+    // Après l'envoi, la page est bien plus courte que le formulaire : on remonte tout en haut pour voir le message de confirmation.
+    if(!state._confirmationVue){ state._confirmationVue = true; window.scrollTo({ top:0, behavior:'instant' }); requestAnimationFrame(() => window.scrollTo({ top:0, behavior:'instant' })); }
+    return;
+  }
+  // Interrupteur de l'atelier : formulaire fermé au public (un membre connecté de l'atelier le voit quand même, pour les tests).
+  if(state.acces === 'verif' && !state.interne.actif){ document.getElementById('app').innerHTML = `${enTeteSite(true)}<div class="wrap"><div class="confirm"><p>Chargement…</p></div></div>${piedSite()}`; return; }
+  if(state.acces === 'ferme' && !state.interne.actif){ document.getElementById('app').innerHTML = `${enTeteSite(true)}<div class="wrap">${renderFormulaireFerme()}</div>${piedSite()}`; return; }
+
+  document.getElementById('app').innerHTML = `
+  ${enTeteSite(false)}
+  ${state.acces === 'ferme' ? `<div style="position:relative;z-index:30;background:#a8461f;color:#fff;text-align:center;padding:8px 14px;font-size:13px">Formulaire fermé au public — vous le voyez parce que vous êtes connecté·e à l'atelier.</div>` : ''}
+  <div class="bandeFull blanc heroBand">
+    ${VIDEO_ENTETE ? `<video class="heroVideo" src="${VIDEO_ENTETE}" poster="video-entete-poster.jpg" autoplay muted loop playsinline preload="auto" disablepictureinpicture aria-hidden="true"></video>` : ''}
+    <div class="bandeContenu"><div class="hero">
+      <h1 class="heroTitre">Estimez votre projet</h1>
+      <p>En 5 minutes, ce formulaire vous donne une première estimation de votre projet et nous permet avec l'équipe de bien comprendre vos attentes.</p>
+      <p>Si l'estimation vous convient, nous revenons vers vous sous 72 h avec une solution personnalisée.</p>
+      <p class="heroSignature">À très vite,<br><span>Tristan</span></p>
+    </div></div>
+  </div>
+
+  <div class="bandeFull beige"><div class="bandeContenu">
+    <div class="section">
+      <h2>Coordonnées</h2>
+      <div class="radioGroup enLigne">
+        <label><input type="radio" name="typeClient" ${state.coordonnees.typeClient==='particulier'?'checked':''} onchange="state.coordonnees.typeClient='particulier';render()"> Particulier</label>
+        <label><input type="radio" name="typeClient" ${state.coordonnees.typeClient==='professionnel'?'checked':''} onchange="state.coordonnees.typeClient='professionnel';render()"> Professionnel</label>
+      </div>
+      ${state.coordonnees.typeClient==='professionnel' ? `
+      <div class="grid2">
+        <div class="field fieldAuto"><label>Dénomination <span class="req">*</span></label><input class="input" autocomplete="off" placeholder="Tapez le nom — le SIRET se propose tout seul" value="${escapeHtml(state.coordonnees.raisonSociale)}" oninput="chercherSociete(this.value)"><div class="sugBox" id="sugSociete"></div></div>
+        <div class="field"><label>SIRET <span class="tiny" style="font-weight:500;color:var(--muted)">(facultatif)</span></label><input class="input" value="${escapeHtml(state.coordonnees.siret)}" oninput="chercherSiret(this.value)" placeholder="14 chiffres — ou laissez la dénomination le remplir"></div>
+      </div>` : ''}
+      <div class="grid2">
+        <div class="field"><label>Nom - Prénom du contact <span class="req">*</span></label><input class="input" value="${escapeHtml(state.coordonnees.nom)}" onchange="state.coordonnees.nom=this.value"></div>
+        <div class="field"><label>Téléphone <span class="req">*</span></label><input class="input" value="${escapeHtml(state.coordonnees.telephone)}" onchange="state.coordonnees.telephone=this.value"></div>
+        <div class="field"><label>Email <span class="req">*</span></label><input class="input" type="email" value="${escapeHtml(state.coordonnees.email)}" onchange="state.coordonnees.email=this.value"></div>
+        <div class="field fieldAuto"><label>Adresse du chantier <span class="req">*</span></label><input class="input" autocomplete="off" placeholder="N°, rue, code postal, ville — ça se complète tout seul" value="${escapeHtml(state.coordonnees.adresse)}" oninput="chercherAdresse(this.value)" onchange="planifierDeplacement()"><div class="sugBox" id="sugAdresse"></div>${state.adresseSiegePropose ? `<div class="tiny" id="hintSiege" style="color:var(--muted);margin-top:3px">Adresse du siège de l'entreprise proposée — modifiez-la si le chantier est ailleurs.</div>` : ''}</div>
+        <div class="field"><label>Ville du chantier <span class="req">*</span></label><input class="input" value="${escapeHtml(state.coordonnees.ville)}" onchange="state.coordonnees.ville=this.value;planifierDeplacement()"></div>
+      </div>
+    </div>
+  </div></div>
+
+  <div class="bandeFull blanc"><div class="bandeContenu">
+    <div class="section">
+      <h2 id="sectionProjet">Votre projet</h2>
+      <div class="field"><label>Lettrage à peindre <span class="req">*</span></label><input class="input" placeholder="ex : L'Escale" value="${escapeHtml(state.projet.nomProjet)}" onchange="state.projet.nomProjet=this.value;tenterEstimationSiPret()"></div>
+      <div class="field"><label>Quel est votre objectif en quelques mots ?</label><textarea class="textarea" onchange="state.projet.objectif=this.value">${escapeHtml(state.projet.objectif)}</textarea></div>
+      <div class="field" id="sectionSupports"><label>Choisissez votre support à peindre <span class="req">*</span> <span class="tiny" style="font-weight:500;color:var(--muted)">(un seul — vous pourrez en ajouter d'autres après l'estimation)</span></label>
+        <div class="tiles tilesSupports">
+          ${state.supports.filter(s=>s.base).map(s=>`
+          <div class="tile tileSupport ${state.principalId===s.id?'selected':''}" role="radio" aria-checked="${state.principalId===s.id}" tabindex="0" onclick="choisirSupportPrincipal('${s.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();choisirSupportPrincipal('${s.id}')}">
+            <div class="preview">${ICONE_SUPPORT[s.support]||'🎨'}</div>
+            <div class="label">${escapeHtml(s.support)}</div>
+          </div>`).join('')}
+          ${tuileImprobable()}
+        </div>
+      </div>
+    </div>
+  </div></div>
+
+  <div class="bandeFull beige"><div class="bandeContenu">
+    <div class="section">
+      <h2>Effet de relief souhaité</h2>
+      ${renderEffetsHtml()}
+
+      ${state.rendu.enCours ? `<p class="tiny" style="text-align:center;margin:14px 0 0">Un instant…</p>` : ''}
+      ${state.rendu.erreur ? `<div class="msg" style="color:var(--muted);text-align:center">${escapeHtml(state.rendu.erreur)}</div>` : ''}
+      ${state.estimationVisible ? `<div class="rappelDiscret"><button type="button" class="ghostBtn" onclick="recommencerEstimatif()">↺ Recommencer l'estimatif</button></div>` : ''}
+    </div>
+  </div></div>
+
+    ${state.estimationVisible ? (()=>{
+      const compteurs = {}, totalParType = {};
+      for(const s of state.supports) totalParType[s.support] = (totalParType[s.support]||0) + 1;
+      const occurrence = {};
+      for(const s of state.supports) occurrence[s.id] = (compteurs[s.support] = (compteurs[s.support]||0) + 1);
+      // Les supports choisis plus haut arrivent ici déjà listés, chacun avec son estimation et sa
+      // case "C'est ça que je veux !" (décocher = retirer) ; les autres restent dans le répertoire.
+      const principal = state.supports.find(s=>s.id===state.principalId);
+      const autres = state.supports.filter(s=>s.id!==state.principalId && s.base);
+      return `
+      <div class="bandeFull blanc"><div class="bandeContenu">
+      <div class="section">
+        <h2>Votre support</h2>
+        ${principal ? `<div class="supportBlock principal" id="sb-${principal.id}">${renderSupportRow(principal, occurrence[principal.id], totalParType[principal.support])}</div>` : `<p class="tiny" style="margin:0 0 14px">Choisissez d'abord votre support à peindre plus haut.</p>`}
+
+        <h3 style="font-family:var(--f-titre);font-weight:400;font-size:26px;line-height:1.15;text-transform:uppercase;letter-spacing:.01em;margin:30px 0 6px 0">Ajouter d'autres supports ?</h3>
+        <p class="tiny" style="color:var(--muted);margin:0 0 12px 0">Cochez ceux qui vous intéressent : vous pouvez préciser leur texte et leurs dimensions, sinon nous en chiffrerons une première estimation sur des dimensions standard et nous la préciserons ensemble.</p>
+        <div class="listeAjouts">${autres.map(s=>renderLigneAjout(s)).join('')}</div>
+      </div>
+      </div></div>`;
+    })() : ''}
+
+    ${state.estimationVisible ? `
+    <div class="bandeFull beige"><div class="bandeContenu">
+    ${renderPetitPlus()}
+    </div></div>
+
+    <div class="bandeFull blanc"><div class="bandeContenu">
+    ${state.interne.actif ? `
+    <div class="section" style="background:var(--soft)">
+      <h2>Informations internes</h2>
+      <p style="font-size:13px;color:var(--muted);margin-top:-8px;margin-bottom:14px">Visible uniquement en session atelier connectée — jamais transmis au client, jamais affiché côté page publique.</p>
+      <div class="field"><label>Note libre</label><textarea class="input" rows="2" oninput="onChampInterne('note',this.value)">${escapeHtml(state.interne.note)}</textarea></div>
+      <div class="grid2">
+        <div class="field"><label>Priorité</label>
+          <select class="input" onchange="onChampInterne('priorite',this.value)">
+            <option value="normale" ${state.interne.priorite==='normale'?'selected':''}>Normale</option>
+            <option value="urgente" ${state.interne.priorite==='urgente'?'selected':''}>Urgente</option>
+          </select>
+        </div>
+        <div class="field"><label>Origine du contact</label><input class="input" value="${escapeHtml(state.interne.origineContact)}" oninput="onChampInterne('origineContact',this.value)" placeholder="ex : téléphone, salon, bouche-à-oreille..."></div>
+      </div>
+    </div>
+    ` : ''}
+    <div class="section">
+      <div class="blocUniforme">
+        <h2 style="font-family:var(--f-titre);font-weight:400;font-size:22px;text-transform:uppercase;margin:0 0 14px">Pour nous aider à préparer votre projet</h2>
+        <div class="field">
+          <label>Logo, charte graphique ou photos du chantier</label>
+          <input class="input" type="file" accept="image/*,.pdf" multiple onchange="ajouterFichiers(this)">
+          <div class="tiny" style="color:var(--muted);margin-top:5px">Jusqu'à ${MAX_FICHIERS} fichiers, 3 Mo max chacun. Pour un fichier plus lourd, envoyez-le plutôt à <b>peinture@etsgesret.fr</b>.</div>
+          ${state.projet.photos.length ? `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px">${state.projet.photos.map((p,i)=>`
+            <div style="border:1px solid var(--line);border-radius:10px;padding:6px 10px;font-size:13.5px;display:flex;align-items:center;gap:7px;background:#fff">
+              ${p.type.startsWith('image/') ? `<img src="${p.dataUrl}" style="width:30px;height:30px;object-fit:cover;border-radius:5px">` : '📄'}
+              <span>${escapeHtml(p.nom)}</span><span style="color:var(--muted)">(${p.tailleKo} Ko)</span>
+              <button type="button" onclick="retirerFichier(${i})" style="color:var(--red);font-size:15px;line-height:1">✕</button>
+            </div>`).join('')}</div>` : ''}
+        </div>
+        <div class="field" style="margin-bottom:0">
+          <label>Photo du mur / lieu / objet à orner</label>
+          <input class="input" type="file" accept="image/*" onchange="choisirPhotoLieu(this)">
+          ${state.rendu.photoLieu
+            ? `<div style="margin-top:8px"><img src="${state.rendu.photoLieu.dataUrl}" style="max-width:100%;max-height:260px;border-radius:10px"><div class="toolbar" style="margin-top:6px"><button type="button" class="ghostBtn" onclick="retirerPhotoLieu()">Retirer</button></div></div>`
+            : ''}
+        </div>
+      </div>
+    <div class="finEnvoi">
+      <p>Dernière étape : nous vous envoyons l'estimation de votre projet <b>par e-mail</b>, à l'adresse indiquée plus haut. Vous pourrez ensuite nous dire d'un clic si elle vous convient.</p>
+      <button type="button" class="actionBtn cadre" onclick="recevoirEstimation()">Je reçois maintenant l'estimation de mon projet</button>
+    </div>
+    </div>
+    </div></div>` : ''}
+
+  ${state.refusOuvert ? renderRefusModal() : ''}
+  ${piedSite()}`;
+}
+
+// « Envie d'un petit plus ? » : un seul bloc qui réunit les produits dérivés (prix forfaitaire
+// réglable dans Réglages tarifs, ajouté à l'estimation) et les options d'accompagnement (lignes
+// libres, sans prix), puis la date souhaitée et les contraintes. Une option qui ferait doublon
+// avec un produit dérivé (ex. la mini-charte graphique) n'est pas reproposée.
+function renderPetitPlus(){
+  return `
+  <div class="blocUniforme">
+    <h2 style="font-family:var(--f-titre);font-weight:400;font-size:22px;text-transform:uppercase;margin:0 0 14px">Envie d'un petit plus ?</h2>
+    <div class="petitsPlus">${PETITS_PLUS.map(d => { const p = petitPlusParCle(d.cle); return `
+      <div class="checkRow">
+        <input type="checkbox" id="envie-${p.cle}" ${state.envieChoisies.includes(p.cle)?'checked':''} onchange="toggleEnvie('${p.cle}', this.checked)">
+        <label for="envie-${p.cle}">${escapeHtml(p.label)}</label>
+      </div>`; }).join('')}</div>
+    <div class="field" style="margin-top:10px"><label>Date de réalisation souhaitée</label>
+      <select class="select" onchange="state.organisation.dateSouhaitee=this.value">
+        ${optionsSelectHtml(["Dès que possible","Dans le mois","Dans les 3 mois","Dans les 6 mois","Avant une date précise","Je ne sais pas encore"], state.organisation.dateSouhaitee)}
+      </select>
+    </div>
+    <div class="field" style="margin-bottom:0"><label>Contraintes éventuelles (accessibilité, Bâtiment de France, réglementation...)</label>
+      <textarea class="textarea" onchange="state.organisation.contraintes=this.value">${escapeHtml(state.organisation.contraintes)}</textarea>
+    </div>
+  </div>`;
+}
+
+/* Estimatif flottant — montant (fourchette), synthèse grisée de ce qu'il comprend, puis les trois
+   issues. Mis à jour sans tout redessiner quand seul le trajet change (majPanneau). */
+const OPTIONS_COURTES = { flyers:"Flyers", urbanisme:"Démarches urbanisme / ABF", mini_charte:"Mini-charte graphique" };
+// Lignes grisées de l'estimatif : { lib (HTML), prix (HT, ou null) }. Chaque ligne tient en deux
+// lignes d'écran : le texte à peindre est abrégé à 10 caractères.
+function abregerTexte(t){ t = String(t||'').trim(); return t.length > 10 ? t.slice(0,10).trimEnd() + '...' : t; }
+// Maquette + poncifs : montant HT cumulé, affiché UNIQUEMENT à l'intérieur du prix du support principal (jamais en ligne séparée,
+// pour qu'on ne puisse pas comparer les tarifs particulier / professionnel en jouant avec le formulaire).
+function forfaitsCumulesHT(){ return forfaitsProjet().reduce((s, f) => s + forfaitHT(f), 0); }
+// Support principal = le premier support retenu dont le prix est affiché ; à défaut, le premier dont le prix est affiché.
+function supportPrincipal(){
+  const pret = s => supportComplet(s) && s._prixAffiche != null;
+  return state.supports.find(s => s.id === state.principalId && pret(s)) || state.supports.find(s => s.inclus && pret(s)) || null;
+}
+function prixAfficheAvecForfaits(s){
+  const sp = supportPrincipal();
+  return s._prixAffiche + (sp && sp.id === s.id ? forfaitsCumulesHT() : 0);
+}
+function syntheseEstimatif(){
+  const tot = {}, cpt = {};
+  for(const s of state.supports) tot[s.support] = (tot[s.support]||0) + 1;
+  const lignes = [];
+  for(const s of state.supports){
+    const occ = (cpt[s.support] = (cpt[s.support]||0) + 1);
+    if(!s.inclus) continue;
+    const texte = abregerTexte(s.texteAPeindre || state.projet.nomProjet);
+    const dim = s.moyen ? ' · estimation moyenne' : (estVehicule(s) ? (surfaceVehiculeCm2(s) ? ` · ${partiesVehiculeChoisies(s).length} partie(s), ${(surfaceVehiculeCm2(s)/10000).toFixed(2).replace('.', ',')} m²` : '') : ((s.longueurCm && s.hauteurCm) ? ` · ${s.longueurCm}×${s.hauteurCm} cm` : ''));
+    lignes.push({ lib: nomSupportAffiche(s, occ, tot[s.support]) + (texte ? ` « ${escapeHtml(texte)} »` : '') + dim, prix: supportComplet(s) && s._prixAffiche != null ? prixAfficheAvecForfaits(s) : null });
+  }
+  if(descriptionEffet()) lignes.push({ lib: escapeHtml(descriptionEffet()), prix: null });
+  for(const cle of state.envieChoisies){
+    const p = petitPlusParCle(cle);
+    if(p) lignes.push({ lib: escapeHtml(p.label), prix: p.prixHT == null ? null : Number(p.prixHT) });
+  }
+  for(const code of state.optionsChoisies) lignes.push({ lib: escapeHtml(OPTIONS_COURTES[code] || OPTIONS_CLIENT_LABELS[code] || code), prix: null });
+  if(state.deplacement) lignes.push({ lib: `Déplacement · ${state.deplacement.km.toLocaleString('fr-FR')} km A/R`, prix: state.deplacement.prixHT });
+  return lignes;
+}
+function renderEstimatifFlottant(){
+  const totalHT = estimationTotaleHT();
+  let montant = '—', note = "Complétez les informations de votre support pour voir l'estimatif.";
+  if(totalHT){
+    const estTTC = state.coordonnees.typeClient === 'particulier';
+    const total = estTTC ? totalHT * (1 + (reglagesEstimation?.tvaPct ?? 20)/100) : totalHT;
+    // La fabrication du support est un prix fixe : la fourchette ne s'applique qu'au reste.
+    const fixe = estimationFixeHT() * (estTTC ? 1 + (reglagesEstimation?.tvaPct ?? 20)/100 : 1), f = fourchettePct()/100;
+    const basse = Math.round((total - fixe) * (1 - f) + fixe), haute = Math.round((total - fixe) * (1 + f) + fixe);
+    montant = `${basse.toLocaleString('fr-FR')} – ${haute.toLocaleString('fr-FR')} €`;
+    const sansFab = state.supports.some(s => s.inclus && supportComplet(s) && s._prixAffiche != null && !fabricationPour(s));
+    note = `${estTTC ? 'TTC' : 'HT'} · estimation indicative (± ${fourchettePct()} %)${sansFab ? ', hors fabrication du support' : ''}`;
+  }
+  const synth = syntheseEstimatif();
+  const facteur = state.coordonnees.typeClient === 'particulier' ? 1 + (reglagesEstimation?.tvaPct ?? 20)/100 : 1;
+  const prixTxt = p => p == null ? '' : '≈ ' + Math.round(p * facteur).toLocaleString('fr-FR') + ' €';
+  return `<aside class="estimatif ${state.estimatifOuvert?'ouvert':''}" id="estimatif" aria-live="polite">
+    <div class="estEntete">
+      <div><img class="estPalette" src="pictos-estimation/palette.png" alt="" draggable="false"><div class="estTitre">Estimatif total</div><div class="estMontant">${montant}</div><div class="estNote">${note}</div></div>
+      <button type="button" class="estToggle" onclick="basculerEstimatif()">${state.estimatifOuvert?'Masquer le détail ▼':'Voir ce qui compose mon estimatif ▲'}</button>
+    </div>
+    <div class="estCorps">
+      <p class="estAvert">Estimation indicative. La fabrication du support (découpe, ponçage, apprêt d'un panneau à créer) n'est comprise que si vous avez coché « Fabrication du support » sur le support concerné. Elle ne vaut pas devis : l'atelier vous confirme un prix ferme après étude de votre projet.</p>
+      ${synth.length ? `<ul class="estListe">${synth.map(l=>`<li><span class="estLib">${l.lib}</span><span class="estPrix">${prixTxt(l.prix)}</span></li>`).join('')}</ul>` : ''}
+      <div class="estBoutons">
+        <button type="button" class="estBtn principal actionBtn" onclick="envoyerDemande('qualification')">L'estimatif me convient, contactez-moi pour la suite</button>
+        <a class="estBtn secondaire" href="https://www.etsgesret.fr/contact" target="_blank" rel="noopener" onclick="enregistrerAbandon('rappel')">Je préfère être rappelé·e ou mon projet est plus complexe</a>
+        <button type="button" class="estBtn discret" onclick="recommencerEstimatif()">↺ Recommencer l'estimatif</button>
+        <button type="button" class="estBtn discret" onclick="declinerDemande()">Pas pour moi cette fois-ci</button>
+      </div>
+    </div>
+  </aside>`;
+}
+function majPanneau(){
+  if(!state.estimationVisible || state.envoye) return;
+  const el = document.getElementById('estimatif'); if(!el) return;
+  const y = window.scrollY;
+  el.outerHTML = renderEstimatifFlottant();
+  window.scrollTo(0, y);
+}
+function ouvrirEstimatif(){ if(!state.estimatifOuvert) basculerEstimatif(); }
+// Le panneau est ouvert/fermé sur place (sans le recréer) : la page ne bouge pas, et le détail s'affiche en haut du panneau.
+function basculerEstimatif(){
+  state.estimatifOuvert = !state.estimatifOuvert;
+  const el = document.getElementById('estimatif'); if(!el) return;
+  el.classList.toggle('ouvert', state.estimatifOuvert);
+  const btn = el.querySelector('.estToggle'); if(btn) btn.textContent = state.estimatifOuvert ? 'Masquer le détail ▼' : 'Voir ce qui compose mon estimatif ▲';
+  el.scrollTop = 0;
+}
+function renderRefusModal(){
+  return `<div class="modalFond" onclick="if(event.target===this)fermerRefus()">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="refusTitre">
+      <h3 id="refusTitre">Dommage !</h3>
+      <p>On garde ce que vous avez renseigné pour progresser, sans donner suite. Confirmer ?</p>
+      <div class="modalBtns">
+        <button type="button" class="actionBtn" onclick="refusGarder()">Oui, vous pouvez garder</button>
+        <button type="button" class="actionBtn secondary" onclick="refusSupprimer()">Non, supprimez mes données</button>
+        <button type="button" class="ghostBtn" onclick="fermerRefus()">Annuler</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+async function detecterModeInterne(){
+  try{
+    const { data: { session } } = await sb.auth.getSession();
+    if(session && ESTABLISHMENT_ID){
+      const { data: membre } = await sb.from('members').select('id').eq('user_id', session.user.id).eq('establishment_id', ESTABLISHMENT_ID).maybeSingle();
+      state.interne.actif = !!membre;
+    }
+  }catch(err){ /* silencieux : un visiteur public sans session ne doit jamais voir d'erreur ici */ }
+  state.interne.verifie = true;
+  render();
+}
+function onChampInterne(champ, v){ state.interne[champ] = v; }
+
+// Barre d'outils du navigateur (iPhone) : si elle recouvre le bas de l'écran, le panneau est relevé d'autant.
+/* =========================================================================
+   COORDONNÉES RÉCUPÉRÉES EN CAS D'ABANDON — si le visiteur a renseigné un téléphone et/ou un e-mail puis quitte le formulaire sans l'envoyer,
+   on enregistre quand même sa demande telle qu'elle est (marquée « abandon » : l'alerte à l'atelier le précise). Une seule fois par visite.
+   Envoi par fetch « keepalive » (part même quand la page se ferme). AUCUN mail immédiat : l'abandon est rangé côté serveur (signaler-abandon) et l'atelier reçoit
+   un seul récapitulatif en fin de journée (recap-abandons), car un visiteur peut refuser au dernier moment de partager ses données.
+   ========================================================================= */
+function coordonneesExploitables(){
+  const c = state.coordonnees;
+  return c.telephone.replace(/\D/g, '').length >= 8 || /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(c.email.trim());
+}
+// motif : 'abandon' (page quittée), 'rappel' (a cliqué « Je préfère être rappelé·e » → renvoyé vers le formulaire de contact du site, qu'il peut ne pas remplir).
+function enregistrerAbandon(){
+  if(state.envoye || state._abandonEnvoye || !ESTABLISHMENT_ID || state.acces === 'ferme' || !coordonneesExploitables()) return;
+  state._abandonEnvoye = true;
+  try{
+    const c = state.coordonnees, sp = state.supports.find(x => x.id === state.principalId);
+    const corps = { establishmentId: ESTABLISHMENT_ID,
+      coordonnees: { nom:c.nom, telephone:c.telephone, email:c.email, adresse:c.adresse, ville:c.ville, typeClient:c.typeClient, raisonSociale:c.raisonSociale, siret:c.siret },
+      projet: { nom: state.projet.nomProjet, objectif: state.projet.objectif, support: sp ? sp.support : '' } };
+    // Rangé pour le récapitulatif du soir (fonction signaler-abandon) : aucune fiche n'est créée au Kanban pour quelqu'un qui n'est pas allé au bout.
+    fetch(SUPABASE_URL + '/functions/v1/signaler-abandon', { method:'POST', keepalive:true,
+      headers:{ 'Content-Type':'application/json', apikey:SUPABASE_KEY, Authorization:'Bearer ' + SUPABASE_KEY }, body: JSON.stringify(corps) }).catch(() => {});
+  }catch(e){ /* sans effet pour le visiteur */ }
+}
+let minuteurAbandon = null;
+document.addEventListener('visibilitychange', () => {
+  clearTimeout(minuteurAbandon);
+  // Page masquée (onglet fermé, changement d'application) : on laisse 20 s avant de considérer que le visiteur est parti (il peut juste consulter un numéro).
+  if(document.visibilityState === 'hidden') minuteurAbandon = setTimeout(() => enregistrerAbandon('abandon'), 20000);
+});
+window.addEventListener('pagehide', () => enregistrerAbandon('abandon'));
+function ajusterBarreBas(){
+  const vv = window.visualViewport; let cache = 0;
+  if(vv && vv.scale <= 1.01) cache = Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop));
+  document.documentElement.style.setProperty('--barre-bas', cache + 'px');
+}
+// Saisie en cours : sur téléphone, le bandeau du bas disparaît tant qu'un champ de texte, un nombre ou une liste a le focus (le clavier est ouvert).
+const CHAMPS_SAISIE = 'input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=submit]):not([type=file]),textarea,select';
+document.addEventListener('focusin', e => { if(e.target.matches && e.target.matches(CHAMPS_SAISIE)) document.body.classList.add('saisieEnCours'); });
+document.addEventListener('focusout', () => setTimeout(() => {
+  const a = document.activeElement;
+  if(!(a && a.matches && a.matches(CHAMPS_SAISIE))) document.body.classList.remove('saisieEnCours');
+}, 150));
+if(window.visualViewport){ visualViewport.addEventListener('resize', ajusterBarreBas); visualViewport.addEventListener('scroll', ajusterBarreBas); }
+window.addEventListener('scroll', ajusterBarreBas, { passive:true }); window.addEventListener('resize', ajusterBarreBas); ajusterBarreBas();
+// Chaque rendu est suivi d'un réajustement de la taille des aperçus (et à chaque changement de taille de fenêtre).
+document.addEventListener('keydown', e => {
+  const b = e.target;
+  if(!b || !b.classList || !b.classList.contains('qcmOpt')) return;
+  const sens = { ArrowRight:1, ArrowDown:1, ArrowLeft:-1, ArrowUp:-1 }[e.key];
+  if(!sens) return;
+  const groupe = [...b.closest('.qcm').querySelectorAll('.qcmOpt')];
+  const suivant = groupe[(groupe.indexOf(b) + sens + groupe.length) % groupe.length];
+  if(suivant){ e.preventDefault(); suivant.focus(); suivant.click(); }
+});
+// Le formulaire se redessine après chaque champ validé : on garde le curseur dans le champ en cours, pour que la touche Tab
+// continue vers la case suivante (Longueur → Hauteur, etc.) au lieu de renvoyer ailleurs.
+const CHAMPS_FOCUS = 'input,textarea,select,button.qcmOpt';
+function cleFocus(el){
+  if(!el || !el.matches || !el.matches(CHAMPS_FOCUS)) return null;
+  const bloc = el.closest('[id^="sb-"]'), racine = bloc || document.getElementById('app');
+  return { bloc: bloc ? bloc.id : '', i: [...racine.querySelectorAll(CHAMPS_FOCUS)].indexOf(el) };
+}
+function restaurerFocus(c){
+  if(!c || c.i < 0) return;
+  const racine = c.bloc ? document.getElementById(c.bloc) : document.getElementById('app'); if(!racine) return;
+  const n = [...racine.querySelectorAll(CHAMPS_FOCUS)][c.i];
+  if(n && n !== document.activeElement && n.type !== 'file') n.focus({ preventScroll:true });
+}
+{ const renderBase = render; render = function(){ const c = cleFocus(document.activeElement); renderBase(); restaurerFocus(c); ajusterApercus(); }; }
+window.addEventListener('resize', ajusterApercus);
+if(document.fonts && document.fonts.ready) document.fonts.ready.then(ajusterApercus);
+// À l'actualisation, le navigateur ne doit pas rouvrir la page au milieu : on repart toujours du haut.
+try{ if('scrollRestoration' in history) history.scrollRestoration = 'manual'; }catch(e){}
+render();
+window.scrollTo(0, 0);
+detecterModeInterne();
+if(ESTABLISHMENT_ID) chargerReglagesEstimation(ESTABLISHMENT_ID).then(render);
+// Filet de sécurité : si les réglages tardent (réseau), le formulaire s'affiche quand même au bout de 6 s.
+setTimeout(()=>{ if(state.acces === 'verif'){ state.acces = 'ouvert'; render(); } }, 6000);
+</script>
+</body>
+</html>

@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Dossier de présentation</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="atelier-nav.js"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600;700&family=Anton&family=Space+Mono:wght@400;700&display=swap">
+<style>
+  :root{ --bg:#fff; --ink:#1c1a17; --muted:#55504a; --line:#e4e0d9; --soft:#f7f5f2; --accent:#a8461f; }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--soft);color:var(--ink);font-family:Inter,system-ui,sans-serif}
+  body{font-size:15px;line-height:1.4}
+  h1,h2,h3{font-family:Fraunces,Georgia,serif;font-weight:600;margin:0}
+  .topbar{padding:0}
+  nav.topnav{background:#1c1a17;color:#fff;display:flex;align-items:center;gap:4px;padding:0 20px;height:52px;font-size:14px}
+  nav.topnav a.brand{color:#fff;text-decoration:none;font-weight:600;margin-right:24px;font-size:15px;font-family:Fraunces,Georgia,serif}
+  nav.topnav .menuItem{position:relative;height:100%;display:flex;align-items:center}
+  nav.topnav .menuItem>span,nav.topnav .menuItem>a.topLink{padding:0 14px;cursor:pointer;color:#d7dbe4;text-decoration:none}
+  nav.topnav .menuItem:hover>span,nav.topnav .menuItem>a.topLink:hover{color:#fff}
+  nav.topnav .dropdown{display:none;position:absolute;top:100%;left:0;background:#fff;color:var(--ink);min-width:220px;box-shadow:0 8px 24px rgba(0,0,0,.18);border-radius:0 0 10px 10px;overflow:hidden;z-index:50}
+  nav.topnav .menuItem:hover .dropdown{display:block}
+  nav.topnav .dropdown a{display:block;padding:10px 16px;color:var(--ink);text-decoration:none;font-size:13.5px;border-bottom:1px solid var(--line)}
+  nav.topnav .dropdown a:last-child{border-bottom:none}
+  nav.topnav .dropdown a:hover{background:var(--soft)}
+  nav.topnav .navToggle{display:none;margin-left:auto;background:none;border:none;color:#fff;font-size:20px;cursor:pointer}
+  @media (max-width:820px){
+    nav.topnav{flex-wrap:wrap;height:auto;padding:10px 16px}
+    nav.topnav .navToggle{display:block}
+    nav.topnav .menuItem{display:none;width:100%;height:auto;flex-direction:column;align-items:stretch}
+    nav.topnav.navOpen .menuItem{display:flex}
+    nav.topnav .menuItem>span,nav.topnav .menuItem>a.topLink{padding:12px 0 4px;cursor:pointer;display:block}
+    nav.topnav .dropdown{position:static;box-shadow:none;border-radius:0;background:transparent;min-width:0}
+    nav.topnav .menuItem.open .dropdown{display:block}
+    nav.topnav .dropdown a{color:#fff;padding:10px 0 10px 14px;border-bottom:1px solid rgba(255,255,255,.12)}
+    nav.topnav .dropdown a:hover{background:rgba(255,255,255,.06)}
+  }
+  .outils{max-width:900px;margin:0 auto;padding:0 20px 20px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .btn{border:1px solid var(--line);background:#fff;border-radius:999px;padding:9px 16px;font-size:14px;cursor:pointer}
+  .btnPrimary{background:#111;color:#fff;border-color:#111}
+  .input,.select,.textarea{border:1px solid var(--line);border-radius:8px;padding:7px 9px;background:#fff;font:inherit;width:100%}
+  .field{margin-bottom:10px}
+  .field label{display:block;font-size:12px;color:var(--muted);margin-bottom:3px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+  .quickForm{max-width:900px;margin:0 auto 24px;padding:18px 20px;background:#fff;border:1px solid var(--line);border-radius:14px}
+  .quickForm h2{font-size:15px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:12px}
+  .ligneSupport{border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:10px;background:var(--soft)}
+  .tiny{font-size:12px;color:var(--muted)}
+
+  /* =======================================================================
+     Pages du dossier — reprend le design réel du gabarit papier de l'atelier
+     (kraft, titre condensé, labels façon machine à écrire) plutôt qu'une
+     mise en page générique. Chaque .page est une feuille A4 isolée à l'écran,
+     imprimée une par page.
+     Les illustrations propres à la marque (logo Ets. Gesret, téléphone
+     vintage, icône "peinture fraîche") ne sont PAS reproduites ici — je n'ai
+     que le PDF en référence, pas les fichiers image sources. Un monogramme
+     texte générique les remplace en attendant que Tristan fournisse ces
+     visuels en fichiers séparés (PNG/SVG) pour un rendu identique au gabarit.
+     ======================================================================= */
+  /* Couleurs échantillonnées directement sur les images du PDF de référence (voir
+     dossier-assets/), pas inventées — pour matcher le gabarit au plus près. */
+  :root{ --kraft:#c6af90; --kraftLine:rgba(23,18,10,.42); --cream:#d8d4cd; --papInk:#181510; --papMuted:#6d6250; --papRed:#ae3f37; }
+  .page{width:210mm;min-height:297mm;margin:0 auto 24px;background:var(--cream);box-shadow:0 4px 20px rgba(0,0,0,.08);position:relative;display:flex;flex-direction:column;overflow:hidden;color:var(--papInk);font-family:'Space Mono',monospace}
+  .page.kraft{background:var(--kraft)}
+  .pageGrain{position:absolute;inset:0;pointer-events:none;opacity:.5;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E")}
+  .pageInner{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;padding:14mm 14mm 10mm}
+  .displayFont{font-family:'Anton',Impact,sans-serif;text-transform:uppercase;letter-spacing:.005em;line-height:.92}
+
+  .pageTopBar{position:relative;z-index:1;display:flex;justify-content:space-between;align-items:flex-start;font-size:9.5px;letter-spacing:.04em;padding:8mm 14mm 3mm;border-bottom:1px solid var(--kraftLine)}
+  .pageTopBar b{font-size:11px}
+  .pageTopBar .d{text-align:right}
+  .pageTopBar .sub{opacity:.7;margin-top:1mm}
+
+  .pageFooter{position:relative;z-index:1;margin-top:auto;padding:4mm 14mm 8mm;border-top:1px solid var(--kraftLine);text-align:center;font-size:7px;letter-spacing:.03em;text-transform:uppercase;opacity:.7}
+
+  /* Étiquette compacte (fond clair posé sur fond kraft) — imite les petits repères
+     "NOM DE MAISON / LE PALAIS, MORBIHAN" du gabarit papier. */
+  .tagBox{display:inline-block;background:var(--cream);padding:2.5mm 4mm;font-size:9px;letter-spacing:.04em}
+  .tagBox b{display:block;font-size:10px}
+  .tagBox .sub{opacity:.7;margin-top:.5mm}
+
+  /* Couverture : lignes étiquetées avec soulignement (PROJET /, LOCALISATION /...). */
+  .champLigne{margin-bottom:6mm}
+  .champLbl{font-size:9.5px;letter-spacing:.06em;opacity:.7;border-bottom:1px solid var(--kraftLine);padding-bottom:1.5mm;margin-bottom:1.5mm}
+  .champVal{font-size:15px;font-weight:700;border-bottom:1px solid var(--kraftLine);padding-bottom:1.5mm;min-height:6mm}
+  .champGrid2{display:grid;grid-template-columns:1fr 1fr;gap:8mm}
+  .monogramme{width:16mm;margin:8mm auto 0;display:block;flex:none}
+  .iconePeinture{width:22mm}
+  .logoGesret{width:52mm;display:block;margin:0 auto}
+  .telephoneVintage{width:46mm;display:block;margin-bottom:8mm}
+
+  /* Introduction : panneau kraft + photo pleine page à droite. */
+  .introSplit{flex:1;display:grid;grid-template-columns:1fr 1fr}
+  .introPanel{display:flex;flex-direction:column;padding:10mm 10mm 8mm 14mm}
+  .introTexte{font-size:12.5px;line-height:1.9;margin-bottom:auto}
+  .introTexte b{font-weight:700}
+  .introRepere{border-top:1px solid var(--kraftLine);padding-top:4mm;margin-top:8mm}
+  .introRepere .nom{font-family:'Anton',Impact,sans-serif;font-size:20px;text-transform:uppercase}
+  .introRepere .lieu{font-size:10px;letter-spacing:.03em;margin-top:1mm}
+  .introPhoto{position:relative;background:var(--kraft);display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .introPhoto img{width:100%;height:100%;object-fit:cover;display:block}
+  .introPhoto .vide{font-size:10px;letter-spacing:.04em;text-align:center;padding:10mm;opacity:.6}
+
+  /* Pages 3+ — une proposition par support. */
+  .propositionZone{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;text-align:center;padding:14mm}
+  .propositionZone.avecPhoto{background-size:cover;background-position:center}
+  .propositionNomSupport{font-size:10px;letter-spacing:.06em;text-transform:uppercase;opacity:.65;margin-bottom:6mm}
+  .propositionTexte{font-size:34px;word-break:break-word;padding:0 6mm}
+  .propositionInfos{display:flex;gap:10mm;justify-content:center;flex-wrap:wrap;font-size:9.5px;margin-top:8mm;opacity:.75}
+  .propositionInfos b{opacity:1}
+
+  /* Demande d'autorisation — texte réglementaire, mise en page kraft. */
+  .autoTitre{font-size:34px;margin:4mm 0 6mm}
+  .autoTexte{font-size:11.5px;line-height:1.75}
+  .autoTexte p{margin:0 0 4mm}
+  .cerfaBox{border-bottom:1.5px solid var(--papRed);display:inline-block;color:var(--papRed);font-weight:700;margin-bottom:2mm}
+  .autoTexte ul{margin:2mm 0 0;padding-left:5mm}
+  .autoTexte li{margin-bottom:2mm}
+
+  /* Dernière page — pochette + coordonnées, imite le photomontage recto/verso du gabarit. */
+  .contactSpread{flex:1;display:grid;grid-template-columns:1fr 1fr}
+  .contactLeft{background:var(--kraft);display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;padding:14mm;text-align:center}
+  .contactRight{background:var(--cream);position:relative;padding:14mm 14mm 14mm 20mm;display:flex;flex-direction:column;justify-content:center}
+  .contactRight::before{content:'';position:absolute;left:10mm;top:0;bottom:0;border-left:1.5px solid var(--papRed)}
+  .contactRight::after{content:'';position:absolute;left:12mm;top:0;bottom:0;border-left:1.5px solid var(--papRed)}
+  .contactNom{font-family:'Anton',Impact,sans-serif;font-size:26px;margin-bottom:8mm}
+  .contactLigne{font-size:12px;border-bottom:1px solid var(--kraftLine);padding-bottom:2mm;margin-bottom:4mm}
+
+  @page{ size:A4 portrait; margin:0; }
+  @media print{
+    body{background:#fff}
+    .topbar,.outils,.quickForm{display:none !important}
+    .page{box-shadow:none;margin:0;width:210mm;min-height:297mm;page-break-after:always}
+    .page:last-child{page-break-after:auto}
+    nav.topnav{display:none !important}
+  }
+  @media (max-width:900px){ .page{width:100%} .introSplit,.contactSpread{grid-template-columns:1fr} .contactRight{padding-left:14mm} .contactRight::before,.contactRight::after{display:none} }
+</style>
+</head>
+<body>
+<div class="topbar"><nav class="topnav" id="nav"></nav></div>
+<div id="app"></div>
+<script>
+const SUPABASE_URL = 'https://uuuigousvpijskbdhcal.supabase.co';
+const SUPABASE_KEY = 'sb_publishable__YuNj5XCo5YF8lwhwTu5OQ_RDM1Eesp';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:true } });
+function escapeHtml(s){ return String(s??'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])) }
+function uid(p='id'){ return p+'-'+Math.random().toString(16).slice(2,9) }
+
+const params = new URLSearchParams(location.search);
+const DEVIS_ID = params.get('devis') || '';
+const PROJET_ID = params.get('projet') || '';
+const ESTABLISHMENT_ID_URL = params.get('est') || '';
+
+// Styles de lettrage / effets — mêmes libellés que le formulaire client et l'atelier, juste
+// pour prévisualiser le TEXTE réel du client avec le style choisi (pas de rendu photo-réaliste
+// d'une façade — hors scope, voir le projet Magnific à venir).
+const ICONE_SUPPORT = { "Enseigne principale":"🏢", "Enseigne drapeau":"🚩", "Vitrines":"🪟", "Jambages":"🚪", "Pignon":"🧱", "Véhicule":"🚗", "Stop-trottoir":"🅿️", "Ardoises":"🪧" };
+const SUPPORTS_CONNUS = Object.keys(ICONE_SUPPORT);
+const STYLES_FORME = ["Lettres capitales / majuscules","Lettres minuscules","Lettres bâton / sans empattement","Lettres script / manuscrites","Lettres anciennes / traditionnelles","Lettres très décoratives","Reproduction d'une typographie existante","Reproduction d'un logo existant"];
+const STYLES_EFFET = ["Aucun effet particulier / lettrage simple","Filet / contour autour des lettres","Dorure","Dégradé","Patine / effet vieilli","Effet ancien / enseigne d'époque","Décor ou illustration autour du texte"];
+function apercuForme(cle){
+  const styles = {
+    "Lettres capitales / majuscules": "text-transform:uppercase;font-weight:700;letter-spacing:.03em",
+    "Lettres minuscules": "text-transform:lowercase;font-weight:600",
+    "Lettres bâton / sans empattement": "font-family:Arial,Helvetica,sans-serif;font-weight:700",
+    "Lettres script / manuscrites": "font-family:'Segoe Script','Brush Script MT',cursive",
+    "Lettres anciennes / traditionnelles": "font-family:Georgia,serif;font-variant:small-caps;letter-spacing:.05em",
+    "Lettres très décoratives": "font-family:Georgia,serif;font-weight:700;letter-spacing:.08em;text-shadow:1px 1px 0 #ccc,2px 2px 0 #ddd",
+    "Reproduction d'une typographie existante": "font-family:Arial,sans-serif",
+    "Reproduction d'un logo existant": "font-family:Arial,sans-serif;font-style:italic;opacity:.7",
+  };
+  return styles[cle] || "font-weight:700";
+}
+function apercuEffet(cle){
+  const styles = {
+    "Filet / contour autour des lettres": "-webkit-text-stroke:1.5px #111;color:#fff;text-shadow:0 0 1px #111",
+    "Dorure": "background:linear-gradient(135deg,#caa54a,#f5e29c,#a9791f);-webkit-background-clip:text;background-clip:text;color:transparent",
+    "Dégradé": "background:linear-gradient(90deg,#175cd3,#b42318);-webkit-background-clip:text;background-clip:text;color:transparent",
+    "Patine / effet vieilli": "color:#8a7455;text-shadow:1px 1px 0 #d8cdb0",
+    "Effet ancien / enseigne d'époque": "font-family:Georgia,serif;letter-spacing:.04em;color:#5c4326",
+    "Décor ou illustration autour du texte": "border:1px solid #ccc;padding:6px 14px;border-radius:8px;display:inline-block",
+  };
+  return styles[cle] || "";
+}
+
+let etablissement = { name:'', telephone:'', adresse:'', email_contact:'' };
+let dossier = null; // { numero, dateStr, projetNom, ville, clientNom, clientTelephone, texteAPeindre, lignes, photoUrl }
+let formulaireManuel = { projetNom:'', ville:'', clientNom:'', clientTelephone:'', texteAPeindre:'', forme:'', effet:'',
+  lignes: [ { id: uid(), support:'Enseigne principale', longueurCm:'', hauteurCm:'' } ] };
+
+async function chargerEtablissement(estId){
+  if(!estId) return;
+  const { data, error } = await sb.from('establishments').select('name,telephone,adresse,email_contact').eq('id', estId).maybeSingle();
+  if(!error && data) etablissement = data;
+}
+
+async function chargerDepuisDevis(devisId){
+  const { data: d, error } = await sb.from('devis').select('*').eq('id', devisId).maybeSingle();
+  if(error || !d){ dossier = null; return; }
+  const { data: lignesRows } = await sb.from('devis_lignes').select('*').eq('devis_id', devisId).eq('type','calculee').order('position');
+  await chargerEtablissement(d.establishment_id);
+  const notes = d.notes_client || {};
+  // Une seule photo représentative pour tout le dossier (pas de photo par ligne dans le modèle
+  // actuel) — la première image jointe par le client, sinon aucune (page reste sobre, sans photo).
+  const premierePhoto = (d.photos||[]).find(p=>(p.type||'').startsWith('image/'));
+  dossier = {
+    numero: d.numero, dateStr: new Date(d.created_at).toLocaleDateString('fr-FR'),
+    projetNom: notes.nomProjet || d.client_nom, ville: d.client_adresse || '',
+    clientNom: d.client_nom, clientTelephone: d.client_telephone,
+    texteAPeindre: notes.texteAPeindre || '',
+    lignes: (lignesRows||[]).map(l=>({ support:l.support, forme:l.forme, effet:l.effet, longueurCm:l.longueur_cm, hauteurCm:l.hauteur_cm, texteAPeindre:l.texte_a_peindre||'' })),
+    photoUrl: premierePhoto ? premierePhoto.dataUrl : '',
+  };
+}
+
+function construireDossierDepuisFormulaireManuel(){
+  const f = formulaireManuel;
+  dossier = {
+    numero: PROJET_ID ? PROJET_ID.slice(0,8) : '—', dateStr: new Date().toLocaleDateString('fr-FR'),
+    projetNom: f.projetNom, ville: f.ville, clientNom: f.clientNom, clientTelephone: f.clientTelephone,
+    texteAPeindre: f.texteAPeindre,
+    lignes: f.lignes.filter(l=>l.support).map(l=>({ support:l.support, forme:f.forme, effet:f.effet, longueurCm:l.longueurCm, hauteurCm:l.hauteurCm })),
+  };
+}
+
+/* =========================================================================
+   FORMULAIRE RAPIDE (mode graphiste, projet sans devis en ligne) — pré-rempli
+   depuis la fiche projet, à compléter en quelques secondes : texte à peindre,
+   style, et le(s) support(s) concernés.
+   ========================================================================= */
+function majFormulaireManuel(champ, valeur){ formulaireManuel[champ] = valeur; render(); }
+function ajouterLigneManuelle(){ formulaireManuel.lignes.push({ id:uid(), support:'Enseigne principale', longueurCm:'', hauteurCm:'' }); render(); }
+function retirerLigneManuelle(id){ formulaireManuel.lignes = formulaireManuel.lignes.filter(l=>l.id!==id); render(); }
+function majLigneManuelle(id, champ, valeur){ const l = formulaireManuel.lignes.find(x=>x.id===id); if(l) l[champ]=valeur; render(); }
+
+function renderFormulaireManuel(){
+  const f = formulaireManuel;
+  return `
+  <div class="quickForm">
+    <h2>Dossier de présentation — saisie rapide</h2>
+    <div class="grid2">
+      <div class="field"><label>Nom du projet / enseigne</label><input class="input" value="${escapeHtml(f.projetNom)}" onchange="majFormulaireManuel('projetNom', this.value)"></div>
+      <div class="field"><label>Localisation</label><input class="input" value="${escapeHtml(f.ville)}" onchange="majFormulaireManuel('ville', this.value)"></div>
+      <div class="field"><label>Nom du client</label><input class="input" value="${escapeHtml(f.clientNom)}" onchange="majFormulaireManuel('clientNom', this.value)"></div>
+      <div class="field"><label>Téléphone client</label><input class="input" value="${escapeHtml(f.clientTelephone)}" onchange="majFormulaireManuel('clientTelephone', this.value)"></div>
+    </div>
+    <div class="field"><label>Texte à peindre</label><textarea class="textarea" rows="2" onchange="majFormulaireManuel('texteAPeindre', this.value)">${escapeHtml(f.texteAPeindre)}</textarea></div>
+    <div class="grid2">
+      <div class="field"><label>Style de lettrage</label>
+        <select class="select" onchange="majFormulaireManuel('forme', this.value)"><option value="">—</option>${STYLES_FORME.map(k=>`<option value="${escapeHtml(k)}" ${k===f.forme?'selected':''}>${escapeHtml(k)}</option>`).join('')}</select>
+      </div>
+      <div class="field"><label>Effet</label>
+        <select class="select" onchange="majFormulaireManuel('effet', this.value)"><option value="">—</option>${STYLES_EFFET.map(k=>`<option value="${escapeHtml(k)}" ${k===f.effet?'selected':''}>${escapeHtml(k)}</option>`).join('')}</select>
+      </div>
+    </div>
+    <label class="tiny" style="display:block;margin:10px 0 6px;text-transform:uppercase;letter-spacing:.05em">Support(s) concernés</label>
+    ${f.lignes.map(l=>`
+      <div class="ligneSupport grid3" style="align-items:end">
+        <div class="field" style="margin:0"><label>Support</label>
+          <select class="select" onchange="majLigneManuelle('${l.id}','support', this.value)">${SUPPORTS_CONNUS.map(s=>`<option value="${escapeHtml(s)}" ${s===l.support?'selected':''}>${escapeHtml(s)}</option>`).join('')}</select>
+        </div>
+        <div class="field" style="margin:0"><label>Longueur (cm)</label><input class="input" type="number" value="${l.longueurCm}" onchange="majLigneManuelle('${l.id}','longueurCm', this.value)"></div>
+        <div style="display:flex;gap:8px;align-items:end">
+          <div class="field" style="margin:0;flex:1"><label>Hauteur (cm)</label><input class="input" type="number" value="${l.hauteurCm}" onchange="majLigneManuelle('${l.id}','hauteurCm', this.value)"></div>
+          <button class="btn" onclick="retirerLigneManuelle('${l.id}')">✕</button>
+        </div>
+      </div>`).join('')}
+    <button class="btn" onclick="ajouterLigneManuelle()">+ Support</button>
+  </div>`;
+}
+
+/* =========================================================================
+   RENDU DU DOSSIER — pages A4 imprimables (Imprimer / Enregistrer en PDF),
+   même convention que devis-interne.html : pas de génération PDF côté
+   serveur, le navigateur s'en charge.
+   ========================================================================= */
+// En-tête compact façon gabarit papier : nom/localisation à gauche, label de page + version
+// à droite — sur fond kraft directement (pas d'étiquette blanche) sur les pages internes.
+function pageTopBar(titreDroite){
+  return `<div class="pageTopBar">
+    <div><b>${escapeHtml(dossier.projetNom||'Sans nom')}</b>${dossier.ville?`<div class="sub">${escapeHtml(dossier.ville)}</div>`:''}</div>
+    <div class="d"><b>${escapeHtml(titreDroite)}</b><div class="sub">V1 • ${escapeHtml(dossier.dateStr)}</div></div>
+  </div>`;
+}
+function pageFooter(){
+  return `<div class="pageFooter">Toute diffusion et reproduction interdite © ${escapeHtml(etablissement.name||'Atelier')} — reproduction ou imitation du design interdite</div>`;
+}
+function renderCouverture(){
+  return `
+  <div class="page kraft">
+    <div class="pageGrain"></div>
+    <div class="pageInner">
+      <div class="pageTopBar" style="padding:0 0 3mm;margin-bottom:10mm">
+        <div><b>Dossier / ${escapeHtml(dossier.numero)}</b><div class="sub">Propositions V1</div></div>
+        <img class="iconePeinture" src="dossier-assets/icone-peinture-fraiche.png" alt="">
+      </div>
+      <div class="displayFont" style="font-size:56px;margin:10mm 0 14mm">${escapeHtml(dossier.projetNom||'Sans nom')}</div>
+      <div class="champLigne">
+        <div class="champLbl">Projet /</div>
+        <div class="champVal">${escapeHtml(dossier.projetNom||'—')}</div>
+      </div>
+      <div class="champLigne">
+        <div class="champLbl">Localisation /</div>
+        <div class="champVal">${escapeHtml(dossier.ville||'—')}</div>
+      </div>
+      <div class="champGrid2">
+        <div class="champLigne">
+          <div class="champLbl">Interlocuteur /</div>
+          <div class="champVal">${escapeHtml(dossier.clientNom||'—')}</div>
+        </div>
+        <div class="champLigne">
+          <div class="champLbl">Téléphone /</div>
+          <div class="champVal">${escapeHtml(dossier.clientTelephone||'—')}</div>
+        </div>
+      </div>
+      <img class="monogramme" src="dossier-assets/monogramme-gt.png" alt="">
+      <div class="champLigne" style="margin-top:auto">
+        <div class="champLbl">Date /</div>
+        <div class="champVal" style="border-bottom:none">${escapeHtml(dossier.dateStr)}</div>
+      </div>
+    </div>
+    ${pageFooter()}
+  </div>`;
+}
+function renderIntroduction(){
+  const photo = dossier.photoUrl
+    ? `<img src="${dossier.photoUrl}" alt="">`
+    : `<div class="vide">Photo du lieu — à venir</div>`;
+  return `
+  <div class="page kraft">
+    <div class="pageGrain"></div>
+    ${pageTopBar('Proposition')}
+    <div class="introSplit" style="position:relative;z-index:1">
+      <div class="introPanel">
+        <div class="displayFont" style="font-size:30px;margin-bottom:8mm">Introduction</div>
+        <p class="introTexte">Vous nous avez sollicités dans le cadre de la réalisation de lettrages peints pour <b>${escapeHtml(dossier.texteAPeindre || dossier.projetNom || 'votre projet')}</b>, situé${dossier.ville?` à ${escapeHtml(dossier.ville)}`:''}.<br><br><b>Vous trouverez ci-après nos premiers croquis d'intention.</b><br><br>Ces propositions ne sont pas définitives et évolueront si vous décidez de travailler avec nous.</p>
+        <div class="introRepere">
+          <div class="nom">${escapeHtml(dossier.projetNom||'')}</div>
+          <div class="lieu">${escapeHtml(dossier.ville||'')}</div>
+        </div>
+      </div>
+      <div class="introPhoto">${photo}</div>
+    </div>
+    ${pageFooter()}
+  </div>`;
+}
+function renderPageSupport(l, index){
+  const texte = l.texteAPeindre || dossier.texteAPeindre || dossier.projetNom || '…';
+  const styleInline = `${apercuForme(l.forme)};${apercuEffet(l.effet)}`;
+  const avecPhoto = !!dossier.photoUrl;
+  return `
+  <div class="page">
+    ${pageTopBar('Proposition '+String(index+1).padStart(2,'0'))}
+    <div class="propositionZone${avecPhoto?' avecPhoto':''}" ${avecPhoto?`style="background-image:url('${dossier.photoUrl}')"`:''}>
+      <div class="propositionNomSupport" style="${avecPhoto?'background:var(--cream);padding:1.5mm 4mm':''}">${ICONE_SUPPORT[l.support]||'🎨'} ${escapeHtml(l.support||'Support')}</div>
+      <div class="propositionTexte" style="${styleInline}${avecPhoto?';background:var(--cream);padding:4mm 8mm;display:inline-block':''}">${escapeHtml(texte)}</div>
+      <div class="propositionInfos" style="${avecPhoto?'background:var(--cream);padding:2mm 6mm':''}">
+        ${l.forme ? `<span>Style : <b>${escapeHtml(l.forme)}</b></span>` : ''}
+        ${l.effet && l.effet!=="Aucun effet particulier / lettrage simple" ? `<span>Effet : <b>${escapeHtml(l.effet)}</b></span>` : ''}
+        ${l.longueurCm && l.hauteurCm ? `<span>Dimensions indicatives : <b>${escapeHtml(String(l.longueurCm))} × ${escapeHtml(String(l.hauteurCm))} cm</b></span>` : ''}
+      </div>
+    </div>
+    ${pageFooter()}
+  </div>`;
+}
+function renderAutorisation(){
+  return `
+  <div class="page kraft">
+    <div class="pageGrain"></div>
+    ${pageTopBar("Demande d'autorisation")}
+    <div class="pageInner" style="padding-top:8mm">
+      <div class="displayFont autoTitre">Demande d'autorisation</div>
+      <div class="autoTexte">
+        <p><b>Avant de modifier votre façade et votre enseigne, vous devez impérativement faire une demande d'autorisation préalable auprès du service urbanisme de la mairie de votre ville.</b></p>
+        <p>&gt; <b>Pour cela, vous devez remplir le formulaire CERFA ci-dessous :</b></p>
+        <p><span class="cerfaBox">Formulaire 14798*01 :</span><br>Demande d'autorisation préalable pour l'installation d'un dispositif ou matériel supportant de la publicité, une enseigne ou une pré-enseigne</p>
+        <p>&gt; <b>Si votre bâtiment se trouve dans l'un des secteurs suivants,</b> il est probable que le service urbanisme de votre ville vous demande une autre déclaration et sollicite également l'avis des Architectes des Bâtiments de France.<br><b>Renseignez-vous bien auprès de ce service.</b></p>
+        <ul>
+          <li>Périmètre d'un site patrimonial remarquable : villes, villages ou quartiers dont la conservation, la restauration, la réhabilitation ou la mise en valeur présente, au point de vue historique, architectural, archéologique, artistique ou paysager, un intérêt public</li>
+          <li>Abords des monuments historiques</li>
+          <li>Site inscrit : monument naturel ou zone dont la préservation présente, au point de vue artistique, historique, scientifique, légendaire ou pittoresque, un intérêt général</li>
+          <li>Site classé ou en instance de classement : site et monument naturels dont la conservation ou la préservation présente un intérêt général au point de vue artistique, historique, scientifique, légendaire ou pittoresque</li>
+          <li>Réserves naturelles</li>
+          <li>À l'intérieur du cœur des parcs nationaux délimités</li>
+          <li>Immeuble protégé</li>
+          <li>Commune ou périmètre de commune où le conseil municipal a décidé de soumettre le ravalement à autorisation d'urbanisme</li>
+        </ul>
+      </div>
+    </div>
+    ${pageFooter()}
+  </div>`;
+}
+function renderContact(){
+  return `
+  <div class="page kraft">
+    <div class="pageGrain"></div>
+    <div class="contactSpread" style="position:relative;z-index:1">
+      <div class="contactLeft">
+        <div class="tagBox" style="position:absolute;top:10mm;left:10mm"><b>${escapeHtml(dossier.projetNom||'')}</b><div class="sub">${escapeHtml(dossier.ville||'')}</div></div>
+        <img class="logoGesret" src="dossier-assets/logo-ets-gesret.png" alt="">
+        <div class="tagBox" style="position:absolute;bottom:10mm"><b>Propositions</b></div>
+      </div>
+      <div class="contactRight">
+        <img class="telephoneVintage" src="dossier-assets/telephone-vintage.png" alt="">
+        <div class="contactNom">${escapeHtml(etablissement.name||'')}</div>
+        ${etablissement.telephone ? `<div class="contactLigne">${escapeHtml(etablissement.telephone)}</div>` : ''}
+        ${etablissement.adresse ? `<div class="contactLigne">${escapeHtml(etablissement.adresse)}</div>` : ''}
+        ${etablissement.email_contact ? `<div class="contactLigne" style="border-bottom:none">${escapeHtml(etablissement.email_contact)}</div>` : ''}
+      </div>
+    </div>
+  </div>`;
+}
+
+function render(){
+  const app = document.getElementById('app');
+  if(!dossier){
+    if(PROJET_ID){
+      app.innerHTML = renderFormulaireManuel() + `
+        <div class="outils"><button class="btn btnPrimary" onclick="construireDossierDepuisFormulaireManuel();render()">Générer l'aperçu du dossier →</button></div>`;
+      return;
+    }
+    app.innerHTML = `<div class="quickForm"><p>Chargement, ou lien incomplet — ce dossier doit être ouvert avec <code>?devis=…</code> ou <code>?projet=…</code> dans l'adresse.</p></div>`;
+    return;
+  }
+  const pages = [renderCouverture(), renderIntroduction(), ...dossier.lignes.map(renderPageSupport), renderAutorisation(), renderContact()];
+  app.innerHTML = `
+    <div class="outils">
+      <button class="btn btnPrimary" onclick="window.print()">🖨 Imprimer / Enregistrer en PDF</button>
+      ${PROJET_ID ? `<button class="btn" onclick="dossier=null;render()">← Modifier la saisie</button>` : ''}
+    </div>
+    ${pages.join('')}
+  `;
+}
+
+async function initApp(){
+  // Nav atelier affichée seulement côté graphiste (mode ?projet=) — un client public qui
+  // ouvre son dossier via ?devis= ne doit jamais voir le menu interne de l'atelier.
+  if(PROJET_ID){
+    const { data: p } = await sb.from('projets').select('establishment_id,nom_projet,ville,client_nom,client_telephone').eq('id', PROJET_ID).maybeSingle();
+    if(p){
+      await chargerEtablissement(p.establishment_id);
+      Object.assign(formulaireManuel, { projetNom: p.nom_projet||'', ville: p.ville||'', clientNom: p.client_nom||'', clientTelephone: p.client_telephone||'' });
+      document.getElementById('nav').innerHTML = navAtelierHtml(p.establishment_id, {});
+    }
+  } else if(DEVIS_ID){
+    await chargerDepuisDevis(DEVIS_ID);
+  } else if(ESTABLISHMENT_ID_URL){
+    await chargerEtablissement(ESTABLISHMENT_ID_URL);
+  }
+  render();
+}
+initApp();
+</script>
+</body>
+</html>

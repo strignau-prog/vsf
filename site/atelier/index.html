@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Maurice — Coopérative des peintres en lettres</title>
+  <script>location.replace('federation-accueil.html');</script>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600;700&display=swap">
+  <style>
+    /* V0 — même système typo/couleurs que tout le projet, voir atelier-compte.html. */
+    :root{
+      --bg:#fff; --ink:#1c1a17; --muted:#55504a; --line:#e4e0d9; --soft:#f7f5f2;
+      --accent:#a8461f;
+      --red:var(--ink); --amber:var(--ink); --green:var(--ink);
+      --redBg:var(--soft); --amberBg:var(--soft); --greenBg:var(--soft);
+      --blue:var(--ink); --blueBg:var(--soft);
+      --sidebar:#1c1a17; --sidebarSoft:#2b2823; --sidebarLine:#3a352d;
+      --sidebarInk:#f7f5f2; --sidebarMuted:#a39c90;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif}
+    body{font-size:16px;line-height:1.3;font-variant-numeric:tabular-nums}
+    h1,h2,nav.topnav a.brand{font-family:Fraunces,Georgia,serif;font-weight:600}
+    a{color:inherit}
+    button{cursor:pointer;background:none;border:none;padding:0;font:inherit;color:inherit}
+
+    /* ---------- Nav horizontale — jamais latérale, sous-menu au survol ---------- */
+    nav.topnav{background:var(--sidebar);color:var(--sidebarInk);display:flex;align-items:center;gap:4px;padding:0 20px;height:56px;font-size:14.5px;position:sticky;top:0;z-index:40}
+    nav.topnav a.brand{color:#fff;text-decoration:none;font-weight:700;margin-right:22px;font-size:15.5px;letter-spacing:.02em}
+    nav.topnav .menuItem{position:relative;height:100%;display:flex;align-items:center}
+    nav.topnav .menuItem>span,nav.topnav .menuItem>a.topLink{padding:0 14px;cursor:pointer;color:var(--sidebarMuted);text-decoration:none}
+    nav.topnav .menuItem:hover>span,nav.topnav .menuItem>a.topLink:hover{color:#fff}
+    nav.topnav .dropdown{display:none;position:absolute;top:100%;left:0;background:#fff;color:var(--ink);min-width:240px;box-shadow:0 8px 24px rgba(0,0,0,.18);border-radius:0 0 10px 10px;overflow:hidden;z-index:50}
+    nav.topnav .menuItem:hover .dropdown{display:block}
+    nav.topnav .dropdown a{display:block;padding:10px 16px;color:var(--ink);text-decoration:none;font-size:13.5px;border-bottom:1px solid var(--line)}
+    nav.topnav .dropdown a:last-child{border-bottom:none}
+    nav.topnav .dropdown a:hover{background:var(--soft)}
+    .navToggle{display:none;background:none;border:none;color:#fff;font-size:22px;cursor:pointer;padding:4px 10px;margin-left:auto}
+    @media (max-width:720px){
+      nav.topnav{flex-wrap:wrap;height:auto;padding:10px 16px}
+      .navToggle{display:block}
+      nav.topnav .menuItem{display:none;width:100%;height:auto;flex-direction:column;align-items:stretch}
+      nav.topnav.navOpen .menuItem{display:flex}
+      nav.topnav .menuItem>span,nav.topnav .menuItem>a.topLink{padding:12px 0 4px;cursor:pointer;text-align:left;width:100%;display:block}
+      nav.topnav .dropdown{position:static;box-shadow:none;border-radius:0;background:transparent;min-width:0}
+      nav.topnav .menuItem.open .dropdown{display:block}
+      nav.topnav .dropdown a{color:#fff;padding:10px 0 10px 14px;border-bottom:1px solid rgba(255,255,255,.12)}
+      nav.topnav .dropdown a:hover{background:rgba(255,255,255,.06)}
+    }
+
+    /* ---------- "À venir", déplacé du menu (pas des destinations réelles) vers le contenu ---------- */
+    .futureList{display:flex;flex-direction:column;gap:1px;border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-top:8px}
+    .futureItem{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 14px;font-size:14.5px;color:var(--muted);background:var(--soft)}
+    .futureTag{font-size:10.5px;border:1px solid var(--line);border-radius:999px;padding:2px 8px;white-space:nowrap;background:#fff}
+
+    /* ---------- Main content ---------- */
+    .content{padding:40px 32px 60px 32px;max-width:760px;margin:0 auto}
+    .hero h1{font-size:32px;margin:0 0 8px 0}
+    .hero p{color:var(--muted);font-size:16px;line-height:1.55;margin:0 0 30px 0;max-width:600px}
+    .statusGrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:36px}
+    .statusCard{border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+    .statusCard .num{font-size:26px;font-weight:700}
+    .statusCard .lbl{font-size:13px;color:var(--muted);margin-top:2px}
+    .treeTitle{font-weight:700;font-size:21px;margin:0 0 4px 0}
+    .sectionSub{font-size:14px;color:var(--muted);margin:0 0 14px 0}
+    .muted{color:var(--muted)}
+    .chip{display:inline-flex;align-items:center;padding:3px 9px;font-size:12.5px;border:1px solid var(--line);background:#fff;border-radius:999px;white-space:nowrap}
+    .chip.red{border-color:#f1b4b0;background:var(--redBg);color:var(--red)}
+    .chip.amber{border-color:#f0d9a7;background:var(--amberBg);color:var(--amber)}
+    .chip.green{border-color:#a7e0be;background:var(--greenBg);color:var(--green)}
+    .chip.blue{border-color:#b2ddff;background:var(--blueBg);color:var(--blue)}
+    .noteCard{border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:14px;background:var(--soft)}
+    .noteCard b{display:block;margin-bottom:4px;font-size:16px}
+    .noteCard p{margin:0;font-size:14.5px;color:var(--muted);line-height:1.5}
+    .noteCard a{text-decoration:underline}
+
+    @media (max-width:820px){
+      .statusGrid{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+<nav class="topnav">
+  <a class="brand" href="index.html">MAURICE</a>
+  <button class="navToggle" onclick="toggleNav()" aria-label="Menu">☰</button>
+  <div class="menuItem"><span onclick="toggleMenuItem(this)">Mon Atelier</span>
+    <div class="dropdown">
+      <a href="devis-interne.html">Devis</a>
+      <a href="devis-client.html">↳ Formulaire client (en ligne)</a>
+      <a href="stock-atelier.html">Stock &amp; commandes</a>
+      <a href="client-projet.html">Client / Projet</a>
+      <a href="atelier-compte.html">Compte &amp; équipe</a>
+    </div>
+  </div>
+  <div class="menuItem"><a class="topLink" href="federation-accueil.html">Ma Fédération</a></div>
+</nav>
+
+  <main class="content" id="content">
+    <div class="hero">
+      <h1 id="greeting">Bienvenue</h1>
+      <p>Maurice, l'outil de l'atelier, module par module. Ce qui est marqué "fonctionnel" est construit et testable dès maintenant ; le reste est à venir. Choisis un module dans le menu du haut.</p>
+    </div>
+
+    <div class="field" style="max-width:280px;margin-bottom:6px">
+      <label style="display:block;font-size:12px;color:var(--muted);margin-bottom:5px">Connecté en tant que</label>
+      <select id="vueRole" onchange="renderAccueil()" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-family:inherit;font-size:15px">
+        <option value="dirigeant">Peintre (dirigeant)</option>
+        <option value="graphiste">Graphiste</option>
+        <option value="regisseur">Régisseur</option>
+      </select>
+    </div>
+    <p class="tiny muted" style="margin:0 0 20px 0">Aujourd'hui, le Peintre (dirigeant) cumule tous les droits, y compris l'attribution des droits aux autres. Un rôle Dirigeant séparé, avec des accès distincts par personne, arrivera avec le module Compte &amp; équipe une fois débloqué.</p>
+
+    <div class="statusGrid" id="kpiGrid"></div>
+
+    <div class="treeTitle" id="tachesTitle">À faire</div>
+    <div class="sectionSub">Tiré de tes vrais devis et de ton vrai stock, pas d'exemple inventé.</div>
+    <div id="taches" style="margin-bottom:30px"></div>
+
+    <div class="treeTitle">Où en est le projet</div>
+    <div class="sectionSub">Le point sur ce qui tourne déjà et ce qui reste à brancher.</div>
+
+    <div class="noteCard">
+      <b>Devis, Stock &amp; Suivi chantier <span class="chip green" style="margin-left:6px">Fonctionnel</span></b>
+      <p>Calcul automatique du devis (support × matière × état × hauteur × forme × effet), formulaire client avec sélection visuelle du style, suivi de stock avec réservation automatique et commandes fournisseur, et frise de suivi par chantier. Tournent pour l'instant en enregistrement local dans le navigateur (pas encore relié à Supabase) — idéal pour tester et donner ton avis, mais rien n'est encore partagé entre appareils.</p>
+    </div>
+
+    <div class="noteCard">
+      <b>Compte &amp; équipe <span class="chip green" style="margin-left:6px">Fonctionnel</span></b>
+      <p>Création de compte au niveau de la Fédération, création d'atelier, invitation des membres par numéro Fédération (gérant, peintre, graphiste, logistique) : tout est branché sur Supabase et testé de bout en bout. <a href="federation-accueil.html">→ Ouvrir Ma Fédération</a></p>
+    </div>
+
+    <div class="noteCard">
+      <b>MAMAIN — cartographie des compétences</b>
+      <p>Un autre outil de l'atelier, qui utilise le même compte Supabase que "Compte &amp; équipe" : un atelier créé d'un côté existera aussi de l'autre. <a href="cartographie-metier_1.html">→ Ouvrir MAMAIN</a></p>
+    </div>
+
+    <div class="treeTitle" style="font-size:19px;margin-top:30px">À venir</div>
+    <div class="futureList">
+      <div class="futureItem">Pré-autorisation ABF<span class="futureTag">bientôt</span></div>
+      <div class="futureItem">Croquis &amp; maquette<span class="futureTag">bientôt</span></div>
+      <div class="futureItem">BAT &amp; poncif<span class="futureTag">bientôt</span></div>
+      <div class="futureItem">Préparation chantier<span class="futureTag">bientôt</span></div>
+      <div class="futureItem">Facturation<span class="futureTag">bientôt</span></div>
+      <div class="futureItem">Kanban global<span class="futureTag">bientôt</span></div>
+    </div>
+  </main>
+<script>
+function euros(n){ return Number(n||0).toLocaleString('fr-FR',{minimumFractionDigits:0,maximumFractionDigits:0}) + ' €'; }
+function toggleNav(){ document.querySelector('nav.topnav').classList.toggle('navOpen'); }
+function toggleMenuItem(el){ el.parentElement.classList.toggle('open'); }
+function joursDepuis(iso){ if(!iso) return null; const d=new Date(iso); if(isNaN(d)) return null; return Math.floor((Date.now()-d.getTime())/86400000); }
+function chargerDevis(){ try{ const v = localStorage.getItem('erp_devis_v1'); return v ? JSON.parse(v).devis||[] : []; }catch(e){ return []; } }
+function chargerStock(){ try{ const v = localStorage.getItem('erp_stock_v1'); return v ? JSON.parse(v) : {pots:[],besoins:[],commandes:[]}; }catch(e){ return {pots:[],besoins:[],commandes:[]}; } }
+function totalDevis(d){ let t=0; for(const l of (d.lignes||[])) t += Number(l.prixHT)||0; return t; }
+function dernierHistorique(d, statut){ const h=(d.historique||[]).filter(x=>x.statut===statut); return h.length ? h[h.length-1].date : null; }
+
+function renderAccueil(){
+  const vue = document.getElementById('vueRole').value; // 'dirigeant' | 'graphiste' | 'regisseur'
+  const devis = chargerDevis();
+  const stock = chargerStock();
+
+  const enAttente = devis.filter(d => d.statut==='brouillon' || d.statut==='envoye');
+  const montantAttente = enAttente.reduce((a,d)=>a+totalDevis(d),0);
+  const aEnvoyer = devis.filter(d=>d.statut==='brouillon');
+  const aRelancer = devis.filter(d=>d.statut==='envoye').filter(d=>{ const j=joursDepuis(dernierHistorique(d,'envoye')); return j!=null && j>5; });
+  const commandesEnCours = (stock.commandes||[]).filter(c=>c.quantiteACommander>0);
+
+  document.getElementById('greeting').textContent = vue==='dirigeant' ? 'Vision globale' : vue==='graphiste' ? 'Vue — Graphiste' : 'Vue — Régisseur';
+  document.getElementById('tachesTitle').textContent = vue==='dirigeant' ? 'À faire, tous rôles' : `À faire — ${vue==='graphiste'?'Graphiste':'Régisseur'}`;
+
+  const taches = [];
+
+  if(vue==='graphiste'){
+    // Pas encore de module Croquis/BAT : on le dit clairement plutôt que d'afficher des chiffres inventés.
+    document.getElementById('kpiGrid').innerHTML = `
+      <div class="statusCard" style="grid-column:1/-1"><div class="lbl" style="margin-top:0">Pas encore de données pour ce rôle — les modules Croquis &amp; maquette et BAT &amp; poncif (à venir) alimenteront cette vue.</div></div>
+    `;
+    document.getElementById('taches').innerHTML = `<div class="tiny muted">Rien à afficher pour l'instant côté Graphiste.</div>`;
+    return;
+  }
+
+  if(vue==='dirigeant'){
+    document.getElementById('kpiGrid').innerHTML = `
+      <div class="statusCard"><div class="num">${enAttente.length}</div><div class="lbl">Devis en attente de signature</div></div>
+      <div class="statusCard"><div class="num">${euros(montantAttente)}</div><div class="lbl">Montant en devis, en attente</div></div>
+      <div class="statusCard"><div class="num" style="color:${commandesEnCours.length?'var(--amber)':'inherit'}">${commandesEnCours.length}</div><div class="lbl">Produits à commander (stock)</div></div>
+    `;
+    aEnvoyer.forEach(d=> taches.push(`<span class="chip blue">À envoyer</span> ${d.numero} — ${d.client?.nom||'Sans nom'} (${euros(totalDevis(d))})`));
+    aRelancer.forEach(d=>{ const j=joursDepuis(dernierHistorique(d,'envoye')); taches.push(`<span class="chip amber">À relancer</span> ${d.numero} — ${d.client?.nom||'Sans nom'} (${j} jours sans réponse)`); });
+    commandesEnCours.forEach(c=> taches.push(`<span class="chip amber">À commander</span> ${c.quantiteACommander} L — ${c.cleProduit}${c.fournisseur?' chez '+c.fournisseur:''}`));
+  } else {
+    // Régisseur : relances client + suivi des commandes fournisseur, pas le montant financier.
+    document.getElementById('kpiGrid').innerHTML = `
+      <div class="statusCard" style="${aRelancer.length?'background:var(--amberBg);border-color:transparent':''}"><div class="num" style="${aRelancer.length?'color:var(--amber)':''}">${aRelancer.length}</div><div class="lbl" style="${aRelancer.length?'color:var(--amber)':''}">Relances client à faire</div></div>
+      <div class="statusCard"><div class="num">${enAttente.length}</div><div class="lbl">Devis en attente de signature</div></div>
+      <div class="statusCard" style="${commandesEnCours.length?'background:var(--amberBg);border-color:transparent':''}"><div class="num" style="${commandesEnCours.length?'color:var(--amber)':''}">${commandesEnCours.length}</div><div class="lbl" style="${commandesEnCours.length?'color:var(--amber)':''}">Besoins stock à commander</div></div>
+    `;
+    aRelancer.forEach(d=>{ const j=joursDepuis(dernierHistorique(d,'envoye')); taches.push(`<span class="chip amber">À relancer</span> ${d.numero} — ${d.client?.nom||'Sans nom'} (${j} jours sans réponse)`); });
+    commandesEnCours.forEach(c=> taches.push(`<span class="chip amber">À commander</span> ${c.quantiteACommander} L — ${c.cleProduit}${c.fournisseur?' chez '+c.fournisseur:''}`));
+  }
+
+  document.getElementById('taches').innerHTML = taches.length
+    ? `<div class="noteCard" style="background:#fff">${taches.map(t=>`<div style="padding:6px 0;font-size:14.5px;border-bottom:1px solid var(--line)">${t}</div>`).join('')}</div>`
+    : `<div class="tiny muted">Rien de pressant pour l'instant.</div>`;
+}
+renderAccueil();
+</script>
+</body>
+</html>

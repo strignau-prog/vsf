@@ -1,0 +1,1160 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="color-scheme" content="light">
+<title>Mon passeport — Maurice</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="boite-message.js"></script>
+<style>
+:root{--ink:#111;--grey:#8a8a8a;--line:#e6e6e6;--soft:#f6f6f6;--accent:#b98a3e}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:#fff;color:var(--ink);font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:16px;line-height:1.45;-webkit-tap-highlight-color:transparent}
+.wrap{max-width:560px;margin:0 auto;padding:0 20px calc(48px + env(safe-area-inset-bottom))}
+header.top{display:flex;justify-content:space-between;align-items:center;max-width:560px;margin:0 auto;padding:14px 20px}
+header.top b{font-weight:800;letter-spacing:.02em}
+.t1{font-size:34px;line-height:1.05;font-weight:800;letter-spacing:-.02em;margin:18px 0 10px}
+.t2{font-size:22px;line-height:1.15;font-weight:800;letter-spacing:-.01em;margin:0 0 6px}
+.kicker{font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--grey);margin:26px 0 6px}
+.cap{font-size:13px;color:var(--grey);margin:2px 0 0}
+p{margin:8px 0}
+.btn{background:none;border:0;padding:12px 0;margin:0;font:inherit;font-size:14px;font-weight:800;text-decoration:underline;text-underline-offset:4px;letter-spacing:.03em;text-transform:uppercase;color:var(--ink);cursor:pointer;text-align:left}
+.btn[disabled]{color:#bbb;text-decoration:none;cursor:default}
+.btn.sm{font-size:12px;padding:8px 0}
+.btn.grey{color:var(--grey)}
+.pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;border:1.5px solid var(--ink);padding:3px 8px;white-space:nowrap}
+.pill.plein{background:var(--ink);color:#fff}
+.pill.gris{border-color:#c9c9c9;color:var(--grey)}
+.row{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:16px 0;border-top:1px solid var(--line);cursor:pointer}
+.row:last-child{border-bottom:1px solid var(--line)}
+.row.statique{cursor:default}
+.row .gros{font-weight:800;font-size:17px;line-height:1.2}
+.row .fl{font-size:22px;font-weight:800;flex:none}
+.liste{margin:8px 0}
+label.f{display:block;font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--grey);margin-top:20px}
+input[type=text],input[type=tel],input[type=email],input[type=number],textarea,select{width:100%;border:0;border-bottom:1.5px solid var(--ink);border-radius:0;padding:10px 0;font:inherit;font-size:17px;background:transparent;color:var(--ink);outline:none}
+textarea{min-height:90px;resize:vertical;border:1.5px solid var(--ink);padding:10px}
+input:focus,textarea:focus,select:focus{border-color:var(--ink);box-shadow:0 2px 0 0 var(--ink)}
+.niv{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:10px 0}
+.niv button{border:1.5px solid var(--ink);background:#fff;color:var(--ink);font:inherit;font-size:13px;font-weight:800;padding:12px 2px;cursor:pointer}
+.niv button.on{background:var(--ink);color:#fff}
+.niv button.cible{background:var(--ink);color:#fff}
+.niv button.actuel{background:#cfcfcf}
+.niv button.cible.actuel{background:var(--ink);color:#fff;box-shadow:inset 0 -7px 0 #bdbdbd}
+.niv button.vue{outline:3px solid var(--ink);outline-offset:2px}
+.leg{display:inline-block;width:14px;height:14px;vertical-align:-2px;margin-right:2px}
+.niv button.moi{box-shadow:inset 0 -4px 0 var(--ink)}
+.niv button.on.moi{box-shadow:none}
+.niv button[disabled]{border-color:#d4d4d4;color:#bbb;cursor:default}
+.obs{background:var(--soft);padding:14px 16px;margin:10px 0}
+.obs ul{margin:6px 0 0;padding:0;list-style:none}
+.obs li{padding:9px 0;border-top:1px solid #e1e1e1;font-size:15px}
+.obs li:first-child{border-top:0}
+.note{border-left:3px solid var(--ink);padding:2px 0 2px 12px;margin:14px 0;font-size:14px}
+.retour{font-size:13px;font-weight:800;text-decoration:underline;text-underline-offset:3px;color:var(--ink);background:none;border:0;padding:12px 0;cursor:pointer;font-family:inherit}
+#menu{position:fixed;inset:0;background:#fff;z-index:50;display:none;overflow:auto}
+#menu.on{display:block}
+#menu .gm{font-size:24px;font-weight:800;letter-spacing:-.02em;padding:14px 0;border-top:1px solid var(--line);cursor:pointer}
+#sheet{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:60;display:none;align-items:flex-end;justify-content:center}
+#sheet.on{display:flex}
+#sheet .in{background:#fff;width:100%;max-width:560px;padding:22px 20px calc(24px + env(safe-area-inset-bottom));max-height:88vh;overflow:auto}
+.choix{display:block;width:100%;text-align:left;font:inherit;font-weight:600;font-size:17px;padding:15px 0;border:0;border-top:1px solid var(--line);background:none;cursor:pointer;color:var(--ink)}
+.choix:last-of-type{border-bottom:1px solid var(--line)}
+.tag{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.vide{color:var(--grey);padding:18px 0}
+.chargement{padding:60px 0;color:var(--grey)}
+.ligne2{display:flex;gap:18px;flex-wrap:wrap}
+a{color:var(--ink)}
+/* Typographie des champs : même famille et même graisse que le reste de l'application */
+textarea,input,select{font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-weight:400}
+textarea{font-size:16px;line-height:1.4}
+/* Petite touche de couleur (teinte ocre de VraiSavoirFaire) sur les interactions : survol, appui, sélection, état validé */
+.btn:hover,.btn:active{color:var(--accent)}
+.row:active{background:#fbf6ec}
+.row:hover .fl{color:var(--accent)}
+.niv button:active{background:var(--accent);border-color:var(--accent);color:#fff}
+.niv button.vue{outline-color:var(--accent)}
+.choix:hover,.choix:active{color:var(--accent)}
+.pill.plein{background:var(--accent);border-color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input:focus,textarea:focus,select:focus{border-color:var(--accent);box-shadow:0 2px 0 0 var(--accent)}
+/* Aide courte : une ligne, le détail derrière un « ? » */
+.q{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--grey);background:#fff;font-weight:800;font-size:12px;line-height:1;padding:0;cursor:pointer;color:var(--grey);vertical-align:1px}
+.q:hover{border-color:var(--accent);color:var(--accent)}
+.aideDetail{font-size:13px;line-height:1.4;color:#444;margin:2px 0 8px;padding:8px 10px;background:var(--soft)}
+/* Niveau visé et mon niveau : toujours visibles ensemble */
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+.duo>div{padding:10px 12px}
+.duo .vise{background:var(--ink);color:#fff}
+.duo .moi{background:#e4e4e4}
+.duo small{display:block;font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;opacity:.75;margin-bottom:2px}
+.duo b{font-size:14px;line-height:1.2;display:block}
+.mini{display:inline-block;font-size:11.5px;font-weight:800;padding:2px 7px;margin-right:4px}
+.mini.vise{background:var(--ink);color:#fff}
+.mini.moi{background:#e4e4e4}
+/* Parcours : étapes numérotées */
+.stepper{display:flex;align-items:center;margin:8px 0 2px}
+.stepper .pas{width:34px;height:34px;border-radius:50%;border:2px solid var(--ink);background:#fff;color:var(--ink);font:inherit;font-weight:800;font-size:14px;cursor:pointer;flex:none;padding:0}
+.stepper .pas.fait{background:var(--ink);color:#fff}
+.stepper .pas.courant{background:var(--accent);border-color:var(--accent);color:#fff}
+.stepper .pas.avenir{border-color:#c4c4c4;color:#c4c4c4}
+.stepper .trait{flex:1;height:2px;background:#d6d6d6;min-width:10px}
+.etape{display:flex;gap:14px;align-items:flex-start;padding:16px 0;border-top:1px solid var(--line)}
+.etape .num{width:38px;height:38px;border-radius:50%;border:2px solid var(--ink);display:flex;align-items:center;justify-content:center;font-weight:800;flex:none}
+.etape.fait .num{background:var(--ink);color:#fff}
+.etape.courant .num{background:var(--accent);border-color:var(--accent);color:#fff}
+.etape.avenir{color:#9a9a9a}.etape.avenir .num{border-color:#c4c4c4}
+/* Conversation avec Thérèse */
+.fil{margin:10px 0 14px}
+.bulle{margin:10px 0;font-size:16px;line-height:1.4}
+.bulle.t{border-left:3px solid var(--accent);padding:2px 0 2px 12px;font-weight:600}
+.bulle.u{text-align:right;color:var(--grey);font-size:15px}
+.bandeau{background:var(--soft);border-left:3px solid var(--accent);padding:8px 12px;font-size:14px;margin:10px 0}
+.groupeIntensite{border:2px solid var(--ink);padding:12px 14px;margin:8px 0;cursor:pointer}
+.groupeIntensite.sel{border-color:var(--accent);background:#fbf6ec}
+.groupeIntensite b{font-size:17px}
+.jour{display:inline-block;width:36px;height:36px;line-height:32px;text-align:center;border:2px solid var(--ink);margin:2px 3px 2px 0;font-weight:800;cursor:pointer}
+.jour.on{background:var(--accent);border-color:var(--accent);color:#fff}
+</style>
+</head>
+<body>
+<header class="top" id="entete" style="display:none">
+  <b>MAURICE</b>
+  <button class="btn sm" onclick="menu(true)" style="padding:6px 0">Menu</button>
+</header>
+<div id="menu"><div class="wrap" id="menuIn"></div></div>
+<div id="sheet" onclick="if(event.target===this)fermerSheet()"><div class="in" id="sheetIn"></div></div>
+<main class="wrap" id="app"><div class="chargement">Chargement…</div></main>
+
+<script>
+const SUPABASE_URL='https://uuuigousvpijskbdhcal.supabase.co';
+const SUPABASE_KEY='sb_publishable__YuNj5XCo5YF8lwhwTu5OQ_RDM1Eesp';
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+
+const NIV=['N1 Comprendre','N2 Faire avec repères','N3 Réaliser en situation','N4 Maîtriser et transmettre'];
+const NIV_COURT=['N1','N2','N3','N4'];
+const nivLib=n=>n?NIV[n-1]:'à choisir';
+const ROLES={gerant:'Dirigeant·e',admin:'Administrateur·rice',peintre:'Peintre',graphiste:'Graphiste',logistique:'Logistique'};
+
+const S={user:null,fiche:null,mems:[],est:null,estNom:'',me:null,obs:[],postes:[],invit:[],noms:{},libs:{},
+  concepteur:false,mode:'inscription',pending:{prenom:'',nom:'',tel:'',mail:'',besoinMail:false},canal:null,
+  cadrage:null,posit:[],valids:[],preuves:[],
+  equipe:[],cadrages:[],positE:[],validsE:[],
+  C:null,vue:{},ouvertChall:false,dernierEnvoi:0};
+
+const $=id=>document.getElementById(id);
+const E=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fr=d=>{try{return new Date(d).toLocaleDateString('fr-FR')}catch(e){return ''}};
+function flag(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
+const estDirigeant=()=>!!S.me&&['gerant','admin'].includes(S.me.role);
+const parQui=v=>(v.mode&&v.mode!=='humain')?'auto-validation '+(v.mode==='auto_concepteur'?'concepteur':'dirigeant'):'par '+E(v.valide_nom);
+function aideCourte(court, detail){
+  return `<p class="cap">${court}${detail?` <button type="button" class="q" aria-label="Plus d’explications" onclick="basculerAide(this)">?</button>`:''}</p>${detail?`<div class="aideDetail" style="display:none">${detail}</div>`:''}`;
+}
+function basculerAide(b){ const d = b.closest('p').nextElementSibling; if(d) d.style.display = d.style.display === 'none' ? 'block' : 'none'; }
+// Niveau visé et niveau actuel, côte à côte et nettement distincts
+function duoNiveaux(s, p){
+  const actuel = p && !p.ne_sait_pas && p.niveau_declare ? NIV[p.niveau_declare-1] : (p && p.ne_sait_pas ? 'je ne sais pas' : '—');
+  return `<div class="duo"><div class="vise"><small>Niveau visé</small><b>${s.niveau_attendu ? NIV[s.niveau_attendu-1] : 'à choisir'}</b></div><div class="moi"><small>Mon niveau</small><b>${E(actuel)}</b></div></div>`;
+}
+function ecran(html,garder){const y=window.scrollY;$('app').innerHTML=html;window.scrollTo(0,garder?y:0);}
+function go(h){if(location.hash===h)route();else location.hash=h;}
+function prenomAffiche(){return (S.fiche&&S.fiche.prenom)||(S.user&&S.user.user_metadata&&S.user.user_metadata.prenom)||'';}
+function nomComplet(uid,mail){return S.noms[uid]||(mail?mail.split('@')[0]:'Membre');}
+function monNomComplet(){const n=((S.fiche&&S.fiche.prenom)||(S.user.user_metadata&&S.user.user_metadata.prenom)||'')+' '+((S.fiche&&S.fiche.nom)||(S.user.user_metadata&&S.user.user_metadata.nom)||'');return n.trim()||(S.user.email||'Moi');}
+function erreur(e){console.error(e);alert('Une erreur est survenue : '+((e&&e.message)||e));}
+
+/* ───────────── menu / feuille ───────────── */
+function menu(on){
+  if(on){
+    const lignes=[['#parcours','Mon parcours'],['#tableau','Mon tableau'],['#positionnement','Mon positionnement']];
+    if(estDirigeant()) lignes.push(['#equipe','Mon équipe']);
+    else if(S.concepteur&&S.me) lignes.push(['#cadrer/'+S.me.id,'Mon cadrage'],['#valider/'+S.me.id,'Valider mes niveaux']);
+    lignes.push(['#therese','Parler à Thérèse']);
+    if(S.me) lignes.push(['#formation','Formation']);
+    lignes.push(['#passeport','Mon passeport']);
+    if(S.postes.some(p=>p.proprietaire_id&&p.proprietaire_id===S.user.id)) lignes.push(['#fiche','Ma fiche VSF']);
+    lignes.push(['#reglages','Réglages']);
+    $('menuIn').innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0"><b>MAURICE</b><button class="btn sm" onclick="menu(false)" style="padding:6px 0">Fermer</button></div>
+      <div style="margin-top:20px">${lignes.map(l=>`<div class="gm" onclick="menu(false);go('${l[0]}')">${l[1]}</div>`).join('')}
+      <div class="gm" onclick="menu(false);deconnexion()" style="border-bottom:1px solid var(--line)">Déconnexion</div></div>
+      <div class="kicker">Mes ateliers</div>
+      ${S.mems.map(m=>`<div class="row" onclick="changerAtelier('${m.establishment_id}')"><div><div class="gros">${E(m.nom)}</div><p class="cap">${E(ROLES[m.role]||m.role)}${m.establishment_id===S.est?' · atelier actuel':''}</p></div></div>`).join('')||'<p class="cap">Aucun atelier pour l’instant.</p>'}
+      <button class="btn sm" onclick="menu(false);go('#atelier')">Rejoindre un atelier avec un code</button>
+      <p class="cap" style="margin-top:18px">${E(monNomComplet())}${S.estNom?' · '+E(S.estNom):''}</p>`;
+  }
+  $('menu').classList.toggle('on',!!on);
+}
+async function changerAtelier(estId){
+  flag('ap_est',estId); S.chargeEnCours=true;
+  try{await chargerBase(); if(S.est) await chargerMoi();}catch(e){erreur(e);}
+  S.chargeEnCours=false; menu(false); go(S.me&&S.me.establishment_id===estId&&!flag('ap_droit_'+S.user.id+'_'+S.est)?'#droit':accueil());
+}
+function ouvrirSheet(html){$('sheetIn').innerHTML=html;$('sheet').classList.add('on');}
+function fermerSheet(){$('sheet').classList.remove('on');if(S._okPreuve){const f=S._okPreuve;S._okPreuve=null;f(null);}}
+
+/* ───────────── connexion ───────────── */
+function normaliserTel(t){
+  let s=String(t||'').replace(/[\s.\-()]/g,'');
+  if(!s) return '';
+  if(s.startsWith('00')) s='+'+s.slice(2);
+  if(/^0\d{9}$/.test(s)) return '+33'+s.slice(1);
+  if(/^33\d{9}$/.test(s)) return '+'+s;
+  return s;
+}
+function vueInscription(){
+  const p=S.pending,conn=S.mode==='connexion';
+  $('entete').style.display='none';
+  ecran(`<div class="kicker">${conn?'Connexion':'Créer mon passeport'}</div>
+    <h1 class="t1">${conn?'Content de vous revoir.':'Votre savoir-faire vous appartient.'}</h1>
+    <p class="cap">${conn?'Recevez un code pour vous reconnecter.':'Créez votre compte en une minute. Aucun employeur à indiquer : c’est vous qui le tenez, pas l’atelier.'}</p>
+    ${conn?'':`<label class="f" for="iPrenom">Prénom</label><input id="iPrenom" type="text" autocomplete="given-name" value="${E(p.prenom)}">
+    <label class="f" for="iNom">Nom</label><input id="iNom" type="text" autocomplete="family-name" value="${E(p.nom)}">`}
+    <label class="f" for="iTel">Téléphone mobile</label><input id="iTel" type="tel" inputmode="tel" autocomplete="tel" placeholder="06 00 00 00 00" value="${E(p.tel)}">
+    <label class="f" for="iMail">E-mail ${p.besoinMail?'— nécessaire ici':'(à défaut de SMS)'}</label><input id="iMail" type="email" autocomplete="email" placeholder="prenom@exemple.fr" value="${E(p.mail)}">
+    <p class="cap" style="margin-top:12px">Vous recevez un code. Par SMS si c’est disponible, sinon par e-mail.</p>
+    <button class="btn" style="margin-top:18px" onclick="envoyerCode()">Recevoir mon code</button><br>
+    <button class="btn sm grey" onclick="S.mode='${conn?'inscription':'connexion'}';vueInscription()">${conn?'Je n’ai pas encore de compte':'J’ai déjà un compte'}</button>`);
+}
+function lireForm(){
+  const p=S.pending;
+  if($('iPrenom')) p.prenom=$('iPrenom').value.trim();
+  if($('iNom')) p.nom=$('iNom').value.trim();
+  p.tel=$('iTel').value.trim(); p.mail=$('iMail').value.trim();
+}
+async function envoyerCode(){
+  lireForm(); const p=S.pending, conn=S.mode==='connexion';
+  if(!conn&&(!p.prenom||!p.nom)) return alert('Indiquez votre prénom et votre nom.');
+  if(!p.tel&&!p.mail) return alert('Indiquez votre téléphone ou votre e-mail pour recevoir le code.');
+  if(p.mail&&!/^\S+@\S+\.\S+$/.test(p.mail)) return alert('Cette adresse e-mail ne semble pas valide.');
+  const data=conn?undefined:{prenom:p.prenom,nom:p.nom};
+  if(p.tel){
+    const tel=normaliserTel(p.tel);
+    if(!/^\+\d{9,15}$/.test(tel)) return alert('Ce numéro de téléphone ne semble pas valide. Exemple : 06 74 86 46 60.');
+    const r=await sb.auth.signInWithOtp({phone:tel,options:{shouldCreateUser:!conn,data}});
+    if(!r.error){S.canal={type:'sms',val:tel};return vueCode();}
+    console.warn('SMS indisponible',r.error);
+    if(!p.mail){
+      p.besoinMail=true; vueInscription();
+      return alert('L’envoi de SMS n’est pas encore branché sur Maurice.\n\nIndiquez votre adresse e-mail : le code vous y sera envoyé à la place.');
+    }
+    alert('L’envoi de SMS n’est pas encore branché sur Maurice : le code part par e-mail à '+p.mail+'.');
+  }
+  const r2=await sb.auth.signInWithOtp({email:p.mail,options:{shouldCreateUser:!conn,data,emailRedirectTo:location.origin+location.pathname}});
+  if(r2.error){
+    console.error(r2.error);
+    const m=String(r2.error.message||'');
+    if(/rate|seconds|limit/i.test(m)) return alert('Trop de demandes de code pour l’instant. Patientez une minute puis réessayez.');
+    if(/not allowed|not found|signups/i.test(m)) return alert('Aucun compte ne correspond à cette adresse. Utilisez « Créer mon passeport ».');
+    return alert('Le code n’a pas pu être envoyé : '+m+'\n\nSi le problème persiste, l’envoi d’e-mails de Supabase doit être configuré (voir la note de test).');
+  }
+  S.canal={type:'email',val:p.mail}; vueCode();
+}
+function vueCode(){
+  const c=S.canal;
+  ecran(`<div class="kicker">Code de connexion</div>
+    <h1 class="t1">${c.type==='sms'?'Regardez vos SMS.':'Regardez vos e-mails.'}</h1>
+    <p class="cap">Code envoyé ${c.type==='sms'?'par SMS au':'par e-mail à'} ${E(c.val)}.${c.type==='email'?' Pensez aux courriers indésirables.':''}</p>
+    <label class="f" for="iCode">Code reçu</label>
+    <input id="iCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="10" style="font-size:28px;letter-spacing:.3em;font-weight:800" onkeydown="if(event.key==='Enter')verifierCode()">
+    <button class="btn" style="margin-top:18px" onclick="verifierCode()">Valider le code</button><br>
+    <button class="btn sm grey" onclick="vueInscription()">← Changer de numéro ou d’adresse</button>`);
+  setTimeout(()=>{const i=$('iCode');if(i)i.focus();},50);
+}
+async function verifierCode(){
+  const token=($('iCode').value||'').replace(/\s/g,'');
+  if(token.length<4) return alert('Saisissez le code reçu.');
+  const c=S.canal; let res=null,derniere=null;
+  const types=c.type==='sms'?['sms']:['email','signup','magiclink'];
+  for(const t of types){
+    const arg=c.type==='sms'?{phone:c.val,token,type:t}:{email:c.val,token,type:t};
+    const r=await sb.auth.verifyOtp(arg);
+    if(!r.error&&r.data&&r.data.session){res=r;break;}
+    derniere=r.error;
+  }
+  if(!res){console.error(derniere);return alert('Ce code n’est pas bon ou a expiré. Vérifiez-le, ou demandez-en un nouveau.');}
+  S.user=res.data.user; await demarrer(true);
+}
+async function deconnexion(){
+  try{await sb.auth.signOut();}catch(e){}
+  Object.assign(S,{user:null,fiche:null,mems:[],est:null,estNom:'',me:null,cadrage:null,posit:[],valids:[],preuves:[],equipe:[]});
+  S.mode='connexion'; go('#connexion');
+}
+
+/* ───────────── chargement ───────────── */
+async function chargerBase(){
+  const u=S.user.id;
+  const [f,m,o,po,ps]=await Promise.all([
+    sb.from('federation_members').select('numero_membre,nom,prenom,telephone,adresse').eq('user_id',u).maybeSingle(),
+    sb.from('members').select('id,establishment_id,role').eq('user_id',u),
+    sb.from('observables').select('situation_uid,niveau,ordre,texte,texte_je').order('niveau').order('ordre'),
+    sb.from('postes_apprenance').select('id,nom,ref_vsf,proprietaire_id').order('nom'),
+    sb.from('poste_apprenance_situations').select('poste_id,ordre,libelle,situation_uid,niveau_defaut').order('ordre')
+  ]);
+  S.fiche=f.data||null; S.mems=m.data||[]; S.obs=o.data||[];
+  try{const {data:rs}=await sb.from('roles_systeme').select('role').eq('user_id',u);S.concepteur=!!(rs&&rs.some(r=>r.role==='concepteur'));}catch(e){S.concepteur=false;}
+  S.postes=(po.data||[]).map(p=>Object.assign({},p,{situations:(ps.data||[]).filter(x=>x.poste_id===p.id)}));
+  S.verb={};S.infos={};
+  try{
+    const uids=[...new Set((ps.data||[]).map(x=>x.situation_uid))];
+    if(uids.length){
+      const [vb,inf]=await Promise.all([sb.from('referentiel_situations').select('situation_uid,niveau,verbalisation').in('situation_uid',uids),
+                                        sb.from('situation_infos').select('situation_uid,etapes,decisions,critere_qualite,point_depart').in('situation_uid',uids)]);
+      (vb.data||[]).forEach(r=>{S.verb[r.situation_uid+'|'+parseInt(String(r.niveau).replace(/\D/g,'')[0]||'0',10)]=r.verbalisation;});
+      (inf.data||[]).forEach(r=>{S.infos[r.situation_uid]=r;});
+    }
+  }catch(e){console.warn(e);}
+  const ids=S.mems.map(x=>x.establishment_id);
+  if(ids.length){
+    const {data:es}=await sb.from('establishments').select('id,name').in('id',ids);
+    S.mems.forEach(x=>{const e=(es||[]).find(y=>y.id===x.establishment_id);x.nom=e?e.name:'Atelier';});
+    const pref=flag('ap_est');
+    const choisi=S.mems.find(x=>x.establishment_id===pref)||S.mems[0];
+    S.est=choisi.establishment_id; S.estNom=choisi.nom; S.me=choisi;
+  }else{S.est=null;S.estNom='';S.me=null;}
+  const filtre=[`invitee_user_id.eq.${u}`]; if(S.user.email) filtre.push(`email.eq.${S.user.email.toLowerCase()}`);
+  const {data:inv}=await sb.from('invitations').select('id,establishment_id,role,status').or(filtre.join(',')).eq('status','pending');
+  S.invit=inv||[];
+  if(S.invit.length){
+    const {data:es2}=await sb.from('establishments').select('id,name').in('id',S.invit.map(i=>i.establishment_id));
+    S.invit.forEach(i=>{const e=(es2||[]).find(y=>y.id===i.establishment_id);i.nom=e?e.name:'Atelier';});
+  }
+}
+async function chargerMoi(){
+  const u=S.user.id;
+  const [c,p,v,pr]=await Promise.all([
+    S.est?sb.from('cadrages').select('*').eq('user_id',u).eq('establishment_id',S.est).maybeSingle():Promise.resolve({data:null}),
+    sb.from('apprenance_positionnements').select('*').eq('user_id',u),
+    sb.from('apprenance_validations').select('*').eq('user_id',u),
+    sb.from('preuves').select('*').eq('user_id',u).order('cree_le',{ascending:false})
+  ]);
+  S.cadrage=c.data||null; S.posit=p.data||[]; S.valids=v.data||[]; S.preuves=pr.data||[];
+  const manque=[...new Set([...S.posit,...S.valids,...S.preuves].map(x=>x.situation_uid).filter(x=>x&&!libConnu(x)))];
+  if(manque.length){
+    const {data}=await sb.from('referentiel_situations').select('situation,situation_uid').in('situation_uid',manque);
+    (data||[]).forEach(r=>{S.libs[r.situation_uid]=r.situation;});
+  }
+}
+function libConnu(uid){return (S.cadrage&&(S.cadrage.situations||[]).some(s=>s.situation_uid===uid))||S.libs[uid];}
+function libSit(uid){
+  const s=S.cadrage&&(S.cadrage.situations||[]).find(x=>x.situation_uid===uid);
+  return s?s.libelle:(S.libs[uid]||'Situation');
+}
+async function chargerEquipe(){
+  const {data:ms}=await sb.from('members').select('id,user_id,role,email').eq('establishment_id',S.est);
+  S.equipe=ms||[];
+  const ids=S.equipe.map(m=>m.user_id).filter(Boolean);
+  const {data:fs}=await sb.from('federation_members').select('user_id,prenom,nom').in('user_id',ids);
+  S.noms={}; (fs||[]).forEach(f=>{const n=((f.prenom||'')+' '+(f.nom||'')).trim(); if(n) S.noms[f.user_id]=n;});
+  if(!S.noms[S.user.id]) S.noms[S.user.id]=monNomComplet();
+  const [c,p,v]=await Promise.all([
+    sb.from('cadrages').select('*').eq('establishment_id',S.est),
+    sb.from('apprenance_positionnements').select('*').eq('establishment_id',S.est),
+    sb.from('apprenance_validations').select('*').eq('establishment_id',S.est)
+  ]);
+  S.cadrages=c.data||[]; S.positE=p.data||[]; S.validsE=v.data||[];
+}
+
+/* ───────────── démarrage / routage ───────────── */
+async function demarrer(apresCode){
+  S.chargeEnCours=true;
+  try{
+    await chargerBase();
+    if(apresCode&&S.pending&&(S.pending.prenom||S.pending.nom)){
+      const nomVide=!(S.fiche&&S.fiche.nom);
+      if(nomVide){
+        const tel=S.pending.tel?normaliserTel(S.pending.tel):((S.fiche&&S.fiche.telephone)||'');
+        const {error}=await sb.rpc('update_ma_fiche',{p_nom:S.pending.nom,p_prenom:S.pending.prenom,p_telephone:tel,p_adresse:(S.fiche&&S.fiche.adresse)||''});
+        if(error) console.warn('Fiche non mise à jour',error);
+        else await chargerBase();
+      }
+    }
+    if(S.est) await chargerMoi();
+  }catch(e){erreur(e);}
+  S.chargeEnCours=false;
+  $('entete').style.display='';
+  if(apresCode||!location.hash||['#inscription','#connexion','#code'].includes(location.hash)) go(accueil()); else route();
+}
+function accueil(){
+  const u=S.user.id;
+  if(!flag('ap_rgpd_'+u)) return '#rgpd';
+  if(!S.me) return '#atelier';
+  if(!flag('ap_droit_'+u+'_'+S.est)) return '#droit';
+  if(!flag('ap_parcours_'+u)) return '#parcours';
+  return estDirigeant()?'#equipe':'#tableau';
+}
+async function route(){
+  if(!S.user){
+    $('entete').style.display='none';
+    if(location.hash==='#connexion') S.mode='connexion';
+    return vueInscription();
+  }
+  $('entete').style.display='';
+  const parts=location.hash.slice(1).split('/'); const nom=parts[0]||'', arg=parts.slice(1).join('/');
+  const vues={rgpd:vueRgpd,atelier:vueAtelier,droit:vueDroit,equipe:vueEquipe,cadrer:vueCadrer,valider:vueValider,
+    positionnement:vuePositionnement,situation:vueSituation,tableau:vueTableau,passeport:vuePasseport,preuves:vuePreuves,
+    'preuve-nouvelle':vuePreuveNouvelle,progres:vueProgres,fiche:vueFiche,parcours:vueParcours,reglages:vueReglages,therese:vueTherese,formation:vueFormation};
+  const f=vues[nom];
+  if(!f){return go(accueil());}
+  const besoinAtelier=['equipe','cadrer','valider','positionnement','situation','tableau'];
+  if(besoinAtelier.includes(nom)&&!S.me) return go('#atelier');
+  const monPoste=S.concepteur&&S.me&&(nom==='cadrer'||nom==='valider')&&arg===S.me.id;
+  if(['equipe','cadrer','valider'].includes(nom)&&!estDirigeant()&&!monPoste) return go('#tableau');
+  $('app').innerHTML='<div class="chargement">Chargement…</div>';
+  try{
+    if(S.est&&!['rgpd','atelier','droit'].includes(nom)) await chargerMoi();
+    if(['equipe','cadrer','valider'].includes(nom)||(nom==='parcours'&&estDirigeant())) await chargerEquipe();
+    await f(arg);
+  }catch(e){erreur(e);}
+}
+window.addEventListener('hashchange',()=>{menu(false);if(S.user&&!S.chargeEnCours)route();else if(!S.user)route();});
+
+/* ───────────── 1b. droits RGPD, rattachement, droit à la déconnexion ───────────── */
+function vueRgpd(){
+  ecran(`<div class="kicker">Vos droits</div>
+    <h1 class="t1">Vos données restent les vôtres.</h1>
+    <div class="liste">
+      <div class="row statique"><div><div class="gros">Jamais vendues, jamais partagées.</div><p class="cap">Ni à une entreprise, ni à un autre atelier.</p></div></div>
+      <div class="row statique"><div><div class="gros">Accès, correction, suppression.</div><p class="cap">À tout moment, depuis votre passeport.</p></div></div>
+      <div class="row statique"><div><div class="gros">Aucune décision automatique.</div><p class="cap">Un niveau est toujours validé par une personne, en situation réelle.</p></div></div>
+      <div class="row statique"><div><div class="gros">Cela vous suit.</div><p class="cap">Si vous changez d’atelier, votre passeport reste le vôtre.</p></div></div>
+    </div>
+    <button class="btn" style="margin-top:14px" onclick="flag('ap_rgpd_'+S.user.id,'1');go(accueil())">J’ai compris, continuer</button>`);
+}
+function codeMembre(){
+  return (S.fiche&&S.fiche.numero_membre)||null;
+}
+function vueAtelier(){
+  const code=codeMembre();
+  ecran(`<div class="kicker">Étape 2 sur 2</div>
+    <h1 class="t1">Rejoindre votre atelier.</h1>
+    <p class="cap">C’est le dirigeant qui vous invite : votre compte n’est jamais relié à un atelier sans lui.</p>
+    <div class="kicker">Votre code à lui transmettre</div>
+    ${code?`<div style="font-size:34px;font-weight:800;letter-spacing:.06em">${E(code)}</div><p class="cap">Numéro de membre. Le dirigeant le saisit dans « Mon équipe » pour vous inviter.</p>`
+      :`<p class="note">Votre numéro de membre n’est pas encore disponible. Donnez au dirigeant ${E(S.user.email||(S.fiche&&S.fiche.telephone)||'votre identifiant de connexion')} : il pourra vous retrouver.</p>`}
+    <div class="kicker">Invitations reçues</div>
+    ${S.invit.length?S.invit.map(i=>`<div class="row statique"><div><div class="gros">${E(i.nom)}</div><p class="cap">Rôle proposé : ${E(ROLES[i.role]||i.role)}</p></div><button class="btn sm" onclick="accepterInvitation('${i.id}')">Accepter</button></div>`).join('')
+      :`<p class="vide" style="padding:6px 0">Aucune invitation pour l’instant.</p><button class="btn sm grey" onclick="route()">Actualiser</button>`}
+    <div class="kicker">Test</div>
+    <button class="btn sm" onclick="$('blocTest').style.display='block';this.style.display='none'">J’ai un code de test</button>
+    <div id="blocTest" style="display:none"><input id="iTest" type="text" autocapitalize="characters" placeholder="CODE DE TEST" style="text-transform:uppercase"><button class="btn" onclick="rattacherTest()">Me relier à l’atelier de test</button></div>
+    <div class="kicker">Et en attendant</div>
+    <button class="btn sm" onclick="go('#passeport')">Ouvrir mon coffre-fort personnel</button>`);
+}
+async function accepterInvitation(id){
+  const inv=S.invit.find(i=>i.id===id); if(!inv) return;
+  try{
+    const {data:deja}=await sb.from('members').select('id').eq('user_id',S.user.id).eq('establishment_id',inv.establishment_id).maybeSingle();
+    if(!deja){const {error}=await sb.from('members').insert({user_id:S.user.id,establishment_id:inv.establishment_id,role:inv.role,email:S.user.email||null});if(error)throw error;}
+    await sb.from('invitations').update({status:'accepted'}).eq('id',inv.id);
+    flag('ap_est',inv.establishment_id);
+    await demarrer(true);
+  }catch(e){erreur(e);}
+}
+async function rattacherTest(){
+  const code=($('iTest').value||'').trim(); if(!code) return;
+  const {data,error}=await sb.rpc('apprenance_test_rattacher',{p_code:code});
+  if(error) return alert(/inconnu|expir/i.test(error.message)?'Ce code de test est inconnu ou expiré.':'Impossible de vous relier : '+error.message+'\n\nLe script SQL « migration_apprenance.sql » a-t-il bien été exécuté ?');
+  flag('ap_est',data&&data.establishment_id);
+  await demarrer(true);
+}
+function vueDroit(){
+  ecran(`<div class="kicker">Vous êtes relié·e à ${E(S.estNom)}</div>
+    <h1 class="t1">Votre droit à la déconnexion.</h1>
+    <div class="liste">
+      <div class="row statique"><div class="gros">Aucune sollicitation hors de vos heures de travail.</div></div>
+      <div class="row statique"><div class="gros">Le silence est la règle par défaut.</div></div>
+      <div class="row statique"><div><div class="gros">Au plus 2 pistes par semaine.</div><p class="cap">Jamais imposées. Vous pouvez les ignorer.</p></div></div>
+    </div>
+    <button class="btn" style="margin-top:14px" onclick="flag('ap_droit_'+S.user.id+'_'+S.est,'1');go(accueil())">Continuer</button>`);
+}
+
+/* ───────────── composants ───────────── */
+function niveauxHtml(sel,fn,opt){
+  opt=opt||{};
+  return `<div class="niv">${[1,2,3,4].map(n=>{
+    const dis=opt.dispo&&!opt.dispo(n);
+    return `<button class="${sel===n?'on':''} ${opt.moi===n?'moi':''}" ${dis?'disabled':''} onclick="${fn}(${n})">${NIV_COURT[n-1]}</button>`;}).join('')}</div>`;
+}
+function obsDe(item,niveau,je){
+  if(item.specifique) return (niveau===item.niveau_attendu?(item.observables||[]):[]);
+  return S.obs.filter(o=>o.situation_uid===item.situation_uid&&o.niveau===niveau).map(o=>je?o.texte_je:o.texte);
+}
+function panneauObs(liste,titre,vide,fait){
+  return `<div class="obs"><div class="kicker" style="margin:0 0 4px">${titre}</div>${fait?`<p style="margin:4px 0 8px;font-weight:600">${E(fait)}</p>`:''}${liste.length?`<ul>${liste.map(t=>`<li>${E(t)}</li>`).join('')}</ul>`:`<p class="cap">${vide||'Observables à écrire pour ce niveau.'}</p>`}</div>`;
+}
+const retour=(h,t)=>`<button class="retour" onclick="go('${h}')">← ${t}</button>`;
+
+/* ───────────── 2. Équipe & cadrage (dirigeant) ───────────── */
+function statutMembre(m){
+  const c=S.cadrages.find(x=>x.member_id===m.id);
+  if(!c) return {code:'attente',txt:'En attente de cadrage',cl:'gris'};
+  const sits=c.situations||[];
+  const ps=S.positE.filter(x=>x.member_id===m.id), vs=S.validsE.filter(x=>x.member_id===m.id);
+  const valides=sits.filter(s=>vs.some(v=>v.situation_uid===s.situation_uid&&v.niveau_valide>=s.niveau_attendu)).length;
+  if(sits.length&&valides===sits.length) return {code:'valide',txt:'Validé·e',cl:'plein'};
+  const pos=sits.filter(s=>ps.some(p=>p.situation_uid===s.situation_uid)).length;
+  if(sits.length&&pos===sits.length) return {code:'positionne',txt:'Positionné·e · à valider',cl:''};
+  return {code:'cadre',txt:`Cadré · ${pos}/${sits.length} positionné`,cl:''};
+}
+function vueEquipe(){
+  const lignes=S.equipe.map(m=>{
+    const st=statutMembre(m), c=S.cadrages.find(x=>x.member_id===m.id), moi=m.user_id===S.user.id;
+    return `<div class="row statique" style="align-items:flex-start;flex-direction:column;gap:6px">
+      <div style="display:flex;justify-content:space-between;width:100%;gap:10px;align-items:flex-start"><div><div class="gros">${E(nomComplet(m.user_id,m.email))}${moi?' <span class="cap" style="display:inline">(moi)</span>':''}</div>
+        <p class="cap">${E(ROLES[m.role]||m.role)}${c&&c.poste_nom?' · poste '+E(c.poste_nom):''}</p></div><span class="pill ${st.cl}">${E(st.txt)}</span></div>
+      <div class="ligne2"><button class="btn sm" onclick="go('#cadrer/${m.id}')">${c?'Revoir le cadrage':'Cadrer le poste de '+E((nomComplet(m.user_id,m.email)).split(' ')[0])+' →'}</button>
+      ${c?`<button class="btn sm" onclick="go('#valider/${m.id}')">Valider →</button>`:''}</div></div>`;}).join('');
+  ecran(`<div class="kicker">${E(S.estNom)}</div>
+    <h1 class="t1">Mon équipe.</h1>
+    <p class="cap">${S.equipe.length} personne${S.equipe.length>1?'s':''}. Cadrez le poste, la personne se positionne, vous validez en situation réelle.</p>
+    <div class="liste" style="margin-top:14px">${lignes||'<p class="vide">Personne pour l’instant.</p>'}</div>
+    <div class="kicker">Inviter une personne</div>
+    <p class="cap">Saisissez le numéro de membre qu’elle vous a transmis.</p>
+    <input id="iInv" type="text" autocapitalize="characters" placeholder="NUMÉRO DE MEMBRE" style="text-transform:uppercase">
+    <select id="iInvRole" style="margin-top:8px">${['graphiste','peintre','logistique','gerant'].map(r=>`<option value="${r}">${E(ROLES[r])}</option>`).join('')}</select>
+    <button class="btn" onclick="inviter()">Inviter</button>
+    <div class="kicker">Mon parcours</div>
+    <button class="btn sm" onclick="go('#tableau')">Voir ma propre vue de membre →</button>`);
+}
+async function inviter(){
+  const n=($('iInv').value||'').trim(); if(!n) return alert('Saisissez un numéro de membre.');
+  const {error}=await sb.rpc('invite_by_numero',{p_establishment_id:S.est,p_numero_membre:n.toUpperCase(),p_role:$('iInvRole').value});
+  if(error) return alert('Invitation impossible : '+error.message);
+  alert('Invitation envoyée. La personne la voit dès sa prochaine connexion.'); $('iInv').value='';
+}
+
+/* cadrage */
+function itemsDefautPoste(p){return p.situations.map(s=>({situation_uid:s.situation_uid,libelle:s.libelle,niveau_attendu:s.niveau_defaut||null,specifique:false}));}
+async function vueCadrer(memberId){
+  const m=S.equipe.find(x=>x.id===memberId); if(!m) return go('#equipe');
+  const c=S.cadrages.find(x=>x.member_id===memberId);
+  S.C={memberId,userId:m.user_id,nom:nomComplet(m.user_id,m.email),poste:c?c.poste_nom:null,
+       items:c?JSON.parse(JSON.stringify(c.situations||[])):[],vue:{},existe:!!c};
+  drawCadrer();
+}
+function drawCadrer(garder){
+  const C=S.C;
+  if(!C.poste){
+    ecran(`${retour(estDirigeant()?'#equipe':'#tableau',estDirigeant()?'Mon équipe':'Mon tableau')}<div class="kicker">Cadrer le poste de ${E(C.nom)}</div>
+      <h1 class="t1">Quel poste ?</h1><p class="cap">Choisissez le poste dans le référentiel. Vous verrez ses situations et leurs niveaux, avec les preuves attendues.</p>
+      <div class="liste" style="margin-top:12px">${S.postes.length?S.postes.map(p=>`<div class="row" onclick="cadrerPoste('${p.id}')"><div><div class="gros">${E(p.nom)}</div><p class="cap">${p.situations.length} situations${p.ref_vsf?' · '+E(p.ref_vsf):''}</p></div><span class="fl">→</span></div>`).join(''):'<p class="vide">Aucun poste dans le référentiel. Le script SQL « migration_apprenance.sql » est-il exécuté ?</p>'}</div>`);
+    return;
+  }
+  const lignes=C.items.map((it,i)=>{
+    const v=C.vue[i]||it.niveau_attendu;
+    const obs=v?obsDe(it,v,false):[];
+    const inf=S.infos[it.situation_uid];
+    return `<div style="border-top:1px solid var(--line);padding:18px 0 6px">
+      <div style="display:flex;justify-content:space-between;gap:10px"><div><div class="kicker" style="margin:0">Situation ${i+1}${it.specifique?' · propre à l’atelier':''}</div><div class="t2">${E(it.libelle)}</div></div>
+        ${it.specifique?`<button class="btn sm grey" onclick="cadrerRetirer(${i})">Retirer</button>`:''}</div>
+      <p class="cap">${it.specifique?'':(inf&&inf.point_depart?'Point de départ suggéré : '+E(inf.point_depart)+' · ':'')}Niveau visé : <b style="color:var(--ink)">${nivLib(it.niveau_attendu)}</b></p>
+      <div class="niv">${[1,2,3,4].map(n=>`<button class="${it.niveau_attendu===n?'on':''}" ${(it.specifique||S.obs.some(o=>o.situation_uid===it.situation_uid&&o.niveau===n))?'':'disabled'} onclick="cadrerNiveau(${i},${n})">${NIV_COURT[n-1]}</button>`).join('')}</div>
+      ${v?panneauObs(obs,'Preuves attendues · '+NIV[v-1],'Aucun observable écrit pour ce niveau : il ne peut pas être choisi.',it.specifique?'':(S.verb[it.situation_uid+'|'+v]||'')):'<p class="cap">Touchez un niveau pour voir ses preuves attendues.</p>'}
+    </div>`;}).join('');
+  ecran(`${retour(estDirigeant()?'#equipe':'#tableau',estDirigeant()?'Mon équipe':'Mon tableau')}<div class="kicker">Cadrer le poste de ${E(C.nom)}</div>
+    <h1 class="t1">${E(C.poste)}.</h1>
+    ${aideCourte(`${C.items.length} situations. Choisissez le niveau visé.`,'Chaque niveau montre ses preuves attendues : ce qu’on peut voir, en situation réelle.')}
+    ${lignes}
+    <div style="border-top:1px solid var(--line);padding-top:6px"><button class="btn" onclick="cadrerSpecifique()">+ Ajouter une situation propre à l’atelier</button></div>
+    <button class="btn" style="margin-top:6px" onclick="cadrerEnregistrer()">Enregistrer le cadrage</button><br>
+    <button class="btn sm grey" onclick="cadrerChangerPoste()">Changer de poste</button>`,garder);
+}
+/* sélection du niveau : une fonction par ligne, pour garder des onclick simples */
+function cadrerNiveau(i,n){S.C.items[i].niveau_attendu=n;S.C.vue[i]=n;drawCadrer(true);}
+function cadrerPoste(pid){
+  const p=S.postes.find(x=>x.id===pid); if(!p) return;
+  S.C.poste=p.nom; S.C.items=itemsDefautPoste(p); S.C.vue={}; drawCadrer();
+}
+async function cadrerChangerPoste(){
+  if(!await confirmer('Changer de poste remplace la liste des situations de ce cadrage. Continuer ?')) return;
+  S.C.poste=null; S.C.items=[]; drawCadrer();
+}
+function cadrerRetirer(i){S.C.items.splice(i,1);S.C.vue={};drawCadrer(true);}
+async function cadrerSpecifique(){
+  const lib=await demander('Nom de la situation propre à votre atelier (ex. « Livrer un chantier en hauteur ») :');
+  if(!lib||!lib.trim()) return;
+  const obs=await demander('Observables attendus, séparés par un point-virgule (au moins un). Ex. : « A monté l’échafaudage seul ; A balisé la zone » :');
+  const liste=(obs||'').split(';').map(s=>s.trim()).filter(Boolean);
+  if(!liste.length) return alert('Une situation ne peut pas être cadrée sans observable : ajoutez-en au moins un.');
+  S.C.items.push({situation_uid:crypto.randomUUID(),libelle:lib.trim(),niveau_attendu:2,specifique:true,observables:liste});
+  drawCadrer();
+}
+async function cadrerEnregistrer(){
+  const C=S.C;
+  if(!C.items.length) return alert('Le cadrage ne contient aucune situation.');
+  const sansNiveau=C.items.find(it=>!it.niveau_attendu);
+  if(sansNiveau) return alert('Choisissez le niveau visé pour « '+sansNiveau.libelle+' ».');
+  const manque=C.items.find(it=>!obsDe(it,it.niveau_attendu,false).length);
+  if(manque) return alert('« '+manque.libelle+' » n’a pas d’observable au niveau '+NIV[manque.niveau_attendu-1]+'. Choisissez un niveau qui en a, ou ajoutez-les.');
+  const ligne={establishment_id:S.est,member_id:C.memberId,user_id:C.userId,poste_nom:C.poste,situations:C.items,cree_par:S.user.id};
+  const {error}=await sb.from('cadrages').upsert(ligne,{onConflict:'member_id'});
+  if(error) return erreur(error);
+  alert('Cadrage enregistré. '+C.nom.split(' ')[0]+' peut maintenant se positionner.');
+  go(estDirigeant()?'#equipe':'#tableau');
+}
+
+/* ───────────── 3. Positionnement (membre) ───────────── */
+function positDe(uid){return S.posit.find(p=>p.situation_uid===uid);}
+function vuePositionnement(){
+  const c=S.cadrage;
+  if(!c){
+    return ecran(`<div class="kicker">Mon positionnement</div><h1 class="t1">En attente de cadrage.</h1>
+      ${aideCourte('Votre poste n’est pas encore cadré.','Votre dirigeant choisit d’abord votre poste et le niveau visé pour chaque situation.')}
+      <span class="pill gris" style="margin-top:12px">En attente de cadrage</span>
+      <div style="margin-top:22px"><button class="btn sm" onclick="go('#passeport')">Ouvrir mon coffre-fort personnel →</button></div>`);
+  }
+  const sits=c.situations||[];
+  const faits=sits.filter(s=>positDe(s.situation_uid)).length;
+  const valides=sits.filter(s=>S.valids.some(v=>v.situation_uid===s.situation_uid)).length;
+  ecran(`<div class="kicker">${E(c.poste_nom||'Mon poste')} · ${E(S.estNom)}</div>
+    <h1 class="t1">Où en êtes-vous ?</h1>
+    ${stepperHtml()}
+    ${aideCourte(`${faits} sur ${sits.length} positionnée${faits>1?'s':''}.`,'Vous vous positionnez vous-même, appuyé·e sur les preuves attendues. Ce que vous indiquez seul·e ne valide rien : un niveau est validé en situation réelle, par une personne.')}
+    <div class="liste" style="margin-top:14px">${sits.map((s,i)=>{
+      const p=positDe(s.situation_uid), val=S.valids.filter(v=>v.situation_uid===s.situation_uid).sort((a,b)=>b.niveau_valide-a.niveau_valide)[0];
+      return `<div class="row" onclick="go('#situation/${s.situation_uid}')"><div><div class="kicker" style="margin:0">Situation ${i+1}</div><div class="gros">${E(s.libelle)}</div>
+        <p style="margin:6px 0 0"><span class="mini vise">Visé ${s.niveau_attendu?'N'+s.niveau_attendu:'—'}</span><span class="mini moi">Moi ${p?(p.ne_sait_pas?'?':'N'+p.niveau_declare):'—'}</span>${val?`<span class="pill plein">Validé N${val.niveau_valide}</span>`:''}</p></div><span class="fl">→</span></div>`;}).join('')}</div>
+    ${valides===sits.length&&sits.length?'<div class="note">Tous vos niveaux sont validés.</div>':faits===sits.length?'<div class="note">Positionnement terminé. Il reste à le valider avec votre dirigeant, en situation réelle.</div>':''}
+    ${blocBesoin()}`);
+}
+function blocBesoin(){
+  return `<div class="kicker">Un besoin d’accès ?</div>
+    ${aideCourte('Facultatif, à tout moment.','Ce n’est jamais un diagnostic. Visible de vous seul·e, sauf si vous choisissez de le partager. Ni l’atelier, ni le comité, ni la Fédération ne le voient.')}
+    <button class="btn sm" onclick="ouvrirBesoin()">Signaler un besoin d’accès</button>`;
+}
+async function ouvrirBesoin(){
+  const {data}=await sb.from('besoins_acces').select('texte').eq('user_id',S.user.id).maybeSingle();
+  ouvrirSheet(`<div class="kicker" style="margin-top:0">Besoin d’accès</div><div class="t2">Dites-le à votre façon.</div>
+    <p class="cap">Écrit ou dicté. Visible de vous seul·e.</p>
+    <textarea id="iBesoin" placeholder="Ex. : consignes à l’écrit, avec des pauses…">${E((data&&data.texte)||'')}</textarea>
+    <button class="btn" onclick="enregistrerBesoin()">Enregistrer</button> <button class="btn sm grey" onclick="fermerSheet()" style="margin-left:14px">Fermer</button>`);
+}
+async function enregistrerBesoin(){
+  const t=($('iBesoin').value||'').trim();
+  const {error}=await sb.from('besoins_acces').upsert({user_id:S.user.id,texte:t,maj_le:new Date().toISOString()},{onConflict:'user_id'});
+  if(error) return erreur(error);
+  fermerSheet(); alert(t?'Enregistré dans votre coffre-fort.':'Besoin retiré.');
+}
+function vueSituation(uid,garder){
+  const c=S.cadrage; if(!c) return go('#positionnement');
+  const sits=c.situations||[], i=sits.findIndex(s=>s.situation_uid===uid); if(i<0) return go('#positionnement');
+  const s=sits[i], p=positDe(uid);
+  const vue=S.vue[uid]||(p&&p.niveau_declare)||s.niveau_attendu||1;
+  const obs=obsDe(s,vue,true);
+  const dispo=n=>s.specifique?n===s.niveau_attendu:S.obs.some(o=>o.situation_uid===uid&&o.niveau===n);
+  const val=S.valids.filter(v=>v.situation_uid===uid).sort((a,b)=>b.niveau_valide-a.niveau_valide)[0];
+  ecran(`${retour('#positionnement','Mes situations')}
+    <div class="kicker" style="margin-top:6px">Situation ${i+1} sur ${sits.length}</div>
+    <h1 class="t1" style="margin-top:6px">${E(s.libelle)}</h1>
+    ${duoNiveaux(s,p)}${val?`<p style="margin:0 0 6px"><span class="pill plein">Validé ${NIV[val.niveau_valide-1]}</span></p>`:''}
+    ${(()=>{const inf=S.infos[uid];return inf&&(inf.etapes||inf.decisions||inf.critere_qualite)?`<details style="margin:8px 0"><summary class="btn sm" style="display:inline-block">Voir la situation</summary>
+      ${inf.etapes?`<p><span class="tag">Étapes</span><br>${E(inf.etapes)}</p>`:''}${inf.decisions?`<p><span class="tag">Décisions, arbitrages, aléas</span><br>${E(inf.decisions)}</p>`:''}${inf.critere_qualite?`<p><span class="tag">Critère de qualité</span><br>${E(inf.critere_qualite)}</p>`:''}</details>`:'';})()}
+    <div class="kicker">Touchez un niveau pour voir ses preuves attendues</div>
+    <div class="niv">${[1,2,3,4].map(n=>`<button class="${s.niveau_attendu===n?'cible':''} ${p&&p.niveau_declare===n&&!p.ne_sait_pas?'actuel':''} ${vue===n?'vue':''}" ${dispo(n)?'':'disabled'} onclick="voirNiveau('${uid}',${n})">${NIV_COURT[n-1]}</button>`).join('')}</div>
+    ${panneauObs(obs,NIV[vue-1]+' · preuves attendues','Pas encore d’observable écrit pour ce niveau.',s.specifique?'':(S.verb[uid+'|'+vue]||''))}
+    <button class="btn" onclick="seSituer('${uid}',${vue})" ${obs.length?'':'disabled'}>${p&&p.niveau_declare===vue&&!p.ne_sait_pas?'✓ C’est mon positionnement':'Je me situe au niveau '+NIV[vue-1]}</button><br>
+    <button class="btn sm" onclick="jeNeSaisPas('${uid}')">Je ne sais pas</button><br>
+    <button class="btn sm" onclick="S.ouvertChall=!S.ouvertChall;vueSituation('${uid}',true)">Me faire challenger sur un observable</button><br>
+    <button class="btn sm" onclick="go('#formation/${uid}')">Voir comment progresser →</button>
+    ${S.ouvertChall?`<div class="obs"><div class="kicker" style="margin:0 0 4px">Choisissez l’observable à challenger</div><ul>${obs.map((t,k)=>`<li style="cursor:pointer" onclick="choisirChallenge('${uid}',${k})">${E(t)} <b style="text-decoration:underline">Challenger</b></li>`).join('')}</ul></div>`:''}
+    ${p&&p.challenge_texte?`<div class="note"><span class="tag">Vous serez challengé·e sur</span><br>${E(p.challenge_texte)}</div>`:''}
+    ${p&&p.ne_sait_pas?`<div class="note"><span class="tag">Je ne sais pas</span><br>${p.ce_qui_a_joue?'Vous avez nommé : '+E(p.ce_qui_a_joue)+'.':'Thérèse reviendra vers un exemple concret avec vous.'}</div>`:''}
+    ${i+1<sits.length?`<button class="btn" style="margin-top:10px;display:block" onclick="go('#situation/${sits[i+1].situation_uid}')">Situation suivante →</button>`:`<button class="btn" style="margin-top:10px;display:block" onclick="go('#positionnement')">Terminer →</button>`}`,garder);
+}
+function voirNiveau(uid,n){S.vue[uid]=n;vueSituation(uid,true);}
+async function sauverPosit(uid,champs){
+  const c=S.cadrage; const ex=positDe(uid);
+  const ligne=Object.assign({cadrage_id:c.id,establishment_id:S.est,member_id:S.me.id,user_id:S.user.id,situation_uid:uid,
+    niveau_declare:ex?ex.niveau_declare:null,ne_sait_pas:ex?ex.ne_sait_pas:false,ce_qui_a_joue:ex?ex.ce_qui_a_joue:null,challenge_texte:ex?ex.challenge_texte:null,declare_le:new Date().toISOString()},champs);
+  const {data,error}=await sb.from('apprenance_positionnements').upsert(ligne,{onConflict:'cadrage_id,situation_uid'}).select().maybeSingle();
+  if(error) throw error;
+  const nouv=Object.assign({},ligne,data||{});
+  S.posit=S.posit.filter(x=>x.situation_uid!==uid).concat([nouv]);
+}
+async function seSituer(uid,n){try{await sauverPosit(uid,{niveau_declare:n,ne_sait_pas:false});vueSituation(uid,true);}catch(e){erreur(e);}}
+async function choisirChallenge(uid,k){
+  const s=S.cadrage.situations.find(x=>x.situation_uid===uid); const vue=S.vue[uid]||(positDe(uid)&&positDe(uid).niveau_declare)||s.niveau_attendu;
+  const t=obsDe(s,vue,true)[k]; S.ouvertChall=false;
+  try{await sauverPosit(uid,{challenge_texte:t});vueSituation(uid,true);}catch(e){erreur(e);}
+}
+
+/* Thérèse : « je ne sais pas » → exemple concret récent, puis ce qui a joué. Une question à la fois. */
+function sheetTherese(question,aide,choix,fnChoix,libre){
+  ouvrirSheet(`<div class="kicker" style="margin-top:0">Thérèse</div><div class="t2">${question}</div>${aide?`<p class="cap">${aide}</p>`:''}
+    <div style="margin-top:8px">${choix.map((c,i)=>`<button class="choix" onclick="${fnChoix}(${i})">${E(c)}</button>`).join('')}</div>
+    ${libre?`<input id="iLibre" type="text" placeholder="Ou avec vos mots (facultatif)" style="margin-top:12px">`:''}
+    <button class="btn sm grey" onclick="fermerSheet()" style="margin-top:6px">Plus tard</button>`);
+}
+const T={uid:null,quand:null,joue:null};
+function jeNeSaisPas(uid){
+  T.uid=uid;T.quand=null;T.joue=null;
+  sheetTherese('Pensez à une fois récente où vous avez fait ça, même en partie. C’était quand ?','',['Cette semaine','Ce mois-ci','Il y a plus longtemps','Je n’ai pas encore eu l’occasion'],'thQuand');
+}
+async function thQuand(i){
+  const q=['Cette semaine','Ce mois-ci','Il y a plus longtemps','Pas encore eu l’occasion'][i]; T.quand=q;
+  if(i===3){
+    try{await sauverPosit(T.uid,{ne_sait_pas:true,niveau_declare:null,ce_qui_a_joue:null});}catch(e){return erreur(e);}
+    ouvrirSheet(`<div class="kicker" style="margin-top:0">Thérèse</div><div class="t2">C’est une information juste.</div><p class="cap">On en reparle quand l’occasion se présente.</p><button class="btn" onclick="fermerSheet();vueSituation('${T.uid}')">Fermer</button>`);
+    return;
+  }
+  sheetTherese('Dans cet exemple, qu’est-ce qui a le plus joué ?','',['Un geste','Un choix','Une astuce','Autre chose'],'thJoue',true);
+}
+async function thJoue(i){
+  const j=['un geste','un choix','une astuce','autre chose'][i]; const libre=($('iLibre')&&$('iLibre').value||'').trim();
+  const texte=T.quand+' — '+j+(libre?' — '+libre:'');
+  try{
+    await sauverPosit(T.uid,{ne_sait_pas:true,niveau_declare:null,ce_qui_a_joue:texte});
+    const {data,error}=await sb.from('preuves').insert({user_id:S.user.id,situation_uid:T.uid,titre:'Ce qui a joué : '+j,note:libre||T.quand,source:'astuce'}).select().maybeSingle();
+    if(!error&&data) S.preuves.unshift(data);
+  }catch(e){return erreur(e);}
+  ouvrirSheet(`<div class="kicker" style="margin-top:0">Thérèse</div><div class="t2">Merci, c’est noté.</div><p class="cap">Gardé dans « Ce qui m’a fait progresser ».</p><button class="btn" onclick="fermerSheet();vueSituation('${T.uid}')">Fermer</button>`);
+}
+
+/* ───────────── 4. Validation (dirigeant) ───────────── */
+function vueValider(memberId){
+  const m=S.equipe.find(x=>x.id===memberId), c=S.cadrages.find(x=>x.member_id===memberId);
+  if(!m||!c) return go('#equipe');
+  const nom=nomComplet(m.user_id,m.email), moi=m.user_id===S.user.id;
+  S.V={memberId,sel:{}};
+  const ps=S.positE.filter(x=>x.member_id===memberId), vs=S.validsE.filter(x=>x.member_id===memberId);
+  ecran(`${retour(estDirigeant()?'#equipe':'#tableau',estDirigeant()?'Mon équipe':'Mon tableau')}<div class="kicker">Validation</div>
+    <h1 class="t1">${E(nom)}.</h1>
+    ${aideCourte(`${E(c.poste_nom||'')} · Validez ce que vous avez vu en situation réelle.`,`Une ligne par situation : un niveau, une date, le nom de la personne qui valide. Ni commentaire, ni score. Ce que ${E(nom.split(' ')[0])} a indiqué seul·e ne valide rien.${moi?' Auto-validation : une preuve concrète vous sera demandée, elle est gardée avec votre validation.':''}`)}
+    ${(c.situations||[]).map((s,i)=>{
+      const p=ps.find(x=>x.situation_uid===s.situation_uid);
+      const mes=vs.filter(v=>v.situation_uid===s.situation_uid).sort((a,b)=>b.niveau_valide-a.niveau_valide);
+      const top=mes[0]; const sel=S.V.sel[s.situation_uid]||s.niveau_attendu; S.V.sel[s.situation_uid]=sel;
+      return `<div style="border-top:1px solid var(--line);padding:18px 0 8px">
+        <div class="kicker" style="margin:0">Situation ${i+1}</div><div class="t2">${E(s.libelle)}</div>
+        <p class="cap">Visé : ${nivLib(s.niveau_attendu)} · ${p?(p.ne_sait_pas?'se positionne : « je ne sais pas »':'se positionne : '+NIV[p.niveau_declare-1]):'pas encore positionné·e'}</p>
+        ${p&&p.challenge_texte?`<p class="cap">Veut être challengé·e sur : ${E(p.challenge_texte)}</p>`:''}
+        ${top?`<p style="margin:10px 0"><span class="pill plein">Validé · ${NIV[top.niveau_valide-1]}</span> <span class="cap" style="display:inline">le ${fr(top.valide_le)} · ${parQui(top)}</span></p>`:''}
+        <div class="niv" id="vn_${s.situation_uid}">${[1,2,3,4].map(n=>`<button class="${sel===n?'on':''}" onclick="choisirNivValid('${s.situation_uid}',${n})" ${obsDe(s,n,false).length?'':'disabled'}>${NIV_COURT[n-1]}</button>`).join('')}</div>
+        <div id="vo_${s.situation_uid}">${panneauObs(obsDe(s,sel,false),'À voir en situation réelle · '+NIV[sel-1])}</div>
+        <button class="btn" id="vb_${s.situation_uid}" onclick="validerNiveau('${memberId}','${s.situation_uid}')">${mes.some(v=>v.niveau_valide===sel)?'Déjà validé':'Valider le niveau '+NIV[sel-1]}</button>
+      </div>`;}).join('')}`);
+}
+function choisirNivValid(uid,n){
+  S.V.sel[uid]=n;
+  const c=S.cadrages.find(x=>x.member_id===S.V.memberId), s=c.situations.find(x=>x.situation_uid===uid);
+  const vs=S.validsE.filter(x=>x.member_id===S.V.memberId&&x.situation_uid===uid);
+  [...$('vn_'+uid).children].forEach((b,k)=>b.classList.toggle('on',k+1===n));
+  $('vo_'+uid).innerHTML=panneauObs(obsDe(s,n,false),'À voir en situation réelle · '+NIV[n-1]);
+  $('vb_'+uid).textContent=vs.some(v=>v.niveau_valide===n)?'Déjà validé':'Valider le niveau '+NIV[n-1];
+}
+function demanderPreuveAuto(){
+  return new Promise(ok=>{
+    S._okPreuve=ok;
+    ouvrirSheet(`<div class="kicker" style="margin-top:0">Thérèse</div><div class="t2">Qu’est-ce qui le montre ?</div>
+      <p class="cap">Un exemple récent ou un observable, en une phrase. Je ne valide rien : la preuve est gardée avec votre validation.</p>
+      <textarea id="iPreuveAuto" placeholder="Ex. : samedi, j’ai confié le planning à Émilie sans le reprendre."></textarea>
+      <button class="btn" onclick="envoyerPreuveAuto()">Valider avec cette preuve</button> <button class="btn sm grey" onclick="fermerSheet()" style="margin-left:14px">Annuler</button>`);
+  });
+}
+function envoyerPreuveAuto(){
+  const t=($('iPreuveAuto').value||'').trim();
+  if(t.length<10) return alert('Décrivez la preuve en une phrase au moins (10 caractères).');
+  const f=S._okPreuve; S._okPreuve=null; $('sheet').classList.remove('on'); if(f) f(t);
+}
+async function validerNiveau(memberId,uid){
+  const m=S.equipe.find(x=>x.id===memberId), c=S.cadrages.find(x=>x.member_id===memberId), s=c.situations.find(x=>x.situation_uid===uid);
+  const n=S.V.sel[uid];
+  if(S.validsE.some(v=>v.member_id===memberId&&v.situation_uid===uid&&v.niveau_valide===n)) return alert('Ce niveau est déjà validé.');
+  const nom=nomComplet(m.user_id,m.email), moi=m.user_id===S.user.id;
+  const ligne={establishment_id:S.est,member_id:memberId,user_id:m.user_id,situation_uid:uid,niveau_valide:n,valide_par:S.user.id,valide_nom:monNomComplet(),mode:'humain'};
+  if(moi){
+    ligne.mode=S.concepteur?'auto_concepteur':'auto_dirigeant';
+    const preuve=await demanderPreuveAuto(); if(!preuve) return;
+    ligne.preuve_texte=preuve;
+    if(!await confirmer('Valider le niveau « '+NIV[n-1]+' » pour « '+s.libelle+' » ?\n\nC’est une auto-validation : elle est datée, porte la mention « auto-validation '+(S.concepteur?'concepteur':'dirigeant')+' » et garde votre preuve.')) return;
+  }else if(!await confirmer('Valider le niveau « '+NIV[n-1]+' » de '+nom+' pour « '+s.libelle+' » ?\n\nVous confirmez l’avoir vu en situation réelle. La validation est datée et porte votre nom.')) return;
+  const {error}=await sb.from('apprenance_validations').insert(ligne);
+  if(error) return erreur(error);
+  await chargerEquipe(); vueValider(memberId);
+}
+
+/* ───────────── 5. Tableau de bord du membre ───────────── */
+function meilleurs(){
+  const out={};
+  S.valids.forEach(v=>{if(!out[v.situation_uid]||out[v.situation_uid].niveau_valide<v.niveau_valide) out[v.situation_uid]=v;});
+  return out;
+}
+function vueTableau(){
+  const c=S.cadrage, best=meilleurs(), sits=(c&&c.situations)||[];
+  const prenom=prenomAffiche();
+  const lignes=sits.length?sits.map(s=>{const v=best[s.situation_uid];
+    return `<div class="row statique"><div><div class="gros">${E(s.libelle)}</div><p class="cap">${v?'Validé le '+fr(v.valide_le)+' '+parQui(v):'Attendu : '+NIV[s.niveau_attendu-1]}</p></div>${v?`<span class="pill plein">${NIV[v.niveau_valide-1]}</span>`:`<span class="pill gris">À valider</span>`}</div>`;}).join('')
+    :(c?`<p class="vide">Aucune situation cadrée.</p>`
+        :S.concepteur&&S.me?`<p class="vide">Votre poste n’est pas encore cadré.</p><button class="btn" onclick="go('#cadrer/${S.me.id}')">Cadrer mon poste →</button>`
+        :`<p class="vide">En attente de cadrage par votre dirigeant.</p>`);
+  ecran(`<div class="kicker">${E(S.estNom)}</div>
+    <h1 class="t1">${prenom?'Bonjour '+E(prenom)+'.':'Mon tableau.'}</h1>
+    <div class="kicker">Mes niveaux validés</div>
+    <div class="liste">${lignes}</div>
+    <div class="kicker">Pistes de Thérèse</div>
+    <p style="margin:6px 0">Aucune piste cette semaine.</p>
+    <p class="cap">Au plus 2 par semaine, jamais imposées.</p>
+    <button class="btn sm" onclick="go('#therese')">Parler à Thérèse →</button>
+    <div class="kicker">Mon coffre-fort personnel</div>
+    <div class="liste"><div class="row" onclick="go('#passeport')"><div><div class="gros">Mon passeport</div><p class="cap">Il est à vous, quel que soit l’atelier.</p></div><span class="fl">→</span></div>
+    <div class="row" onclick="go('#progres')"><div><div class="gros">Ce qui m’a fait progresser</div><p class="cap">Le chemin parcouru, situation par situation.</p></div><span class="fl">→</span></div></div>
+    <div class="liste" style="margin-top:20px"><div class="row" onclick="go('#positionnement')"><div class="gros">Mon positionnement</div><span class="fl">→</span></div></div>`);
+}
+
+/* ───────────── Parcours guidé ───────────── */
+function etapesParcours(){
+  const sits = (S.cadrage && S.cadrage.situations) || [];
+  const posOk = sits.length > 0 && sits.every(x => positDe(x.situation_uid));
+  const valOk = sits.length > 0 && sits.every(x => S.valids.some(v => v.situation_uid === x.situation_uid && v.niveau_valide >= (x.niveau_attendu || 1)));
+  let etapes;
+  if(estDirigeant() && !S.concepteur){
+    const autres = (S.equipe || []).filter(m => m.user_id !== S.user.id);
+    etapes = [
+      { t:'Inviter une personne', d:'Avec son numéro de membre.', ok:autres.length > 0, go:'#equipe' },
+      { t:'Cadrer son poste', d:'Ses situations et le niveau visé.', ok:autres.some(m => (S.cadrages || []).some(c => c.member_id === m.id)), go:'#equipe' },
+      { t:'Valider en situation réelle', d:'Un niveau, une date, votre nom.', ok:(S.validsE || []).some(v => v.user_id !== S.user.id), go:'#equipe' },
+      { t:'Voir mon passeport', d:'Mon coffre-fort personnel.', ok:false, go:'#passeport' }];
+  }else{
+    etapes = [
+      { t:S.concepteur ? 'Choisir mon poste' : 'Mon poste', d:S.concepteur ? 'Mes situations et le niveau visé.' : 'Cadré par mon dirigeant.', ok:!!S.cadrage, go:S.concepteur && S.me ? '#cadrer/' + S.me.id : '#positionnement' },
+      { t:'Me positionner', d:'Où j’en suis, situation par situation.', ok:posOk, go:'#positionnement' },
+      { t:'Faire valider', d:S.concepteur ? 'En situation réelle, avec une preuve.' : 'Avec mon dirigeant, en situation réelle.', ok:valOk, go:S.concepteur && S.me ? '#valider/' + S.me.id : '#tableau' },
+      { t:'Voir mon passeport', d:'Mes niveaux, mes preuves.', ok:S.valids.length > 0, go:'#passeport' }];
+  }
+  const courant = etapes.findIndex(e => !e.ok);
+  etapes.forEach((e, k) => { e.n = k + 1; e.etat = e.ok ? 'fait' : (k === courant ? 'courant' : 'avenir'); });
+  return etapes;
+}
+function stepperHtml(){
+  const e = etapesParcours(), cour = e.find(x => x.etat === 'courant');
+  return `<div class="stepper">${e.map((x, k) => `${k ? '<span class="trait"></span>' : ''}<button type="button" class="pas ${x.etat}" onclick="go('${x.go}')" aria-label="Étape ${x.n} : ${E(x.t)}">${x.etat === 'fait' ? '✓' : x.n}</button>`).join('')}</div>
+    ${cour ? `<p class="cap" style="margin:2px 0 8px"><b style="color:var(--ink)">Étape ${cour.n} · ${E(cour.t)}</b></p>` : ''}`;
+}
+function vueParcours(){
+  flag('ap_parcours_' + S.user.id, '1');
+  const e = etapesParcours();
+  ecran(`<div class="kicker">Mon parcours</div><h1 class="t1">Quatre étapes.</h1>
+    ${aideCourte('Touchez l’étape en couleur pour continuer.','Le parcours reste accessible depuis le menu, à tout moment.')}
+    <div style="margin-top:8px">${e.map(x => `<div class="etape ${x.etat}"><div class="num">${x.etat === 'fait' ? '✓' : x.n}</div>
+      <div style="flex:1"><div class="gros" style="font-weight:800;font-size:18px">${E(x.t)}</div><p class="cap" style="color:inherit;opacity:.8">${E(x.d)}</p>
+      ${x.etat === 'courant' ? `<button class="btn" onclick="go('${x.go}')">Y aller →</button>` : x.etat === 'fait' ? `<button class="btn sm grey" onclick="go('${x.go}')">Revoir</button>` : ''}</div></div>`).join('')}</div>`);
+}
+
+/* ───────────── Réglages de Thérèse (personnels) ───────────── */
+const INTENSITES = [
+  { k:'discrete', nom:'Discrète', txt:'Thérèse ne parle que si vous ouvrez l’écran. Aucune piste proposée d’elle-même.' },
+  { k:'standard', nom:'Standard', txt:'Un debrief court par semaine (2 questions). Une piste au plus par semaine.' },
+  { k:'proactive', nom:'Proactive', txt:'Un petit point à la demande chaque jour, un debrief par semaine, jusqu’à 2 pistes par semaine.' },
+];
+async function chargerReglages(){
+  try{ const { data } = await sb.from('therese_reglages_perso').select('*').eq('user_id', S.user.id).maybeSingle(); if(data) return data; }catch(e){}
+  try{ const l = JSON.parse(flag('ap_reglages_' + S.user.id) || 'null'); if(l) return l; }catch(e){}
+  return { intensite:'discrete', plage_debut:'08:00', plage_fin:'18:00', jours:[1,2,3,4,5], rituel_hebdo:true };
+}
+async function vueReglages(){
+  const r = await chargerReglages(); S.reg = { ...r, jours:[...(r.jours || [])] };
+  dessinerReglages();
+}
+function dessinerReglages(){
+  const r = S.reg, hh = t => String(t || '').slice(0, 5);
+  ecran(`${retour('#tableau','Mon tableau')}<div class="kicker">Thérèse</div><h1 class="t1">Réglages.</h1>
+    <div class="kicker">Intensité du suivi</div>
+    ${INTENSITES.map(i => `<div class="groupeIntensite ${r.intensite === i.k ? 'sel' : ''}" onclick="S.reg.intensite='${i.k}';dessinerReglages()"><b>${i.nom}</b><p class="cap" style="color:#444">${i.txt}</p></div>`).join('')}
+    <div class="kicker">Plages de travail</div>
+    <p class="cap">Hors de ces plages, Thérèse se tait.</p>
+    <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap"><label class="cap">De <input id="rDebut" type="time" value="${hh(r.plage_debut)}" style="width:auto"></label><label class="cap">à <input id="rFin" type="time" value="${hh(r.plage_fin)}" style="width:auto"></label></div>
+    <div style="margin-top:8px">${['L','M','M','J','V','S','D'].map((j, k) => `<span class="jour ${(r.jours || []).includes(k + 1) ? 'on' : ''}" onclick="basculerJour(${k + 1})">${j}</span>`).join('')}</div>
+    <div class="kicker">Rituels</div>
+    <label class="checkRow" style="display:flex;gap:10px;align-items:center;font-size:16px"><input type="checkbox" id="rRituel" ${r.rituel_hebdo ? 'checked' : ''}> Debrief court chaque semaine</label>
+    <div class="kicker">Règles fixes</div>
+    <p class="cap">2 pistes par semaine au maximum, silence par défaut, rien hors des plages. Une alerte discrète au bout de 5 minutes d’échange, sans jamais couper.</p>
+    <button class="btn" style="margin-top:12px" onclick="enregistrerReglages()">Enregistrer</button>`);
+}
+function basculerJour(n){
+  const j = new Set(S.reg.jours || []); if(j.has(n)) j.delete(n); else j.add(n);
+  S.reg.jours = [...j].sort(); S.reg.plage_debut = $('rDebut').value || S.reg.plage_debut; S.reg.plage_fin = $('rFin').value || S.reg.plage_fin; S.reg.rituel_hebdo = $('rRituel').checked;
+  dessinerReglages();
+}
+async function enregistrerReglages(){
+  const r = S.reg; r.plage_debut = $('rDebut').value || '08:00'; r.plage_fin = $('rFin').value || '18:00'; r.rituel_hebdo = $('rRituel').checked;
+  const ligne = { user_id:S.user.id, intensite:r.intensite, plage_debut:r.plage_debut, plage_fin:r.plage_fin, jours:r.jours, rituel_hebdo:r.rituel_hebdo, maj_le:new Date().toISOString() };
+  flag('ap_reglages_' + S.user.id, JSON.stringify(ligne));
+  const { error } = await sb.from('therese_reglages_perso').upsert(ligne, { onConflict:'user_id' });
+  alert(error ? 'Réglages gardés sur cet appareil. Le stockage en ligne arrive avec la migration 4.' : 'Réglages enregistrés.');
+}
+
+/* ───────────── Chat avec Thérèse (scénario : scenario-accompagnement-therese.md) ───────────── */
+let CH = null;
+const decouper = (t, seps) => String(t || '').split(seps).map(x => x.trim()).filter(Boolean).map(x => x.charAt(0).toUpperCase() + x.slice(1));
+async function vueTherese(){
+  const sits = (S.cadrage && S.cadrage.situations) || [];
+  S.reg = S.reg || await chargerReglages();
+  if(CH && CH.timer){ clearInterval(CH.timer); }
+  CH = { sits, sit:null, i:-1, fil:[], rep:{}, relances:0, attend:null, debut:0, alerte:false, fini:false, timer:null, etapes:[] };
+  if(!sits.length){
+    return ecran(`${retour('#tableau','Mon tableau')}<div class="kicker">Thérèse</div><h1 class="t1">Parler à Thérèse.</h1>
+      <p class="cap">Aucune situation pour l’instant.</p><button class="btn" onclick="go('${S.concepteur && S.me ? '#cadrer/' + S.me.id : '#positionnement'}')">${S.concepteur ? 'Choisir mon poste →' : 'Voir mon poste →'}</button>`);
+  }
+  dessinerChat();
+}
+function horsPlage(){
+  const r = S.reg || {}, d = new Date(), j = d.getDay() === 0 ? 7 : d.getDay(), m = d.getHours() * 60 + d.getMinutes();
+  const mm = t => { const [h, n] = String(t || '00:00').split(':'); return (+h) * 60 + (+n); };
+  return !((r.jours || [1,2,3,4,5]).includes(j) && m >= mm(r.plage_debut || '08:00') && m <= mm(r.plage_fin || '18:00'));
+}
+function construireEtapes(sit){
+  const inf = S.infos[sit.situation_uid] || {};
+  const etapes = decouper(inf.etapes, /,/);
+  const decisions = /;/.test(inf.decisions || '') ? decouper(inf.decisions, /;/) : decouper(inf.decisions, /,/);
+  const crit = inf.critere_qualite ? [inf.critere_qualite.charAt(0).toUpperCase() + inf.critere_qualite.slice(1)] : [];
+  const relanceA = 'Revenez à un détail du moment : un lieu, un objet, une phrase entendue. Lequel ?';
+  return [
+    { id:'accord', q:'Je vous propose de revenir sur un moment précis. D’accord ?', choix:['Oui', 'Plus tard'], libre:false, sans:true },
+    { id:'moment', q:'Pensez à une fois récente où vous avez vécu cela. C’était quand ?', choix:['Cette semaine', 'Ce mois-ci', 'Il y a plus longtemps', 'Pas encore d’occasion'], libre:false },
+    { id:'ancrage', q:'Où étiez-vous, et avec qui ?', choix:[], libre:true, relance:[relanceA, relanceA] },
+    { id:'deroule', q:'Qu’avez-vous fait en premier ?', choix:[...etapes, 'Autre chose'], libre:true, relance:[relanceA, 'Que s’est-il passé juste après être arrivé·e ?'] },
+    { id:'decision', q:'À un moment, il a fallu choisir. Qu’avez-vous pesé ?', choix:[...decisions, 'Autre chose'], libre:true, relance:[relanceA, 'Qu’est-ce qui a fait pencher la balance ?'] },
+    { id:'interieur', q:'Juste avant de décider, qu’est-ce que vous vous êtes dit ?', choix:[], libre:true, relance:[relanceA, 'Qu’avez-vous regardé ou entendu à ce moment-là ?'] },
+    { id:'critere', q:'À quoi avez-vous vu que c’était réussi ?', choix:[...crit, 'Autre chose', 'Pas encore'], libre:true, relance:[relanceA, 'Qui a pu le constater, et comment ?'] },
+    { id:'reformuler', q:'', choix:['Oui, c’est ça', 'Pas tout à fait'], libre:false, sans:true },
+    { id:'garder', q:'Voulez-vous garder une astuce de ce moment ?', choix:['Oui, l’écrire', 'Non merci'], libre:false, sans:true },
+  ];
+}
+function poserQuestion(){
+  const e = CH.etapes[CH.i]; if(!e) return;
+  if(e.id === 'reformuler'){
+    const r = CH.rep, p = [];
+    if(r.deroule) p.push(`vous avez commencé par « ${r.deroule} »`);
+    if(r.decision) p.push(`vous avez pesé « ${r.decision} »`);
+    if(r.critere && r.critere !== 'Pas encore') p.push(`vous avez vu que c’était réussi à « ${r.critere} »`);
+    e.q = p.length ? `Si je reprends vos mots : ${p.join(', ')}. C’est bien ça ?` : 'Merci pour ce moment. Voulez-vous le garder ?';
+    if(!p.length){ CH.i++; return poserQuestion(); }
+  }
+  CH.fil.push({ de:'t', txt:e.q });
+}
+function chatDemarrer(uid){
+  const sit = CH.sits.find(x => x.situation_uid === uid); CH.sit = sit; CH.etapes = construireEtapes(sit);
+  CH.i = 0; CH.debut = Date.now(); CH.fil = [{ de:'t', txt:`Situation : ${sit.libelle}.` }];
+  if(horsPlage()) CH.fil.push({ de:'b', txt:'Vous êtes hors de vos plages de travail. Vous pouvez continuer ou revenir plus tard.' });
+  poserQuestion();
+  CH.timer = setInterval(() => { if(location.hash !== '#therese'){ clearInterval(CH.timer); return; } if(!CH.alerte && !CH.fini && Date.now() - CH.debut > 5 * 60 * 1000){ CH.alerte = true; dessinerChat(); } }, 15000);
+  dessinerChat();
+}
+function chatFin(msg){ CH.fil.push({ de:'t', txt:msg }); CH.fini = true; CH.i = CH.etapes.length; dessinerChat(); }
+async function chatReponse(texte, jeNeSaisPas){
+  if(CH.fini) return;
+  const e = CH.etapes[CH.i]; if(!e) return;
+  texte = String(texte || '').trim();
+  if(!jeNeSaisPas && !texte) return;
+  if(texte === 'Autre chose'){ const l = $('chatLibre'); if(l) l.focus(); return; }
+  CH.fil.push({ de:'u', txt:jeNeSaisPas ? 'Je ne sais pas' : texte });
+  if(jeNeSaisPas){
+    if(e.relance && CH.relances < 2){ CH.fil.push({ de:'t', txt:e.relance[CH.relances] }); CH.relances++; return dessinerChat(); }
+    CH.fil.push({ de:'t', txt:'On laisse cela de côté. Vous pourrez y revenir.' }); CH.relances = 0; return chatAvancer();
+  }
+  CH.relances = 0; CH.rep[e.id] = texte;
+  if(e.id === 'accord' && texte === 'Plus tard') return chatFin('Très bien. À une prochaine fois.');
+  if(e.id === 'moment' && texte === 'Pas encore d’occasion') return chatFin('C’est une information juste. Vous pouvez voir comment progresser sur cette situation, ou revenir quand l’occasion se présente.');
+  if(e.id === 'reformuler' && texte === 'Pas tout à fait'){ CH.fil.push({ de:'t', txt:'Dites-le avec vos mots.' }); CH.attend = 'correction'; return dessinerChat(); }
+  if(CH.attend === 'correction'){ CH.attend = null; CH.rep.correction = texte; return chatAvancer(); }
+  if(CH.attend === 'astuce') return chatGarderAstuce(texte);
+  if(e.id === 'garder'){
+    if(texte === 'Non merci') return chatFin('Merci. À une prochaine fois.');
+    CH.fil.push({ de:'t', txt:'Écrivez cette astuce en une phrase.' }); CH.attend = 'astuce'; return dessinerChat();
+  }
+  chatAvancer();
+}
+function chatAvancer(){ CH.i++; if(CH.i >= CH.etapes.length) return chatFin('Merci. À une prochaine fois.'); poserQuestion(); dessinerChat(); }
+async function chatGarderAstuce(texte){
+  try{
+    const { data, error } = await sb.from('preuves').insert({ user_id:S.user.id, situation_uid:CH.sit.situation_uid, titre:'Astuce — ' + CH.sit.libelle, note:texte, source:'astuce' }).select().maybeSingle();
+    if(error) throw error; if(data) S.preuves.unshift(data);
+    CH.attend = null; chatFin('Merci. C’est noté dans votre coffre-fort.');
+  }catch(e){ erreur(e); }
+}
+function dessinerChat(){
+  if(!CH.sit){
+    return ecran(`${retour('#tableau','Mon tableau')}<div class="kicker">Thérèse</div><h1 class="t1">Parler à Thérèse.</h1>
+      <p class="cap">Sur quelle situation voulez-vous revenir ?</p>
+      <div class="liste">${CH.sits.map(x => `<div class="row" onclick="chatDemarrer('${x.situation_uid}')"><div class="gros">${E(x.libelle)}</div><span class="fl">→</span></div>`).join('')}</div>`);
+  }
+  const e = CH.etapes[CH.i], actif = !CH.fini && e;
+  const attendTexte = CH.attend === 'astuce' || CH.attend === 'correction';
+  ecran(`<div class="kicker">Thérèse · ${E(CH.sit.libelle)}</div>
+    <div class="fil">${CH.fil.map(m => `<div class="bulle ${m.de === 't' ? 't' : m.de === 'u' ? 'u' : ''}">${m.de === 'b' ? `<div class="bandeau">${E(m.txt)}</div>` : E(m.txt)}</div>`).join('')}</div>
+    ${CH.alerte && !CH.fini ? `<div class="bandeau">Cela fait 5 minutes — vous pouvez continuer ou arrêter ici.</div>` : ''}
+    ${actif ? `${!attendTexte ? (e.choix || []).map((c, k) => `<button class="choix" onclick="chatReponse(${JSON.stringify(c).replace(/"/g, '&quot;')})">${E(c)}</button>`).join('') : ''}
+      ${(e.libre || attendTexte) ? `<input id="chatLibre" type="text" placeholder="Écrivez ou dictez…" style="margin-top:12px" onkeydown="if(event.key==='Enter')chatReponse(this.value)"><button class="btn sm" onclick="chatReponse($('chatLibre').value)">Envoyer</button>` : ''}
+      ${!e.sans && !attendTexte ? `<button class="btn sm grey" onclick="chatReponse('',true)" style="margin-left:14px">Je ne sais pas</button>` : ''}`
+      : `<button class="btn" onclick="go('${CH.rep.moment === 'Pas encore d’occasion' ? '#formation/' + CH.sit.situation_uid : '#tableau'}')">${CH.rep.moment === 'Pas encore d’occasion' ? 'Voir comment progresser →' : 'Retour à mon tableau →'}</button>`}
+    <div style="margin-top:18px"><button class="btn sm grey" onclick="go('#tableau')">Arrêter</button></div>`);
+  const l = $('chatLibre'); if(l && !CH.fini) l.focus({ preventScroll:true });
+  window.scrollTo(0, document.body.scrollHeight);
+}
+
+/* ───────────── Formation : modules en regard des situations ───────────── */
+async function vueFormation(ouvrir){
+  const sits = (S.cadrage && S.cadrage.situations) || [];
+  if(!sits.length) return ecran(`${retour('#tableau','Mon tableau')}<div class="kicker">Formation</div><h1 class="t1">Comment progresser.</h1><p class="cap">Aucune situation pour l’instant.</p>`);
+  const uids = sits.map(x => x.situation_uid);
+  const [ms, mf] = await Promise.all([sb.from('module_situations').select('module_id,situation_id,niveau_depart,niveau_arrivee,type').in('situation_id', uids), sb.from('modalites_formation').select('id,label')]);
+  const ids = [...new Set((ms.data || []).map(x => x.module_id))];
+  const { data: mods } = ids.length ? await sb.from('modules_apprentissage').select('id,nom,description,contenu_humain,modalite_id,etat_construction').in('id', ids) : { data:[] };
+  const modalite = id => ((mf.data || []).find(x => x.id === id) || {}).label || '';
+  const niv = t => parseInt(String(t).replace(/\D/g, '')[0] || '0', 10);
+  const bloc = (x, i) => {
+    const liens = (ms.data || []).filter(l => l.situation_id === x.situation_uid);
+    const trans = [1, 2, 3].map(n => {
+      const l = liens.find(k => k.type === 'transition' && niv(k.niveau_depart) === n); const m = l && (mods || []).find(y => y.id === l.module_id);
+      if(!m) return '';
+      const redige = m.etat_construction === 'brouillon_redige' || m.etat_construction === 'pilote';
+      return `<div style="padding:12px 0;border-top:1px solid var(--line)"><div class="kicker" style="margin:0">N${n} → N${n + 1} · ${E(modalite(m.modalite_id))}</div>
+        <div class="gros" style="font-weight:800">${E(redige ? m.nom : 'Module à construire')}</div>
+        ${redige ? `<p class="cap" style="color:#444">${E(m.description || '')}</p><ol style="margin:6px 0 0;padding-left:20px;font-size:14.5px;line-height:1.45">${String((m.contenu_humain && m.contenu_humain.deroule) || '').split('\n').map(z => z.replace(/^\d+\.\s*/, '')).filter(Boolean).map(z => `<li>${E(z)}</li>`).join('')}</ol><span class="pill gris" style="margin-top:8px">${m.etat_construction === 'pilote' ? 'Pilote · brouillon' : 'Brouillon à valider'}</span>` : '<p class="cap">Pas encore rédigé.</p>'}</div>`;
+    }).join('');
+    return `<details class="formation" ${ouvrir === x.situation_uid ? 'open' : ''} style="border-top:1px solid var(--line);padding:14px 0"><summary style="cursor:pointer"><span class="kicker" style="margin:0">Situation ${i + 1}</span><div class="gros" style="font-weight:800;font-size:18px;display:inline-block">${E(x.libelle)}</div></summary>${trans || '<p class="cap">Aucun module relié.</p>'}</details>`;
+  };
+  ecran(`${retour('#tableau','Mon tableau')}<div class="kicker">Formation</div><h1 class="t1">Comment progresser.</h1>
+    ${aideCourte('Pour passer au niveau suivant, situation par situation.','Les preuves attendues disent ce qu’il faut montrer ; ces modules disent comment y arriver. Brouillons à relire.')}
+    ${sits.map(bloc).join('')}`);
+}
+
+/* ───────────── Fiche VSF du poste (propriétaire seul) ───────────── */
+function mdHtml(md){
+  const inline=t=>E(t).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/\*(.+?)\*/g,'<i>$1</i>');
+  const lignes=String(md||'').split('\n'); let out='',i=0;
+  while(i<lignes.length){
+    const l=lignes[i];
+    if(/^\|/.test(l)){
+      const bloc=[];while(i<lignes.length&&/^\|/.test(lignes[i])){bloc.push(lignes[i]);i++;}
+      const cell=r=>r.replace(/^\||\|$/g,'').split('|').map(c=>c.trim());
+      const tete=cell(bloc[0]), corps=bloc.slice(2).map(cell);
+      out+=`<div style="overflow-x:auto"><table style="border-collapse:collapse;font-size:14px;margin:8px 0"><tr>${tete.map(c=>`<th style="text-align:left;border-bottom:1.5px solid var(--ink);padding:6px 10px 6px 0">${inline(c)}</th>`).join('')}</tr>${corps.map(r=>`<tr>${r.map(c=>`<td style="border-bottom:1px solid var(--line);padding:6px 10px 6px 0;vertical-align:top">${inline(c)}</td>`).join('')}</tr>`).join('')}</table></div>`;
+    }else if(/^- /.test(l)){
+      let li='';while(i<lignes.length&&/^- /.test(lignes[i])){li+=`<li>${inline(lignes[i].slice(2))}</li>`;i++;}
+      out+=`<ul style="padding-left:18px">${li}</ul>`;
+    }else if(l.trim()===''){i++;}
+    else{out+=`<p>${inline(l)}</p>`;i++;}
+  }
+  return out;
+}
+async function vueFiche(code){
+  const poste=S.postes.find(p=>p.proprietaire_id&&p.proprietaire_id===S.user.id);
+  if(!poste) return go('#passeport');
+  const {data,error}=await sb.from('fiche_vsf_rubriques').select('id,code,titre,contenu_md,statut,ordre').eq('poste_id',poste.id).order('ordre');
+  if(error) throw error;
+  S.rubriques=data||[];
+  if(!code){
+    return ecran(`${retour('#passeport','Mon passeport')}<div class="kicker">Fiche VSF</div><h1 class="t1">${E(poste.nom)}.</h1>
+      <p class="cap">${E(poste.ref_vsf||'')} · visible de vous seul. Les situations et leurs niveaux sont dans « Mon cadrage ».</p>
+      <div class="liste" style="margin-top:14px">${S.rubriques.map(r=>`<div class="row" onclick="go('#fiche/${r.code}')"><div><div class="gros">${E(r.titre)}</div>${r.statut?`<p class="cap">${E(r.statut)}</p>`:''}</div><span class="fl">→</span></div>`).join('')||'<p class="vide">Aucune rubrique.</p>'}</div>`);
+  }
+  const r=S.rubriques.find(x=>x.code===code); if(!r) return go('#fiche');
+  ecran(`${retour('#fiche','Fiche VSF')}<div class="kicker">${E(poste.nom)}</div><h1 class="t1" style="font-size:26px">${E(r.titre)}</h1>
+    ${r.statut?`<span class="pill gris">${E(r.statut)}</span>`:''}
+    <div id="ficheLecture" style="margin-top:12px">${mdHtml(r.contenu_md)}</div>
+    <div id="ficheEdition" style="display:none"><textarea id="ficheTexte" style="min-height:320px;font-size:15px">${E(r.contenu_md)}</textarea>
+      <button class="btn" onclick="enregistrerRubrique('${r.id}','${r.code}')">Enregistrer</button> <button class="btn sm grey" onclick="go('#fiche/${r.code}')" style="margin-left:14px">Annuler</button></div>
+    <button class="btn" id="ficheBtn" onclick="$('ficheLecture').style.display='none';$('ficheEdition').style.display='block';this.style.display='none'">Modifier</button>`);
+}
+async function enregistrerRubrique(id,code){
+  const {error}=await sb.from('fiche_vsf_rubriques').update({contenu_md:$('ficheTexte').value,maj_le:new Date().toISOString()}).eq('id',id);
+  if(error) return erreur(error);
+  go('#fiche/'+code);
+}
+
+/* ───────────── 6. Coffre-fort personnel ───────────── */
+function vuePasseport(){
+  const sitVecues=new Set([...S.posit,...S.valids].map(x=>x.situation_uid)).size;
+  ecran(`<div class="kicker">Mon passeport</div>
+    <h1 class="t1">${prenomAffiche()?E(prenomAffiche())+', c’est à vous.':'C’est à vous.'}</h1>
+    <p class="cap">Votre coffre-fort vous suit, quel que soit l’atelier. Personne d’autre n’y entre.</p>
+    <div class="liste" style="margin-top:14px">
+      <div class="row" onclick="go('#progres')"><div><div class="gros">Mes situations vécues</div><p class="cap">${sitVecues} situation${sitVecues>1?'s':''}</p></div><span class="fl">→</span></div>
+      <div class="row" onclick="go('#therese')"><div><div class="gros">Parler à Thérèse</div><p class="cap">Un moment précis, une question à la fois</p></div><span class="fl">→</span></div>
+      <div class="row" onclick="go('#preuves')"><div><div class="gros">Mes preuves</div><p class="cap">${S.preuves.length} preuve${S.preuves.length>1?'s':''} · photo, document, enregistrement</p></div><span class="fl">→</span></div>
+      <div class="row" onclick="location.href='constellation-des-gestes.html'"><div><div class="gros">Explorer d’autres métiers</div><p class="cap">La constellation des gestes</p></div><span class="fl">→</span></div>
+      <div class="row" onclick="go('#progres')"><div><div class="gros">Ce qui m’a fait progresser</div><p class="cap">À la demande, situation par situation</p></div><span class="fl">→</span></div>
+    </div>
+    ${blocBesoin()}
+    <div class="kicker">Mes données</div>
+    <button class="btn sm" onclick="location.href='federation-accueil.html'">Consulter, corriger, exporter ou supprimer →</button>`);
+}
+function fichierLien(p){return p.fichier_path?`<br><button class="btn sm" onclick="ouvrirFichier('${E(p.fichier_path)}')">Ouvrir ${E(p.fichier_nom||'le fichier')}</button>`:'';}
+async function ouvrirFichier(path){
+  const {data,error}=await sb.storage.from('preuves-passeport').createSignedUrl(path,300);
+  if(error||!data) return erreur(error||'Fichier introuvable');
+  window.open(data.signedUrl,'_blank');
+}
+const SOURCES={manuelle:'Ajoutée par vous',astuce:'Ce qui a joué',auto_validation:'Validation de l’atelier'};
+function vuePreuves(){
+  ecran(`${retour('#passeport','Mon passeport')}<div class="kicker">Coffre-fort</div><h1 class="t1">Mes preuves.</h1>
+    <p class="cap">Format libre : une photo, un document, un enregistrement, ou juste une phrase.</p>
+    <button class="btn" onclick="go('#preuve-nouvelle')">+ Ajouter une preuve</button>
+    <div class="liste">${S.preuves.length?S.preuves.map(p=>`<div class="row statique" style="align-items:flex-start"><div><div class="gros">${E(p.titre)}</div>
+      <p class="cap">${fr(p.cree_le)} · ${E(SOURCES[p.source]||p.source)}${p.situation_uid?' · '+E(libSit(p.situation_uid)):''}</p>${p.note?`<p style="font-size:15px">${E(p.note)}</p>`:''}${fichierLien(p)}</div></div>`).join(''):'<p class="vide">Aucune preuve pour l’instant.</p>'}</div>`);
+}
+function vuePreuveNouvelle(uid){
+  S.pu=uid||'';
+  ecran(`${retour(uid?'#progres':'#preuves',uid?'Ce qui m’a fait progresser':'Mes preuves')}<div class="kicker">Nouvelle preuve</div><h1 class="t1">${uid?E(libSit(uid))+'.':'Ajouter une preuve.'}</h1>
+    <label class="f" for="pTitre">Titre</label><input id="pTitre" type="text" placeholder="Ex. : mon premier croquis validé">
+    <label class="f" for="pNote">Quelques mots (facultatif)</label><textarea id="pNote"></textarea>
+    <label class="f" for="pFic">Photo, document ou enregistrement (facultatif)</label>
+    <input id="pFic" type="file" accept="image/*,application/pdf,audio/*,video/*,.doc,.docx" style="font-size:15px;border:0;padding:12px 0">
+    <button class="btn" id="pOk" onclick="enregistrerPreuve()">Enregistrer dans mon coffre-fort</button>`);
+}
+async function enregistrerPreuve(){
+  const titre=($('pTitre').value||'').trim(), note=($('pNote').value||'').trim(), f=$('pFic').files[0];
+  if(!titre) return alert('Donnez un titre à cette preuve.');
+  if(f&&f.size>20*1024*1024) return alert('Ce fichier dépasse 20 Mo.');
+  $('pOk').disabled=true;
+  try{
+    let path=null,nom=null;
+    if(f){
+      nom=f.name; path=S.user.id+'/'+Date.now()+'-'+f.name.replace(/[^\w.\-]+/g,'_');
+      const {error}=await sb.storage.from('preuves-passeport').upload(path,f,{contentType:f.type||undefined});
+      if(error) throw error;
+    }
+    const {error}=await sb.from('preuves').insert({user_id:S.user.id,situation_uid:S.pu||null,titre,note:note||null,fichier_path:path,fichier_nom:nom,source:'manuelle'});
+    if(error) throw error;
+    go(S.pu?'#progres':'#preuves');
+  }catch(e){$('pOk').disabled=false;erreur(e);}
+}
+function vueProgres(){
+  const evts=[];
+  S.posit.forEach(p=>evts.push({uid:p.situation_uid,d:p.declare_le,t:p.ne_sait_pas?'Vous avez répondu « je ne sais pas »'+(p.ce_qui_a_joue?' · ce qui a joué : '+p.ce_qui_a_joue:''):'Vous vous êtes situé·e : '+NIV[p.niveau_declare-1]}));
+  S.valids.forEach(v=>evts.push({uid:v.situation_uid,d:v.valide_le,t:'Niveau '+NIV[v.niveau_valide-1]+' validé '+parQui(v).replace(/&amp;/g,'&'),fort:true}));
+  S.preuves.filter(p=>p.source!=='auto_validation'&&p.source!=='astuce').forEach(p=>evts.push({uid:p.situation_uid||'',d:p.cree_le,t:'Preuve : '+p.titre+(p.note?' — '+p.note:''),p}));
+  const uids=[...new Set([...(S.cadrage?(S.cadrage.situations||[]).map(s=>s.situation_uid):[]),...evts.map(e=>e.uid).filter(Boolean)])];
+  const bloc=uid=>{
+    const l=evts.filter(e=>e.uid===uid).sort((a,b)=>new Date(a.d)-new Date(b.d));
+    return `<div style="border-top:1px solid var(--line);padding:18px 0 6px"><div class="t2">${uid?E(libSit(uid)):'Autres preuves'}</div>
+      ${l.length?l.map(e=>`<div style="padding:8px 0;border-top:1px solid var(--line)"><span class="cap">${fr(e.d)}</span><div ${e.fort?'style="font-weight:800"':''}>${E(e.t)}</div>${e.p?fichierLien(e.p):''}</div>`).join(''):'<p class="cap">Rien encore sur cette situation.</p>'}
+      <button class="btn sm" onclick="go('#preuve-nouvelle/${uid}')">+ Ajouter une preuve</button></div>`;};
+  const sansSit=evts.some(e=>!e.uid);
+  ecran(`${retour('#passeport','Mon passeport')}<div class="kicker">À la demande</div><h1 class="t1">Ce qui m’a fait progresser.</h1>
+    <p class="cap">Le chemin parcouru, situation par situation. À chaque étape, vous pouvez ajouter une preuve : photo, document, enregistrement.</p>
+    ${uids.length?uids.map(bloc).join(''):'<p class="vide">Rien à relire pour l’instant : cela se remplit avec votre positionnement et vos validations.</p>'}
+    ${sansSit?bloc(''):''}`);
+}
+
+/* ───────────── lancement ───────────── */
+(async function(){
+  let session=null;
+  try{const r=await sb.auth.getSession();session=r.data&&r.data.session;}catch(e){}
+  if(session){S.user=session.user;await demarrer(false);}
+  else{S.mode=location.hash==='#connexion'?'connexion':'inscription';vueInscription();}
+  sb.auth.onAuthStateChange(async(ev,sess)=>{
+    if(ev==='SIGNED_IN'&&sess&&!S.user){S.user=sess.user;await demarrer(true);}
+    if(ev==='SIGNED_OUT'){S.user=null;}
+  });
+})();
+</script>
+</body>
+</html>
