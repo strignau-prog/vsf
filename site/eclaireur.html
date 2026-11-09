@@ -166,6 +166,10 @@ h1{margin:10px 0 14px;font-size:clamp(34px,4.6vw,60px);font-weight:900;line-heig
 .hide{display:none!important}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
 <link rel="stylesheet" href="vsf-menu.css">
 </head>
 <body class="page-publique">
@@ -292,7 +296,7 @@ function nav(ok,label,why){return '<div class="nav"><button class="next'+(ok?' r
 function panel(){var h='';
   if(S.st===0)h='<div class="kick">L’Éclaireur · 3 minutes · sans compte</div><h1 class="focus play">Voulez-vous enfin trouver le métier qui vous <span style="white-space:nowrap">r<span class="mk">e</span>ssemble ?</span></h1><p class="lead">Dites-nous ce que vous faites, et ce qui compte pour vous. Les métiers bougent, se rapprochent, et trois d’entre eux viennent à vous.</p><button class="start" id="go"><span class="dot"></span>Commencer →</button><p class="note">Rien n’est enregistré tant que vous ne le décidez pas.</p>';
   if(S.st===1){h=prog()+'<div class="kick">1 · Votre point de départ</div><div class="q">Quel est votre métier aujourd’hui ?</div><p class="qh">Ou le dernier que vous avez exercé.</p><div class="srch'+(S.job?'':' todo')+'"><span class="caret"></span><input id="jq" autocomplete="off" placeholder="un métier…" aria-label="Votre métier" value="'+(S.job?esc(S.job.n):'')+'"></div><div class="sugg" id="js"></div>'+nav(!!S.job,null,'Cherchez votre métier.');}
-  if(S.st===2){var n=Object.keys(S.sf).filter(function(k){return S.sf[k];}).length;h=prog()+'<div class="kick">2 · '+esc(S.job.n)+'</div><div class="q">Qu’est-ce que vous faites vraiment ?</div><p class="qh">Cochez ce qui fait votre journée. Regardez le ciel : les métiers proches se rapprochent.</p><div class="chips'+(n?'':' todo')+'">'+S.job.sf.map(function(x,k){return '<button data-sf="'+k+'" class="'+(S.sf[k]?'on':'')+'">'+x[0]+'</button>';}).join('')+'</div><div class="sel'+(S.dur?'':' todo')+'"><select id="dur" aria-label="Depuis combien de temps"><option value="">Depuis combien de temps ?</option>'+DUR.map(function(d,k){return '<option value="'+k+'"'+(String(k)===S.dur?' selected':'')+'>'+d+'</option>';}).join('')+'</select></div>'+nav(n&&S.dur!=='',null,!n?'Cochez au moins un savoir-faire.':'Dites depuis combien de temps.');}
+  if(S.st===2){var n=Object.keys(S.sf).filter(function(k){return S.sf[k];}).length;h=prog()+'<div class="kick">2 · '+esc(S.job.n)+'</div><div class="q">Qu’est-ce que vous faites vraiment ?</div><p class="qh">Cochez ce qui fait votre journée. Regardez le ciel : les métiers proches se rapprochent.</p><div class="chips'+(n?'':' todo')+'">'+S.job.sf.map(function(x,k){return '<button data-sf="'+k+'" class="'+(S.sf[k]?'on':'')+'">'+x[0]+'</button>';}).join('')+'</div><p class="qh" style="margin-top:20px">Depuis combien de temps ?</p><div class="chips'+(S.dur?'':' todo')+'" role="radiogroup" aria-label="Depuis combien de temps">'+DUR.map(function(d,k){return '<button data-dur="'+k+'" role="radio" aria-checked="'+(String(k)===S.dur)+'" class="'+(String(k)===S.dur?'on':'')+'">'+d+'</button>';}).join('')+'</div>'+nav(n&&S.dur!=='',null,!n?'Cochez au moins un savoir-faire.':'Dites depuis combien de temps.');}
   if(S.st===3){h=prog()+'<div class="kick">3 · Avant</div><div class="q">Un autre métier avant ?</div><p class="qh">Ce que vous avez appris ailleurs compte aussi.</p>'+(S.prev?'<div class="chips"><button class="on">'+esc(S.prev.n)+' ×</button></div>':(S.prevAsk?'<div class="srch"><span class="caret"></span><input id="pq" autocomplete="off" placeholder="un autre métier…" aria-label="Autre métier"></div><div class="sugg" id="ps"></div>':'<div class="chips"><button id="pyes">Oui, j’en ajoute un</button></div>'))+nav(true,S.prev?'Continuer →':'Non, c’est tout →');}
   if(S.st===4){var Q=QS[S.q],sel=S.a[Q.k],n2=Object.keys(sel).filter(function(x){return sel[x];}).length;h=prog()+'<div class="kick">4 · Ce qui a du sens pour vous · '+(S.q+1)+' / '+QS.length+'</div><div class="q">'+Q.q+'</div><p class="qh">'+Q.h+'</p><div class="chips'+(n2?'':' todo')+'">'+Q.o.map(function(o){var on=sel[o[0]],dis=!on&&Q.max&&Q.max>1&&n2>=Q.max;return '<button data-a="'+o[0]+'" class="'+(on?'on':'')+'"'+(dis?' disabled style="opacity:.35"':'')+'>'+o[1]+'</button>';}).join('')+'</div>'+nav(n2>0,S.q<QS.length-1?'Question suivante →':'Continuer →','Choisissez au moins une réponse.');}
   if(S.st===5)h=prog()+'<div class="kick">5 · Ce que vous voulez voir</div><div class="q">Vers quels métiers on regarde ?</div><p class="qh">Le baromètre de VraiSavoirFaire est mis à jour chaque mois.</p><div class="chips'+(S.want?'':' todo')+'">'+[['hire','↗ Ceux qui embauchent'],['rare','◆ Les métiers rares'],['both','Les deux']].map(function(o){return '<button data-w="'+o[0]+'" class="'+(S.want===o[0]?'on':'')+'">'+o[1]+'</button>';}).join('')+'</div><div class="sel"><select id="reg" aria-label="Région">'+REG.map(function(r){return '<option'+(r===S.reg?' selected':'')+'>'+r+'</option>';}).join('')+'</select></div>'+nav(!!S.want,'Dessiner ma constellation →','Choisissez ce que vous voulez voir.');
@@ -350,12 +354,13 @@ function calc(){S.calc=true;render();var names=M.map(function(m){return m.n;}),n
 function stopCalc(){TKT.forEach(function(t){clearInterval(t);clearTimeout(t);});TKT=[];$('tks').innerHTML='';S.calc=false;}
 /* ---------- moteur ---------- */
 function render(){panel();S.top=S.st>=8?pick3():[];$('sky').classList.toggle('fin',S.st>=8);cards();layout();sig();}
-$('panel').addEventListener('click',function(e){var t=e.target.closest('#go,#nx,#bk,[data-sf],[data-a],[data-w],#pyes,#redo');if(!t)return;
+$('panel').addEventListener('click',function(e){var t=e.target.closest('#go,#nx,#bk,[data-sf],[data-dur],[data-a],[data-w],#pyes,#redo');if(!t)return;
   if(t.id==='go'){S.st=1;render();return;}
   if(t.id==='redo'){stopCalc();S.st=0;S.job=null;S.sf={};S.dur='';S.prev=null;S.prevAsk=false;S.a={w:{},m:{},l:{},a:{},v:{},r:{}};S.want='';S.pick=-1;S.bpick=-1;S.q=0;render();return;}
   if(t.id==='bk'){if(S.st===4&&S.q>0)S.q--;else S.st--;render();return;}
   if(t.id==='pyes'){S.prevAsk=true;render();return;}
   if(t.dataset.sf!==undefined){S.sf[t.dataset.sf]=!S.sf[t.dataset.sf];render();return;}
+  if(t.dataset.dur!==undefined){S.dur=t.dataset.dur;render();return;}
   if(t.dataset.a){var Q=QS[S.q],v=t.dataset.a;if(Q.max===1){S.a[Q.k]={};S.a[Q.k][v]=true;}else S.a[Q.k][v]=!S.a[Q.k][v];render();return;}
   if(t.dataset.w){S.want=t.dataset.w;render();return;}
   if(t.id==='nx'){if(!t.classList.contains('ready'))return;
