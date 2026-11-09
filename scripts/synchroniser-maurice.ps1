@@ -25,3 +25,6 @@ robocopy $Source $Cible /E /XF $exclure /NFL /NDL /NJH /NJS /NP | Out-Null
 if ($LASTEXITCODE -ge 8) { throw "robocopy a échoué (code $LASTEXITCODE)" }
 $n = (Get-ChildItem $Cible -Recurse -File | Measure-Object).Count
 Write-Host "Terminé : $n fichiers dans site/atelier."
+
+# Les pages copiées portent aussi l'icône VSF (sauf la page d'estimation, qui reste intacte) : on la remet après chaque copie.
+& (Join-Path $PSScriptRoot 'ajouter-favicon.ps1')
