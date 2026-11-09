@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <script src="boite-message.js"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin métiers — Fédération</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600;700&display=swap">
+  <style>
+    /* V0 — même système typo/couleurs que tout le projet, voir atelier-compte.html. */
+    :root{
+      --bg:#fff; --ink:#1c1a17; --muted:#55504a; --line:#e4e0d9; --soft:#f7f5f2;
+      --accent:#a8461f;
+      --red:var(--ink); --amber:var(--ink); --green:var(--ink);
+      --redBg:var(--soft); --amberBg:var(--soft); --greenBg:var(--soft);
+      --blue:var(--ink); --blueBg:var(--soft);
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif}
+    body{font-size:16px;line-height:1.4;font-variant-numeric:tabular-nums}
+    button,input,select{font:inherit;color:inherit}
+    button{cursor:pointer}
+    nav.topnav{background:#1c1a17;color:#fff;display:flex;align-items:center;gap:4px;padding:0 20px;height:52px;font-size:14px}
+    nav.topnav a.brand{color:#fff;text-decoration:none;font-weight:600;margin-right:24px;font-size:15px}
+    h1,h2,nav.topnav a.brand{font-family:Fraunces,Georgia,serif;font-weight:600}
+    nav.topnav .navToggle{display:none;margin-left:auto;background:none;border:none;color:#fff;font-size:20px;cursor:pointer}
+    nav.topnav .menuItem{position:relative;height:100%;display:flex;align-items:center}
+    nav.topnav .menuItem>span,nav.topnav .menuItem>a.topLink{padding:0 14px;cursor:pointer;color:#d7dbe4;text-decoration:none}
+    nav.topnav .menuItem:hover>span,nav.topnav .menuItem>a.topLink:hover{color:#fff}
+    nav.topnav .dropdown{display:none;position:absolute;top:100%;left:0;background:#fff;color:var(--ink);min-width:220px;box-shadow:0 8px 24px rgba(0,0,0,.18);border-radius:0 0 10px 10px;overflow:hidden;z-index:50}
+    nav.topnav .menuItem:hover .dropdown{display:block}
+    nav.topnav .dropdown a{display:block;padding:10px 16px;color:var(--ink);text-decoration:none;font-size:13.5px;border-bottom:1px solid var(--line)}
+    nav.topnav .dropdown a:last-child{border-bottom:none}
+    nav.topnav .dropdown a:hover{background:var(--soft)}
+    @media (max-width:820px){
+      nav.topnav{flex-wrap:wrap;height:auto;padding:10px 16px}
+      nav.topnav .navToggle{display:block}
+      nav.topnav .menuItem{display:none;width:100%;height:auto;flex-direction:column;align-items:stretch}
+      nav.topnav.navOpen .menuItem{display:flex}
+      nav.topnav .menuItem>span,nav.topnav .menuItem>a.topLink{padding:12px 0 4px;cursor:pointer;display:block}
+      nav.topnav .dropdown{position:static;box-shadow:none;border-radius:0;background:transparent;min-width:0}
+      nav.topnav .menuItem.open .dropdown{display:block}
+      nav.topnav .dropdown a{color:#fff;padding:10px 0 10px 14px;border-bottom:1px solid rgba(255,255,255,.12)}
+      nav.topnav .dropdown a:hover{background:rgba(255,255,255,.06)}
+    }
+    .wrap{max-width:820px;margin:0 auto;padding:32px 20px 80px 20px}
+    .hero h1{font-size:26px;margin:0 0 8px 0}
+    .hero p{color:var(--muted);font-size:15px;line-height:1.5;margin:0 0 20px 0}
+    .note{font-size:12.5px;color:var(--muted);background:var(--soft);border:1px dashed var(--line);border-radius:10px;padding:10px 12px;margin:16px 0}
+    .field label{display:block;font-size:13px;color:var(--muted);margin-bottom:5px}
+    .input,.select{width:100%;border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:16px;background:#fff}
+    .actionBtn{border:1px solid #111;background:#111;color:#fff;border-radius:999px;padding:11px 18px;font-size:15px;font-weight:700;margin-top:10px}
+    .actionBtn:disabled{opacity:.5;cursor:default}
+    .ghostBtn{border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 14px;font-size:13.5px;color:var(--muted)}
+    .section{margin-top:28px}
+    .section h2{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:0 0 12px 0}
+    .resultRow{border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+    .resultRow b{font-size:14.5px}
+    .resultRow .code{font-size:12.5px;color:var(--muted);font-family:monospace}
+    .previewBox{border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-top:14px;background:var(--soft)}
+    .metierRow{border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin-bottom:8px}
+    .metierRow .t{font-weight:700;font-size:15px}
+    .metierRow .s{font-size:12.5px;color:var(--muted);margin-top:2px}
+    .chip{display:inline-flex;align-items:center;padding:3px 9px;font-size:12px;border:1px solid var(--line);background:#fff;border-radius:999px;white-space:nowrap}
+    .chip.grey{border-color:var(--line);background:#fff;color:var(--muted)}
+    .chip.blue{border-color:var(--line);background:var(--soft);color:var(--ink);font-weight:700}
+    .tiny{font-size:13px;color:var(--muted)}
+    .errBox{padding:14px;color:var(--red);font-size:13.5px}
+    .msgOk{color:var(--green);font-size:13.5px;margin-top:8px}
+  </style>
+  <link rel="stylesheet" href="charte-vsf.css">
+<script src="acces-entreprise.js" defer></script>
+</head>
+<body>
+<nav class="topnav">
+  <a class="brand" href="federation-accueil.html">Maurice</a>
+  <button class="navToggle" onclick="toggleNav()" aria-label="Menu">☰</button>
+  <div class="menuItem"><span onclick="toggleMenuItem(this)">Mon Atelier</span>
+    <div class="dropdown">
+      <a href="atelier-compte.html">Accueil atelier</a>
+      <a href="devis-interne.html">Devis</a>
+      <a href="stock-atelier.html">Stock</a>
+      <a href="client-projet.html">Client / Projet</a>
+    </div>
+  </div>
+  <div class="menuItem"><span onclick="toggleMenuItem(this)">Ma Fédération</span>
+    <div class="dropdown">
+      <a href="federation-accueil.html">Accueil Fédération</a>
+      <a href="federation-accueil.html?tab=peintres">Nos peintres</a>
+      <a href="guide-production-mindmap.html">Guide comment on travaille</a>
+      <a href="guide-production-mindmap.html?guide=peindre">Guide comment on peint</a>
+      <a href="federation-accueil.html?tab=devenir">Nous rejoindre (Constellation &amp; Reconversion)</a>
+      <a href="therese.html" id="lienTherese" style="display:none">Thérèse</a>
+      <a href="federation-editos.html" id="lienEditos">Éditos du site public</a>
+      <a href="admin-metiers.html" id="lienAdminMetiers">Admin métiers</a>
+      <a href="deploiement-referentiel-formation.html" id="lienDeploiementFormation">Déploiement référentiel-formation</a>
+    </div>
+  </div>
+</nav>
+<div class="wrap" id="app"></div>
+<script src="federation-nav.js"></script>
+<script>
+const SUPABASE_URL = 'https://uuuigousvpijskbdhcal.supabase.co';
+const SUPABASE_KEY = 'sb_publishable__YuNj5XCo5YF8lwhwTu5OQ_RDM1Eesp';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const COMITE_EMAIL = COMITE_EMAIL_FEDERATION; // source unique : federation-nav.js
+function toggleNav(){ document.querySelector('nav.topnav').classList.toggle('navOpen'); }
+function toggleMenuItem(el){ el.parentElement.classList.toggle('open'); }
+function escapeHtml(s){ return String(s??'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])) }
+
+const STATUTS = ['candidate','documented','pilot','validated_by_practitioners','public_referential','archived'];
+const STATUT_LABEL = {
+  candidate:'Candidat', documented:'Documenté', pilot:'Pilote',
+  validated_by_practitioners:'Validé par des praticiens', public_referential:'Référentiel public', archived:'Archivé'
+};
+
+let session = null;
+let etat = { chargement:true, autorise:false, recherche:'', resultats:[], selection:null, nomForm:'', statutForm:'candidate', enregistrement:false, msg:'', erreur:'', metiers:[], resynchro:false, msgResynchro:'' };
+
+function render(){
+  const el = document.getElementById('app');
+  if(etat.chargement){ el.innerHTML = `<div class="wrap tiny">Chargement…</div>`; return; }
+  if(!etat.autorise){
+    el.innerHTML = `<div class="hero"><h1>Accès réservé</h1><p>Cet écran est réservé au comité de la Fédération.</p></div>`;
+    return;
+  }
+  el.innerHTML = `
+    <div class="hero">
+      <h1>Admin métiers</h1>
+      <p>Ajouter un métier ROME au périmètre de la Fédération, un par un. Recherche dans les 1911 fiches ROME officielles — aperçu avant tout engagement.</p>
+    </div>
+    <div class="note">Créer un métier ici ne le rend jamais actif automatiquement : il reste invisible du reste de l'application (aucun écran n'a encore été adapté au multi-métier) tant que ce n'est pas fait volontairement, à part.</div>
+
+    <div class="section">
+      <h2>Base de recherche ROME</h2>
+      <div class="tiny">1911 fiches chargées. Utile seulement si France Travail a publié une nouvelle version de ROME depuis le dernier chargement — pas une opération à faire souvent.</div>
+      <button class="ghostBtn" style="margin-top:8px" ${etat.resynchro?'disabled':''} onclick="resynchroniser()">${etat.resynchro?'Resynchronisation…':'Resynchroniser depuis France Travail'}</button>
+      ${etat.msgResynchro ? `<div class="tiny" style="margin-top:6px">${escapeHtml(etat.msgResynchro)}</div>` : ''}
+    </div>
+
+    <div class="section">
+      <h2>Rechercher une fiche ROME</h2>
+      <input class="input" placeholder="Code (ex. D1212) ou intitulé (ex. ébéniste)…" value="${escapeHtml(etat.recherche)}" oninput="onRecherche(this.value)">
+      ${etat.resultats.length ? etat.resultats.map(r=>`
+        <div class="resultRow">
+          <div><b>${escapeHtml(r.libelle)}</b><div class="code">${escapeHtml(r.code_rome)}</div></div>
+          <button class="ghostBtn" onclick="choisirFiche('${escapeHtml(r.code_rome)}','${escapeHtml(r.libelle).replace(/'/g,"\\'")}')">Aperçu</button>
+        </div>`).join('') : (etat.recherche.trim().length>1 ? '<div class="tiny">Aucune fiche trouvée.</div>' : '')}
+    </div>
+
+    ${etat.selection ? `
+    <div class="previewBox">
+      <div class="tiny" style="text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Aperçu ROME</div>
+      <div style="font-weight:700;font-size:17px">${escapeHtml(etat.selection.libelle)}</div>
+      <div class="tiny" style="font-family:monospace;margin-bottom:14px">${escapeHtml(etat.selection.code_rome)}</div>
+
+      <div class="field" style="margin-bottom:10px">
+        <label>Nom du métier dans la Fédération</label>
+        <input class="input" value="${escapeHtml(etat.nomForm)}" oninput="etat.nomForm=this.value">
+      </div>
+      <div class="field" style="margin-bottom:10px">
+        <label>Statut initial</label>
+        <select class="select" onchange="etat.statutForm=this.value">
+          ${STATUTS.map(s=>`<option value="${s}" ${s===etat.statutForm?'selected':''}>${STATUT_LABEL[s]}</option>`).join('')}
+        </select>
+      </div>
+      <button class="actionBtn" ${etat.enregistrement?'disabled':''} onclick="creerMetier()">${etat.enregistrement?'Création…':'Créer ce métier'}</button>
+      <button class="ghostBtn" style="margin-left:8px" onclick="etat.selection=null; render()">Annuler</button>
+      ${etat.msg ? `<div class="msgOk">${escapeHtml(etat.msg)}</div>` : ''}
+      ${etat.erreur ? `<div class="errBox">${escapeHtml(etat.erreur)}</div>` : ''}
+    </div>` : ''}
+
+    <div class="section">
+      <h2>Métiers déjà créés (${etat.metiers.length})</h2>
+      ${etat.metiers.map(m=>`
+        <div class="metierRow">
+          <div class="t">${escapeHtml(m.nom)} <span class="chip ${m.statut==='public_referential'?'blue':'grey'}">${STATUT_LABEL[m.statut]||m.statut}</span></div>
+          <div class="s">ordre ${m.ordre}${m.code_rome_origine?` · issu de ${escapeHtml(m.code_rome_origine)} — ${escapeHtml(m.libelle_rome_origine||'')}`:''}${m.cree_par?` · créé par ${escapeHtml(m.cree_par)}`:''}</div>
+        </div>`).join('')}
+    </div>
+  `;
+}
+
+let rechercheTimer = null;
+function onRecherche(v){
+  etat.recherche = v;
+  clearTimeout(rechercheTimer);
+  rechercheTimer = setTimeout(async ()=>{
+    const q = v.trim();
+    if(q.length<2){ etat.resultats = []; render(); return; }
+    const { data, error } = await sb.from('rome_referentiel_metiers')
+      .select('code_rome,libelle')
+      .or(`code_rome.ilike.%${q}%,libelle.ilike.%${q}%`)
+      .order('libelle').limit(20);
+    etat.resultats = error ? [] : (data||[]);
+    render();
+  }, 300);
+}
+
+function choisirFiche(code, libelle){
+  etat.selection = { code_rome: code, libelle };
+  etat.nomForm = libelle;
+  etat.statutForm = 'candidate';
+  etat.msg = ''; etat.erreur = '';
+  render();
+}
+
+async function creerMetier(){
+  if(!etat.nomForm.trim()){ etat.erreur = 'Le nom du métier est requis.'; render(); return; }
+  etat.enregistrement = true; etat.erreur = ''; render();
+  try{
+    const { data: maxOrdre } = await sb.from('metiers').select('ordre').order('ordre',{ascending:false}).limit(1);
+    const ordre = ((maxOrdre && maxOrdre[0] && maxOrdre[0].ordre) || 0) + 100;
+    const { error } = await sb.from('metiers').insert({
+      nom: etat.nomForm.trim(),
+      code_rome_origine: etat.selection.code_rome,
+      libelle_rome_origine: etat.selection.libelle,
+      statut: etat.statutForm,
+      cree_par: session.user.email,
+      ordre
+    });
+    if(error) throw error;
+    etat.msg = 'Métier créé — toujours invisible du reste de l\'application.';
+    etat.selection = null;
+    await chargerMetiers();
+  }catch(e){
+    etat.erreur = e.message || String(e);
+  }
+  etat.enregistrement = false;
+  render();
+}
+
+async function resynchroniser(){
+  if(!await confirmer('Retélécharger la liste officielle des fiches ROME depuis France Travail et remplacer la base de recherche actuelle ?')) return;
+  etat.resynchro = true; etat.msgResynchro = ''; render();
+  try{
+    const { data, error } = await sb.functions.invoke('rome-referentiel-metiers-sync');
+    if(error) throw error;
+    if(data && data.error) throw new Error(data.error);
+    etat.msgResynchro = `${data.lignesMisesAJour} fiches à jour (${data.fichesRecues} reçues de France Travail).`;
+  }catch(e){
+    etat.msgResynchro = 'Erreur : ' + (e.message || String(e));
+  }
+  etat.resynchro = false;
+  render();
+}
+
+async function chargerMetiers(){
+  const { data } = await sb.from('metiers').select('nom,ordre,statut,code_rome_origine,libelle_rome_origine,cree_par').order('ordre');
+  etat.metiers = data || [];
+}
+
+(async function init(){
+  const { data } = await sb.auth.getSession();
+  session = data.session || null;
+  if(session && session.user.email===COMITE_EMAIL){
+    etat.autorise = true;
+    await chargerMetiers();
+  }
+  if(session){
+    const { data: fm } = await sb.from('federation_members').select('therese_actif').eq('user_id', session.user.id).maybeSingle();
+    if(fm && fm.therese_actif){
+      const lienT = document.getElementById('lienTherese');
+      if(lienT) lienT.style.display = '';
+    }
+  }
+  etat.chargement = false;
+  render();
+})();
+</script>
+</body>
+</html>

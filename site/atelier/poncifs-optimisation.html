@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <script src="boite-message.js"></script>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Optimisation impression poncifs</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="atelier-nav.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600;700&display=swap">
+<style>
+  :root{ --bg:#fff; --ink:#1c1a17; --muted:#55504a; --line:#e4e0d9; --soft:#f7f5f2; --accent:#a8461f; --red:#b3261e; }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--soft);color:var(--ink);font-family:Inter,system-ui,sans-serif}
+  body{font-size:15px;line-height:1.4}
+  h1,h2,h3{font-family:Fraunces,Georgia,serif;font-weight:600;margin:0}
+  .topbar{padding:0}
+  nav.topnav{background:#1c1a17;color:#fff;display:flex;align-items:center;gap:4px;padding:0 20px;height:52px;font-size:14px}
+  nav.topnav a.brand{color:#fff;text-decoration:none;font-weight:600;margin-right:24px;font-size:15px;font-family:Fraunces,Georgia,serif}
+  nav.topnav .menuItem{position:relative;height:100%;display:flex;align-items:center}
+  nav.topnav .menuItem>span,nav.topnav .menuItem>a.topLink{padding:0 14px;cursor:pointer;color:#d7dbe4;text-decoration:none}
+  nav.topnav .menuItem:hover>span,nav.topnav .menuItem>a.topLink:hover{color:#fff}
+  nav.topnav .dropdown{display:none;position:absolute;top:100%;left:0;background:#fff;color:var(--ink);min-width:220px;box-shadow:0 8px 24px rgba(0,0,0,.18);border-radius:0 0 10px 10px;overflow:hidden;z-index:50}
+  nav.topnav .menuItem:hover .dropdown{display:block}
+  nav.topnav .dropdown a{display:block;padding:10px 16px;color:var(--ink);text-decoration:none;font-size:13.5px;border-bottom:1px solid var(--line)}
+  nav.topnav .dropdown a:last-child{border-bottom:none}
+  nav.topnav .dropdown a:hover{background:var(--soft)}
+  nav.topnav .navToggle{display:none;margin-left:auto;background:none;border:none;color:#fff;font-size:20px;cursor:pointer}
+  @media (max-width:820px){
+    nav.topnav{flex-wrap:wrap;height:auto;padding:10px 16px}
+    nav.topnav .navToggle{display:block}
+    nav.topnav .menuItem{display:none;width:100%;height:auto;flex-direction:column;align-items:stretch}
+    nav.topnav.navOpen .menuItem{display:flex}
+    nav.topnav .menuItem>span,nav.topnav .menuItem>a.topLink{padding:12px 0 4px;cursor:pointer;display:block}
+    nav.topnav .dropdown{position:static;box-shadow:none;border-radius:0;background:transparent;min-width:0}
+    nav.topnav .menuItem.open .dropdown{display:block}
+    nav.topnav .dropdown a{color:#fff;padding:10px 0 10px 14px;border-bottom:1px solid rgba(255,255,255,.12)}
+    nav.topnav .dropdown a:hover{background:rgba(255,255,255,.06)}
+  }
+
+  .wrap{max-width:980px;margin:0 auto;padding:28px 20px 60px}
+  .hero{margin-bottom:22px}
+  .hero h1{font-size:26px;margin-bottom:6px}
+  .hero p{color:var(--muted);margin:0}
+  .section{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:20px}
+  .section h2{font-size:14px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:14px}
+  .field{margin-bottom:10px}
+  .field label{display:block;font-size:13.5px;margin-bottom:4px}
+  .input,.select{border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:15px;background:#fff;color:inherit;font:inherit}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .tiny{font-size:12.5px;color:var(--muted)}
+
+  .dropzone{border:2px dashed var(--line);border-radius:14px;padding:34px 16px;text-align:center;cursor:pointer;transition:border-color .12s ease,background .12s ease}
+  .dropzone:hover,.dropzone.over{border-color:var(--accent);background:var(--soft)}
+  .dropzone b{display:block;margin-bottom:4px;font-size:15.5px}
+
+  .poncifsTable{width:100%;border-collapse:collapse;margin-top:16px}
+  .poncifsTable th{text-align:left;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;padding:6px 8px;border-bottom:1px solid var(--line)}
+  .poncifsTable td{padding:6px 8px;vertical-align:middle;border-bottom:1px solid var(--soft)}
+  .poncifsTable .input{width:80px;padding:6px 8px;font-size:14px}
+  .poncifsTable .input.manque{border-color:var(--red);background:#fdecea}
+  .miniApercu{width:44px;height:44px;object-fit:contain;border:1px solid var(--line);border-radius:6px;background:var(--soft)}
+  .miniApercuVide{width:44px;height:44px;border:1px solid var(--line);border-radius:6px;background:var(--soft);display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--muted)}
+
+  .btn{border:1px solid var(--line);background:#fff;border-radius:999px;padding:9px 16px;font-size:14px;cursor:pointer}
+  .btn:hover{background:var(--soft)}
+  .btnDanger{color:var(--red);border-color:#f0c9c5}
+  .actionBtn{border:1px solid #111;background:#111;color:#fff;border-radius:999px;padding:13px 22px;font-size:16px;font-weight:700;cursor:pointer}
+  .actionBtn:disabled{opacity:.4;cursor:not-allowed}
+  .actionBtn:hover:not(:disabled){opacity:.9}
+
+  .resumeLigne{display:flex;gap:22px;flex-wrap:wrap;margin-bottom:14px}
+  .resumeLigne .chiffre{font-size:22px;font-weight:700;font-family:Fraunces,Georgia,serif}
+  .resumeLigne .lbl{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+  .rouleauSvgWrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:#fafaf8;padding:10px}
+  .poncifRect{fill:#fff;stroke:#1c1a17;stroke-width:1.5}
+  .poncifLabel{font-family:Inter,sans-serif;font-size:11px;fill:#1c1a17}
+
+  @media print{
+    .topbar,.section.reglages,.section.fichiers,.actionsHaut{display:none !important}
+    body{background:#fff}
+    .wrap{max-width:none;padding:0}
+    .section{border:none;box-shadow:none;padding:0}
+  }
+</style>
+  <link rel="stylesheet" href="charte-vsf.css">
+<script src="acces-entreprise.js" defer></script>
+</head>
+<body>
+<div class="topbar"><nav class="topnav" id="nav"></nav></div>
+<div id="app"></div>
+<script>
+const SUPABASE_URL = 'https://uuuigousvpijskbdhcal.supabase.co';
+const SUPABASE_KEY = 'sb_publishable__YuNj5XCo5YF8lwhwTu5OQ_RDM1Eesp';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:true } });
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+function escapeHtml(s){ return String(s??'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])) }
+function uid(p='p'){ return p+'-'+Math.random().toString(16).slice(2,9) }
+const params = new URLSearchParams(location.search);
+const ESTABLISHMENT_ID = params.get('est') || '';
+const PT_EN_CM = 2.54/72; // 1 point PDF = 1/72 pouce
+
+/* =========================================================================
+   ÉTAT — un rouleau de largeur fixe (réglable), une liste de poncifs
+   rectangulaires (chacun largeur × hauteur en cm, une quantité), et le
+   résultat de l'optimisation une fois calculé.
+   ========================================================================= */
+const state = {
+  rouleauLargeurCm: 100, // réglage utilisateur — pas de valeur FC9000 fiable donnée, à ajuster ici
+  margeCm: 1,
+  poncifs: [],
+  resultat: null,
+  enCours: false,
+};
+
+/* =========================================================================
+   LECTURE DES FICHIERS — un PDF exporté à l'échelle réelle (habitude de
+   travail avant découpe) donne directement la taille du poncif en cm via
+   la taille de sa page. Si la lecture échoue (fichier pas au format PDF,
+   ou pas exporté à l'échelle réelle), le poncif est quand même ajouté à la
+   liste — largeur/hauteur restent à saisir à la main.
+   ========================================================================= */
+async function lireDimensionsPdf(file){
+  try{
+    const buf = await file.arrayBuffer();
+    const doc = await pdfjsLib.getDocument({ data: buf }).promise;
+    const page = await doc.getPage(1);
+    const [x0,y0,x1,y1] = page.view;
+    const largeurCm = Math.round(Math.abs(x1-x0) * PT_EN_CM * 10) / 10;
+    const hauteurCm = Math.round(Math.abs(y1-y0) * PT_EN_CM * 10) / 10;
+    // Aperçu miniature — juste pour reconnaître visuellement le poncif dans la liste.
+    let apercuDataUrl = null;
+    try{
+      const viewport = page.getViewport({ scale: 0.3 });
+      const canvas = document.createElement('canvas');
+      canvas.width = viewport.width; canvas.height = viewport.height;
+      await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+      apercuDataUrl = canvas.toDataURL('image/png');
+    }catch(e){ /* aperçu facultatif, jamais bloquant */ }
+    return { largeurCm, hauteurCm, apercuDataUrl };
+  }catch(e){
+    console.warn('Lecture PDF impossible pour', file.name, ':', e.message);
+    return { largeurCm:null, hauteurCm:null, apercuDataUrl:null };
+  }
+}
+
+async function ajouterFichiers(fileList){
+  for(const file of Array.from(fileList)){
+    const poncif = { id: uid(), nom: file.name.replace(/\.[^.]+$/,''), largeurCm:null, hauteurCm:null, quantite:1, apercuDataUrl:null, sourceFichier:true };
+    state.poncifs.push(poncif);
+    render();
+    const dims = await lireDimensionsPdf(file);
+    Object.assign(poncif, dims);
+    render();
+  }
+}
+function ajouterPoncifManuel(){
+  state.poncifs.push({ id: uid(), nom:'Poncif '+(state.poncifs.length+1), largeurCm:null, hauteurCm:null, quantite:1, apercuDataUrl:null, sourceFichier:false });
+  render();
+}
+function majPoncif(id, champ, valeur){
+  const p = state.poncifs.find(x=>x.id===id); if(!p) return;
+  if(champ==='largeurCm' || champ==='hauteurCm' || champ==='quantite'){
+    p[champ] = valeur===''? null : Number(valeur);
+  } else p[champ] = valeur;
+  state.resultat = null;
+  render();
+}
+function supprimerPoncif(id){
+  state.poncifs = state.poncifs.filter(x=>x.id!==id);
+  state.resultat = null;
+  render();
+}
+
+/* =========================================================================
+   OPTIMISATION — emboîtement par "étagères" (shelf packing) : on trie les
+   poncifs du plus grand au plus petit, on les pose en rangées sur la
+   largeur du rouleau, chaque poncif pouvant pivoter à 90° si ça l'aide à
+   tenir dans la rangée (pour la découpe, l'orientation ne change rien).
+   Heuristique simple et fiable, pas un optimum mathématique parfait — mais
+   nettement plus économe qu'une disposition faite à l'œil.
+   ========================================================================= */
+function optimiser(){
+  const largeur = Number(state.rouleauLargeurCm)||0;
+  const marge = Number(state.margeCm)||0;
+  if(!largeur){ alert('Indique la largeur du rouleau.'); return; }
+
+  // Un item par exemplaire (une ligne "quantité 3" devient 3 items à placer).
+  let items = [];
+  for(const p of state.poncifs){
+    if(!p.largeurCm || !p.hauteurCm){ continue; }
+    const q = Math.max(1, Math.round(p.quantite||1));
+    for(let i=0;i<q;i++) items.push({ nom:p.nom, largeurCm:p.largeurCm, hauteurCm:p.hauteurCm });
+  }
+  if(!items.length){ alert('Ajoute au moins un poncif avec ses dimensions renseignées.'); return; }
+
+  // Tri décroissant sur la plus grande des deux dimensions — les gros poncifs
+  // sont posés en premier, pendant qu'il y a encore de la place pour bien choisir.
+  items.sort((a,b)=> Math.max(b.largeurCm,b.hauteurCm) - Math.max(a.largeurCm,a.hauteurCm));
+
+  const shelves = [];
+  let horsGabarit = [];
+  for(const item of items){
+    const orientations = [[item.largeurCm,item.hauteurCm],[item.hauteurCm,item.largeurCm]]
+      .filter(([w]) => w <= largeur + 0.001);
+    if(!orientations.length){ horsGabarit.push(item); continue; }
+
+    let place = false;
+    for(const shelf of shelves){
+      for(const [w,h] of orientations){
+        if(h <= shelf.hauteur + 0.001 && shelf.largeurUtilisee + w <= largeur + 0.001){
+          shelf.items.push({ nom:item.nom, x:shelf.largeurUtilisee, w, h });
+          shelf.largeurUtilisee += w + marge;
+          place = true; break;
+        }
+      }
+      if(place) break;
+    }
+    if(!place){
+      // Nouvelle rangée : orientation qui tient dans la largeur, en gardant
+      // la hauteur la plus faible possible pour économiser du rouleau.
+      orientations.sort((a,b)=>a[1]-b[1]);
+      const [w,h] = orientations[0];
+      const y = shelves.length ? (shelves[shelves.length-1].y + shelves[shelves.length-1].hauteur + marge) : 0;
+      shelves.push({ y, hauteur:h, largeurUtilisee:w+marge, items:[{ nom:item.nom, x:0, w, h }] });
+    }
+  }
+
+  const longueurTotale = shelves.length ? (shelves[shelves.length-1].y + shelves[shelves.length-1].hauteur) : 0;
+  const surfaceUtile = items.reduce((s,i)=>s+i.largeurCm*i.hauteurCm, 0);
+  const surfaceRouleau = largeur * longueurTotale;
+  state.resultat = {
+    largeur, longueurTotale, shelves, horsGabarit,
+    tauxUtilisation: surfaceRouleau>0 ? Math.round((surfaceUtile/surfaceRouleau)*100) : 0,
+    nbPoncifs: items.length, nbRangees: shelves.length,
+  };
+  render();
+}
+
+/* =========================================================================
+   AFFICHAGE
+   ========================================================================= */
+function renderPoncifLigne(p){
+  const manqueL = !p.largeurCm, manqueH = !p.hauteurCm;
+  return `
+  <tr>
+    <td>${p.apercuDataUrl ? `<img class="miniApercu" src="${p.apercuDataUrl}">` : `<div class="miniApercuVide">${p.sourceFichier?'⏳':'✎'}</div>`}</td>
+    <td><input class="input" style="width:170px" value="${escapeHtml(p.nom)}" onchange="majPoncif('${p.id}','nom',this.value)"></td>
+    <td><input class="input ${manqueL?'manque':''}" type="number" step="0.1" min="0" placeholder="cm" value="${p.largeurCm??''}" onchange="majPoncif('${p.id}','largeurCm',this.value)"></td>
+    <td><input class="input ${manqueH?'manque':''}" type="number" step="0.1" min="0" placeholder="cm" value="${p.hauteurCm??''}" onchange="majPoncif('${p.id}','hauteurCm',this.value)"></td>
+    <td><input class="input" style="width:56px" type="number" min="1" step="1" value="${p.quantite}" onchange="majPoncif('${p.id}','quantite',this.value)"></td>
+    <td><button class="btn btnDanger" onclick="supprimerPoncif('${p.id}')">✕</button></td>
+  </tr>`;
+}
+
+function renderResultat(){
+  const r = state.resultat; if(!r) return '';
+  const echellePx = Math.min(700 / r.largeur, 700 / Math.max(r.longueurTotale, 1), 22);
+  const largeurPx = r.largeur * echellePx, longueurPx = r.longueurTotale * echellePx;
+  const rects = r.shelves.flatMap(shelf => shelf.items.map(it => `
+    <g>
+      <rect class="poncifRect" x="${it.x*echellePx}" y="${shelf.y*echellePx}" width="${it.w*echellePx}" height="${it.h*echellePx}"></rect>
+      <text class="poncifLabel" x="${(it.x+it.w/2)*echellePx}" y="${(shelf.y+it.h/2)*echellePx}" text-anchor="middle" dominant-baseline="middle">${escapeHtml(it.nom)}</text>
+    </g>`)).join('');
+  return `
+  <div class="section" id="resultatSection">
+    <h2>Résultat</h2>
+    <div class="resumeLigne">
+      <div><div class="chiffre">${r.longueurTotale.toFixed(1)} cm</div><div class="lbl">Longueur de rouleau nécessaire</div></div>
+      <div><div class="chiffre">${r.nbRangees}</div><div class="lbl">Rangée${r.nbRangees>1?'s':''}</div></div>
+      <div><div class="chiffre">${r.tauxUtilisation}%</div><div class="lbl">Papier utilisé (reste = chutes)</div></div>
+    </div>
+    ${r.horsGabarit.length ? `<p class="tiny" style="color:var(--red)">⚠ ${r.horsGabarit.length} poncif(s) plus large(s) que le rouleau, même pivotés — impossible à placer : ${r.horsGabarit.map(i=>escapeHtml(i.nom)).join(', ')}.</p>` : ''}
+    <div class="rouleauSvgWrap">
+      <svg width="${largeurPx}" height="${longueurPx}" viewBox="0 0 ${largeurPx} ${longueurPx}">
+        <rect x="0" y="0" width="${largeurPx}" height="${longueurPx}" fill="#fff" stroke="var(--line)"></rect>
+        ${rects}
+      </svg>
+    </div>
+    <p class="tiny" style="margin-top:10px">Disposition calculée automatiquement (poncifs pivotés si ça économise du rouleau) — sers-toi de ce plan comme repère pour les positionner dans Illustrator avant de lancer la découpe.</p>
+    <button class="btn" style="margin-top:6px" onclick="window.print()">🖨 Imprimer ce plan</button>
+  </div>`;
+}
+
+function render(){
+  const dimsManquantes = state.poncifs.some(p=>!p.largeurCm || !p.hauteurCm);
+  document.getElementById('app').innerHTML = `
+  <div class="wrap">
+    <div class="hero">
+      <h1>Optimisation impression des poncifs</h1>
+      <p>Dépose tes fichiers, indique la largeur de ton rouleau, et l'outil calcule la disposition la plus économe en papier.</p>
+    </div>
+
+    <div class="section reglages">
+      <h2>Rouleau</h2>
+      <div class="row2">
+        <div class="field"><label>Largeur utile du rouleau (cm)</label><input class="input" type="number" step="1" min="1" value="${state.rouleauLargeurCm}" onchange="state.rouleauLargeurCm=this.value;state.resultat=null;render()"></div>
+        <div class="field"><label>Marge entre les poncifs (cm)</label><input class="input" type="number" step="0.5" min="0" value="${state.margeCm}" onchange="state.margeCm=this.value;state.resultat=null;render()"></div>
+      </div>
+      <p class="tiny">Pas sûr de la largeur exacte de ton FC9000 ? Ajuste cette valeur, le calcul se refait à chaque changement.</p>
+    </div>
+
+    <div class="section fichiers">
+      <h2>Poncifs à imprimer</h2>
+      <div class="dropzone" id="dropzone" onclick="document.getElementById('inputFichiers').click()">
+        <b>📎 Glisse tes fichiers PDF ici, ou clique pour les choisir</b>
+        <span class="tiny">Un PDF exporté à la taille réelle du poncif donne directement ses dimensions. Sinon, saisis-les à la main juste en dessous.</span>
+      </div>
+      <input type="file" id="inputFichiers" accept="application/pdf" multiple style="display:none" onchange="ajouterFichiers(this.files);this.value=''">
+      <button class="btn" style="margin-top:12px" onclick="ajouterPoncifManuel()">+ Ajouter un poncif sans fichier</button>
+
+      ${state.poncifs.length ? `
+      <table class="poncifsTable">
+        <thead><tr><th></th><th>Nom</th><th>Largeur (cm)</th><th>Hauteur (cm)</th><th>Qté</th><th></th></tr></thead>
+        <tbody>${state.poncifs.map(renderPoncifLigne).join('')}</tbody>
+      </table>` : `<p class="tiny" style="margin-top:14px">Aucun poncif pour l'instant.</p>`}
+
+      <div class="actionsHaut" style="margin-top:18px">
+        <button class="actionBtn" ${(!state.poncifs.length || dimsManquantes)?'disabled':''} onclick="optimiser()">Optimiser la disposition</button>
+        ${dimsManquantes && state.poncifs.length ? `<p class="tiny" style="color:var(--red);margin-top:8px">Complète les dimensions manquantes (en rouge) avant de lancer le calcul.</p>` : ''}
+      </div>
+    </div>
+
+    ${renderResultat()}
+  </div>`;
+
+  const dz = document.getElementById('dropzone');
+  if(dz){
+    dz.ondragover = (e)=>{ e.preventDefault(); dz.classList.add('over'); };
+    dz.ondragleave = ()=> dz.classList.remove('over');
+    dz.ondrop = (e)=>{ e.preventDefault(); dz.classList.remove('over'); if(e.dataTransfer.files.length) ajouterFichiers(e.dataTransfer.files); };
+  }
+}
+
+async function initApp(){
+  if(ESTABLISHMENT_ID) document.getElementById('nav').innerHTML = navAtelierHtml(ESTABLISHMENT_ID, {});
+  render();
+}
+initApp();
+</script>
+</body>
+</html>

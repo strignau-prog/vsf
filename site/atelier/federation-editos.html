@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Éditos Fédération — comité référentiel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="federation-nav.js"></script>
+<style>
+  /* V0 — même système typo/couleurs que tout le projet, voir atelier-compte.html. */
+  :root {
+    --ink: #1c1a17; --muted: #55504a; --line: #e4e0d9; --lineSoft: #efece6; --bg: #ffffff;
+    --navBg: #1c1a17; --accent: #a8461f;
+  }
+  * { box-sizing: border-box; }
+  html, body { font-family: Inter, system-ui, sans-serif; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-size:16px; font-variant-numeric:tabular-nums; }
+  h1, h2, nav.topnav a.brand { font-family: Fraunces, Georgia, serif; font-weight: 600; }
+
+  nav.topnav { background: var(--navBg); color: #fff; display: flex; align-items: center; gap: 4px; padding: 0 20px; height: 52px; font-size: 14px; }
+  nav.topnav a.brand { color: #fff; text-decoration: none; font-weight: 600; margin-right: 24px; font-size: 15px; }
+  nav.topnav .menuItem { position: relative; height: 100%; display: flex; align-items: center; }
+  nav.topnav .menuItem > span { padding: 0 14px; cursor: default; color: #d7dbe4; }
+  nav.topnav .menuItem:hover > span { color: #fff; }
+  nav.topnav .dropdown { display: none; position: absolute; top: 100%; left: 0; background: #fff; color: var(--ink); min-width: 220px; box-shadow: 0 8px 24px rgba(0,0,0,.18); border-radius: 0 0 10px 10px; overflow: hidden; z-index: 50; }
+  nav.topnav .menuItem:hover .dropdown { display: block; }
+  nav.topnav .dropdown a { display: block; padding: 10px 16px; color: var(--ink); text-decoration: none; font-size: 13.5px; border-bottom: 1px solid var(--lineSoft); }
+  nav.topnav .dropdown a:last-child { border-bottom: none; }
+  nav.topnav .dropdown a:hover { background: #f5f4ef; }
+  .navToggle { display: none; background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; padding: 4px 10px; margin-left: auto; }
+  @media (max-width: 720px) {
+    nav.topnav { flex-wrap: wrap; height: auto; padding: 10px 16px; }
+    .navToggle { display: block; }
+    nav.topnav .menuItem { display: none; width: 100%; height: auto; flex-direction: column; align-items: stretch; }
+    nav.topnav.navOpen .menuItem { display: flex; }
+    nav.topnav .menuItem > span { padding: 12px 0 4px; cursor: pointer; }
+    nav.topnav .dropdown { position: static; box-shadow: none; border-radius: 0; background: transparent; min-width: 0; }
+    nav.topnav .menuItem.open .dropdown { display: block; }
+    nav.topnav .dropdown a { color: #fff; padding: 10px 0 10px 14px; border-bottom: 1px solid rgba(255,255,255,.12); }
+    nav.topnav .dropdown a:hover { background: rgba(255,255,255,.06); }
+  }
+
+  .wrap { max-width: 780px; margin: 0 auto; padding: 40px 48px 80px 48px; }
+  h1 { font-size: 26px; font-weight: 600; margin: 0 0 6px; }
+  .sub { color: var(--muted); font-size: 14.5px; margin: 0 0 28px; line-height: 1.5; }
+  .chargement, .errBox { font-size: 14px; color: var(--muted); padding: 20px 0; }
+  .errBox { color: var(--ink); font-weight:600; font-family: monospace; white-space: pre-wrap; }
+  .refuse { background: var(--soft); border: 1px solid var(--line); color: var(--ink); font-size: 13px; padding: 12px 16px; border-radius: 8px; }
+
+  .pageTabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 28px; }
+  .pageTab { border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 6px 14px; font-size: 13px; cursor: pointer; font-family: inherit; color: var(--ink); }
+  .pageTab.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+  .champ { margin-bottom: 16px; }
+  .champ label { display: block; font-size: 12.5px; color: var(--muted); margin-bottom: 5px; }
+  .champ input, .champ textarea { width: 100%; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 14px; font-family: inherit; background: #fff; color: var(--ink); }
+  .champ textarea { min-height: 64px; resize: vertical; }
+  .groupe { border: 1px solid var(--lineSoft); border-radius: 10px; padding: 14px 16px; margin-bottom: 14px; }
+  .groupeTitre { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin-bottom: 10px; }
+  .btnPrimaire { background: var(--ink); color: #fff; border: none; border-radius: 999px; padding: 10px 20px; font-size: 14px; cursor: pointer; font-family: inherit; }
+  .btnSecondaire { background: #fff; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 8px 16px; font-size: 13px; cursor: pointer; font-family: inherit; }
+  .msgOk { color: var(--ink); font-weight:600; font-size: 13px; margin-top: 10px; }
+  .msgErr { color: var(--ink); font-weight:600; font-style:italic; font-size: 13px; margin-top: 10px; }
+</style>
+<script src="acces-entreprise.js" defer></script>
+</head>
+<body>
+<nav class="topnav">
+  <a class="brand" href="federation-accueil.html">Maurice</a>
+  <button class="navToggle" onclick="toggleNav()" aria-label="Menu">☰</button>
+  <div class="menuItem"><span onclick="toggleMenuItem(this)">Mon Atelier</span>
+    <div class="dropdown">
+      <a href="atelier-compte.html">Accueil atelier</a>
+      <a href="devis-interne.html">Devis</a>
+      <a href="stock-atelier.html">Stock</a>
+      <a href="client-projet.html">Client / Projet</a>
+    </div>
+  </div>
+  <div class="menuItem"><span onclick="toggleMenuItem(this)">Ma Fédération</span>
+    <div class="dropdown">
+      <a href="federation-accueil.html">Accueil Fédération</a>
+      <a href="federation-accueil.html?tab=peintres">Nos peintres</a>
+      <a href="guide-production-mindmap.html">Guide comment on travaille</a>
+      <a href="guide-production-mindmap.html?guide=peindre">Guide comment on peint</a>
+      <a href="federation-accueil.html?tab=devenir">Nous rejoindre (Constellation &amp; Reconversion)</a>
+      <a href="therese.html" id="lienTherese" style="display:none">Thérèse</a>
+      <a href="federation-editos.html" id="lienEditos" style="display:none">Éditos du site public</a>
+      <a href="admin-metiers.html" id="lienAdminMetiers" style="display:none">Admin métiers</a>
+      <a href="deploiement-referentiel-formation.html" id="lienDeploiementFormation" style="display:none">Déploiement référentiel-formation</a>
+    </div>
+  </div>
+</nav>
+<div class="wrap" id="app">
+  <div class="chargement">Chargement…</div>
+</div>
+<script>
+const SUPABASE_URL = 'https://uuuigousvpijskbdhcal.supabase.co';
+const SUPABASE_KEY = 'sb_publishable__YuNj5XCo5YF8lwhwTu5OQ_RDM1Eesp';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+function escapeHtml(s){ return String(s??'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])) }
+function toggleNav(){ document.querySelector('nav.topnav').classList.toggle('navOpen'); }
+function toggleMenuItem(el){ el.parentElement.classList.toggle('open'); }
+
+let session = null;
+let pages = [];
+let pageActive = null;
+let contenuEdite = null; // copie de travail de la page active, écrite en base seulement au clic "Enregistrer"
+let message = null; // { ok:bool, texte }
+let enCours = false;
+
+async function initApp(){
+  const { data } = await sb.auth.getSession();
+  session = data.session || null;
+  if(!session){
+    const brand = document.querySelector('nav.topnav a.brand');
+    if(brand) brand.textContent = 'Fédération de peintres en lettres';
+  } else {
+    appliquerLiensComite(session, ['lienEditos','lienAdminMetiers','lienDeploiementFormation']);
+    const { data: fm } = await sb.from('federation_members').select('therese_actif').eq('user_id', session.user.id).maybeSingle();
+    if(fm && fm.therese_actif){
+      const lienT = document.getElementById('lienTherese');
+      if(lienT) lienT.style.display = '';
+    }
+  }
+  const { data: rows, error } = await sb.from('federation_pages_publiques').select('slug,titre_menu,contenu,ordre').order('ordre');
+  if(error){ document.getElementById('app').innerHTML = `<div class="errBox">${escapeHtml(error.message)}</div>`; return; }
+  pages = rows || [];
+  if(pages.length){ pageActive = pages[0].slug; contenuEdite = JSON.parse(JSON.stringify(pages[0].contenu)); }
+  render();
+}
+
+function autorise(){ return session && session.user.email===COMITE_EMAIL_FEDERATION; }
+
+function choisirPage(slug){
+  pageActive = slug;
+  const p = pages.find(x=>x.slug===slug);
+  contenuEdite = JSON.parse(JSON.stringify(p.contenu));
+  message = null;
+  render();
+}
+
+async function enregistrer(){
+  if(!autorise()) return;
+  enCours = true; message = null; render();
+  const { data, error } = await sb.from('federation_pages_publiques')
+    .update({ contenu: contenuEdite, updated_at: new Date().toISOString() })
+    .eq('slug', pageActive)
+    .select('slug');
+  enCours = false;
+  if(error){ message = { ok:false, texte: error.message }; render(); return; }
+  if(!data || !data.length){ message = { ok:false, texte: "Écriture refusée — droits insuffisants (seul le comité référentiel connecté peut écrire)." }; render(); return; }
+  const p = pages.find(x=>x.slug===pageActive);
+  p.contenu = JSON.parse(JSON.stringify(contenuEdite));
+  message = { ok:true, texte: 'Enregistré — visible immédiatement sur le site public.' };
+  render();
+}
+
+function champTexte(label, valeur, onInput){
+  return `<div class="champ"><label>${escapeHtml(label)}</label><input value="${escapeHtml(valeur)}" oninput="${onInput}"></div>`;
+}
+function champZone(label, valeur, onInput){
+  return `<div class="champ"><label>${escapeHtml(label)}</label><textarea oninput="${onInput}">${escapeHtml(valeur)}</textarea></div>`;
+}
+
+function formPage(slug, c){
+  if(slug==='accueil') return `
+    ${champZone("Titre (un retour à la ligne = &lt;br&gt;)", c.titre, `contenuEdite.titre=this.value`)}
+    ${champTexte("Phrase d'accroche (lead)", c.lead, `contenuEdite.lead=this.value`)}
+    ${champZone("Paragraphe d'introduction", c.intro, `contenuEdite.intro=this.value`)}
+    <div class="groupe"><div class="groupeTitre">Dernier récit publié</div>
+      ${champTexte("Auteur", c.dernier_recit.auteur, `contenuEdite.dernier_recit.auteur=this.value`)}
+      ${champZone("Texte", c.dernier_recit.texte, `contenuEdite.dernier_recit.texte=this.value`)}
+    </div>
+    <div class="groupe"><div class="groupeTitre">Carte 1</div>
+      ${champTexte("Titre", c.carte1.titre, `contenuEdite.carte1.titre=this.value`)}
+      ${champZone("Texte", c.carte1.texte, `contenuEdite.carte1.texte=this.value`)}
+    </div>
+    <div class="groupe"><div class="groupeTitre">Carte 2</div>
+      ${champTexte("Titre", c.carte2.titre, `contenuEdite.carte2.titre=this.value`)}
+      ${champZone("Texte", c.carte2.texte, `contenuEdite.carte2.texte=this.value`)}
+    </div>`;
+
+  if(slug==='savoirfaire') return `
+    ${champZone("Titre", c.titre, `contenuEdite.titre=this.value`)}
+    ${champZone("Introduction", c.intro, `contenuEdite.intro=this.value`)}
+    <div class="groupe"><div class="groupeTitre">Notre principe fondateur</div>
+      ${champTexte("Titre de section", c.principe_titre, `contenuEdite.principe_titre=this.value`)}
+      ${champZone("Texte", c.principe_texte, `contenuEdite.principe_texte=this.value`)}
+    </div>
+    <div class="groupe"><div class="groupeTitre">Thérèse</div>
+      ${champTexte("Titre de section", c.therese_titre, `contenuEdite.therese_titre=this.value`)}
+      ${champZone("Texte", c.therese_texte, `contenuEdite.therese_texte=this.value`)}
+    </div>`;
+
+  if(slug==='federation') return `
+    ${champZone("Titre", c.titre, `contenuEdite.titre=this.value`)}
+    ${champTexte("Phrase d'accroche (lead)", c.lead, `contenuEdite.lead=this.value`)}
+    <div class="groupe"><div class="groupeTitre">Onglet Missions</div>
+      ${champTexte("Titre", c.missions.titre, `contenuEdite.missions.titre=this.value`)}
+      ${champZone("Texte", c.missions.texte, `contenuEdite.missions.texte=this.value`)}
+    </div>
+    <div class="groupe"><div class="groupeTitre">Onglet Gouvernance</div>
+      ${champTexte("Titre", c.gouvernance.titre, `contenuEdite.gouvernance.titre=this.value`)}
+      ${champZone("Texte", c.gouvernance.texte, `contenuEdite.gouvernance.texte=this.value`)}
+    </div>
+    <div class="groupe"><div class="groupeTitre">Onglet Équipe fondatrice</div>
+      ${champTexte("Titre", c.equipe.titre, `contenuEdite.equipe.titre=this.value`)}
+      ${champZone("Texte", c.equipe.texte, `contenuEdite.equipe.texte=this.value`)}
+    </div>`;
+
+  if(slug==='peintres') return `
+    ${champZone("Titre", c.titre, `contenuEdite.titre=this.value`)}
+    ${champZone("Introduction", c.intro, `contenuEdite.intro=this.value`)}
+    <div class="groupe"><div class="groupeTitre">Carte 1</div>
+      ${champTexte("Titre", c.carte1.titre, `contenuEdite.carte1.titre=this.value`)}
+      ${champZone("Texte", c.carte1.texte, `contenuEdite.carte1.texte=this.value`)}
+    </div>
+    <div class="groupe"><div class="groupeTitre">Carte 2</div>
+      ${champTexte("Titre", c.carte2.titre, `contenuEdite.carte2.titre=this.value`)}
+      ${champZone("Texte", c.carte2.texte, `contenuEdite.carte2.texte=this.value`)}
+    </div>`;
+
+  if(slug==='vousetes') return `
+    ${champZone("Titre", c.titre, `contenuEdite.titre=this.value`)}
+    ${c.tabs.map((t,i)=>`
+    <div class="groupe"><div class="groupeTitre">Onglet ${i+1}</div>
+      ${champTexte("Libellé de l'onglet", t.label, `contenuEdite.tabs[${i}].label=this.value`)}
+      ${champTexte("Titre", t.titre, `contenuEdite.tabs[${i}].titre=this.value`)}
+      ${champZone("Texte", t.texte, `contenuEdite.tabs[${i}].texte=this.value`)}
+      ${champTexte("Bouton (texte)", t.cta, `contenuEdite.tabs[${i}].cta=this.value`)}
+    </div>`).join('')}`;
+
+  if(slug==='devenir') return `
+    ${champZone("Titre", c.titre, `contenuEdite.titre=this.value`)}
+    ${champZone("Introduction", c.intro, `contenuEdite.intro=this.value`)}
+    <div class="groupe"><div class="groupeTitre">Onglet 1 — Peintre dirigeant</div>
+      ${champTexte("Libellé de l'onglet", c.tab_dirigeant.label, `contenuEdite.tab_dirigeant.label=this.value`)}
+      ${champTexte("Titre", c.tab_dirigeant.titre, `contenuEdite.tab_dirigeant.titre=this.value`)}
+      ${c.tab_dirigeant.cartes.map((cc,i)=>`
+        ${champTexte("Carte "+(i+1)+" — titre", cc.titre, `contenuEdite.tab_dirigeant.cartes[${i}].titre=this.value`)}
+        ${champZone("Carte "+(i+1)+" — texte", cc.texte, `contenuEdite.tab_dirigeant.cartes[${i}].texte=this.value`)}`).join('')}
+    </div>
+    <div class="groupe"><div class="groupeTitre">Onglet 2 — Membre d'un atelier</div>
+      ${champTexte("Libellé de l'onglet", c.tab_membre.label, `contenuEdite.tab_membre.label=this.value`)}
+      ${champTexte("Titre", c.tab_membre.titre, `contenuEdite.tab_membre.titre=this.value`)}
+      ${c.tab_membre.cartes.map((cc,i)=>`
+        ${champTexte("Carte "+(i+1)+" — titre", cc.titre, `contenuEdite.tab_membre.cartes[${i}].titre=this.value`)}
+        ${champZone("Carte "+(i+1)+" — texte", cc.texte, `contenuEdite.tab_membre.cartes[${i}].texte=this.value`)}`).join('')}
+    </div>
+    ${champZone("Conclusion", c.conclusion, `contenuEdite.conclusion=this.value`)}
+    ${champTexte("Bouton 1", c.cta1, `contenuEdite.cta1=this.value`)}
+    ${champTexte("Bouton 2", c.cta2, `contenuEdite.cta2=this.value`)}`;
+
+  if(slug==='rse') return `
+    ${champZone("Titre", c.titre, `contenuEdite.titre=this.value`)}
+    ${c.cartes.map((cc,i)=>`
+    <div class="groupe"><div class="groupeTitre">Carte ${i+1}</div>
+      ${champTexte("Titre", cc.titre, `contenuEdite.cartes[${i}].titre=this.value`)}
+      ${champZone("Texte", cc.texte, `contenuEdite.cartes[${i}].texte=this.value`)}
+    </div>`).join('')}
+    ${champTexte("Titre — Le mécénat de progression", c.mecenat_titre, `contenuEdite.mecenat_titre=this.value`)}
+    ${champZone("Texte — mécénat", c.mecenat_texte, `contenuEdite.mecenat_texte=this.value`)}`;
+
+  if(slug==='recits') return `
+    ${champZone("Titre", c.titre, `contenuEdite.titre=this.value`)}
+    ${champZone("Introduction", c.intro, `contenuEdite.intro=this.value`)}
+    <div class="groupeTitre" style="margin-top:6px">Récits publiés</div>
+    ${c.recits.map((r,i)=>`
+    <div class="groupe">
+      ${champTexte("Auteur / chantier", r.auteur, `contenuEdite.recits[${i}].auteur=this.value`)}
+      ${champZone("Texte", r.texte, `contenuEdite.recits[${i}].texte=this.value`)}
+      <button class="btnSecondaire" onclick="retirerRecit(${i})">Retirer ce récit</button>
+    </div>`).join('')}
+    <button class="btnSecondaire" onclick="ajouterRecit()">+ Ajouter un récit</button>`;
+
+  if(slug==='contact') return `
+    ${champZone("Titre", c.titre, `contenuEdite.titre=this.value`)}
+    ${champZone("Texte", c.texte, `contenuEdite.texte=this.value`)}
+    ${champTexte("Bouton", c.cta, `contenuEdite.cta=this.value`)}`;
+
+  return '';
+}
+
+function ajouterRecit(){ contenuEdite.recits.push({ auteur:'', texte:'' }); render(); }
+function retirerRecit(i){ contenuEdite.recits.splice(i,1); render(); }
+
+function render(){
+  const app = document.getElementById('app');
+  if(!pages.length){ app.innerHTML = `<h1>Éditos — site public Fédération</h1><div class="sub">Aucune page trouvée.</div>`; return; }
+
+  if(!autorise()){
+    app.innerHTML = `
+    <h1>Éditos — site public Fédération</h1>
+    <div class="sub">Modifier les textes des pages publiques (accueil, savoir-faire, RSE...) sans toucher au code.</div>
+    <div class="refuse">🔒 Accès réservé au comité référentiel. ${session ? `Connecté en tant que ${escapeHtml(session.user.email)} — ce compte n'a pas les droits.` : `Connecte-toi depuis <a href="federation-accueil.html">Ma Fédération</a> avec le compte du comité.`}</div>`;
+    return;
+  }
+
+  const p = pages.find(x=>x.slug===pageActive);
+  app.innerHTML = `
+  <h1>Éditos — site public Fédération</h1>
+  <div class="sub">Modifie le texte ci-dessous puis enregistre — c'est visible immédiatement sur <a href="federation-accueil.html">le site public</a>.</div>
+  <div class="pageTabs">
+    ${pages.map(x=>`<button class="pageTab ${x.slug===pageActive?'active':''}" onclick="choisirPage('${x.slug}')">${escapeHtml(x.titre_menu)}</button>`).join('')}
+  </div>
+  ${formPage(pageActive, contenuEdite)}
+  <button class="btnPrimaire" ${enCours?'disabled':''} onclick="enregistrer()">${enCours?'Enregistrement…':'Enregistrer'}</button>
+  ${message ? `<div class="${message.ok?'msgOk':'msgErr'}">${escapeHtml(message.texte)}</div>` : ''}
+  `;
+}
+
+initApp();
+</script>
+</body>
+</html>

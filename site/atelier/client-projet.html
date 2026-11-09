@@ -1,0 +1,1776 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <script src="boite-message.js"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Client / Projet — Atelier</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="atelier-nav.js"></script>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600;700&display=swap">
+  <style>
+    /* V0 — même système typo/couleurs que tout le projet, voir atelier-compte.html. */
+    :root{
+      --bg:#fff; --ink:#1c1a17; --muted:#55504a; --line:#e4e0d9; --soft:#f7f5f2;
+      --accent:#a8461f;
+      --red:var(--ink); --amber:var(--ink); --green:var(--ink);
+      --redBg:var(--soft); --amberBg:var(--soft); --greenBg:var(--soft);
+      --blue:var(--ink); --blueBg:var(--soft);
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif}
+    body{font-size:16px;line-height:1.25;font-variant-numeric:tabular-nums}
+    h1,h2,.treeTitle,.sousTitre{font-family:Fraunces,Georgia,serif;font-weight:600}
+    button,input,select,textarea{font:inherit;color:inherit}
+    button{cursor:pointer;background:none;border:none;padding:0}
+    .app{display:grid;grid-template-rows:auto auto 1fr;min-height:100vh}
+    nav.topnav{background:#1c1a17;color:#fff;display:flex;align-items:center;gap:4px;padding:0 20px;height:52px;font-size:14px}
+    nav.topnav a.brand{color:#fff;text-decoration:none;font-weight:600;margin-right:24px;font-size:15px;font-family:Fraunces,Georgia,serif}
+    nav.topnav .menuItem{position:relative;height:100%;display:flex;align-items:center}
+    nav.topnav .menuItem>span,nav.topnav .menuItem>a.topLink{padding:0 14px;cursor:pointer;color:#d7dbe4;text-decoration:none}
+    nav.topnav .menuItem:hover>span,nav.topnav .menuItem>a.topLink:hover{color:#fff}
+    nav.topnav .dropdown{display:none;position:absolute;top:100%;left:0;background:#fff;color:var(--ink);min-width:220px;box-shadow:0 8px 24px rgba(0,0,0,.18);border-radius:0 0 10px 10px;overflow:hidden;z-index:50}
+    nav.topnav .menuItem:hover .dropdown{display:block}
+    nav.topnav .dropdown a{display:block;padding:10px 16px;color:var(--ink);text-decoration:none;font-size:13.5px;border-bottom:1px solid var(--line)}
+    nav.topnav .dropdown a:last-child{border-bottom:none}
+    nav.topnav .dropdown a:hover{background:var(--soft)}
+    nav.topnav .navToggle{display:none;margin-left:auto;background:none;border:none;color:#fff;font-size:20px;cursor:pointer}
+    @media (max-width:820px){
+      nav.topnav{flex-wrap:wrap;height:auto;padding:10px 16px}
+      nav.topnav .navToggle{display:block}
+      nav.topnav .menuItem{display:none;width:100%;height:auto;flex-direction:column;align-items:stretch}
+      nav.topnav.navOpen .menuItem{display:flex}
+      nav.topnav .menuItem>span,nav.topnav .menuItem>a.topLink{padding:12px 0 4px;cursor:pointer;display:block}
+      nav.topnav .dropdown{position:static;box-shadow:none;border-radius:0;background:transparent;min-width:0}
+      nav.topnav .menuItem.open .dropdown{display:block}
+      nav.topnav .dropdown a{color:#fff;padding:10px 0 10px 14px;border-bottom:1px solid rgba(255,255,255,.12)}
+      nav.topnav .dropdown a:hover{background:rgba(255,255,255,.06)}
+    }
+    .topbar{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--line);padding:10px 18px;display:flex;align-items:center;gap:16px;z-index:20}
+    .brand{font-weight:700;font-size:22px;letter-spacing:.02em}
+    .brand small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+    .main{padding:20px 24px 60px 24px;max-width:1400px;margin:0 auto;width:100%}
+    .toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px}
+    @media (max-width:700px){ .topbar{flex-wrap:wrap;row-gap:8px} }
+    .ghostBtn,.actionBtn,.miniBtn{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 14px;font-size:14px}
+    .actionBtn{background:#111;color:#fff;border-color:#111}
+    .ghostBtn{color:var(--muted)}
+    .toggleBar{display:flex;gap:8px}
+    .toggleBtn{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 16px;font-size:14px;color:var(--muted)}
+    .toggleBtn.active{background:#111;color:#fff;border-color:#111}
+    .agendaMois{font-weight:700;font-size:15px;margin:18px 0 8px 0;text-transform:capitalize}
+    .agendaMois:first-child{margin-top:0}
+    .agendaLigne{display:flex;align-items:center;gap:12px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;margin-bottom:6px;cursor:pointer}
+    .agendaLigne:hover{background:var(--soft)}
+    .agendaDates{font-size:12.5px;color:var(--muted);min-width:110px}
+    @media (max-width:640px){ .agendaLigne{flex-wrap:wrap} .agendaDates{min-width:0} }
+    .mainPleine{max-width:none}
+    .blocSites{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--soft);margin:10px 0 14px 0}
+    .siteCarte{background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-bottom:8px}
+    .siteEntete{display:flex;gap:8px;align-items:center;margin-bottom:6px}
+    .siteLigne{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap}
+    .sf>label{display:block;font-size:11.5px;color:var(--muted);margin-bottom:3px}
+    .sf .inputLeger{width:100%}
+    .chipPeintre{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line);border-radius:99px;padding:4px 10px;font-size:12.5px;margin:0 4px 4px 0;cursor:pointer;background:#fff}
+    .chipPeintre.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+    .chipPeintre input{display:none}
+    .siteGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+    @media (max-width:700px){ .siteGrid{grid-template-columns:1fr 1fr} }
+    .ficheDrawerVoile{position:fixed;inset:0;background:rgba(20,18,15,.35);z-index:110}
+    .ficheDrawer{position:fixed;top:0;right:0;bottom:0;width:min(780px,96vw);background:#fff;overflow:auto;padding:18px 22px;box-shadow:-8px 0 30px rgba(0,0,0,.25)}
+    .ficheDrawer .ficheGrid{grid-template-columns:1fr}
+    .calWrap{display:grid;grid-template-columns:minmax(220px,25%) minmax(0,1fr);gap:16px;align-items:start}
+    .calWrapReduit{grid-template-columns:auto minmax(0,1fr)}
+    .calVolet{border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--soft);height:calc(100vh - 215px);min-height:380px;overflow:auto}
+    .calVoletRabat{border:1px solid var(--line);border-radius:10px;background:var(--soft);padding:10px 8px;font-size:13px;font-weight:600;writing-mode:vertical-rl;cursor:pointer}
+    .calPret{background:#fff;border:1px solid var(--line);border-radius:9px;padding:8px 10px;margin-bottom:6px;cursor:pointer}
+    .calPret:hover{border-color:#bdb6aa}
+    @media (max-width:820px){ .calWrap,.calWrapReduit{grid-template-columns:1fr} .calVoletRabat{writing-mode:horizontal-tb} }
+    .ganttScroll{overflow:auto;height:calc(100vh - 215px);min-height:380px;border:1px solid var(--line);border-radius:12px;background:#fff;margin-bottom:6px}
+    .ganttBarre{box-sizing:border-box;position:absolute;height:26px;line-height:26px;background:var(--ink);color:#fff;border-radius:7px;padding:0 9px;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+    .ganttBarre{cursor:grab;touch-action:none;user-select:none}
+    .ganttBarre:active{cursor:grabbing}
+    .ganttPoignee{position:absolute;top:0;bottom:0;width:8px;cursor:ew-resize}
+    .ganttPoignee.g{left:0}
+    .ganttPoignee.d{right:0}
+    .ganttPoignee:hover{background:rgba(255,255,255,.35)}
+    .ganttBarre:hover{background:var(--accent,#a8461f)}
+    .ganttConflit{outline:2px solid #e5483b;outline-offset:1px}
+    .ganttLabelHors{position:absolute;height:26px;line-height:26px;font-size:12.5px;white-space:nowrap;cursor:pointer}
+    .input,.select,.textarea{border:1px solid var(--line);border-radius:10px;padding:8px 11px;background:#fff;font-size:15px}
+    .inputLeger{width:100%;border:none;border-bottom:1px solid var(--line);border-radius:0;background:transparent;padding:6px 2px;font-size:14.5px;font-family:inherit;color:inherit}
+    .inputLeger:focus{outline:none;border-bottom-color:var(--ink)}
+    select.inputLeger{padding:6px 0}
+    .treeTitle{font-weight:700;font-size:21px;margin:0 0 4px 0}
+    .sectionSub{font-size:14px;color:var(--muted);margin:0 0 14px 0}
+    .muted{color:var(--muted)}
+    .tiny{font-size:12.5px;line-height:1.35}
+    .chip{display:inline-flex;align-items:center;padding:4px 11px;font-size:12.5px;font-weight:700;border:1px solid var(--line);background:#fff;border-radius:999px;white-space:nowrap}
+    .chip.red,.chip.amber,.chip.green{border-color:var(--line);background:var(--soft);color:var(--ink);font-weight:700}
+
+    .board{display:flex;gap:12px;overflow-x:auto;padding:2px 2px 14px;scroll-snap-type:x proximity;align-items:flex-start}
+    .col{flex:0 0 clamp(250px,19vw,300px);height:min(420px,calc(100vh - 300px));min-height:300px;display:flex;flex-direction:column;background:var(--soft);border-radius:8px;padding:10px;scroll-snap-align:start}
+    .col h4{flex:0 0 auto;display:flex;align-items:flex-start;justify-content:space-between;gap:8px;font-size:15px;font-weight:800;line-height:1.25;letter-spacing:-.005em;text-transform:none;text-align:left;color:var(--ink);margin:0 0 8px 0;padding:2px 2px 8px;border-bottom:1px solid var(--line);min-height:40px}
+    .col h4 .colNom{flex:1 1 auto;min-width:0}
+    .colN{flex:0 0 auto;min-width:26px;text-align:center;font-size:13px;font-weight:800;color:#fff;background:var(--ink);border-radius:999px;padding:2px 9px;line-height:1.35}
+    .colN.vide{background:#fff;color:var(--muted);box-shadow:inset 0 0 0 1px var(--line)}
+    .colCards{flex:1 1 auto;min-height:0;overflow-y:auto}
+    .col.dragOver{background:var(--amberBg);outline:2px dashed var(--amber);outline-offset:-2px}
+    .card{background:#fff;border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:13px;margin-bottom:6px;cursor:grab;box-shadow:0 1px 2px rgba(20,15,10,.08),0 1px 1px rgba(20,15,10,.05)}
+    .card:hover{border-color:var(--amber)}
+    .card.selected{border-color:var(--amber);background:var(--amberBg)}
+    .card.dragging{opacity:.4}
+    @media (max-width:700px){
+      .board{gap:8px}
+      .col{flex:0 0 78vw;height:min(420px,calc(100vh - 260px));min-height:300px;padding:8px}
+      .col h4{font-size:14px}
+      .card{font-size:12.5px;padding:8px 9px}
+    }
+    .card .cName{font-weight:700;font-size:13.5px;line-height:1.25}
+    .card .cMeta{color:var(--muted);font-size:12px;margin-top:3px;line-height:1.3}
+    .ficheHeader,.ficheGrid{max-width:1400px;margin-left:auto;margin-right:auto}
+
+    .ficheHeader{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-top:22px}
+    .ficheGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:16px;align-items:start}
+    @media (max-width:1100px){ .ficheGrid{grid-template-columns:1fr} }
+    .colonneFiche{border:1px solid var(--line);border-radius:14px;padding:20px 22px;min-width:0}
+    .colDroiteFiche{display:flex;flex-direction:column;gap:16px;min-width:0}
+    .colDroiteFiche .blocSites{margin:0}   /* « Dates du chantier » au-dessus de « Points de contrôle » */
+    .champLecture{margin-bottom:14px}
+    .champLecture label{display:block;font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-bottom:4px;font-weight:600}
+    .champLecture p{margin:0 0 2px 0;font-size:14.5px;line-height:1.45}
+    .sousTitre{font-size:15px;font-weight:700;margin:22px 0 10px 0;padding-bottom:6px;border-bottom:2px solid var(--line);color:var(--ink)}
+    .checkItem{display:flex;gap:8px;align-items:flex-start;font-size:14px;padding:7px 0;border-bottom:1px solid var(--line)}
+    .checkItem:last-of-type{border-bottom:none}
+    .checkItem input{margin-top:3px;flex:0 0 auto}
+    .stepsRow{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:6px}
+    .stepChip{flex:0 0 auto;padding:7px 11px;border-radius:7px;font-size:10.5px;font-weight:700;white-space:nowrap}
+    .stepChip.fait{background:var(--greenBg);color:var(--green)}
+    .stepChip.attente{background:var(--amber);color:#fff}
+    .stepChip.avenir{background:var(--soft);color:var(--muted);border:1px solid var(--line)}
+    .respLine{font-size:13px;color:var(--muted);margin:8px 0 0 0}
+    .respLine b{color:var(--ink)}
+    .field{margin-bottom:14px}
+    .field label{display:block;font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-bottom:4px;font-weight:600}
+    .fieldAuto{position:relative}
+    .sugBox{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid var(--line);border-radius:10px;margin-top:4px;max-height:220px;overflow-y:auto;z-index:20;box-shadow:0 8px 24px rgba(0,0,0,.10)}
+    .sugItem{padding:9px 12px;cursor:pointer;font-size:13.5px;border-bottom:1px solid var(--line)}
+    .sugItem:last-child{border-bottom:none}
+    .sugItem:hover{background:var(--soft)}
+    .field input,.field textarea{width:100%}
+    .lectureSouple{font-size:14.5px;font-weight:500;line-height:1.45;padding:5px 2px;cursor:text;display:flex;align-items:flex-start;flex-wrap:wrap;gap:4px}
+    .lectureSouple:hover{background:var(--soft);border-radius:6px}
+    .lectureSouple .ghostBtn{opacity:0;transition:opacity .1s}
+    .lectureSouple:hover .ghostBtn{opacity:1}
+    .inputSouple{width:100%;border:none;border-bottom:2px solid var(--amber,#b54708);background:var(--soft);border-radius:6px 6px 0 0;padding:7px 8px;font-size:14.5px;font-family:inherit}
+    .inputSouple:focus{outline:none}
+    .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .manqueRow{display:flex;justify-content:space-between;align-items:center;gap:8px;background:var(--amberBg);color:var(--amber);border-radius:8px;padding:8px 11px;margin-bottom:6px;font-size:13.5px;font-weight:600}
+    .histoLine{display:flex;justify-content:space-between;font-size:13.5px;padding:7px 0;border-bottom:1px solid var(--line)}
+    .histoLine:last-child{border-bottom:none}
+    .empty{color:var(--muted);font-size:13px;padding:14px 0;text-align:center}
+    .errBox{padding:24px;color:var(--red);font-family:monospace;white-space:pre-wrap}
+    .overlay{position:fixed;inset:0;background:rgba(20,15,10,.4);display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto;z-index:100}
+    .modal{background:#fff;border-radius:16px;max-width:480px;width:100%;padding:22px 24px}
+  </style>
+  <link rel="stylesheet" href="charte-vsf.css">
+<script src="acces-entreprise.js" defer></script>
+</head>
+<body>
+<div class="app"></div>
+<script src="module-lecteur.js"></script>
+<script>
+const SUPABASE_URL = 'https://uuuigousvpijskbdhcal.supabase.co';
+const SUPABASE_KEY = 'sb_publishable__YuNj5XCo5YF8lwhwTu5OQ_RDM1Eesp';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:true } });
+const STORAGE = { currentEst:'ac_current_est_v1' };
+function getCurrentEstId(){ const fromUrl=new URLSearchParams(window.location.search).get('est'); if(fromUrl) return fromUrl; return localStorage.getItem(STORAGE.currentEst)||''; }
+let ESTABLISHMENT_ID = '';
+function escapeHtml(s){ return String(s??'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])) }
+function toggleMenuItem(el){ el.parentElement.classList.toggle('open'); }
+function toggleNav(){ document.querySelector('nav.topnav').classList.toggle('navOpen'); }
+function estUrl(page){ return page+'?est='+encodeURIComponent(ESTABLISHMENT_ID); }
+
+// Les étapes viennent de la table etapes_kanban (chargées au démarrage) — plus codées
+// en dur, pour que l'intitulé affiché soit renommable sans toucher au code. La colonne
+// "qualification" (label "À qualifier") est la cible de toute carte créée par le
+// formulaire client public (voir fonction soumettre_devis_client côté base).
+let ETAPES = [];
+let INDEX_ETAPE = {};
+// Point 1 (bloc Kanban) — signaux client, purement informatifs : jamais de
+// déclenchement automatique d'étape, c'est toujours "Valider «étape»" (bouton
+// existant) qui fait avancer le suivi. Un signal en_attente depuis plus de
+// SEUIL_RELANCE_SIGNAL_JOURS jours est traité comme une relance à faire.
+const TYPE_SIGNAL_LABEL = { validation_devis:'Devis validé', validation_croquis:'Croquis validé', paiement_acompte:'Acompte reçu', date_validee:'Date validée' };
+const SEUIL_RELANCE_SIGNAL_JOURS = 3;
+let SIGNAUX_CLIENT = {};
+// Point 6 — labels manuels personnalisables par atelier (nom libre + couleur), distincts
+// des labels système (badge des signaux client, non touché ici).
+let LABELS_ATELIER = [];
+let PROJET_LABELS = {};
+async function chargerLabels(){
+  const { data: labels, error: e1 } = await sb.from('labels_atelier').select('*').eq('establishment_id', ESTABLISHMENT_ID).order('created_at');
+  if(e1) throw e1;
+  LABELS_ATELIER = labels || [];
+  const { data: liens, error: e2 } = await sb.from('projet_labels').select('projet_id,label_id');
+  if(e2) throw e2;
+  PROJET_LABELS = {};
+  for(const l of (liens||[])) (PROJET_LABELS[l.projet_id] = PROJET_LABELS[l.projet_id] || []).push(l.label_id);
+}
+async function toggleLabelProjet(projetId, labelId, actif){
+  if(actif){
+    const { error } = await sb.from('projet_labels').insert({ projet_id:projetId, label_id:labelId });
+    if(error){ alert('Erreur : '+error.message); return; }
+    (PROJET_LABELS[projetId] = PROJET_LABELS[projetId] || []).push(labelId);
+  } else {
+    const { error } = await sb.from('projet_labels').delete().eq('projet_id',projetId).eq('label_id',labelId);
+    if(error){ alert('Erreur : '+error.message); return; }
+    PROJET_LABELS[projetId] = (PROJET_LABELS[projetId]||[]).filter(id=>id!==labelId);
+  }
+  render();
+}
+async function ouvrirNouveauLabel(){
+  const nom = await demander('Nom du nouveau label :', ''); if(!nom || !nom.trim()) return;
+  nouveauLabelNom = nom.trim();
+  render();
+}
+async function choisirCouleurLabel(couleur){
+  const nom = nouveauLabelNom; if(!nom) return;
+  nouveauLabelNom = null;
+  const { data, error } = await sb.from('labels_atelier').insert({ establishment_id:ESTABLISHMENT_ID, nom, couleur }).select().single();
+  if(error){ alert('Erreur : '+error.message); render(); return; }
+  LABELS_ATELIER.push(data); render();
+}
+function ouvrirLabelsPicker(projetId){ labelsPickerPour = projetId; nouveauLabelNom = null; render(); }
+function ouvrirGestionLabels(){ labelsPickerPour = '__gestion__'; nouveauLabelNom = null; render(); }
+function fermerLabelsPicker(){ labelsPickerPour = null; nouveauLabelNom = null; render(); }
+function renderLabelsPickerModal(){
+  const projetId = labelsPickerPour;
+  const gestion = projetId === '__gestion__'; // ouvert depuis "⋯" à côté de Kanban : gérer la palette de l'atelier, pas un projet précis
+  return `<div class="overlay" onclick="if(event.target===event.currentTarget) fermerLabelsPicker()">
+    <div class="modal" style="max-width:360px">
+      <div class="treeTitle" style="font-size:17px;margin-bottom:10px">${gestion ? "Labels de l'atelier" : 'Labels'}</div>
+      ${nouveauLabelNom ? `
+        <div class="tiny muted" style="margin-bottom:8px">Couleur pour « ${escapeHtml(nouveauLabelNom)} »</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          ${PALETTE_LABELS.map(c=>`<span style="width:28px;height:28px;border-radius:50%;background:${c};cursor:pointer;border:2px solid #fff;box-shadow:0 0 0 1px var(--line)" onclick="choisirCouleurLabel('${c}')"></span>`).join('')}
+        </div>
+        <button class="ghostBtn" style="margin-top:10px" onclick="nouveauLabelNom=null;render()">Annuler</button>
+      ` : `
+        <div style="display:flex;flex-direction:column;gap:6px">
+          ${LABELS_ATELIER.map(l=>{
+            const actif = !gestion && (PROJET_LABELS[projetId]||[]).includes(l.id);
+            const chip = `<span ${gestion?'':`onclick="toggleLabelProjet('${projetId}','${l.id}',${!actif})"`} style="cursor:${gestion?'default':'pointer'};flex:1;display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;font-size:13px;${actif?`color:#fff;background:${escapeHtml(l.couleur)}`:`color:${escapeHtml(l.couleur)};border:1px solid ${escapeHtml(l.couleur)}`}">${escapeHtml(l.nom)}${actif?' ✓':''}</span>`;
+            return `<div style="display:flex;align-items:center;gap:8px">${chip}<span onclick="supprimerLabelAtelier('${l.id}')" title="Supprimer ce label de l'atelier" style="opacity:.5;cursor:pointer">🗑</span></div>`;
+          }).join('') || '<div class="tiny muted">Aucun label pour l\'instant.</div>'}
+        </div>
+        <button class="ghostBtn" style="margin-top:12px" onclick="ouvrirNouveauLabel()">+ Nouveau label</button>
+        <div class="toolbar" style="margin-top:10px"><button class="ghostBtn" onclick="fermerLabelsPicker()">Fermer</button></div>
+      `}
+    </div>
+  </div>`;
+}
+async function supprimerLabelAtelier(id){
+  if(!await confirmer('Supprimer ce label ? Il sera retiré de tous les projets qui le portent.')) return;
+  const { error } = await sb.from('labels_atelier').delete().eq('id', id);
+  if(error){ alert('Erreur : '+error.message); return; }
+  LABELS_ATELIER = LABELS_ATELIER.filter(l=>l.id!==id);
+  for(const k in PROJET_LABELS) PROJET_LABELS[k] = PROJET_LABELS[k].filter(x=>x!==id);
+  render();
+}
+async function chargerSignauxClient(){
+  const { data, error } = await sb.from('signaux_client').select('*').order('date', {ascending:false});
+  if(error) throw error;
+  SIGNAUX_CLIENT = {};
+  for(const s of (data||[])) (SIGNAUX_CLIENT[s.projet_id] = SIGNAUX_CLIENT[s.projet_id] || []).push(s);
+}
+function joursDepuis(dateIso){ return Math.floor((Date.now() - new Date(dateIso).getTime()) / 86400000); }
+function badgeLabelsCarte(projetId){
+  const ids = PROJET_LABELS[projetId]||[]; if(!ids.length) return '';
+  const labels = ids.map(id=>LABELS_ATELIER.find(l=>l.id===id)).filter(Boolean);
+  return labels.map(l=>`<span style="display:inline-block;padding:1px 7px;border-radius:999px;font-size:9.5px;color:#fff;background:${escapeHtml(l.couleur)}">${escapeHtml(l.nom)}</span>`).join('');
+}
+function badgeSignauxCarte(projetId){
+  const enAttente = (SIGNAUX_CLIENT[projetId]||[]).filter(s=>s.statut==='en_attente');
+  if(!enAttente.length) return '';
+  const enRetard = enAttente.some(s=>joursDepuis(s.date) >= SEUIL_RELANCE_SIGNAL_JOURS);
+  return `<div style="margin-top:4px"><span class="chip ${enRetard?'red':'amber'}" style="font-size:9.5px">${enAttente.length>1?enAttente.length+' signaux':escapeHtml(TYPE_SIGNAL_LABEL[enAttente[0].type]||enAttente[0].type)}${enRetard?' · relance':''}</span></div>`;
+}
+async function chargerEtapesKanban(){
+  const { data, error } = await sb.from('etapes_kanban').select('cle,label,ordre,role').order('ordre');
+  if(error) throw error;
+  ETAPES = data || [];
+  INDEX_ETAPE = {}; ETAPES.forEach((e,i)=>INDEX_ETAPE[e.cle]=i);
+}
+async function renommerEtapeKanban(cle){
+  const e = ETAPES[INDEX_ETAPE[cle]]; if(!e) return;
+  const nouveauLabel = await demander('Nouvel intitulé pour cette étape :', e.label);
+  if(!nouveauLabel || !nouveauLabel.trim() || nouveauLabel.trim()===e.label) return;
+  const label = nouveauLabel.trim();
+  e.label = label; render();
+  const { error } = await sb.from('etapes_kanban').update({ label }).eq('cle', cle);
+  if(error) alert('Erreur : '+error.message);
+}
+
+// Points de contrôle par étape — chargés depuis checklist_points_erp (table réelle,
+// migrée depuis l'ancienne constante JS codée en dur). N'affiche que ceux de l'étape
+// en cours d'un projet, jamais toutes les étapes à la fois.
+let CHECKLISTS = {};
+async function chargerChecklists(){
+  const { data, error } = await sb.from('checklist_points_erp').select('etape_cle,texte,ordre').order('ordre');
+  if(error) throw error;
+  const parEtape = {};
+  for(const row of (data||[])){ (parEtape[row.etape_cle] = parEtape[row.etape_cle] || [])[row.ordre] = row.texte; }
+  CHECKLISTS = parEtape;
+}
+
+// Chantier 3 — pont Kanban → référentiel-formation : situation_etapes_erp (déjà peuplé, 25
+// lignes) relie une étape du Kanban à une situation réelle du référentiel ; module_situations
+// donne ensuite les modules rattachés à cette situation. Le lien est au niveau de l'ÉTAPE, pas
+// de chaque point de contrôle individuellement (la donnée ne va pas plus fin) — un seul bloc
+// "Besoin d'aide ?" par étape, pas un lien par ligne de checklist.
+let MODULES_PAR_ETAPE = {};
+async function chargerModulesParEtape(){
+  const { data: liens, error: e1 } = await sb.from('situation_etapes_erp').select('etape_cle,situation_uid');
+  if(e1) throw e1;
+  if(!liens || !liens.length){ MODULES_PAR_ETAPE = {}; return; }
+  const uids = [...new Set(liens.map(l=>l.situation_uid))];
+  const { data: modSit, error: e2 } = await sb.from('module_situations').select('module_id,situation_id').in('situation_id', uids);
+  if(e2) throw e2;
+  const moduleIds = [...new Set((modSit||[]).map(m=>m.module_id))];
+  let moduleParId = {};
+  if(moduleIds.length){
+    const { data: modules, error: e3 } = await sb.from('modules_apprentissage').select('id,nom,lien_ressource,statut').in('id', moduleIds).eq('statut','publie');
+    if(e3) throw e3;
+    for(const m of (modules||[])) moduleParId[m.id] = m;
+  }
+  const modulesParSituUid = {};
+  for(const ms of (modSit||[])){
+    const mod = moduleParId[ms.module_id]; if(!mod) continue;
+    (modulesParSituUid[ms.situation_id] = modulesParSituUid[ms.situation_id] || []).push(mod);
+  }
+  const parEtape = {};
+  for(const l of liens){
+    const mods = modulesParSituUid[l.situation_uid] || [];
+    if(!mods.length) continue;
+    const set = (parEtape[l.etape_cle] = parEtape[l.etape_cle] || new Map());
+    for(const m of mods) set.set(m.id, m);
+  }
+  MODULES_PAR_ETAPE = {};
+  for(const cle in parEtape) MODULES_PAR_ETAPE[cle] = [...parEtape[cle].values()];
+}
+
+// Phase 4 — même pont pour les épreuves de transition (situation_etapes_erp →
+// epreuve_situations → epreuves_transition), objet frère des modules, jamais fondu
+// dans la même table. Un seul bloc "Besoin d'aide ?" affiche les deux ensemble.
+let EPREUVES_PAR_ETAPE = {};
+async function chargerEpreuvesParEtape(){
+  const { data: liens, error: e1 } = await sb.from('situation_etapes_erp').select('etape_cle,situation_uid');
+  if(e1) throw e1;
+  if(!liens || !liens.length){ EPREUVES_PAR_ETAPE = {}; return; }
+  const uids = [...new Set(liens.map(l=>l.situation_uid))];
+  const { data: epSit, error: e2 } = await sb.from('epreuve_situations').select('epreuve_id,situation_id').in('situation_id', uids);
+  if(e2) throw e2;
+  const epreuveIds = [...new Set((epSit||[]).map(e=>e.epreuve_id))];
+  let epreuveParId = {};
+  if(epreuveIds.length){
+    const { data: epreuves, error: e3 } = await sb.from('epreuves_transition').select('id,nom,type_epreuve,statut').in('id', epreuveIds).eq('statut','publie');
+    if(e3) throw e3;
+    for(const e of (epreuves||[])) epreuveParId[e.id] = e;
+  }
+  const epreuvesParSituUid = {};
+  for(const es of (epSit||[])){
+    const ep = epreuveParId[es.epreuve_id]; if(!ep) continue;
+    (epreuvesParSituUid[es.situation_id] = epreuvesParSituUid[es.situation_id] || []).push(ep);
+  }
+  const parEtape = {};
+  for(const l of liens){
+    const eps = epreuvesParSituUid[l.situation_uid] || [];
+    if(!eps.length) continue;
+    const set = (parEtape[l.etape_cle] = parEtape[l.etape_cle] || new Map());
+    for(const e of eps) set.set(e.id, e);
+  }
+  EPREUVES_PAR_ETAPE = {};
+  for(const cle in parEtape) EPREUVES_PAR_ETAPE[cle] = [...parEtape[cle].values()];
+}
+
+let projets = [];
+let recherche = '';
+let selectionId = null;
+let modalOuvert = false;
+let labelsPickerPour = null; // id du projet dont on gère les labels (au niveau Kanban, pas la fiche)
+let nouveauLabelNom = null; // nom déjà saisi, en attente du choix de couleur (palette, jamais de code hex)
+const PALETTE_LABELS = ['#e0453c','#e08a3c','#e0c53c','#7db83c','#3c9e6b','#3c9ee0','#3c6be0','#7d3ce0','#c53ce0','#8a94a6'];
+let clientCharge = null;
+let clientChargePourId = null;
+let devisDetailCharge = null;
+let devisDetailChargePourId = null;
+let triParRappel = false;
+let vueActive = 'kanban';
+let RENDEMENT_M2_PAR_LITRE = 10;
+let CURRENT_USER_ID = null;
+let MEMBRE_ROLE = null;
+let equipeAtelier = [];
+let equipeChargeePourId = null;
+let equipeIntervenants = [];
+let equipeHeures = [];
+let rechercheNumero = ''; let resultatRecherchePartenaire = null; let erreurRecherchePartenaire = '';
+let formHeures = { date:'', heures:'', note:'' };
+
+const TYPE_ECHANGE_LABEL = { note:'Note', appel:'Appel', email:'Email', rdv:'RDV', sms:'SMS' };
+function libelleProjetCourt(p){
+  if(p.numero_projet) return `${p.numero_projet}. ${p.nom_projet||'Sans enseigne'}${p.ville?' - '+p.ville:''}`;
+  return p.nom;
+}
+function libelleProjetComplet(p){
+  if(p.numero_projet) return `${p.numero_projet}. ${p.nom_projet||'Sans enseigne'}${p.ville?' - '+p.ville:''}${p.client_nom?' - '+p.client_nom:''}`;
+  return p.nom;
+}
+
+async function chargerProjets(){
+  const { data, error } = await sb.from('projets').select('*').eq('establishment_id', ESTABLISHMENT_ID).order('created_at');
+  if(error) throw error;
+  projets = data || [];
+}
+async function chargerEquipeAtelier(){
+  const { data, error } = await sb.from('members').select('id,user_id,email,role').eq('establishment_id', ESTABLISHMENT_ID);
+  if(error) throw error;
+  equipeAtelier = data || [];
+}
+
+/* =========================================================================
+   ÉQUIPE & HEURES (Partie 2, items 7 et 8) — qui fait quoi sur ce chantier
+   (équipe interne + partenaires externes invités par numéro membre) et
+   heures réelles saisies par chacun, pas une approximation calendaire.
+   ========================================================================= */
+let nomsPersonnes = {};
+async function chargerEquipeEtHeures(projetId){
+  const [{ data: interv, error: e1 }, { data: heures, error: e2 }] = await Promise.all([
+    sb.from('projet_intervenants').select('*').eq('projet_id', projetId),
+    sb.from('heures_travaillees').select('*').eq('projet_id', projetId).order('date',{ascending:false}),
+  ]);
+  if(e1) throw e1;
+  if(e2) throw e2;
+  equipeIntervenants = interv || [];
+  equipeHeures = heures || [];
+  equipeChargeePourId = projetId;
+  const idsAResoudre = [...new Set([...equipeIntervenants.map(i=>i.personne_id), ...equipeHeures.map(h=>h.personne_id)])]
+    .filter(id => !nomsPersonnes[id]);
+  if(idsAResoudre.length){
+    const { data: fm } = await sb.from('federation_members').select('user_id,nom,prenom').in('user_id', idsAResoudre);
+    for(const f of (fm||[])) nomsPersonnes[f.user_id] = `${f.prenom||''} ${f.nom||''}`.trim() || null;
+  }
+}
+function nomPersonne(userId){
+  if(nomsPersonnes[userId]) return nomsPersonnes[userId];
+  const m = equipeAtelier.find(x=>x.user_id===userId);
+  return (m && m.email) || userId.slice(0,8);
+}
+async function handleAjouterMembreInterne(memberUserId){
+  if(!memberUserId || !selectionId) return;
+  const { error } = await sb.from('projet_intervenants').insert({
+    projet_id: selectionId, personne_id: memberUserId, externe:false, statut:'confirme', invite_par: CURRENT_USER_ID,
+  });
+  if(error){ alert('Erreur : '+error.message); return; }
+  await chargerEquipeEtHeures(selectionId);
+  render();
+}
+function onChampRechercheNumero(v){ rechercheNumero = v; }
+async function handleRechercherPartenaire(){
+  erreurRecherchePartenaire=''; resultatRecherchePartenaire=null;
+  const numero = rechercheNumero.trim();
+  if(!numero){ render(); return; }
+  const { data, error } = await sb.rpc('chercher_membre_federation_par_numero', { p_numero: numero });
+  if(error){ erreurRecherchePartenaire = error.message; render(); return; }
+  if(!data || !data.length){ erreurRecherchePartenaire = 'Aucun membre avec ce numéro.'; render(); return; }
+  resultatRecherchePartenaire = data[0];
+  render();
+}
+async function handleInviterPartenaire(){
+  if(!resultatRecherchePartenaire || !selectionId) return;
+  const { error } = await sb.from('projet_intervenants').insert({
+    projet_id: selectionId, personne_id: resultatRecherchePartenaire.user_id, externe:true, statut:'invite', invite_par: CURRENT_USER_ID,
+  });
+  if(error){ alert('Erreur : '+error.message); return; }
+  rechercheNumero=''; resultatRecherchePartenaire=null;
+  await chargerEquipeEtHeures(selectionId);
+  render();
+}
+async function handleRepondreInvitation(intervenantId, accepter){
+  const { error } = await sb.from('projet_intervenants').update({ statut: accepter?'confirme':'refuse' }).eq('id', intervenantId);
+  if(error){ alert('Erreur : '+error.message); return; }
+  await chargerEquipeEtHeures(selectionId);
+  render();
+}
+async function handleRetirerIntervenant(intervenantId){
+  if(!await confirmer('Retirer cette personne de ce chantier ?')) return;
+  const { error } = await sb.from('projet_intervenants').delete().eq('id', intervenantId);
+  if(error){ alert('Erreur : '+error.message); return; }
+  await chargerEquipeEtHeures(selectionId);
+  render();
+}
+function onChampHeures(champ, v){ formHeures[champ] = v; }
+async function handleAjouterHeures(){
+  if(!selectionId) return;
+  const heures = Number(formHeures.heures);
+  if(!formHeures.date){ alert('Choisis une date.'); return; }
+  if(!isFinite(heures) || heures<=0){ alert('Nombre d\'heures invalide.'); return; }
+  const { error } = await sb.from('heures_travaillees').insert({
+    projet_id: selectionId, personne_id: CURRENT_USER_ID, date: formHeures.date, heures, note: formHeures.note||null,
+  });
+  if(error){ alert('Erreur : '+error.message); return; }
+  formHeures = { date:'', heures:'', note:'' };
+  await chargerEquipeEtHeures(selectionId);
+  render();
+}
+async function handleSupprimerHeures(id){
+  if(!await confirmer('Supprimer cette ligne d\'heures ?')) return;
+  const { error } = await sb.from('heures_travaillees').delete().eq('id', id);
+  if(error){ alert('Erreur : '+error.message); return; }
+  await chargerEquipeEtHeures(selectionId);
+  render();
+}
+
+function dateFr(d){ if(!d) return ''; const dt=new Date(d); return isNaN(dt)?'':dt.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'}); }
+function aujourdhuiFr(){ return new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'}); }
+function isoAujourdhui(){
+  const d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+// Les anciens échanges n'ont qu'un "jj/mm" sans année : on la déduit (jamais dans le futur).
+function cleDateEchange(h){
+  if(h.iso) return h.iso;
+  const m = /^(\d{2})\/(\d{2})(?:\/(\d{4}))?$/.exec(h.date||''); if(!m) return '';
+  const auj = new Date();
+  let d = new Date(m[3] ? Number(m[3]) : auj.getFullYear(), Number(m[2])-1, Number(m[1]));
+  if(!m[3] && d > auj) d = new Date(d.getFullYear()-1, d.getMonth(), d.getDate());
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+// Du plus récent en haut vers le plus ancien en bas, y compris les échanges importés de la
+// prospection ; à date égale, le dernier saisi passe devant.
+function echangesTries(p){
+  return (p.historique||[]).map((h,i)=>({ h, i })).filter(x=>x.h.type)
+    .sort((a,b)=> cleDateEchange(b.h).localeCompare(cleDateEchange(a.h)) || b.i - a.i).map(x=>x.h);
+}
+let ajoutContactOuvert = false;
+function basculerAjoutContact(){ ajoutContactOuvert = !ajoutContactOuvert; render(); }
+async function sauverAutresContacts(id, liste){
+  const p = projets.find(x=>x.id===id); if(!p) return;
+  p.autres_contacts = liste; render();
+  const { error } = await sb.from('projets').update({ autres_contacts: liste }).eq('id', id);
+  if(error) alert('Erreur : '+error.message);
+}
+function ajouterAutreContact(id){
+  const p = projets.find(x=>x.id===id); if(!p) return;
+  const nom = document.getElementById('acNom').value.trim(); if(!nom) return;
+  const role = document.getElementById('acRole').value.trim();
+  ajoutContactOuvert = false;
+  sauverAutresContacts(id, [...(p.autres_contacts||[]), { nom, role }]);
+}
+function retirerAutreContact(id, i){
+  const p = projets.find(x=>x.id===id); if(!p) return;
+  sauverAutresContacts(id, (p.autres_contacts||[]).filter((_,k)=>k!==i));
+}
+
+function render(){
+  const app = document.querySelector('.app');
+  // Le Kanban est remplacé en entier à chaque rendu (clic sur une carte, glisser-déposer...),
+  // ce qui remettait l'ascenseur horizontal à gauche à chaque fois — on mémorise sa position
+  // avant et on la réapplique juste après.
+  const scrollBoardAvant = document.querySelector('.board')?.scrollLeft || 0;
+  const rechercheLc = recherche.toLowerCase();
+  const parEtape = {};
+  for(const e of ETAPES) parEtape[e.cle] = [];
+  for(const p of projets){
+    const matche = !rechercheLc || p.nom.toLowerCase().includes(rechercheLc) || (p.nom_projet||'').toLowerCase().includes(rechercheLc) || (p.client_nom||'').toLowerCase().includes(rechercheLc) || String(p.numero_projet||'').includes(rechercheLc);
+    if(matche && parEtape[p.etape]) parEtape[p.etape].push(p);
+  }
+  if(triParRappel){
+    for(const cle in parEtape){
+      parEtape[cle].sort((a,b)=>{
+        if(!a.echeance_date && !b.echeance_date) return 0;
+        if(!a.echeance_date) return 1;
+        if(!b.echeance_date) return -1;
+        return a.echeance_date.localeCompare(b.echeance_date);
+      });
+    }
+  }
+
+  const drawerScrollAvant = document.querySelector('.ficheDrawer')?.scrollTop || 0;
+  const selection = projets.find(p=>p.id===selectionId) || null;
+
+  app.innerHTML = `
+  <nav class="topnav">
+    ${navAtelierHtml(ESTABLISHMENT_ID, { actif:'kanban' })}
+  </nav>
+  <div class="topbar">
+    <div class="brand">CLIENT / PROJET<small>Atelier</small></div>
+    <div style="margin-left:auto;display:flex;gap:14px;align-items:center">
+      <input class="input" id="recherche" placeholder="Rechercher un client ou un projet..." value="${escapeHtml(recherche)}" oninput="onRecherche(this.value)" style="width:260px">
+      <button class="actionBtn" onclick="ouvrirModalNouveau()">+ Nouveau projet</button>
+    </div>
+  </div>
+  <div class="main mainPleine">
+    <div class="toggleBar" style="margin-bottom:10px">
+      <button class="ghostBtn" title="Gérer les labels de l'atelier" onclick="ouvrirGestionLabels()">⋯</button>
+      <button class="toggleBtn ${vueActive==='kanban'?'active':''}" onclick="vueActive='kanban';render()">Kanban</button>
+      <button class="toggleBtn ${vueActive==='calendrier'?'active':''}" onclick="vueActive='calendrier';render()">Calendrier chantier</button>
+    </div>
+    ${vueActive==='kanban' ? `
+    <div class="treeTitle">Vue d'ensemble — glisser-déposer une carte pour changer l'étape</div>
+    <div class="sectionSub" style="display:flex;align-items:center;gap:14px">
+      <span>${projets.length} projet${projets.length>1?'s':''} au total.</span>
+      <label class="tiny muted" style="display:flex;align-items:center;gap:5px;white-space:nowrap;cursor:pointer">
+        <input type="checkbox" ${triParRappel?'checked':''} onchange="triParRappel=this.checked;render()"> Trier par date de rappel
+      </label>
+    </div>
+    <div class="board">
+      ${ETAPES.map(e=>`
+        <div class="col" data-etape="${e.cle}" ondragover="event.preventDefault();this.classList.add('dragOver')" ondragleave="this.classList.remove('dragOver')" ondrop="deposerProjet(event,'${e.cle}')">
+          <h4><span class="colNom">${escapeHtml(e.label)} <span style="cursor:pointer;font-weight:400;opacity:.4;font-size:12px" onclick="renommerEtapeKanban('${e.cle}')" title="Renommer cette étape">✎</span></span><span class="colN ${parEtape[e.cle].length?'':'vide'}" title="${parEtape[e.cle].length} projet(s)">${parEtape[e.cle].length}</span></h4>
+          <div class="colCards">
+          ${parEtape[e.cle].map(p=>`
+            <div class="card ${p.id===selectionId?'selected':''}" draggable="true"
+              ondragstart="event.dataTransfer.setData('text/plain','${p.id}');this.classList.add('dragging')"
+              ondragend="this.classList.remove('dragging')"
+              onclick="selectionnerProjet('${p.id}')">
+              <div class="cName">${escapeHtml(p.client_nom||'Sans nom')}</div>
+              <div class="cMeta">${escapeHtml(libelleProjetCourt(p))}</div>
+              <div style="margin-top:4px;display:flex;align-items:center;gap:5px;flex-wrap:wrap">
+                ${badgeLabelsCarte(p.id)}
+                ${p.echeance_date?`<span class="tiny muted" style="font-size:10px">⏰ ${dateFr(p.echeance_date)}</span>`:''}
+                <span title="Labels" style="cursor:pointer;opacity:.5;font-size:11px" onclick="event.stopPropagation();ouvrirLabelsPicker('${p.id}')">🏷</span>
+              </div>
+              ${badgeSignauxCarte(p.id)}
+            </div>`).join('')}
+          </div>
+        </div>`).join('')}
+    </div>` : renderCalendrier()}
+
+    ${selection && vueActive==='calendrier' ? `<div class="ficheDrawerVoile" onclick="if(event.target===this) fermerFiche()"><div class="ficheDrawer">${renderFiche(selection)}</div></div>` : (selection ? renderFiche(selection) : '')}
+  </div>
+  ${modalOuvert ? renderModalNouveau() : ''}
+  ${labelsPickerPour ? renderLabelsPickerModal() : ''}
+  `;
+  const boardEl = document.querySelector('.board');
+  if(boardEl) boardEl.scrollLeft = scrollBoardAvant;
+  const ganttEl = document.getElementById('ganttScroll');
+  if(ganttEl){ ganttEl.scrollLeft = ganttScrollMemo!==null ? ganttScrollMemo : Math.max(0, Number(ganttEl.dataset.today) - 160);
+    ganttEl.scrollTop = ganttTopMemo; }
+  const drawerEl = document.querySelector('.ficheDrawer');
+  if(drawerEl) drawerEl.scrollTop = drawerScrollAvant;
+  if(siteAFocaliser){
+    const champDuree = document.getElementById('dureeSite-'+siteAFocaliser);
+    if(champDuree){ siteAFocaliser = null; champDuree.scrollIntoView({ block:'center' }); champDuree.focus(); champDuree.select(); }
+  }
+}
+
+/* =========================================================================
+   CALENDRIER CHANTIER (Partie 2, item 6) — agenda chronologique croisant les
+   dates d'exécution prévues (date_debut/date_fin) avec les projets en cours.
+   Une liste groupée par mois plutôt qu'une grille mensuelle : plus simple à
+   lire et à toucher sur téléphone (priorité mobile confirmée).
+   ========================================================================= */
+const MOIS_FR = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+const GANTT_JOUR_PX = 34;
+const GANTT_LIGNE_PX = 38;
+const JOURS_INITIALES = ['D','L','M','M','J','V','S'];
+let ganttScrollMemo = null;
+let ganttTopMemo = 0;
+const GANTT_ZOOMS = [22, 34, 52, 80];
+let ganttZoomIdx = 1;
+function zoomGantt(delta){ ganttZoomIdx = Math.max(0, Math.min(GANTT_ZOOMS.length-1, ganttZoomIdx+delta)); ganttScrollMemo = null; render(); }
+let calVoletOuvert = true;
+function basculerVoletCal(){ calVoletOuvert = !calVoletOuvert; ganttScrollMemo = null; render(); }
+function jourDepuis(s){ return new Date(s+'T00:00:00'); }
+function numSemaineISO(d){
+  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  t.setUTCDate(t.getUTCDate() + 4 - (t.getUTCDay()||7));
+  const an = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+  return Math.ceil(((t-an)/86400000 + 1) / 7);
+}
+function entreesChantier(p){
+  const sites = (sitesParProjet[p.id] || []).filter(s=>s.date_debut);
+  if(sites.length) return sites.map(s=>({ cle:s.id, nom:s.nom, adresse:s.adresse, date_debut:s.date_debut, date_fin:s.date_fin, heure_debut:s.heure_debut, heure_fin:s.heure_fin, duree_heures:s.duree_heures, intervenants:s.intervenants||[] }));
+  if(p.date_debut && !(sitesParProjet[p.id]||[]).length) return [{ cle:p.id, nom:null, adresse:null, date_debut:p.date_debut, date_fin:p.date_fin, intervenants:[] }];
+  return [];
+}
+function renderCalendrier(){
+  const derniereEtape = ETAPES[ETAPES.length-1].cle;
+  const planifies = projets.map(p=>({ p, entrees:entreesChantier(p) })).filter(x=>x.entrees.length)
+    .sort((a,b)=>a.entrees[0].date_debut.localeCompare(b.entrees[0].date_debut));
+  const nonPlanifies = projets.filter(p=>!entreesChantier(p).length && p.etape!==derniereEtape);
+  const J = 86400000, W = GANTT_ZOOMS[ganttZoomIdx];
+  const auj = new Date(); auj.setHours(0,0,0,0);
+  let debut = new Date(auj.getTime()-14*J), fin = new Date(auj.getTime()+120*J);
+  for(const { entrees } of planifies) for(const e of entrees){
+    const d = jourDepuis(e.date_debut), f = e.date_fin ? jourDepuis(e.date_fin) : d;
+    if(d<debut) debut = new Date(d.getTime()-3*J);
+    if(f>fin) fin = new Date(f.getTime()+7*J);
+  }
+  debut = new Date(debut.getFullYear(), debut.getMonth(), debut.getDate() - ((debut.getDay()+6)%7)); // lundi
+  const nbJours = Math.round((fin-debut)/J) + 1;
+  const idx = d => Math.round((d-debut)/J);
+  const jours = Array.from({length:nbJours}, (_,i)=> new Date(debut.getFullYear(), debut.getMonth(), debut.getDate()+i));
+  const groupes = (cleFn, labelFn)=>{
+    const out = [];
+    for(const d of jours){ const c = cleFn(d); const dernier = out[out.length-1]; if(dernier && dernier.cle===c) dernier.n++; else out.push({ cle:c, n:1, label:labelFn(d) }); }
+    return out;
+  };
+  const mois = groupes(d=>d.getFullYear()+'-'+d.getMonth(), d=>MOIS_FR[d.getMonth()]+' '+d.getFullYear());
+  const semaines = groupes(d=>d.getFullYear()+'-'+numSemaineISO(d), d=>'S'+numSemaineISO(d));
+  const idxAuj = idx(auj);
+  // Un peintre ne peut pas être sur deux sites qui se chevauchent : on le signale sur la barre.
+  // Avec des heures, deux interventions le même jour (9h-10h puis 14h-15h) ne sont pas un conflit.
+  const intervalle = e => {
+    const d = jourDepuis(e.date_debut), f = e.date_fin ? jourDepuis(e.date_fin) : d;
+    const hd = hhmmEnMin(e.heure_debut), hf = hhmmEnMin(e.heure_fin);
+    return { d: d.getTime() + (hd!=null ? hd : 0)*60000, f: f.getTime() + (hf!=null ? hf : 24*60)*60000 };
+  };
+  const occupation = {};
+  for(const { entrees } of planifies) for(const e of entrees){
+    const iv = intervalle(e);
+    for(const pid of e.intervenants) (occupation[pid] = occupation[pid] || []).push({ cle:e.cle, ...iv });
+  }
+  const prenom = id => (nomPersonne(id)||'').split(' ')[0];
+  const conflitsDe = e => {
+    const iv = intervalle(e);
+    return e.intervenants.filter(pid => (occupation[pid]||[]).some(o=>o.cle!==e.cle && o.d<iv.f && o.f>iv.d)).map(prenom);
+  };
+  let top = 6;
+  const elements = [];
+  for(const { p, entrees } of planifies){
+    const multi = entrees.length > 1;
+    const nomProjet = escapeHtml(libelleProjetCourt(p)) + (p.client_nom ? ' — '+escapeHtml(p.client_nom) : '');
+    if(multi){
+      elements.push(`<div style="position:absolute;left:0;right:0;top:${top}px;height:24px;background:var(--soft);border-bottom:1px solid var(--line)"><span onclick="selectionnerProjet('${p.id}')" style="position:sticky;left:8px;display:inline-block;font-size:12px;font-weight:700;line-height:24px;cursor:pointer">${nomProjet} <span style="font-weight:400;color:var(--muted)">— ${entrees.length} sites</span></span></div>`);
+      top += 26;
+    }
+    for(const e of entrees){
+      const d = jourDepuis(e.date_debut), f = e.date_fin ? jourDepuis(e.date_fin) : d;
+      const left = idx(d)*W + 1, largeur = (Math.max(idx(f)-idx(d),0)+1)*W - 2;
+      const etape = ETAPES[INDEX_ETAPE[p.etape]] ? ETAPES[INDEX_ETAPE[p.etape]].label : p.etape;
+      const conflits = conflitsDe(e);
+      const base = multi ? escapeHtml(e.nom || 'Site') + (e.adresse ? ' · '+escapeHtml(e.adresse) : '') : nomProjet;
+      const horaires = libelleHorairesSite(e); const peintres = (horaires ? ' · ⏱ '+horaires : '') + (e.intervenants.length ? ' · 🎨 '+e.intervenants.map(x=>escapeHtml(prenom(x))).join(', ') : '');
+      const texte = (conflits.length ? '⚠ ' : '') + base + peintres;
+      const titre = `${nomProjet}${multi?' / '+escapeHtml(e.nom||'Site'):''} · ${dateFr(e.date_debut)}${e.date_fin?' → '+dateFr(e.date_fin):''}${horaires?' ('+horaires+')':''} · ${escapeHtml(etape)}${conflits.length?' · CONFLIT : '+conflits.join(', ')+' déjà sur un autre site à ces dates':''}`;
+      const dedans = largeur >= 190;
+      elements.push(`<div class="ganttBarre${conflits.length?' ganttConflit':''}" title="${titre} — glisse pour déplacer, tire un bord pour changer les jours" onpointerdown="ganttPointerDown(event,'${e.cle}','${p.id}')" onpointermove="ganttPointerMove(event)" onpointerup="ganttPointerUp(event)" onpointercancel="ganttPointerUp(event)" style="left:${left}px;top:${top}px;width:${largeur}px"><span class="ganttPoignee g" data-poignee="gauche"></span>${dedans ? texte : ''}<span class="ganttPoignee d" data-poignee="droite"></span></div>`
+        + (dedans ? '' : `<div class="ganttLabelHors" onclick="selectionnerProjet('${p.id}')" style="left:${left+largeur+6}px;top:${top}px">${texte}</div>`));
+      top += GANTT_LIGNE_PX;
+    }
+  }
+  const hauteur = Math.max(top, 60) + 6;
+  const nbSites = planifies.reduce((n,x)=>n+x.entrees.length, 0);
+  const cellule = (n,label,extra)=>`<div style="width:${n*W}px;flex:0 0 ${n*W}px;border-right:1px solid var(--line);padding:3px 6px;overflow:hidden;white-space:nowrap;${extra||''}">${label}</div>`;
+  const weekends = jours.map((d,i)=> (d.getDay()===0||d.getDay()===6) ? `<div style="position:absolute;top:0;bottom:0;left:${i*W}px;width:${W}px;background:rgba(0,0,0,.035)"></div>` : '').join('');
+  // Volet gauche : projets prêts à être planifiés (de « Validation BAT en attente » jusqu'au
+  // chantier, tant qu'aucun site n'a de date) — on clique pour ouvrir la fiche et ajouter un site.
+  const ordreDe = p => (ETAPES[INDEX_ETAPE[p.etape]] || {}).ordre;
+  const ordreBat = (ETAPES.find(e=>e.cle==='bat_attente') || {}).ordre;
+  const ordreFacture = (ETAPES.find(e=>e.cle==='factures_a_envoyer') || {}).ordre;
+  const prets = nonPlanifies.filter(p=>ordreDe(p)>=ordreBat && ordreDe(p)<ordreFacture).sort((a,b)=>ordreDe(a)-ordreDe(b));
+  const etapesPrets = [...new Set(prets.map(p=>p.etape))];
+  const voletHtml = !calVoletOuvert
+    ? `<button class="calVoletRabat" onclick="basculerVoletCal()" title="Afficher les projets à planifier">À planifier (${prets.length}) »</button>`
+    : `<div class="calVolet">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px"><b style="font-size:15px">À planifier <span class="muted" style="font-weight:400">(${prets.length})</span></b><button class="ghostBtn" style="padding:2px 9px;font-size:12px" onclick="basculerVoletCal()">« Masquer</button></div>
+        <div class="tiny muted" style="margin-bottom:10px">Projets prêts, sans date de chantier. Clique pour ouvrir la fiche et ajouter un site.</div>
+        ${etapesPrets.map(cle=>`
+          <div class="tiny" style="font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);margin:10px 0 4px">${escapeHtml((ETAPES[INDEX_ETAPE[cle]]||{}).label||cle)}</div>
+          ${prets.filter(p=>p.etape===cle).map(p=>`<div class="calPret" onclick="selectionnerProjet('${p.id}')"><div style="font-weight:600;font-size:13.5px">${escapeHtml(libelleProjetCourt(p))}</div>${p.client_nom?`<div class="tiny muted">${escapeHtml(p.client_nom)}</div>`:''}</div>`).join('')}`).join('') || '<div class="tiny muted">Aucun projet prêt à planifier.</div>'}
+      </div>`;
+  return `
+  <div class="calWrap ${calVoletOuvert?'':'calWrapReduit'}">
+  ${voletHtml}
+  <div style="min-width:0">
+  <div class="sectionSub" style="margin:0 0 8px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><span>${planifies.length} projet${planifies.length>1?'s':''} planifié${planifies.length>1?'s':''}, ${nbSites} site${nbSites>1?'s':''} — ⚠ = un peintre est sur deux sites en même temps.</span><span style="white-space:nowrap">Zoom <button class="ghostBtn" style="padding:1px 9px" onclick="zoomGantt(-1)">−</button> <button class="ghostBtn" style="padding:1px 9px" onclick="zoomGantt(1)">+</button></span></div>
+  <div id="ganttScroll" class="ganttScroll" data-today="${idxAuj*W}" onscroll="ganttScrollMemo=this.scrollLeft;ganttTopMemo=this.scrollTop">
+    <div style="width:${nbJours*W}px">
+      <div style="position:sticky;top:0;z-index:5;background:#fff">
+      <div style="display:flex;background:var(--soft);font-weight:700;font-size:13px;text-transform:capitalize">${mois.map(m=>cellule(m.n,`<span style="position:sticky;left:8px">${m.label}</span>`,'overflow:visible;')).join('')}</div>
+      <div style="display:flex;font-size:12px;color:var(--muted);border-top:1px solid var(--line)">${semaines.map(s=>cellule(s.n,s.label)).join('')}</div>
+      <div style="display:flex;font-size:11.5px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)">${jours.map((d,i)=>`<div style="width:${W}px;flex:0 0 ${W}px;text-align:center;padding:3px 0;${i===idxAuj?'background:var(--ink);color:#fff;font-weight:700;':(d.getDay()===0||d.getDay()===6?'color:var(--muted);':'')}"><div>${d.getDate()}</div><div style="font-size:10px;opacity:.75">${JOURS_INITIALES[d.getDay()]}</div></div>`).join('')}</div>
+      </div>
+      <div style="position:relative;height:max(${hauteur}px, calc(100vh - 345px));background-image:linear-gradient(to right,#eee 1px,transparent 1px);background-size:${W}px 100%">
+        ${weekends}
+        <div style="position:absolute;top:0;bottom:0;left:${idxAuj*W + W/2}px;width:2px;background:var(--red,#b3261e);opacity:.55"></div>
+        ${elements.join('') || '<div class="tiny muted" style="padding:14px 10px;position:relative">Aucun chantier daté — ouvre la fiche d\'un projet et ajoute un site avec ses dates.</div>'}
+      </div>
+    </div>
+  </div>
+
+  </div>
+  </div>
+  `;
+}
+function renderFiche(p){
+  const idx = INDEX_ETAPE[p.etape];
+  const etape = ETAPES[idx];
+  return `
+  <div class="ficheHeader">
+    <div class="treeTitle" style="font-size:19px;margin-bottom:0">${escapeHtml(libelleProjetComplet(p))}</div>
+    <button class="ghostBtn" onclick="fermerFiche()">Fermer ✕</button>
+  </div>
+  <div class="toolbar" style="margin-top:10px">
+    ${idx < ETAPES.length-1 ? `<button class="actionBtn" onclick="validerEtape('${p.id}')">Valider « ${escapeHtml(etape.label)} » →</button>` : `<span class="chip green">Dernière étape atteinte</span>`}
+    <a class="ghostBtn" style="text-decoration:none" href="dossier-presentation.html?projet=${encodeURIComponent(p.id)}&est=${encodeURIComponent(ESTABLISHMENT_ID)}" target="_blank" rel="noopener" title="Pour un projet sans passage par le formulaire client — saisie rapide, texte + style + support(s)">📄 Générer le dossier de présentation</a>
+    <button class="ghostBtn" style="color:var(--red)" onclick="supprimerProjet('${p.id}')">Supprimer ce projet</button>
+  </div>
+  <div class="ficheGrid">
+    ${renderColonneBesoinTechnique(p)}
+    ${renderColonneRelationClient(p)}
+    <div class="colDroiteFiche">${renderBlocSites(p)}${renderColonnePointsControle(p)}</div>
+  </div>`;
+}
+
+function renderBlocEquipe(p){
+  const estGerant = MEMBRE_ROLE==='gerant' || MEMBRE_ROLE==='admin';
+  const chargee = equipeChargeePourId === p.id;
+  const membresDejaAjoutes = new Set(equipeIntervenants.map(i=>i.personne_id));
+  const membresAjoutables = equipeAtelier.filter(m=>!membresDejaAjoutes.has(m.user_id));
+  const totalHeures = equipeHeures.reduce((n,h)=>n+Number(h.heures), 0);
+  const parPersonne = {};
+  for(const h of equipeHeures) parPersonne[h.personne_id] = (parPersonne[h.personne_id]||0) + Number(h.heures);
+  return `
+    <p class="sousTitre" style="margin-top:0">Équipe &amp; heures</p>
+    ${!chargee ? '<div class="tiny muted">Chargement…</div>' : `
+    <div class="champLecture">
+      <label>Qui fait quoi</label>
+      ${equipeIntervenants.length ? equipeIntervenants.map(i=>{
+        const mine = i.personne_id === CURRENT_USER_ID;
+        return `
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--line)">
+          <span style="font-size:13.5px">${i.externe?'🤝 ':''}${escapeHtml(nomPersonne(i.personne_id))}${i.externe?' <span class="tiny muted">(partenaire externe)</span>':''}${i.statut==='invite'?' <span class="tiny muted">— invitation en attente</span>':''}${i.statut==='refuse'?' <span class="tiny muted">— refusée</span>':''}</span>
+          <span>
+            ${i.statut==='invite' && mine ? `<button class="ghostBtn" style="padding:2px 8px;font-size:11.5px" onclick="handleRepondreInvitation('${i.id}',true)">Accepter</button><button class="ghostBtn" style="padding:2px 8px;font-size:11.5px" onclick="handleRepondreInvitation('${i.id}',false)">Refuser</button>` : ''}
+            ${estGerant ? `<button class="ghostBtn" style="padding:2px 8px;font-size:11.5px" onclick="handleRetirerIntervenant('${i.id}')">Retirer</button>` : ''}
+          </span>
+        </div>`;
+      }).join('') : '<p class="tiny muted">Personne d\'assigné pour l\'instant.</p>'}
+    </div>
+    ${estGerant ? `
+    <div class="champLecture">
+      <label>Ajouter un membre de l'atelier</label>
+      <select class="inputLeger" onchange="if(this.value) handleAjouterMembreInterne(this.value); this.value=''">
+        <option value="">Choisir…</option>
+        ${membresAjoutables.map(m=>`<option value="${m.user_id}">${escapeHtml(m.email)} (${escapeHtml(m.role||'')})</option>`).join('')}
+      </select>
+    </div>` : ''}
+
+    <p class="sousTitre">Temps passé</p>
+    <div class="champLecture">
+      <div style="display:flex;justify-content:space-between;padding:3px 0"><span class="tiny muted">Temps passé (depuis la demande client)</span><span class="tiny" style="font-weight:600">${escapeHtml(dureeDepuisCreation(p))}</span></div>
+      <div class="tiny muted" style="margin-top:6px">Temps projet / temps total projets et marge (temps passé / devis HT) : pas encore calculables — le suivi automatique du temps par membre reste à construire (voir avec Claude).</div>
+    </div>
+    `}
+  `;
+}
+function dureeDepuisCreation(p){
+  if(!p.created_at) return '—';
+  const ms = Date.now() - new Date(p.created_at).getTime();
+  const jours = Math.floor(ms/86400000);
+  if(jours < 1) return 'moins d\'un jour';
+  if(jours < 30) return jours+' jour'+(jours>1?'s':'');
+  const mois = Math.floor(jours/30);
+  return mois+' mois'+(jours%30 ? ' et '+(jours%30)+' j' : '');
+}
+
+// Champs jugés nécessaires pour avancer (pas Charte graphique/Contraintes, légitimement
+// souvent vides ou "Non/Non concerné" — jamais bloquants). Utilisé à deux endroits : les
+// bullet points du bloc "Analyse du besoin IA" et, à l'étape "À qualifier" seulement, les
+// lignes de Points de contrôle (voir renderColonnePointsControle) — même source, pas deux
+// listes à maintenir séparément.
+const CHAMPS_REQUIS_BESOIN = [
+  ['texteAPeindre','Texte à peindre'], ['objectif','Besoin du client / objectif'],
+  ['dateSouhaitee','Date souhaitée'], ['budget','Budget'],
+];
+// Dimensions du SUPPORT saisies par le client, lues dans les notes de la demande (le devis, lui, garde celles du lettrage calculé).
+function dimsSupportDepuisNotes(devis, support){
+  const o = String(((devis && devis.notes_client) || {}).objectif || '');
+  const m = new RegExp('\\[' + String(support).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\] Dimensions du support indiquées : ([\\d.,]+) × ([\\d.,]+) cm\\.?\\s*(?:Emprise estimée du lettrage : ([^\\n]*?)(?:, à préciser[^\\n]*)?)?(?:\\n|$)').exec(o);
+  return m ? { support: m[1] + ' × ' + m[2] + ' cm', emprise: (m[3] || '').replace(/\.\s*$/, '') } : null;
+}
+// La fonction SQL qui crée la fiche ne remplit pas « Besoin technique » : on le reprend de la demande du formulaire (une fois, champs vides seulement) et on l'enregistre.
+async function completerBesoinDepuisDevis(p, devis){
+  if(!p || !devis || !devis.notes_client) return;
+  const nc = devis.notes_client, bt = { ...(p.besoin_technique || {}) }, ajout = {};
+  const paragraphes = String(nc.objectif || '').split(/\n\s*\n/).map(x => x.trim()).filter(Boolean);
+  const motsClient = paragraphes.filter(x => !x.startsWith('[')).join('\n\n');
+  const effet = (/\[Effet souhaité\]\s*([^\n]+)/.exec(String(nc.objectif || '')) || [])[1];
+  const supports = (devis.devis_lignes || []).filter(l => l.type === 'calculee').map(l => l.support).filter(Boolean);
+  const synthese = supports.length ? 'Lettrage peint : ' + supports.join(', ') + (effet ? ' — ' + effet.trim() : '') : '';
+  const candidats = { texteAPeindre: nc.texteAPeindre, objectif: motsClient || synthese, charteGraphique: nc.charteGraphique, dateSouhaitee: nc.dateSouhaitee, contraintes: nc.contraintes };
+  for(const [champ, valeur] of Object.entries(candidats)) if(!bt[champ] && valeur && String(valeur).trim()) ajout[champ] = String(valeur).trim();
+  if(!Object.keys(ajout).length) return;
+  const nouveau = { ...bt, ...ajout };
+  p.besoin_technique = nouveau;
+  const { error } = await sb.from('projets').update({ besoin_technique: nouveau }).eq('id', p.id);
+  if(error) console.error('Besoin technique non enregistré :', error.message);
+}
+function champsManquantsBesoin(p){
+  const bt = p.besoin_technique || {};
+  return CHAMPS_REQUIS_BESOIN.filter(([champ])=>!bt[champ]).map(([,label])=>label);
+}
+// Synthèse "IA" V0 — une phrase assemblée à partir des champs déjà remplis, pas un vrai
+// appel à un modèle (décision actée : commencer simple, brancher une vraie IA plus tard
+// sans changer l'écran). Tronquée pour rester "très court, l'essentiel".
+function syntheseBesoinIA(p){
+  const bt = p.besoin_technique || {};
+  const parts = [];
+  if(bt.texteAPeindre) parts.push(`« ${bt.texteAPeindre} »`);
+  if(bt.objectif){ const ligne = bt.objectif.split('\n')[0].trim(); parts.push(ligne.length>140 ? ligne.slice(0,140)+'…' : ligne); }
+  let phrase = parts.join(' — ');
+  if(bt.dateSouhaitee) phrase += (phrase?'. ':'')+`Souhaité : ${bt.dateSouhaitee}.`;
+  return phrase || null;
+}
+function renderColonneBesoinTechnique(p){
+  const d = (p.devis_id && devisDetailChargePourId===p.devis_id) ? devisDetailCharge : null;
+  const lignes = d ? (d.devis_lignes||[]).filter(l=>l.type==='calculee') : [];
+  const photosDevis = d ? (d.photos||[]) : [];
+  const piecesAtelier = p.pieces_jointes || [];
+  return `
+  <div class="colonneFiche">
+    <div class="treeTitle" style="font-size:19px;text-transform:uppercase;letter-spacing:.02em">Besoin technique</div>
+    ${p.devis_id ? `<a class="ghostBtn" href="${estUrl('devis-interne.html')}&devis=${encodeURIComponent(p.devis_id)}" style="display:inline-block;margin-bottom:12px">Ouvrir le devis de ce projet</a>` : `<div class="tiny muted" style="margin-bottom:12px">Projet créé sans devis lié — renseigne le besoin directement ci-dessous.</div>`}
+    ${p.devis_id && !d ? '<div class="tiny muted">Chargement…</div>' : ''}
+    ${renderChampBt(p,'texteAPeindre','Texte à peindre',true)}
+    ${renderChampBt(p,'objectif','Besoin du client / objectif',true)}
+    ${renderChampBt(p,'charteGraphique','Charte graphique',false)}
+    ${renderChampBt(p,'dateSouhaitee','Date souhaitée',false)}
+    ${renderChampBt(p,'budget','Budget',false)}
+    ${renderChampBt(p,'contraintes','Contraintes',true)}
+    ${lignes.length ? lignes.map(l=>`
+      <div class="champLecture" style="margin-top:12px">
+        <label>Dimensions — ${escapeHtml(l.support||'Support')} (depuis le devis)</label>
+        ${(()=>{
+          // Uniquement les dimensions RÉELLES du support, telles que le client les a saisies : jamais l'emprise du lettrage recalculée.
+          const ds = dimsSupportDepuisNotes(d, l.support);
+          const lettrage = (l.longueur_cm && l.hauteur_cm) ? escapeHtml(String(l.longueur_cm)) + ' × ' + escapeHtml(String(l.hauteur_cm)) + ' cm' : '';
+          const reste = (l.matiere?' · '+escapeHtml(l.matiere):'') + (l.etat?' · '+escapeHtml(l.etat):'') + (l.hauteur_chantier?' · '+escapeHtml(l.hauteur_chantier):'');
+          return `<p>${ds ? 'Dimensions du support : <b>' + escapeHtml(ds.support) + '</b>' : '<span class="muted">Dimensions du support : non relevées dans la demande</span>'}${reste}</p>
+`;
+        })()}
+        ${(l.forme||l.effet) ? `<p class="tiny muted">${l.forme?escapeHtml(l.forme):''}${l.forme&&l.effet?' — ':''}${l.effet?escapeHtml(l.effet):''}</p>` : ''}
+      </div>`).join('') : ''}
+    <div class="champLecture" style="margin-top:12px">
+      <label>Documents &amp; photos</label>
+      ${(photosDevis.length || piecesAtelier.length) ? `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">
+        ${photosDevis.map(ph=>`
+        <a href="${ph.dataUrl}" download="${escapeHtml(ph.nom)}" style="border:1px solid var(--line);border-radius:10px;padding:6px 10px;font-size:12.5px;display:flex;align-items:center;gap:6px;text-decoration:none;color:inherit;background:#fff">
+          ${ph.type && ph.type.startsWith('image/') ? `<img src="${ph.dataUrl}" style="width:24px;height:24px;object-fit:cover;border-radius:4px">` : '📄'}
+          <span>${escapeHtml(ph.nom)}</span>
+          <span class="tiny muted" title="Reçue avec le formulaire client d'origine, non modifiable">🔒 depuis le devis</span>
+        </a>`).join('')}
+        ${piecesAtelier.map((ph,i)=>`
+        <span style="border:1px solid var(--line);border-radius:10px;padding:6px 10px;font-size:12.5px;display:flex;align-items:center;gap:6px;background:#fff">
+          <a href="${ph.url}" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:6px;text-decoration:none;color:inherit">
+            ${ph.type && ph.type.startsWith('image/') ? `<img src="${ph.url}" style="width:24px;height:24px;object-fit:cover;border-radius:4px">` : '📄'}
+            <span>${escapeHtml(ph.nom)}</span>
+          </a>
+          <button class="ghostBtn" style="padding:1px 6px;font-size:11px" onclick="supprimerPieceJointeProjet('${p.id}',${i})">✕</button>
+        </span>`).join('')}
+      </div>` : '<p class="tiny muted">Aucun fichier pour l\'instant.</p>'}
+      <input type="file" accept="image/*,.pdf" style="margin-top:8px" onchange="ajouterPieceJointeProjet('${p.id}',this)">
+      ${uploadPieceJointeEnCours ? '<div class="tiny muted" style="margin-top:4px">Envoi en cours…</div>' : ''}
+    </div>
+    ${(()=>{ const synthese = syntheseBesoinIA(p); const manquants = champsManquantsBesoin(p);
+      if(!synthese && !manquants.length) return '';
+      return `
+      <div style="margin-top:12px;padding:10px 12px;border-radius:10px;background:rgba(168,70,31,.07);border:1px solid rgba(168,70,31,.3)">
+        <div class="tiny" style="text-transform:uppercase;letter-spacing:.04em;font-weight:700;color:var(--accent,#a8461f);margin-bottom:4px">Analyse du besoin (IA)</div>
+        ${synthese ? `<p class="tiny" style="margin:0 0 6px 0">${escapeHtml(synthese)}</p>` : ''}
+        ${manquants.length ? `<ul class="tiny muted" style="margin:0;padding-left:16px">${manquants.map(m=>`<li>${escapeHtml(m)} manquant</li>`).join('')}</ul>` : ''}
+      </div>`; })()}
+  </div>`;
+}
+async function ajouterSignal(projetId, type, etape){
+  let montant = null;
+  if(type==='paiement_acompte'){
+    const saisie = await demander('Montant de l\'acompte reçu (€) :', '');
+    if(saisie===null) return;
+    montant = Number(saisie.replace(',','.'));
+    if(!isFinite(montant) || montant<=0){ alert('Montant invalide.'); return; }
+  }
+  const { data, error } = await sb.from('signaux_client').insert({ projet_id:projetId, type, montant, etape }).select().single();
+  if(error){ alert('Erreur : '+error.message); return; }
+  (SIGNAUX_CLIENT[projetId] = SIGNAUX_CLIENT[projetId] || []).unshift(data);
+  render();
+}
+async function marquerSignalTraite(id){
+  const { error } = await sb.from('signaux_client').update({ statut:'traite' }).eq('id', id);
+  if(error){ alert('Erreur : '+error.message); return; }
+  for(const liste of Object.values(SIGNAUX_CLIENT)){
+    const s = liste.find(x=>x.id===id); if(s){ s.statut='traite'; break; }
+  }
+  render();
+}
+// Point 7 (ergonomie fiche projet) — chaque champ de "Besoin technique" se comporte comme
+// une carte Trello : lecture simple par défaut, édition seulement au clic sur "Modifier",
+// enregistrement automatique en quittant le champ (jamais de bouton "Enregistrer" séparé —
+// principe directeur : minimiser le nombre de clics).
+let champEnEditionBt = null;
+function ouvrirEditionBt(champ){ champEnEditionBt = champ; render(); const el=document.getElementById('editBt_'+champ); if(el) el.focus(); }
+function renderChampBt(p, champ, label, multiligne){
+  const bt = p.besoin_technique || {};
+  const valeur = bt[champ] || '';
+  if(champEnEditionBt === champ){
+    return `<div class="field" style="margin-top:8px"><label>${escapeHtml(label)}</label>
+      ${multiligne
+        ? `<textarea class="inputSouple" id="editBt_${champ}" rows="4" onblur="enregistrerChampBt('${p.id}','${champ}',this.value)">${escapeHtml(valeur)}</textarea>`
+        : `<input class="inputSouple" id="editBt_${champ}" value="${escapeHtml(valeur)}" onblur="enregistrerChampBt('${p.id}','${champ}',this.value)">`}
+    </div>`;
+  }
+  return `<div class="field" style="margin-top:8px"><label>${escapeHtml(label)}</label>
+    <div class="lectureSouple" onclick="ouvrirEditionBt('${champ}')">${valeur ? escapeHtml(valeur) : `<span class="tiny muted">Aucune information renseignée</span>`}<button class="ghostBtn" style="margin-left:8px;padding:1px 8px;font-size:11px" onclick="event.stopPropagation();ouvrirEditionBt('${champ}')">Modifier</button></div>
+  </div>`;
+}
+async function enregistrerChampBt(projetId, champ, valeur){
+  const p = projets.find(x=>x.id===projetId); if(!p) return;
+  const besoin_technique = { ...(p.besoin_technique||{}), [champ]: valeur.trim() || undefined };
+  p.besoin_technique = besoin_technique;
+  champEnEditionBt = null;
+  render();
+  const { error } = await sb.from('projets').update({ besoin_technique }).eq('id', projetId);
+  if(error) alert('Erreur : '+error.message);
+}
+
+// Point 1 (ergonomie fiche projet) — pièces jointes ajoutées directement sur la fiche,
+// dans la même liste que les photos historiques du devis (distinguées par un badge, pas
+// deux sections séparées).
+let uploadPieceJointeEnCours = false;
+async function ajouterPieceJointeProjet(projetId, input){
+  const file = input.files[0]; if(!file) return;
+  uploadPieceJointeEnCours = true; render();
+  try{
+    const chemin = `${projetId}/${Date.now()}-${file.name}`;
+    const { error } = await sb.storage.from('pieces-jointes-projet').upload(chemin, file);
+    if(error) throw error;
+    const { data } = sb.storage.from('pieces-jointes-projet').getPublicUrl(chemin);
+    const p = projets.find(x=>x.id===projetId); if(!p) return;
+    const pieces_jointes = [...(p.pieces_jointes||[]), { nom:file.name, url:data.publicUrl, type:file.type }];
+    p.pieces_jointes = pieces_jointes;
+    const { error: eUp } = await sb.from('projets').update({ pieces_jointes }).eq('id', projetId);
+    if(eUp) throw eUp;
+  }catch(err){
+    alert('Erreur d\'envoi : '+(err.message||err));
+  }
+  uploadPieceJointeEnCours = false;
+  render();
+}
+async function supprimerPieceJointeProjet(projetId, index){
+  const p = projets.find(x=>x.id===projetId); if(!p) return;
+  const pieces_jointes = (p.pieces_jointes||[]).filter((_,i)=>i!==index);
+  p.pieces_jointes = pieces_jointes; render();
+  const { error } = await sb.from('projets').update({ pieces_jointes }).eq('id', projetId);
+  if(error) alert('Erreur : '+error.message);
+}
+
+function renderColonneRelationClient(p){
+  const c = (p.client_id && clientChargePourId===p.client_id) ? clientCharge : null;
+  const autresProjets = p.client_id ? projets.filter(x=>x.client_id===p.client_id && x.id!==p.id) : [];
+  return `
+  <div class="colonneFiche">
+    <div class="treeTitle" style="font-size:19px;text-transform:uppercase;letter-spacing:.02em">Relations client</div>
+    <div class="treeTitle" style="font-size:15px;margin-top:0">${escapeHtml((c&&c.nom)||p.client_nom||'Sans nom')}</div>
+    ${p.client_siret ? `<div class="tiny muted">SIRET : ${escapeHtml(p.client_siret)}</div>` : ''}
+    <div class="row2" style="margin-top:8px">
+      <div class="field"><label>Téléphone</label><input class="inputLeger" id="rcTel" value="${escapeHtml((c?c.telephone:p.client_telephone)||'')}"></div>
+      <div class="field"><label>Email</label><input class="inputLeger" id="rcEmail" value="${escapeHtml((c?c.email:p.client_email)||'')}"></div>
+    </div>
+    <button class="ghostBtn" onclick="enregistrerContactClient('${p.id}')">Enregistrer les coordonnées</button>
+
+    ${(()=>{
+      const autres = p.autres_contacts || [];
+      return `<div style="margin-top:14px">
+        ${autres.length ? `<div class="tiny muted" style="margin-bottom:4px">Autres contacts dans l'entreprise (${autres.length})</div>` : ''}
+        ${autres.map((a,i)=>`<div class="histoLine"><span>${escapeHtml(a.nom)}${a.role?' — '+escapeHtml(a.role):''}</span><button style="background:none;border:none;color:var(--muted);font-size:12px;text-decoration:underline;cursor:pointer;padding:0" onclick="retirerAutreContact('${p.id}',${i})">Retirer</button></div>`).join('')}
+        ${ajoutContactOuvert ? `
+        <div class="row2" style="margin-top:6px">
+          <input class="inputLeger" id="acNom" placeholder="Nom">
+          <input class="inputLeger" id="acRole" placeholder="Rôle (texte libre)" onkeydown="if(event.key==='Enter')ajouterAutreContact('${p.id}')">
+        </div>
+        <div class="toolbar" style="margin-top:6px"><button class="ghostBtn" onclick="ajouterAutreContact('${p.id}')">Ajouter</button><button class="ghostBtn" onclick="basculerAjoutContact()">Annuler</button></div>`
+        : `<button style="border:1px dashed #bdb6aa;background:none;border-radius:10px;padding:6px 12px;font-size:13px;color:var(--muted);cursor:pointer" onclick="basculerAjoutContact()">+ Ajouter un contact</button>`}
+      </div>`;
+    })()}
+
+    <div class="row2" style="margin-top:16px">
+      <div class="field"><label>Date de rappel</label><input class="inputLeger" type="date" id="editEcheanceDate" value="${p.echeance_date||''}"></div>
+      <div class="field"><label>Objet du rappel</label><input class="inputLeger" id="editEcheanceLabel" placeholder="ex : attente signature devis" value="${escapeHtml(p.echeance_label||'')}"></div>
+    </div>
+    <button class="ghostBtn" onclick="enregistrerEcheance('${p.id}')">Enregistrer le rappel</button>
+    <p class="sousTitre">Suivi des échanges</p>
+    ${(()=>{
+      // Les changements d'étape (glisser-déposer, "Valider «étape»") continuent d'être
+      // horodatés dans l'historique — pour calculer plus tard la durée par étape — mais
+      // masqués ici : ce ne sont pas des échanges avec le client, ça encombrait la vue.
+      const echanges = echangesTries(p);
+      return echanges.map(h=>`<div class="histoLine"><span><b>[${escapeHtml(TYPE_ECHANGE_LABEL[h.type]||h.type)}]</b> ${escapeHtml(h.texte)}</span><span class="muted">${escapeHtml(h.date)}</span></div>`).join('') || '<div class="tiny muted">Aucun échange enregistré.</div>';
+    })()}
+    <div class="toolbar" style="margin-top:8px">
+      <select class="inputLeger" style="width:auto" id="nouvelEchangeType">
+        <option value="note">Note</option>
+        <option value="appel">Appel</option>
+        <option value="email">Email</option>
+        <option value="rdv">RDV</option>
+        <option value="sms">SMS</option>
+      </select>
+      <input class="inputLeger" id="nouvelEchangeTexte" placeholder="Ex : appelé, en attente..." style="flex:1;min-width:150px">
+      <button class="ghostBtn" onclick="ajouterEchange('${p.id}')">Ajouter</button>
+    </div>
+
+    <div class="field" style="margin-top:14px">
+      <label>Notes pour le prochain échange</label>
+      <textarea class="inputLeger" id="editNotes" rows="2">${escapeHtml(p.notes||'')}</textarea>
+    </div>
+    <button class="ghostBtn" onclick="enregistrerNotes('${p.id}')">Enregistrer les notes</button>
+
+    ${p.client_id ? `
+    <p class="sousTitre">Autres projets de ce client</p>
+    ${autresProjets.map(x=>`<div class="histoLine" style="cursor:pointer" onclick="selectionnerProjet('${x.id}')"><span>${escapeHtml(libelleProjetCourt(x))}</span><span class="muted">${escapeHtml(ETAPES[INDEX_ETAPE[x.etape]].label)}</span></div>`).join('') || '<div class="tiny muted">Aucun autre projet pour ce client.</div>'}
+    ` : ''}
+
+    <div style="margin-top:20px;padding-top:14px;border-top:2px solid var(--line)">
+      ${renderBlocEquipe(p)}
+    </div>
+  </div>`;
+}
+
+function renderColonnePointsControle(p){
+  const items = CHECKLISTS[p.etape] || [];
+  const coche = (p.checklist_coche && p.checklist_coche[p.etape]) || [];
+  const manquantsEtape = (p.manquants_par_etape && p.manquants_par_etape[p.etape]) || [];
+  return `
+  <div class="colonneFiche">
+    <div class="treeTitle" style="font-size:19px;text-transform:uppercase;letter-spacing:.02em">Points de contrôle</div>
+    <div class="tiny muted" style="margin-bottom:10px">Propre à l'étape en cours — change avec elle. Étape en cours : <b>${escapeHtml(ETAPES[INDEX_ETAPE[p.etape]].label)}</b></div>
+
+    ${p.etape==='qualification' ? (()=>{
+      const manquants = champsManquantsBesoin(p);
+      return manquants.length
+        ? manquants.map(m=>`<div class="tiny" style="padding:4px 0">${escapeHtml(m)} manquant</div>`).join('')
+        : '<div class="tiny muted">Tout est renseigné — le besoin est qualifié.</div>';
+    })() : (items.length ? items.map((texte,i)=>`
+      <label class="checkItem">
+        <input type="checkbox" ${coche.includes(i)?'checked':''} onchange="toggleChecklist('${p.id}',${i})">
+        <span>${escapeHtml(texte)}</span>
+      </label>`).join('') : '<div class="tiny muted">Aucun point de contrôle pour cette étape.</div>')}
+
+    <p class="sousTitre">Éléments manquants bloquants</p>
+    ${manquantsEtape.map((m,i)=>`<div class="manqueRow"><span>${escapeHtml(m)}</span><button class="ghostBtn" style="padding:2px 8px;font-size:11px" onclick="retirerManquant('${p.id}',${i})">Retiré ✕</button></div>`).join('') || '<div class="tiny muted">Rien de bloquant pour cette étape.</div>'}
+    <div class="toolbar" style="margin-top:6px">
+      <input class="inputLeger" id="nouveauManquant" placeholder="Ajouter un élément manquant..." style="flex:1;min-width:150px">
+      <button class="ghostBtn" onclick="ajouterManquant('${p.id}')">Ajouter</button>
+    </div>
+
+    <div style="margin-top:12px;padding-top:10px;border-top:1px dashed var(--line)">
+      ${(MODULES_PAR_ETAPE[p.etape]||[]).length || (EPREUVES_PAR_ETAPE[p.etape]||[]).length ? `
+        <div class="tiny" style="font-weight:700;margin-bottom:4px">Besoin d'aide sur cette étape ?</div>
+        ${(MODULES_PAR_ETAPE[p.etape]||[]).map(m=>`<div class="tiny"><a href="#" onclick="event.preventDefault();ouvrirLecteurModule('${m.id}',sb)">▶ ${escapeHtml(m.nom)}</a></div>`).join('')}
+        ${(EPREUVES_PAR_ETAPE[p.etape]||[]).map(e=>`<div class="tiny"><a href="#" onclick="event.preventDefault();ouvrirLecteurEpreuve('${e.id}',sb)">▶ ${escapeHtml(e.nom)} <span class="muted">(épreuve)</span></a></div>`).join('')}
+      ` : `<div class="tiny muted">Pas encore de module rattaché à cette étape.</div>`}
+    </div>
+    ${(p.etape==='maquette_finale_bat' || p.etape==='poncifs_impression') ? renderBlocPeinture(p) : ''}
+    ${p.etape==='poncifs_impression' ? `
+    <div style="margin-top:14px">
+      <a class="ghostBtn" style="text-decoration:none" href="poncifs-optimisation.html?est=${encodeURIComponent(ESTABLISHMENT_ID)}" target="_blank" rel="noopener">📐 Optimiser l'impression des poncifs</a>
+    </div>` : ''}
+  </div>`;
+}
+
+function renderBlocPeinture(p){
+  const m2 = p.m2_a_peindre;
+  const litres = (m2!=null && m2!=='') ? Math.ceil((Number(m2) / RENDEMENT_M2_PAR_LITRE) * 10) / 10 : null;
+  return `
+  <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--line)">
+    <div class="field"><label>m² à peindre</label><input class="inputLeger" type="number" step="0.1" id="editM2" value="${m2!=null?escapeHtml(String(m2)):''}" onchange="enregistrerM2('${p.id}', this.value)"></div>
+    ${litres!==null ? `<p class="tiny muted">≈ <b>${litres} L</b> de peinture nécessaires (rendement ${RENDEMENT_M2_PAR_LITRE} m²/L).</p>` : ''}
+    <button class="actionBtn" ${litres===null?'disabled':''} onclick="reserverPeinture('${p.id}')">Réserver la peinture</button>
+  </div>`;
+}
+
+function renderModalNouveau(){
+  return `<div class="overlay" onclick="if(event.target===event.currentTarget) fermerModalNouveau()">
+    <div class="modal" style="max-height:94vh;overflow:auto">
+      <div class="treeTitle" style="font-size:19px">Nouveau projet</div>
+      <div class="field"><label>Nom du projet (ex : nom du chantier)</label><input class="input" id="nvNom" placeholder="Enseigne Café de la Place"></div>
+      <div class="field"><label>Nom du client</label><input class="input" id="nvClientNom"></div>
+      <div class="row2">
+        <div class="field"><label>Téléphone</label><input class="input" id="nvTel"></div>
+        <div class="field"><label>Email</label><input class="input" id="nvEmail"></div>
+      </div>
+      <div class="field fieldAuto"><label>Adresse</label><input class="input" id="nvAdresse" autocomplete="off" placeholder="N°, rue, code postal, ville — ça se complète tout seul" oninput="chercherAdresseNouveauProjet(this.value)"><div class="sugBox" id="sugAdresseNouveauProjet"></div></div>
+      <div class="tiny" style="margin:12px 0 6px;font-weight:700">📅 Dates du chantier <span class="muted" style="font-weight:400">(facultatif — si elles sont déjà connues)</span></div>
+      <div class="row2">
+        <div class="field"><label>Début — date</label><input class="input" type="date" id="nvSiteDebut" onchange="calcNouveauSite('date_debut')"></div>
+        <div class="field"><label>Heure de début (ex : 9h30)</label><input class="input" type="text" inputmode="numeric" autocomplete="off" placeholder="09:00" id="nvSiteHeure" onchange="calcNouveauSite('heure_debut')"></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Fin — date</label><input class="input" type="date" id="nvSiteFin" onchange="calcNouveauSite('date_fin')"></div>
+        <div class="field"><label>Heure de fin (ex : 17h)</label><input class="input" type="text" inputmode="numeric" autocomplete="off" placeholder="17:00" id="nvSiteHeureFin" onchange="calcNouveauSite('heure_fin')"></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Durée totale (h) — ex : 1</label><input class="input" type="number" step="0.25" min="0" id="nvSiteDuree" placeholder="se calcule / modifiable" onchange="calcNouveauSite('duree_heures')"></div>
+        <div class="field"><label>Heures de travail / jour</label><input class="input" type="number" step="0.5" min="1" max="24" id="nvSiteHpj" placeholder="7" onchange="calcNouveauSite('heures_par_jour')"></div>
+      </div>
+      <div class="toolbar" style="margin-top:6px">
+        <button class="actionBtn" onclick="creerProjet()">Créer</button>
+        <button class="ghostBtn" onclick="fermerModalNouveau()">Annuler</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function onRecherche(v){ recherche=v; render(); focusRecherche(); }
+function focusRecherche(){ requestAnimationFrame(()=>{ const el=document.getElementById('recherche'); if(el){ el.focus(); const l=el.value.length; el.setSelectionRange(l,l); } }); }
+async function selectionnerProjet(id){
+  selectionId = id;
+  champEnEditionBt = null;
+  render();
+  const p = projets.find(x=>x.id===id);
+  if(!p) return;
+  if(p.client_id && clientChargePourId!==p.client_id){
+    const { data, error } = await sb.from('clients').select('*').eq('id', p.client_id).maybeSingle();
+    if(!error){ clientCharge = data; clientChargePourId = p.client_id; render(); }
+  } else if(!p.client_id){
+    clientCharge = null; clientChargePourId = null;
+  }
+  if(p.devis_id && devisDetailChargePourId!==p.devis_id){
+    const { data, error } = await sb.from('devis').select('*, devis_lignes(*)').eq('id', p.devis_id).maybeSingle();
+    if(!error){ devisDetailCharge = data; devisDetailChargePourId = p.devis_id; await completerBesoinDepuisDevis(p, data); render(); }
+  } else if(!p.devis_id){
+    devisDetailCharge = null; devisDetailChargePourId = null;
+  }
+  if(equipeChargeePourId !== id){
+    rechercheNumero=''; resultatRecherchePartenaire=null; erreurRecherchePartenaire='';
+    formHeures = { date:'', heures:'', note:'' };
+    try{ await chargerEquipeEtHeures(id); render(); }catch(e){ console.error(e); }
+  }
+}
+function fermerFiche(){ selectionId=null; render(); }
+function ouvrirModalNouveau(){ modalOuvert=true; render(); }
+function fermerModalNouveau(){ modalOuvert=false; render(); }
+
+/* Autocomplétion adresse — API Adresse (gouv.fr), gratuite, sans clé. Best-effort : une
+   erreur réseau laisse simplement la saisie manuelle intacte. */
+let adresseSuggestionsNouveauProjet = [];
+let adresseTimerNouveauProjet = null;
+function chercherAdresseNouveauProjet(valeur){
+  clearTimeout(adresseTimerNouveauProjet);
+  if(valeur.trim().length < 4){ adresseSuggestionsNouveauProjet = []; renderSugAdresseNouveauProjet(); return; }
+  adresseTimerNouveauProjet = setTimeout(async ()=>{
+    try{
+      const r = await fetch('https://api-adresse.data.gouv.fr/search/?q='+encodeURIComponent(valeur)+'&limit=5');
+      const data = await r.json();
+      adresseSuggestionsNouveauProjet = (data.features||[]).map(f=>f.properties.label);
+    }catch(e){ adresseSuggestionsNouveauProjet = []; }
+    renderSugAdresseNouveauProjet();
+  }, 300);
+}
+function choisirAdresseNouveauProjet(i){
+  const label = adresseSuggestionsNouveauProjet[i]; if(!label) return;
+  document.getElementById('nvAdresse').value = label;
+  adresseSuggestionsNouveauProjet = []; renderSugAdresseNouveauProjet();
+}
+function renderSugAdresseNouveauProjet(){
+  const el = document.getElementById('sugAdresseNouveauProjet'); if(!el) return;
+  el.innerHTML = adresseSuggestionsNouveauProjet.map((label,i)=>`<div class="sugItem" onclick="choisirAdresseNouveauProjet(${i})">${escapeHtml(label)}</div>`).join('');
+}
+function lireNouveauSite(){
+  const v = id => document.getElementById(id).value;
+  return {
+    date_debut: v('nvSiteDebut') || null, heure_debut: parseHeure(v('nvSiteHeure')) || null,
+    duree_heures: v('nvSiteDuree')==='' ? null : Number(v('nvSiteDuree')),
+    heures_par_jour: v('nvSiteHpj')==='' ? null : Number(v('nvSiteHpj')),
+    date_fin: v('nvSiteFin') || null, heure_fin: parseHeure(v('nvSiteHeureFin')) || null,
+  };
+}
+function calcNouveauSite(champ){
+  for(const id of ['nvSiteHeure','nvSiteHeureFin']){
+    const el = document.getElementById(id), h = parseHeure(el.value);
+    if(h===undefined){ alert('Heure non reconnue — écris par exemple 9, 9h, 9h30 ou 14:00.'); el.value = ''; return; }
+    el.value = h || '';
+  }
+  const auto = calculerSite(lireNouveauSite(), champ);
+  if('date_fin' in auto) document.getElementById('nvSiteFin').value = auto.date_fin || '';
+  if('heure_fin' in auto) document.getElementById('nvSiteHeureFin').value = auto.heure_fin || '';
+  if('duree_heures' in auto) document.getElementById('nvSiteDuree').value = auto.duree_heures;
+}
+async function creerProjet(){
+  const nom = document.getElementById('nvNom').value.trim();
+  if(!nom) return alert('Le nom du projet est obligatoire.');
+  const site = lireNouveauSite();
+  if(site.date_fin && !site.date_debut) return alert('Renseigne aussi la date de début du chantier.');
+  if(site.date_debut && site.date_fin && site.date_fin < site.date_debut) return alert('La fin du chantier ne peut pas être avant son début.');
+  if(site.date_debut && site.duree_heures && !site.date_fin) Object.assign(site, calculerSite(site, 'duree_heures'));
+  else if(site.date_debut && (site.date_fin || site.heure_fin) && !site.duree_heures) Object.assign(site, calculerSite(site, 'date_fin'));
+  const { data: numeroProjet, error: eNum } = await sb.rpc('next_numero_projet', { p_establishment_id: ESTABLISHMENT_ID });
+  if(eNum) return alert('Erreur de numérotation : '+eNum.message);
+  const payload = {
+    establishment_id: ESTABLISHMENT_ID, nom, nom_projet: nom, numero_projet: numeroProjet,
+    client_nom: document.getElementById('nvClientNom').value.trim() || null,
+    client_telephone: document.getElementById('nvTel').value.trim() || null,
+    client_email: document.getElementById('nvEmail').value.trim() || null,
+    client_adresse: document.getElementById('nvAdresse').value.trim() || null,
+    etape: 'croquis_intention',
+    historique: [{ date: aujourdhuiFr(), texte: 'Projet créé' }]
+  };
+  const { data, error } = await sb.from('projets').insert(payload).select().single();
+  if(error) return alert('Erreur : '+error.message);
+  projets.unshift(data);
+  modalOuvert = false;
+  selectionId = data.id;
+  if(site.date_debut){
+    const { data: siteData, error: eSite } = await sb.from('projet_sites').insert({ projet_id:data.id, ordre:0, ...site }).select().single();
+    if(eSite) alert("Projet créé, mais les dates du chantier n'ont pas pu être enregistrées : "+eSite.message);
+    else { siteData.intervenants = []; sitesParProjet[data.id] = [siteData]; await synchroDatesProjet(data.id); return; }
+  }
+  render();
+}
+
+async function deposerProjet(ev, nouvelleCle){
+  ev.preventDefault();
+  document.querySelectorAll('.col').forEach(c=>c.classList.remove('dragOver'));
+  const id = ev.dataTransfer.getData('text/plain');
+  const p = projets.find(x=>x.id===id);
+  if(!p || p.etape===nouvelleCle) return;
+  const ancienLabel = ETAPES[INDEX_ETAPE[p.etape]].label;
+  const nouveauLabel = ETAPES[INDEX_ETAPE[nouvelleCle]].label;
+  const historique = [...(p.historique||[]), { date: aujourdhuiFr(), texte: `Carte déplacée de "${ancienLabel}" vers "${nouveauLabel}" (glisser-déposer)` }];
+  p.etape = nouvelleCle; p.historique = historique;
+  render();
+  const { error } = await sb.from('projets').update({ etape:nouvelleCle, historique }).eq('id', id);
+  if(error) alert('Enregistrement échoué côté serveur : '+error.message);
+  if(nouvelleCle==='chantier_realisation'){
+    alert('Chantier démarré → pense à poser ton intention de progression avec Thérèse avant de commencer.');
+  }
+}
+
+async function validerEtape(id){
+  const p = projets.find(x=>x.id===id); if(!p) return;
+  const idx = INDEX_ETAPE[p.etape];
+  if(idx >= ETAPES.length-1) return;
+  const termine = ETAPES[idx].label;
+  const nouvelleCle = ETAPES[idx+1].cle;
+  const nouveau = ETAPES[idx+1].label;
+  const historique = [...(p.historique||[]), { date: aujourdhuiFr(), texte: `"${termine}" coché → passage à "${nouveau}"` }];
+  p.etape = nouvelleCle; p.historique = historique;
+  render();
+  const { error } = await sb.from('projets').update({ etape:nouvelleCle, historique }).eq('id', id);
+  if(error) alert('Enregistrement échoué côté serveur : '+error.message);
+  if(nouvelleCle==='maquette_finale_bat'){
+    alert('Étape "Maquette finale / BAT / Livrables" atteinte → pense à vérifier le stock nécessaire pour ce chantier.');
+  }
+  if(nouvelleCle==='chantier_realisation'){
+    alert('Chantier démarré → pense à poser ton intention de progression avec Thérèse avant de commencer.');
+  }
+}
+
+async function ajouterManquant(id){
+  const el = document.getElementById('nouveauManquant');
+  const texte = el.value.trim(); if(!texte) return;
+  const p = projets.find(x=>x.id===id); if(!p) return;
+  const parEtape = { ...(p.manquants_par_etape||{}) };
+  parEtape[p.etape] = [...(parEtape[p.etape]||[]), texte];
+  p.manquants_par_etape = parEtape; render();
+  const { error } = await sb.from('projets').update({ manquants_par_etape: parEtape }).eq('id', id);
+  if(error) alert('Erreur : '+error.message);
+}
+async function retirerManquant(id, i){
+  const p = projets.find(x=>x.id===id); if(!p) return;
+  const parEtape = { ...(p.manquants_par_etape||{}) };
+  parEtape[p.etape] = (parEtape[p.etape]||[]).filter((_,ix)=>ix!==i);
+  p.manquants_par_etape = parEtape; render();
+  const { error } = await sb.from('projets').update({ manquants_par_etape: parEtape }).eq('id', id);
+  if(error) alert('Erreur : '+error.message);
+}
+async function enregistrerEcheance(id){
+  const p = projets.find(x=>x.id===id); if(!p) return;
+  const echeance_date = document.getElementById('editEcheanceDate').value || null;
+  const echeance_label = document.getElementById('editEcheanceLabel').value.trim() || null;
+  p.echeance_date = echeance_date; p.echeance_label = echeance_label; render();
+  const { error } = await sb.from('projets').update({ echeance_date, echeance_label }).eq('id', id);
+  if(error) alert('Erreur : '+error.message);
+}
+async function enregistrerNotes(id){
+  const p = projets.find(x=>x.id===id); if(!p) return;
+  const notes = document.getElementById('editNotes').value.trim() || null;
+  p.notes = notes;
+  const { error } = await sb.from('projets').update({ notes }).eq('id', id);
+  if(error) alert('Erreur : '+error.message); else alert('Notes enregistrées.');
+}
+async function ajouterEchange(id){
+  const type = document.getElementById('nouvelEchangeType').value;
+  const el = document.getElementById('nouvelEchangeTexte');
+  const texte = el.value.trim(); if(!texte) return;
+  const p = projets.find(x=>x.id===id); if(!p) return;
+  const historique = [...(p.historique||[]), { date: aujourdhuiFr(), iso: isoAujourdhui(), type, texte }];
+  p.historique = historique; render();
+  const { error } = await sb.from('projets').update({ historique }).eq('id', id);
+  if(error) alert('Erreur : '+error.message);
+}
+async function enregistrerContactClient(id){
+  const p = projets.find(x=>x.id===id); if(!p) return;
+  const telephone = document.getElementById('rcTel').value.trim() || null;
+  const email = document.getElementById('rcEmail').value.trim() || null;
+  if(p.client_id){
+    const { error } = await sb.from('clients').update({ telephone, email }).eq('id', p.client_id);
+    if(error) return alert('Erreur : '+error.message);
+    if(clientCharge) Object.assign(clientCharge, { telephone, email });
+  } else {
+    const patch = { client_telephone: telephone, client_email: email };
+    Object.assign(p, patch);
+    const { error } = await sb.from('projets').update(patch).eq('id', id);
+    if(error) return alert('Erreur : '+error.message);
+  }
+  alert('Coordonnées enregistrées.');
+}
+async function toggleChecklist(id, index){
+  const p = projets.find(x=>x.id===id); if(!p) return;
+  const coche = new Set((p.checklist_coche && p.checklist_coche[p.etape]) || []);
+  if(coche.has(index)) coche.delete(index); else coche.add(index);
+  const checklistCoche = { ...(p.checklist_coche||{}), [p.etape]: [...coche] };
+  p.checklist_coche = checklistCoche; render();
+  const { error } = await sb.from('projets').update({ checklist_coche: checklistCoche }).eq('id', id);
+  if(error) alert('Erreur : '+error.message);
+}
+async function enregistrerM2(id, valeur){
+  const p = projets.find(x=>x.id===id); if(!p) return;
+  const m2 = valeur===''? null : Number(valeur);
+  p.m2_a_peindre = m2; render();
+  const { error } = await sb.from('projets').update({ m2_a_peindre: m2 }).eq('id', id);
+  if(error) alert('Erreur : '+error.message);
+}
+function reserverPeinture(id){
+  const p = projets.find(x=>x.id===id); if(!p || p.m2_a_peindre==null) return;
+  const litres = Math.ceil((Number(p.m2_a_peindre) / RENDEMENT_M2_PAR_LITRE) * 10) / 10;
+  const chantier = libelleProjetCourt(p);
+  window.location.href = `${estUrl('stock-atelier.html')}&besoinChantier=${encodeURIComponent(chantier)}&besoinQuantite=${encodeURIComponent(litres)}`;
+}
+async function supprimerProjet(id){
+  const p = projets.find(x=>x.id===id); if(!p) return;
+  const label = libelleProjetCourt(p);
+  if(!await confirmer(`Supprimer le projet "${label}" ?\n\nLe numéro${p.numero_projet?' '+p.numero_projet:''} ne sera pas réattribué à un autre projet — comme pour un dossier papier, il reste "brûlé".${p.devis_id?'\n\nLe devis lié n\'est pas supprimé, seulement le suivi du projet.':''}`)) return;
+  await Promise.all([
+    sb.from('projet_intervenants').delete().eq('projet_id', id),
+    sb.from('heures_travaillees').delete().eq('projet_id', id),
+    sb.from('projet_labels').delete().eq('projet_id', id),
+    sb.from('signaux_client').delete().eq('projet_id', id),
+  ]);
+  const { error } = await sb.from('projets').delete().eq('id', id);
+  if(error) return alert('Erreur : '+error.message);
+  projets = projets.filter(x=>x.id!==id);
+  if(selectionId===id) selectionId = null;
+  render();
+}
+async function chargerRendement(){
+  const { data } = await sb.from('devis_reglages').select('rendement_m2_par_litre').eq('establishment_id', ESTABLISHMENT_ID).maybeSingle();
+  if(data && data.rendement_m2_par_litre) RENDEMENT_M2_PAR_LITRE = data.rendement_m2_par_litre;
+}
+
+/* =========================================================================
+   SITES DE CHANTIER — un projet (un seul devis, facturé par l'atelier porteur)
+   peut avoir plusieurs sites simultanés : adresse, dates, heures et peintres
+   propres à chacun (équipe interne ou partenaires déjà invités sur le projet).
+   projets.date_debut / date_fin restent tenus à jour (min / max des sites).
+   ========================================================================= */
+let sitesParProjet = {};
+const HEURES_PAR_JOUR_CHANTIER = 7; // même journée de référence que les devis (2 m² = 7 h)
+function hhmmEnMin(s){ if(!s) return null; const [h,m] = String(s).slice(0,5).split(':').map(Number); return h*60 + (m||0); }
+function minEnHhmm(min){ return String(Math.floor(min/60)).padStart(2,'0')+':'+String(min%60).padStart(2,'0'); }
+function ajouterJoursIso(iso, n){
+  const d = new Date(iso+'T00:00:00'); d.setDate(d.getDate()+n);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+// Saisie d'heure souple : « 9 », « 9h », « 9h30 », « 930 », « 9:30 » → « 09:30 ». null = vide, undefined = illisible.
+function parseHeure(v){
+  const s = String(v ?? '').trim().toLowerCase().replace(/\s+/g, '');
+  if(!s) return null;
+  let h, m, r;
+  if((r = s.match(/^(\d{1,2})(?:h|:)(\d{1,2})?$/))){ h = +r[1]; m = r[2]==null ? 0 : +r[2]; }
+  else if((r = s.match(/^(\d{3,4})$/))){ const p = r[1].padStart(4,'0'); h = +p.slice(0,2); m = +p.slice(2); }
+  else if((r = s.match(/^(\d{1,2})$/))){ h = +r[1]; m = 0; }
+  else return undefined;
+  if(h>23 || m>59) return undefined;
+  return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');
+}
+// Jours ouvrés = lundi à vendredi. Le jour de début compte toujours, même un samedi.
+function estJourOuvre(d){ const j = d.getDay(); return j!==0 && j!==6; }
+function joursOuvresEntre(debutIso, finIso){
+  let n = 1;
+  const f = new Date(finIso+'T00:00:00');
+  for(const x = new Date(debutIso+'T00:00:00'); ; ){
+    x.setDate(x.getDate()+1);
+    if(x > f) break;
+    if(estJourOuvre(x)) n++;
+  }
+  return n;
+}
+function ajouterJoursOuvres(iso, n){
+  const d = new Date(iso+'T00:00:00');
+  while(n>0){ d.setDate(d.getDate()+1); if(estJourOuvre(d)) n--; }
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function heuresParJourSite(s){ const h = Number(s.heures_par_jour); return h>0 ? h : HEURES_PAR_JOUR_CHANTIER; }
+// Calculateur début / fin / durée. Le dernier champ modifié pilote le calcul :
+//  - durée, début ou heures/jour modifiés (avec une durée) → la fin se déduit (jours ouvrés, journée de N h) ;
+//  - fin modifiée (ou début sans durée) → la durée se déduit.
+// Ne renvoie que les champs déduits. Journée « forcée » possible (ex : 11 h) via heures_par_jour.
+function calculerSite(s, champ){
+  const auto = {};
+  if(!s.date_debut) return auto;
+  const hpj = heuresParJourSite(s);
+  const debutMin = hhmmEnMin(s.heure_debut), finMin = hhmmEnMin(s.heure_fin);
+  const duree = Number(s.duree_heures);
+  const depuisDuree = champ==='duree_heures' || (['heure_debut','date_debut','heures_par_jour'].includes(champ) && duree>0);
+  if(depuisDuree && duree>0){
+    const jours = Math.max(1, Math.ceil(duree/hpj - 1e-9));
+    const dernierJour = duree - hpj*(jours-1);
+    const finJourMin = debutMin!=null ? debutMin + Math.round(dernierJour*60) : null;
+    auto.date_fin = ajouterJoursOuvres(s.date_debut, jours-1);
+    auto.heure_fin = (finJourMin!=null && finJourMin<=24*60-1) ? minEnHhmm(finJourMin) : null;
+  } else if(['date_fin','heure_fin','heure_debut','date_debut','heures_par_jour'].includes(champ) && (s.date_fin || finMin!=null)){
+    const fin = s.date_fin || s.date_debut;
+    if(fin < s.date_debut) return auto;
+    const n = joursOuvresEntre(s.date_debut, fin);
+    const horairesOk = debutMin!=null && finMin!=null && finMin>debutMin;
+    if(n===1) auto.duree_heures = horairesOk ? Math.round((finMin-debutMin)/60*100)/100 : hpj;
+    else {
+      const dernier = horairesOk ? Math.min(hpj, (finMin-debutMin)/60) : hpj;
+      auto.duree_heures = Math.round(((n-1)*hpj + dernier)*100)/100;
+    }
+  }
+  return auto;
+}
+function resumeSite(s){
+  const duree = Number(s.duree_heures);
+  if(!s.date_debut || !(duree>0)) return 'Saisis début + fin, ou début + durée : le reste se calcule.';
+  const n = joursOuvresEntre(s.date_debut, s.date_fin || s.date_debut);
+  const nb = (s.intervenants||[]).length;
+  return `⏱ ${duree} h de travail sur ${n} jour${n>1?'s':''} ouvré${n>1?'s':''} (journée de ${heuresParJourSite(s)} h)${nb>1 ? ` · 👥 ${nb} peintres ≈ ${Math.round(duree*nb*100)/100} h-peintre` : ''}`;
+}
+async function majSiteHeure(siteId, champ, valeur){
+  const h = parseHeure(valeur);
+  if(h===undefined){ alert('Heure non reconnue — écris par exemple 9, 9h, 9h30 ou 14:00.'); render(); return; }
+  await majSite(siteId, { [champ]: h });
+}
+function libelleHorairesSite(s){
+  const h = s.heure_debut ? String(s.heure_debut).slice(0,5) : null;
+  const f = s.heure_fin ? String(s.heure_fin).slice(0,5) : null;
+  const d = s.duree_heures ? `${Number(s.duree_heures)} h` : null;
+  return [h ? (f && (!s.date_fin || s.date_fin===s.date_debut) ? `${h}–${f}` : `dès ${h}`) : null, d].filter(Boolean).join(' · ');
+}
+async function chargerSites(){
+  sitesParProjet = {};
+  try{
+    const ids = projets.map(p=>p.id); if(!ids.length) return;
+    const { data: sites, error: e1 } = await sb.from('projet_sites').select('*').in('projet_id', ids).order('ordre').order('created_at');
+    if(e1) throw e1;
+    const siteIds = (sites||[]).map(s=>s.id);
+    let liens = [];
+    if(siteIds.length){
+      const { data, error: e2 } = await sb.from('projet_site_intervenants').select('*').in('site_id', siteIds);
+      if(e2) throw e2;
+      liens = data || [];
+    }
+    for(const s of (sites||[])){
+      s.intervenants = liens.filter(l=>l.site_id===s.id).map(l=>l.personne_id);
+      (sitesParProjet[s.projet_id] = sitesParProjet[s.projet_id] || []).push(s);
+      // Durée jamais calculée (dates saisies avant le calculateur) : on la calcule et on l'enregistre.
+      if(s.date_debut && s.date_fin && (s.duree_heures==null)){
+        const auto = calculerSite(s, 'date_fin');
+        if(auto.duree_heures!=null){ s.duree_heures = auto.duree_heures; sb.from('projet_sites').update({ duree_heures:auto.duree_heures }).eq('id', s.id).then(()=>{}); }
+      }
+    }
+    const aResoudre = [...new Set(liens.map(l=>l.personne_id))].filter(id=>!nomsPersonnes[id]);
+    if(aResoudre.length){
+      const { data: fm } = await sb.from('federation_members').select('user_id,nom,prenom').in('user_id', aResoudre);
+      for(const f of (fm||[])) nomsPersonnes[f.user_id] = `${f.prenom||''} ${f.nom||''}`.trim() || null;
+    }
+  }catch(e){ console.warn('Sites de chantier indisponibles :', e.message); }
+}
+function trouverSite(id){
+  for(const k in sitesParProjet){ const s = sitesParProjet[k].find(x=>x.id===id); if(s) return s; }
+  return null;
+}
+async function synchroDatesProjet(projetId){
+  const p = projets.find(x=>x.id===projetId); if(!p) return;
+  const sites = sitesParProjet[projetId] || [];
+  const debuts = sites.map(s=>s.date_debut).filter(Boolean).sort();
+  const fins = sites.map(s=>s.date_fin || s.date_debut).filter(Boolean).sort();
+  const date_debut = debuts[0] || null, date_fin = fins.length ? fins[fins.length-1] : null;
+  p.date_debut = date_debut; p.date_fin = date_fin; render();
+  const { error } = await sb.from('projets').update({ date_debut, date_fin }).eq('id', projetId);
+  if(error) alert('Erreur : '+error.message);
+}
+async function ajouterSite(projetId){
+  const liste = sitesParProjet[projetId] || (sitesParProjet[projetId] = []);
+  const { data, error } = await sb.from('projet_sites').insert({ projet_id:projetId, ordre:liste.length }).select().single();
+  if(error){ alert('Erreur : '+error.message+"\n\n(Si le message parle d'une table ou d'une colonne introuvable, une migration SQL « sites de chantier » n'a pas encore été lancée.)"); return; }
+  data.intervenants = []; liste.push(data); render();
+}
+async function majSite(siteId, patch){
+  const s = trouverSite(siteId); if(!s) return;
+  const champ = Object.keys(patch)[0];
+  const test = { ...s, ...patch };
+  if(test.date_debut && test.date_fin && test.date_fin < test.date_debut){ alert('La fin du site ne peut pas être avant son début.'); render(); return; }
+  if(test.date_debut && (!test.date_fin || test.date_fin===test.date_debut) && test.heure_debut && test.heure_fin && hhmmEnMin(test.heure_fin) <= hhmmEnMin(test.heure_debut)){
+    alert("L'heure de fin doit être après l'heure de début."); render(); return;
+  }
+  Object.assign(s, patch);
+  const auto = calculerSite(s, champ);
+  Object.assign(s, auto); render();
+  const { error } = await sb.from('projet_sites').update({ ...patch, ...auto }).eq('id', siteId);
+  if(error){ alert('Erreur : '+error.message); return; }
+  if('date_debut' in patch || 'date_fin' in patch || 'date_fin' in auto) await synchroDatesProjet(s.projet_id);
+}
+async function supprimerSite(siteId){
+  const s = trouverSite(siteId); if(!s) return;
+  if(!await confirmer('Supprimer ce site ?')) return;
+  const { error } = await sb.from('projet_sites').delete().eq('id', siteId);
+  if(error){ alert('Erreur : '+error.message); return; }
+  sitesParProjet[s.projet_id] = sitesParProjet[s.projet_id].filter(x=>x.id!==siteId);
+  await synchroDatesProjet(s.projet_id);
+}
+async function basculerPeintreSite(siteId, personneId, coche){
+  const s = trouverSite(siteId); if(!s) return;
+  if(coche){
+    const { error } = await sb.from('projet_site_intervenants').insert({ site_id:siteId, personne_id:personneId });
+    if(error){ alert('Erreur : '+error.message); render(); return; }
+    if(!s.intervenants.includes(personneId)) s.intervenants.push(personneId);
+  } else {
+    const { error } = await sb.from('projet_site_intervenants').delete().eq('site_id', siteId).eq('personne_id', personneId);
+    if(error){ alert('Erreur : '+error.message); render(); return; }
+    s.intervenants = s.intervenants.filter(x=>x!==personneId);
+  }
+  render();
+}
+function renderBlocSites(p){
+  const sites = sitesParProjet[p.id] || [];
+  const multi = sites.length > 1;
+  const chargee = equipeChargeePourId === p.id;
+  const dispo = equipeIntervenants.filter(i=>i.statut!=='refuse');
+  const hh = v => escapeHtml(v ? String(v).slice(0,5) : '');
+  const prenomCourt = id => (nomPersonne(id)||'').split(' ')[0];
+  const chips = s => !chargee ? '<span class="tiny muted">…</span>' : dispo.length ? dispo.map(iv=>{
+    const on = s.intervenants.includes(iv.personne_id);
+    return `<label class="chipPeintre ${on?'on':''}" title="${escapeHtml(nomPersonne(iv.personne_id))}${iv.statut==='invite'?' — invitation en attente':''}"><input type="checkbox" ${on?'checked':''} onchange="basculerPeintreSite('${s.id}','${iv.personne_id}',this.checked)">${iv.externe?'🤝 ':''}${escapeHtml(prenomCourt(iv.personne_id))}</label>`;
+  }).join('') : '<span class="tiny muted">aucun peintre assigné au projet (« Équipe &amp; heures »)</span>';
+  return `
+  <div class="blocSites">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px">
+      <div class="treeTitle" style="font-size:16px;margin:0">📅 Dates du chantier <span class="tiny muted" style="font-weight:400;font-family:Inter,system-ui,sans-serif">— début + fin → durée auto (lun–ven, ${HEURES_PAR_JOUR_CHANTIER} h/jour) · début + durée → fin auto</span></div>
+      ${sites.length ? `<button class="ghostBtn" style="padding:3px 10px;font-size:12.5px" onclick="ajouterSite('${p.id}')" title="Plusieurs sites en simultané, chacun avec ses dates et ses peintres. Le devis reste unique.">+ site</button>` : ''}
+    </div>
+    ${sites.map((s,i)=>`
+    <div class="siteCarte">
+      ${multi ? `<div class="siteEntete">
+        <input class="inputLeger" style="flex:1;min-width:120px" value="${escapeHtml(s.nom||'')}" placeholder="Site ${i+1} — nom (ex : Façade rue)" onchange="majSite('${s.id}',{nom:this.value.trim()||null})">
+        <input class="inputLeger" style="flex:1.3;min-width:140px" value="${escapeHtml(s.adresse||'')}" placeholder="Adresse" onchange="majSite('${s.id}',{adresse:this.value.trim()||null})">
+        <button class="ghostBtn" style="padding:2px 9px" title="Supprimer ce site" onclick="supprimerSite('${s.id}')">✕</button>
+      </div>` : ''}
+      <div class="siteLigne">
+        <div class="sf" style="width:136px"><label>Début</label><input class="inputLeger" type="date" value="${s.date_debut||''}" onchange="majSite('${s.id}',{date_debut:this.value||null})"></div>
+        <div class="sf" style="width:70px"><label>Heure</label><input class="inputLeger" type="text" inputmode="numeric" autocomplete="off" placeholder="9h30" value="${hh(s.heure_debut)}" onchange="majSiteHeure('${s.id}','heure_debut',this.value)"></div>
+        <div class="sf" style="width:136px"><label>Fin</label><input class="inputLeger" type="date" value="${s.date_fin||''}" onchange="majSite('${s.id}',{date_fin:this.value||null})"></div>
+        <div class="sf" style="width:70px"><label>Heure</label><input class="inputLeger" type="text" inputmode="numeric" autocomplete="off" placeholder="17h" value="${hh(s.heure_fin)}" onchange="majSiteHeure('${s.id}','heure_fin',this.value)"></div>
+        <div class="sf" style="width:84px"><label>Durée (h)</label><input class="inputLeger" id="dureeSite-${s.id}" type="number" step="0.25" min="0" placeholder="auto" value="${s.duree_heures??''}" title="${escapeHtml(resumeSite(s))}" onchange="majSite('${s.id}',{duree_heures:this.value===''?null:Number(this.value)})"></div>
+        <div class="sf" style="width:72px"><label>h / jour</label><input class="inputLeger" type="number" step="0.5" min="1" max="24" placeholder="${HEURES_PAR_JOUR_CHANTIER}" value="${s.heures_par_jour??''}" onchange="majSite('${s.id}',{heures_par_jour:this.value===''?null:Number(this.value)})" title="Force par ex. 11 h pour réduire le nombre de jours (déplacements, plusieurs peintres)"></div>
+        <div class="sf" style="flex:1;min-width:150px"><label>Peintres</label><div>${chips(s)}</div></div>
+        ${!multi ? `<button class="ghostBtn" style="padding:2px 9px;align-self:flex-end;margin-bottom:4px" title="Supprimer ce site" onclick="supprimerSite('${s.id}')">✕</button>` : ''}
+      </div>
+    </div>`).join('')}
+    ${sites.length ? '' : `<button class="actionBtn" onclick="ajouterSite('${p.id}')">+ Ajouter les dates du chantier</button>`}
+  </div>
+  `;
+}
+/* Déplacer / redimensionner une barre du calendrier à la souris.
+   - Glisser la barre : le chantier se décale (mêmes durée et heures).
+   - Tirer un bord : le nombre de jours change → la durée se recalcule et la fiche s'ouvre sur le
+     champ « Durée » pour un éventuel ajustement des heures.
+   - Simple clic : ouvre la fiche du projet. */
+let ganttDrag = null;
+let siteAFocaliser = null;
+function ganttPointerDown(ev, cle, projetId){
+  if(ev.button !== undefined && ev.button !== 0) return;
+  const bar = ev.currentTarget;
+  ganttDrag = { bar, cle, projetId, mode: ev.target.dataset.poignee || 'move', x0: ev.clientX,
+    left0: parseFloat(bar.style.left), w0: parseFloat(bar.style.width), W: GANTT_ZOOMS[ganttZoomIdx], dj: 0, moved: false };
+  try{ bar.setPointerCapture(ev.pointerId); }catch(e){}
+  ev.preventDefault();
+}
+function ganttPointerMove(ev){
+  const g = ganttDrag; if(!g || g.bar !== ev.currentTarget) return;
+  const dx = ev.clientX - g.x0;
+  if(Math.abs(dx) > 3) g.moved = true;
+  g.dj = Math.round(dx / g.W);
+  const largeurMin = g.W - 2;
+  if(g.mode === 'move') g.bar.style.left = (g.left0 + g.dj*g.W) + 'px';
+  else if(g.mode === 'droite') g.bar.style.width = Math.max(largeurMin, g.w0 + g.dj*g.W) + 'px';
+  else {
+    const gauche = Math.min(g.left0 + g.dj*g.W, g.left0 + g.w0 - largeurMin);
+    g.bar.style.left = gauche + 'px'; g.bar.style.width = (g.left0 + g.w0 - gauche) + 'px';
+  }
+}
+async function ganttPointerUp(ev){
+  const g = ganttDrag; if(!g || g.bar !== ev.currentTarget) return;
+  ganttDrag = null;
+  if(!g.moved){ selectionnerProjet(g.projetId); return; }
+  if(!g.dj){ render(); return; }
+  await deplacerSite(g.cle, g.projetId, g.mode, g.dj);
+}
+async function deplacerSite(cle, projetId, mode, dj){
+  let s = trouverSite(cle);
+  if(!s){ // chantier daté sans site (avant les sites) : on crée d'abord son site pour pouvoir le modifier
+    const p = projets.find(x=>x.id===projetId); if(!p || !p.date_debut){ render(); return; }
+    const { data, error } = await sb.from('projet_sites').insert({ projet_id:projetId, nom:'Site principal', date_debut:p.date_debut, date_fin:p.date_fin, ordre:0 }).select().single();
+    if(error){ alert('Erreur : '+error.message); render(); return; }
+    data.intervenants = []; (sitesParProjet[projetId] = sitesParProjet[projetId] || []).push(data); s = data;
+  }
+  const debut = s.date_debut, fin = s.date_fin || s.date_debut;
+  let nd = debut, nf = fin;
+  if(mode === 'move'){ nd = ajouterJoursIso(debut, dj); nf = ajouterJoursIso(fin, dj); }
+  else if(mode === 'gauche'){ nd = ajouterJoursIso(debut, dj); if(nd > fin) nd = fin; }
+  else { nf = ajouterJoursIso(fin, dj); if(nf < debut) nf = debut; }
+  const patch = { date_debut:nd, date_fin:nf };
+  if(mode !== 'move') Object.assign(patch, calculerSite({ ...s, ...patch }, 'date_fin'));
+  Object.assign(s, patch);
+  const { error } = await sb.from('projet_sites').update(patch).eq('id', s.id);
+  if(error){ alert('Erreur : '+error.message); }
+  if(mode !== 'move'){ siteAFocaliser = s.id; selectionId = projetId; }
+  await synchroDatesProjet(projetId);
+  if(mode !== 'move') selectionnerProjet(projetId);
+}
+async function initApp(){
+  document.querySelector('.app').innerHTML = `<div style="padding:24px" class="tiny muted">Chargement…</div>`;
+  try{
+    const { data:{ session }, error } = await sb.auth.getSession();
+    if(error) throw error;
+    if(!session){ location.replace('federation-accueil.html'); return; }
+    const estId = getCurrentEstId();
+    if(!estId){ location.replace('federation-accueil.html'); return; }
+    const { data: membre, error:e1 } = await sb.from('members').select('id,role').eq('user_id', session.user.id).eq('establishment_id', estId).maybeSingle();
+    if(e1) throw e1;
+    if(!membre){ location.replace('federation-accueil.html'); return; }
+    ESTABLISHMENT_ID = estId;
+    CURRENT_USER_ID = session.user.id;
+    MEMBRE_ROLE = membre.role;
+    await Promise.all([chargerEtapesKanban(), chargerProjets(), chargerRendement(), chargerChecklists(), chargerEquipeAtelier(), chargerModulesParEtape(), chargerEpreuvesParEtape(), chargerSignauxClient(), chargerLabels()]);
+    await chargerSites();
+    // Lien "ouvre directement la fiche de ce projet" (depuis l'Accueil atelier par ex.) —
+    // ?projet=ID en plus de ?est=, sinon comportement inchangé (tableau seul).
+    const projetVoulu = new URLSearchParams(window.location.search).get('projet');
+    if(projetVoulu && projets.some(p=>p.id===projetVoulu)) await selectionnerProjet(projetVoulu);
+    else render();
+  }catch(e){
+    console.error(e);
+    document.querySelector('.app').innerHTML = `<div class="errBox">Impossible de charger les projets : ${escapeHtml(e.message||String(e))}\n\nRecharge la page.</div>`;
+  }
+}
+initApp();
+</script>
+<script src="therese-widget.js"></script>
+</body>
+</html>

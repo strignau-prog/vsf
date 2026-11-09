@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Plan du site — Maurice</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600;700&display=swap">
+<style>
+  :root{ --bg:#fff; --ink:#1c1a17; --muted:#55504a; --line:#e4e0d9; --soft:#f7f5f2; --accent:#a8461f;
+    --green:#2f855a; --greenBg:#e6f2ea; --amber:#8a4a00; --amberBg:#fbeee0; --red:#b3261e; --redBg:#fbe4e1; }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif}
+  body{font-size:15px;line-height:1.35}
+  h1,h2,h3{font-family:Fraunces,Georgia,serif;font-weight:600;margin:0}
+  a{color:inherit}
+  .topbar{background:#1c1a17;color:#fff;padding:16px 24px}
+  .topbar a{color:#fff;text-decoration:none;font-family:Fraunces,Georgia,serif;font-size:18px;font-weight:600}
+  .main{max-width:1100px;margin:0 auto;padding:24px 20px 70px}
+  h1{font-size:26px;margin-bottom:6px}
+  .sub{color:var(--muted);font-size:14px;margin:0 0 18px;max-width:760px}
+  .estBox{background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin-bottom:24px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .estBox label{font-size:13px;color:var(--muted)}
+  .estBox input{border:1px solid var(--line);border-radius:8px;padding:7px 10px;font:inherit;min-width:320px}
+  details.perimetre summary{cursor:pointer;list-style:none}
+  details.perimetre summary::-webkit-details-marker{display:none}
+  details.perimetre summary h2::before{content:'▸ ';color:var(--muted)}
+  details.perimetre[open] summary h2::before{content:'▾ '}
+  .prioNote{background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:10px 16px;margin-bottom:22px;font-size:13.5px}
+  .legende{display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin-bottom:22px}
+  .perimetre{margin-bottom:34px}
+  .perimetre h2{font-size:20px;margin-bottom:2px}
+  .perimetreSub{color:var(--muted);font-size:13px;margin:0 0 12px}
+  .groupe{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:700;margin:14px 0 6px}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th{text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);padding:6px 8px;border-bottom:2px solid var(--line)}
+  td{padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
+  tr.prio td{background:#fffaf3}
+  .nom{font-weight:600}
+  .lien{display:inline-block;color:var(--accent);text-decoration:none;font-weight:600;white-space:nowrap}
+  .lien:hover{text-decoration:underline}
+  .lienGris{color:var(--muted);font-style:italic}
+  .badge{display:inline-flex;align-items:center;gap:5px;border-radius:99px;padding:3px 10px;font-size:12px;font-weight:600;white-space:nowrap}
+  .badge.fonctionnel{background:var(--greenBg);color:var(--green)}
+  .badge.partiel{background:var(--amberBg);color:var(--amber)}
+  .badge.prevu{background:var(--redBg);color:var(--red)}
+  .etoile{color:var(--accent);font-weight:700}
+  .noteBas{background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-top:10px}
+  .noteBas h3{font-size:15px;margin-bottom:8px}
+  .noteBas ul{margin:0;padding-left:20px;font-size:13.5px;color:var(--muted)}
+  .noteBas li{margin-bottom:6px}
+  @media (max-width:760px){ table,thead,tbody,th,td,tr{display:block} thead{display:none} tr{border-bottom:2px solid var(--line);padding:8px 0} td{border:none;padding:3px 0} td:before{content:attr(data-label);display:block;font-size:11px;color:var(--muted);text-transform:uppercase} }
+</style>
+</head>
+<body>
+<div class="topbar"><a href="atelier-compte.html">Maurice</a></div>
+<div class="main">
+  <h1>Plan du site</h1>
+  <p class="sub">Inventaire des écrans réels, à jour au 23/09/2026 — pour naviguer en direct pendant une session de test avec Tristan. Réparti sur les 4 périmètres du projet.</p>
+
+  <div class="estBox">
+    <label for="estInput">Atelier testé (identifiant établissement) :</label>
+    <input id="estInput" type="text" onchange="majLiens()">
+    <span class="sub" style="margin:0">— change-le si tu testes avec un autre atelier que Tristan Gesret.</span>
+  </div>
+
+  <div class="legende">
+    <span><span class="badge fonctionnel">fonctionnel</span> construit et utilisable de bout en bout</span>
+    <span><span class="badge partiel">partiel</span> construit mais des morceaux manquent (précisé)</span>
+    <span><span class="badge prevu">prévu</span> pas encore construit</span>
+    <span><span class="etoile">⭐</span> à tester en premier (nouveau ou signalé instable)</span>
+  </div>
+
+  <div class="prioNote"><b>Priorité confirmée par Tristan :</b> l'ERP Maurice + Thérèse d'abord. VraiSavoirFaire et l'outil d'analyse du geste sont repliés ci-dessous, à ouvrir seulement si besoin.</div>
+
+  <div id="contenu"></div>
+</div>
+
+<script>
+const EST_DEFAUT = 'ee1643c8-dcec-4dec-a113-12057457a138'; // Tristan Gesret — confirmé plus tôt dans le projet
+const ERP_BASE = 'https://fastidious-kringle-8ac4c1.netlify.app/';
+const MARS_BASE = 'https://benevolent-marigold-64a0a1.netlify.app/';
+
+function badge(statut){
+  const map = { fonctionnel:['fonctionnel','🟢'], partiel:['partiel','🟡'], prevu:['prévu','🔴'] };
+  const [label, dot] = map[statut];
+  return `<span class="badge ${statut}">${dot} ${label}</span>`;
+}
+// href : fonction (est)=>url, ou chaîne fixe (pas besoin d'est), ou null (pas de lien, ex. app de bureau)
+function ligne(nom, href, usage, statut, detailStatut, prio){
+  return { nom, href, usage, statut, detailStatut, prio };
+}
+const E = (page, params) => (est) => ERP_BASE + page + (params ? '?est='+encodeURIComponent(est)+params : (page.includes('?')?'':'?est='+encodeURIComponent(est)));
+const EQ = (page) => (est) => ERP_BASE + page; // pas besoin d'est
+const M = (page) => () => MARS_BASE + page;
+const U = (url) => () => url; // adresse absolue fixe
+
+const PERIMETRES = [
+{
+  cle:'maurice', titre:'ERP Maurice', sousTitre:'Base : '+ERP_BASE,
+  groupes: [
+    { nom:'Atelier', lignes:[
+      ligne('Devis (interne)', E('devis-interne.html'), "Créer, chiffrer et imprimer les devis (calcul auto, TVA/TTC, catalogue, déplacement).", 'fonctionnel', '', true),
+      ligne('Formulaire client (devis)', E('devis-client.html'), "Formulaire qu'un client remplit pour demander un devis (estimation en direct, estimatif flottant, mail à l'atelier). Version avec ?est= pour les tests.", 'fonctionnel', '', true),
+      ligne("Formulaire d'estimation interne complet", E('devis-client-archive-20261019.html'), "Le formulaire d'estimation complet, tel qu'il était avant la refonte du 19/10/2026 (plusieurs supports cochables, dimensions du lettrage…). Conservé pour un usage interne : non indexé, lié nulle part ailleurs.", 'fonctionnel', '', false),
+      ligne("Formulaire d'estimation public (estimation.etsgesret.fr)", U('https://estimation.etsgesret.fr'), "Adresse publique du formulaire, à donner à l'agence pour le menu « Obtenir une estimation ». Ouvert/fermé par le dirigeant ou l'admin depuis l'Accueil atelier.", 'fonctionnel', '', true),
+      ligne('Page contact (copie du site)', EQ('contact.html'), "Copie de etsgesret.fr/contact : son formulaire crée une fiche projet au Kanban et prévient l'atelier par mail. Non indexée tant que l'ancienne page fait foi.", 'fonctionnel', '', true),
+      ligne('Kanban clients', E('client-projet.html'), "Suivi des projets de la qualification à la facturation.", 'fonctionnel', '', false),
+      ligne('Dossier de présentation', EQ('dossier-presentation.html'), "Document PDF personnalisé (croquis d'intention, style choisi, autorisation) — auto depuis un devis, ou saisie rapide graphiste à l'étape Croquis d'intention.", 'fonctionnel', '', false),
+      ligne('Optimisation impression poncifs', EQ('poncifs-optimisation.html'), "Dépose des PDF de poncifs, dimensions lues automatiquement, disposition la plus économe en papier calculée pour le rouleau du FC9000.", 'fonctionnel', '', false),
+      ligne('Calendrier chantier', E('client-projet.html'), "Frise des chantiers : sites multiples, heures, glisser-déposer, alerte conflit peintre.", 'fonctionnel', '', true),
+      ligne('Stock & commandes', E('stock-atelier.html'), "Gestion du stock de peinture et des commandes.", 'fonctionnel', '', false),
+      ligne('Accueil atelier / Fiche entreprise', E('atelier-compte.html'), "Tableau de bord + fiche entreprise (SIRET, logo, coordonnées bancaires) + interrupteur « Formulaire d'estimation en ligne » ouvert/fermé (gérant et admin).", 'fonctionnel', '', true),
+      ligne('Compte & équipe', E('atelier-compte.html','&tab=equipe'), "Gérer les membres de l'équipe.", 'fonctionnel', '', false),
+      ligne('Temps de travail', E('atelier-compte.html','&tab=temps'), "Suivi du temps déclaré par l'équipe.", 'fonctionnel', '', false),
+      ligne('Stratégie atelier', E('strategie-atelier.html'), "Objectifs → tâches liées sur 4 colonnes, passage de relais automatique.", 'fonctionnel', '', true),
+    ]},
+    { nom:'Propositions aux prospects (projet séparé, propositions.etsgesret.fr)', lignes:[
+      ligne('Administration des propositions', U('https://propositions.etsgesret.fr/admin'), "Créer une page par prospect : PDF de la proposition, vidéo de Tristan facultative, mot de passe, carte « Ciblé » liée, journal des ouvertures et téléchargements.", 'fonctionnel', '', true),
+      ligne('Page prospect', null, "Adresse du type propositions.etsgesret.fr/p/&lt;identifiant&gt; envoyée au prospect (mot de passe demandé). La racine du site renvoie volontairement vers etsgesret.fr.", 'fonctionnel', 'pas de lien direct : l’identifiant est propre à chaque prospect', false),
+    ]},
+    { nom:'Fédération (public + comité)', lignes:[
+      ligne('Accueil / tableau de bord membre', EQ('federation-accueil.html'), "Site public + tableau de bord \u00abMa Fédération\u00bb une fois connecté.", 'partiel', "écrans « déclaration de niveau » et « journalisation des situations » pas construits", true),
+      ligne('Nos peintres / carte', EQ('federation-accueil.html?tab=peintres'), "Annuaire des peintres + carte des réalisations.", 'fonctionnel', '', false),
+      ligne('Nous rejoindre', EQ('federation-accueil.html?tab=devenir'), "Accueil candidats reconversion (Constellation des gestes intégrée).", 'fonctionnel', '', false),
+      ligne('Carte des réalisations', EQ('carte-realisations.html'), "Carte des enseignes peintes par les membres (photo, vidéo, audio, témoignage, collaborateurs) — alimentée par les réalisations validées.", 'fonctionnel', '', true),
+      ligne('Ajouter une réalisation', EQ('realisation-ajout.html'), "Formulaire d'ajout manuel (enseigne, adresse, peintre, collaborateurs, médias) + validation par le webmaster. Réservé aux membres connectés.", 'fonctionnel', '', true),
+      ligne('Constellation des gestes', EQ('constellation-des-gestes.html'), "Bulles des métiers proches, calculées à partir des gestes/situations communes.", 'fonctionnel', '', true),
+      ligne('Reconversion', EQ('reconversion.html'), "Compare des expériences passées à un métier de la Fédération.", 'partiel', "étiqueté « Prototype » dans le code", true),
+      ligne('Positionnement', E('positionnement.html'), "Auto-évaluation d'un membre + validation par le gérant.", 'fonctionnel', '', false),
+      ligne('Éditos du site public', EQ('federation-editos.html'), "Le comité modifie les textes publics sans toucher au code. Réservé comité.", 'fonctionnel', '', true),
+      ligne('Admin métiers', EQ('admin-metiers.html'), "Ajouter un métier ROME au périmètre. Réservé comité.", 'fonctionnel', '', true),
+    ]},
+    { nom:'Autres', lignes:[
+      ligne('MAMAIN — cartographie des compétences', EQ('cartographie-metier_1.html'), "Outil à part pour cartographier la structure d'un atelier.", 'fonctionnel', '', false),
+      ligne('Accueil « Mon Atelier » (à vérifier)', EQ('index.html'), "Ancienne page d'accueil — orpheline, aucun lien du site n'y mène ; devis/stock y tournent en local, pas relié à Supabase.", 'partiel', 'probablement obsolète — à trancher avec Tristan', false),
+    ]},
+  ]
+},
+{
+  cle:'therese', titre:'Thérèse', sousTitre:'Compagnon pédagogique — dans Maurice',
+  groupes: [
+    { nom:'', lignes:[
+      ligne('Thérèse — clôture de chantier', E('therese.html'), "Dialogue de clôture de chantier (intention avant, échange après, quizz).", 'partiel', "réponses libres pas encore analysées automatiquement (scénario fixe) ; tag « version test »", true),
+      ligne('Guide de production (carte mentale)', EQ('guide-production-mindmap.html'), "Carte mentale du métier + outils comité pour le référentiel de formation.", 'partiel', '« 467 tutos Skolantreuz » pas encore listés nommément', true),
+      ligne('Déploiement du référentiel-formation', EQ('deploiement-referentiel-formation.html'), "Vue de contrôle comité : quels modules sont réellement accessibles.", 'fonctionnel', 'suivi tenu à la main, pas calculé automatiquement', true),
+    ]}
+  ]
+},
+{
+  cle:'vsf', titre:'VraiSavoirFaire (méthode 12MARS)', sousTitre:'Base : '+MARS_BASE+' — projet séparé, URLs sans .html',
+  groupes: [
+    { nom:'Écran principal', lignes:[
+      ligne('Accueil (deux portes)', M('12mars-accueil'), "Oriente vers « Mon passage » et le hors-périmètre.", 'fonctionnel', '', false),
+      ligne('Mon passage', M('12mars-mon-passage'), "Parcours principal : coche ce que tu as fait, dis tes envies, reçois 3 pistes.", 'fonctionnel', '', true),
+      ligne('Données et méthode', M('12mars-donnees-methode'), "D'où viennent les données (ROME, ESCO, O*NET...).", 'fonctionnel', '', false),
+    ]},
+    { nom:'Pilote CAPEB (bâtiment, hors périmètre Fédération)', lignes:[
+      ligne('CAPEB Bâtiment (vitrine)', M('12mars-capeb'), "Vitrine du pilote CAPEB.", 'partiel', 'renvoie vers du contenu démonstration', false),
+      ligne('Entreprise CAPEB (8 portes)', M('12mars-capeb-entreprise'), "Menu de 8 situations d'entreprise.", 'fonctionnel', '', false),
+      ligne('Dialogue de situation (Boussole entreprise)', M('12mars-boussole-prototype'), "Décrire une situation vécue pour en tirer une piste.", 'partiel', 'étiqueté « Prototype », sauvegarde locale seulement', false),
+      ligne('Cartes de promesse CAPEB (démo)', M('12mars-capeb-cartes-demo'), "3 situations concrètes du bâtiment.", 'partiel', 'brouillon, pas validé par un pro', false),
+      ligne('Peintre en bâtiment repositionné (F1606)', M('12mars-capeb-fiche-f1606'), "Le métier comme contribution dans la chaîne CAPEB.", 'partiel', 'brouillon, non validé', false),
+      ligne('Pilote F1606 (analyse approfondie)', M('12mars-pilote-f1606'), "Analyse détaillée du métier peintre en bâtiment.", 'partiel', "pas encore prêt pour une démo publique", false),
+      ligne('Décider avec l\'expertise métier', M('12mars-entreprise-decider'), "Cas démo : consulter un spécialiste avant de décider.", 'partiel', 'cas démo explicite', false),
+      ligne('Entreprise (générique)', M('12mars-entreprise'), "Auto-positionnement entreprise sur les 12 repères M-A-R-S.", 'prevu', 'affiche « Bientôt disponible »', false),
+      ligne('Observatoire CAPEB', M('12mars-observatoire-capeb'), "Tableau de bord emploi/territoire simulé.", 'partiel', 'données de démonstration, chiffres fictifs', false),
+      ligne('Admin CAPEB', M('12mars-capeb-admin'), "Choix manuel du périmètre de métiers CAPEB.", 'fonctionnel', 'interne', false),
+      ligne('Moteur de contributions CAPEB', M('12mars-moteur-contributions'), "Calcule des contributions possibles à partir des données ROME.", 'fonctionnel', 'interne', false),
+      ligne('Tests d\'acceptation CAPEB', M('12mars-capeb-tests-acceptation'), "Suite de tests automatiques du pilote CAPEB.", 'fonctionnel', 'outil interne, pas un écran utilisateur', false),
+    ]},
+    { nom:'Ancien cycle / archivé (remplacé par « Mon passage »)', lignes:[
+      ligne('Analyse 0 (fiche ROME)', M('12mars-analyse0'), "Fiche métier officielle ROME.", 'partiel', 'orpheline', false),
+      ligne('Analyse 1 (comparaison)', M('12mars-analyse1'), "Compare le métier visé au parcours de la personne.", 'partiel', 'orpheline', false),
+      ligne('Boussole 12MARS (Skolantreuz)', M('12mars-skolantreuz'), "Questionnaire 4 axes, cœur de la méthode.", 'partiel', 'orpheline', false),
+      ligne('Constellation demandeur', M('12mars-constellation-demandeur'), "Choisir quel travail faire grandir.", 'partiel', 'orpheline', false),
+      ligne('Passeport de passerelle', M('12mars-passeport-passerelle'), "Chemin (formation, immersion) vers un métier.", 'partiel', 'brouillon explicite', false),
+      ligne('Carnet d\'immersion', M('12mars-carnet-immersion'), "Noter ce qu'on observe pendant une immersion.", 'partiel', 'orpheline, formulaire local', false),
+      ligne('Cartographie 12MARS', M('12mars-cartographie'), "Vue d'ensemble des métiers (matrice/liste).", 'partiel', 'étiquetée « Archivé », onglets pas construits', false),
+      ligne('Validation du modèle (diagnostic)', M('12mars-diagnostic'), "Vérifie couverture/cohérence sur 1911 fiches ROME.", 'fonctionnel', 'interne, étiqueté « Archivé » côté public', false),
+      ligne('Ancien Parcours ROME', M('12mars-parcours'), "Ancienne version du moteur de correspondance.", 'partiel', '« Archivé », mode expert en démo', false),
+    ]}
+  ]
+},
+{
+  cle:'geste', titre:"Outil d'analyse du geste", sousTitre:'Application de bureau (Windows) — pas un écran web',
+  groupes: [
+    { nom:'', lignes:[
+      ligne('Analyse du geste (v0.1.0)', null, "Superpose sur une vidéo le tracé d'un geste (main/doigt), avec calques et export. Anecdotique pour l'instant.", 'fonctionnel', 'C:\\Users\\strig\\geste-studio — dist\\AnalyseDuGeste\\AnalyseDuGeste.exe', false),
+    ]}
+  ]
+},
+];
+
+function majLiens(){
+  const est = document.getElementById('estInput').value.trim() || EST_DEFAUT;
+  const el = document.getElementById('contenu');
+  el.innerHTML = PERIMETRES.map(per => {
+    const prioritaire = per.cle==='maurice' || per.cle==='therese';
+    const tag = prioritaire ? 'div' : 'details';
+    const ouvert = prioritaire ? '' : '';
+    return `
+    <${tag} class="perimetre" ${ouvert}>
+      ${prioritaire ? `<h2>${per.titre}</h2>` : `<summary><h2 style="display:inline">${per.titre}</h2></summary>`}
+      <p class="perimetreSub">${per.sousTitre}</p>
+      ${per.groupes.map(g => `
+        ${g.nom ? `<div class="groupe">${g.nom}</div>` : ''}
+        <table>
+          <thead><tr><th style="width:26px"></th><th>Écran</th><th>À quoi ça sert</th><th style="width:110px">Statut</th></tr></thead>
+          <tbody>
+            ${g.lignes.map(l => {
+              const url = l.href ? l.href(est) : null;
+              const lienHtml = url
+                ? `<a class="lien" href="${url}" target="_blank" rel="noopener">${l.nom} ↗</a>`
+                : `<span class="lienGris">${l.nom}</span><div class="sub" style="margin:2px 0 0">${l.detailStatut}</div>`;
+              const usageHtml = l.href ? `${l.usage}${l.detailStatut ? `<div class="sub" style="margin:3px 0 0">${l.detailStatut}</div>` : ''}` : l.usage;
+              return `<tr class="${l.prio?'prio':''}">
+                <td data-label="">${l.prio?'<span class="etoile">⭐</span>':''}</td>
+                <td data-label="Écran"><div class="nom">${lienHtml}</div></td>
+                <td data-label="Usage">${usageHtml}</td>
+                <td data-label="Statut">${badge(l.statut)}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      `).join('')}
+    </${tag}>
+  `;
+  }).join('') + `
+    <div class="noteBas">
+      <h3>À trancher avec Tristan</h3>
+      <ul>
+        <li><b>Accueil « Mon Atelier »</b> (index.html) semble obsolète et orpheline — vérifier si elle sert encore ou peut être retirée.</li>
+        <li><b>Thérèse</b> et <b>Reconversion</b> sont explicitement marqués « Prototype »/« version test » dans le code — à tester avant toute mise en avant publique.</li>
+        <li>Le pilote <b>CAPEB</b> (VraiSavoirFaire) est hors périmètre Fédération — à montrer seulement si ça concerne Tristan.</li>
+      </ul>
+    </div>
+  `;
+}
+document.getElementById('estInput').value = EST_DEFAUT;
+majLiens();
+</script>
+</body>
+</html>
