@@ -308,10 +308,68 @@ function panel(){var h='';
   var jq=$('jq');if(jq){if(!S.job)jq.focus();jq.oninput=function(){sug(jq.value,'js',function(j){S.job=j;S.sf={};S.dur='';S.st=2;render();});};jq.onkeydown=enter('js');}
   var pq=$('pq');if(pq){pq.focus();pq.oninput=function(){sug(pq.value,'ps',function(j){S.prev=j;S.st=4;S.q=0;render();});};pq.onkeydown=enter('ps');}
 }
-function enter(box){return function(e){if(e.key==='Enter'){var b=$(box).querySelector('[data-pick]');if(b){e.preventDefault();b.click();}}};}
-function sug(q,box,cb){var r=q.trim().length<2?[]:START.filter(function(j){return norm(q).split(/\s+/).every(function(w){return norm(j.n).indexOf(w)>=0;});});
-  $(box).innerHTML=r.map(function(j,k){return '<button data-pick="'+START.indexOf(j)+'">'+j.n+'<small>ROME '+j.c+'</small></button>';}).join('')+(q.trim().length>=2&&!r.length?'<p class="qh" style="margin:8px 12px">Aucun métier dans la démo : essayez « vendeur », « comptable », « graphiste »…</p>':'');
-  $(box).onclick=function(e){var b=e.target.closest('[data-pick]');if(b)cb(START[+b.dataset.pick]);};}
+function enter(box){return function(e){if(e.key==='Enter'){var b=$(box).querySelector('[data-c]');if(b){e.preventDefault();b.click();}}};}
+/* ---------- recherche dans TOUS les métiers ROME (fonction rome-sync) ---------- */
+/* Les savoir-faire d'un métier viennent des fiches ROME (table rome_competences_cache) ; chacun reçoit des « repères » (client, matière, précision…)
+   déduits de ses mots, ce qui permet de rapprocher n'importe quel métier de départ des métiers du ciel. Les 8 métiers de départ écrits à la main gardent leurs savoir-faire. */
+var TAGREG=[
+ ['client',/\b(client|clientele|usager|acheteur|vente|vendre|conseill|accueil|renseign|attentes?|besoins?)/],
+ ['couleur',/\b(couleur|teinte|coloris|nuance|colorim)/],
+ ['compo',/\b(compos|dessin|design|maquet|concevoir|conception|creation|creer|decor|esthet|mise en scene|agencement|vitrine|graphi|visuel|ornement)/],
+ ['matiere',/\b(matiere|materiau|materiel|bois|metal|tissu|cuir|pierre|beton|plastique|textile|usin|soud|ciment|piece|revetement|verre|ceram|couper|coupe)/],
+ ['peinture',/\b(peintur|peindre|vernis|enduit|laque|badigeon|lasure)/],
+ ['support',/\b(support|surface|ponc|facade|mur|sol|plafond)/],
+ ['hauteur',/\b(hauteur|echafaud|nacelle|toiture|couverture|escalade|altitude)/],
+ ['precision',/\b(precis|mesur|controle|verifi|ajust|tolerance|qualite|calcul|regler|reglage|inspect|conform|etalonn)/],
+ ['pose',/\b(pose|poser|posez|poses|install|monter|montage|assembl|raccord|fixer|implanter)/],
+ ['reparer',/\b(repar|maintenance|depann|entretien|panne|restaur|remise en etat|diagnostiquer)/],
+ ['vivant',/\b(animal|animaux|plante|vegetal|culture|elevage|jardin|aliment|cuisin|cuisson|produits frais|agricole|horticole|boulang|patiss|viande|poisson)/],
+ ['soin',/\b(soin|hygiene|patient|sante|toilette|aide a la personne|medical|infirm|douleur|secours)/],
+ ['gens',/\b(personne|public|enfant|eleve|beneficiaire|accompagn|ecoute|relation|lien social|resident|famille|jeune)/],
+ ['transmettre',/\b(former|formation|transmett|enseign|tutorat|pedagog|apprenti|initier)/],
+ ['ecran',/\b(logiciel|informatique|numerique|saisie|ordinateur|base de donnees|donnees|programm|code|web|application|systeme d.information|digital|developp|reseau|cybersecurite)/],
+ ['chiffres',/\b(comptab|budget|financ|factur|paie|calcul|statist|tresorerie|fiscal|bilan|chiffre|tarif|devis|prix)/],
+ ['gestion',/\b(gestion|gerer|organis|planning|planifi|administr|suivi|stock|approvision|commande|pilot|priorit|dossier|archiv|classer|document)/],
+ ['equipe',/\b(equipe|collabor|collectif|coordonn|encadr|animer|superviser|partenaire|parties prenantes)/],
+ ['lettre',/\b(lettr|typograph|calligraph|enseigne|signaletique|affichage|marquage)/]];
+var GENERIQUE=/respecter (des |les )?(regles|consignes|normes)|adapter et optimiser sa pratique|trier et orienter les dechets|communiquer a l.oral|assurer la proprete|qhsse|utiliser les outils numeriques|ethique et de deontologie/;
+function tagsDe(lib){var t=norm(lib),r=[];TAGREG.forEach(function(x){if(x[1].test(t))r.push(x[0]);});return r.slice(0,3);}
+function courtLib(l){var s=String(l).replace(/\s*\([^)]*\)/g,'').replace(/\s+/g,' ').trim();if(s.length>78)s=s.slice(0,s.lastIndexOf(' ',75))+'…';return s.charAt(0).toUpperCase()+s.slice(1);}
+var CACHE_METIERS={};
+async function chargerMetier(code,nom){
+  var d=START.filter(function(j){return j.c===code;})[0];if(d)return d;
+  if(CACHE_METIERS[code])return CACHE_METIERS[code];
+  var sb=window.VSF&&VSF.sb;if(!sb)return null;
+  var lire=function(){return sb.from('rome_competences_cache').select('libelle,code_competence').eq('code_rome',code).eq('type','savoir-faire');};
+  var r=await lire();
+  if(!r.error&&!(r.data||[]).length){await sb.functions.invoke('rome-sync',{body:{codes:[code]}});r=await lire();}   /* fiche pas encore recopiée : on la demande, puis on relit */
+  if(r.error)return null;
+  var vus={},liste=[];
+  (r.data||[]).forEach(function(x){var s=courtLib(x.libelle),k=norm(s);if(vus[k]||GENERIQUE.test(norm(x.libelle)))return;vus[k]=1;liste.push([esc(s),tagsDe(x.libelle)]);});
+  liste=liste.map(function(x,i){return {x:x,i:i};}).sort(function(a,b){return (b.x[1].length>0)-(a.x[1].length>0)||a.i-b.i;}).map(function(o){return o.x;}).slice(0,12);
+  if(!liste.length)return null;
+  return (CACHE_METIERS[code]={c:code,n:nom,sf:liste});
+}
+var sugT=null,sugN=0;
+function sug(q,box,cb){
+  clearTimeout(sugT);var mine=++sugN,v=q.trim(),el=$(box);
+  if(v.length<2){el.innerHTML='';return;}
+  var local=function(){return START.filter(function(j){return norm(v).split(/\s+/).every(function(w){return norm(j.n).indexOf(w)>=0;});}).map(function(j){return {c:j.c,n:j.n};});};
+  var dessiner=function(l,note){if(mine!==sugN)return;
+    el.innerHTML=l.slice(0,8).map(function(x){return '<button data-c="'+esc(x.c)+'" data-n="'+esc(x.n)+'">'+esc(x.n)+'<small>ROME '+esc(x.c)+'</small></button>';}).join('')+(l.length?'':'<p class="qh" style="margin:8px 12px">'+(note||'Aucun métier trouvé : essayez un autre mot.')+'</p>');};
+  dessiner(local(),'Recherche…');
+  sugT=setTimeout(async function(){
+    var res=[];
+    try{var r=await VSF.sb.functions.invoke('rome-sync',{body:{recherche:v}});if(r.error)throw r.error;
+      var vus={};((r.data&&r.data.resultats)||[]).forEach(function(x){if(x.codeRome&&!vus[x.codeRome]){vus[x.codeRome]=1;res.push({c:x.codeRome,n:x.libelleMetier||x.libelle||x.codeRome});}});
+      dessiner(res);}
+    catch(e){dessiner(local(),'La recherche des métiers n’est pas disponible pour le moment. Réessayez dans un instant.');}
+  },350);
+  el.onclick=async function(e){var b=e.target.closest('[data-c]');if(!b)return;
+    el.innerHTML='<p class="qh" style="margin:8px 12px">Un instant…</p>';
+    var j=null;try{j=await chargerMetier(b.dataset.c,b.dataset.n);}catch(x){j=null;}
+    if(!j){el.innerHTML='<p class="qh" style="margin:8px 12px">Les savoir-faire de ce métier n’ont pas pu être chargés. Réessayez, ou choisissez un métier proche.</p>';return;}
+    cb(j);};}
 /* ---------- cibles et fiche signalétique ---------- */
 function cards(){var c=$('cards');if(S.st<8){c.classList.add('hide');return;}c.classList.remove('hide');c.classList.toggle('wait',!!S.calc);
   c.innerHTML=S.top.map(function(x,k){var m=x[0].m;return '<button class="cd'+(S.pick===k?' on':'')+'" data-cd="'+k+'"><div class="ck2">'+x[1]+'</div><div class="cn">'+(m.art?'◆ ':'')+m.n+'</div><div class="bd">'+(m.t>=2?'<span class="rc">↗ '+tTxt(m)+'</span>':'')+(m.up?'<span class="rr">◆ rare qui monte</span>':'')+'<span class="'+(m.ia==='forte'?'ia':'')+'">'+iaTxt(m)+'</span></div><div class="pp">'+m.sf.filter(function(g){return myTags()[g];}).length+' savoir-faire sur '+m.sf.length+' en commun · ≈ '+duree(x[0].p)+'</div></button>';}).join('');}
