@@ -223,9 +223,9 @@ function majListes() { var t = $('tPers'); if (t) t.innerHTML = tablePersonnes()
 function tableEntreprises(q) {
   var L = D.entreprises.filter(function (e) { return q([e.nom, e.dirigeant, e.collectif].join(' ')); });
   var corps = L.map(function (e) {
-    return '<tr class="' + (e.sans_nom ? 'alerte' : '') + '"><td class="nom">' + (e.sans_nom ? (E((e.ateliers || []).join(' · ') || 'Sans nom') + ' <span class="mut" style="font-weight:500">· nom de l’entreprise : ' + E(e.nom_brut || 'vide') + '</span> <button class="lnk" data-act="nommer" data-id="' + E(e.id) + '">Nommer</button>') : E(e.nom) + ((e.ateliers || []).length && (e.ateliers || []).join(' · ') !== e.nom ? ' <span class="mut" style="font-weight:500">· ' + E(e.ateliers.join(' · ')) + '</span>' : '')) + (e.bloquee ? ' <span class="brou">suspendue</span>' : '') + '</td><td class="mut">—</td><td class="mut">—</td><td>' + E(e.dirigeant || '—') + '</td><td>' + (e.membres || 0) + '</td>' +
+    return '<tr class="' + (e.sans_nom ? 'alerte' : '') + '"><td class="nom">' + (e.sans_nom ? (E((e.ateliers || []).join(' · ') || 'Sans nom') + ' <span class="mut" style="font-weight:500">· nom de l’entreprise : ' + E(e.nom_brut || 'vide') + '</span> <button class="lnk" data-act="nommer" data-id="' + E(e.id) + '">Nommer</button>') : E(e.nom) + ((e.ateliers || []).length && (e.ateliers || []).join(' · ') !== e.nom ? ' <span class="mut" style="font-weight:500">· ' + E(e.ateliers.join(' · ')) + '</span>' : '')) + (e.protegee ? ' <span class="brou">protégée</span>' : '') + (e.bloquee ? ' <span class="brou">suspendue</span>' : '') + '</td><td class="mut">—</td><td class="mut">—</td><td>' + E(e.dirigeant || '—') + '</td><td>' + (e.membres || 0) + '</td>' +
       '<td>' + ({ en_cours: '<span class="st jaune"><i></i>En cours</span>', termine: '<span class="st vert"><i></i>Terminé</span>', a_payer: '<span class="st gris"><i></i>À payer</span>' }[e.diagnostic] || '<span class="mut">—</span>') + '</td>' +
-      '<td>' + E((e.outils || []).join(' · ') || '—') + '</td><td>' + E(e.collectif || '—') + '</td><td><div class="act"><a class="lnk" href="entites.html">Voir</a></div></td></tr>';
+      '<td>' + E((e.outils || []).join(' · ') || '—') + '</td><td>' + E(e.collectif || '—') + '</td><td><div class="act">' + (e.protegee ? '<button class="lnk" data-act="code" data-id="' + E(e.id) + '" data-defini="' + (e.code_defini ? '1' : '0') + '">' + (e.code_defini ? 'Changer le code' : 'Définir le code') + '</button>' : '') + '<a class="lnk" href="entites.html">Voir</a></div></td></tr>';
   }).join('');
   return '<div class="tw"><table><thead><tr><th>Nom</th><th>Adresse</th><th>Secteur</th><th>Dirigeant</th><th>Membres</th><th>Diagnostic</th><th>Outils</th><th>Collectif</th><th></th></tr></thead><tbody>' + (corps || '<tr><td colspan="9" class="vide">Aucune entreprise.</td></tr>') + '</tbody></table></div>';
 }
@@ -280,10 +280,10 @@ async function voir(id) {
 
 /* ---------- actions ---------- */
 function msg(t) { var m = $('msg'); if (m) m.textContent = t || ''; }
-function dialogue(titre, texte, avecSaisie, valeurDefaut, labelOk, danger) {
+function dialogue(titre, texte, avecSaisie, valeurDefaut, labelOk, danger, masque) {
   return new Promise(function (res) {
     var d = document.createElement('div'); d.className = 'dlg';
-    d.innerHTML = '<div role="dialog" aria-modal="true"><h3>' + E(titre) + '</h3><p>' + E(texte) + '</p>' + (avecSaisie ? '<input id="dlgIn" value="' + E(valeurDefaut || '') + '" autocomplete="off">' : '') + '<div class="r"><button id="dlgNo">Annuler</button><button id="dlgOk" class="ok' + (danger ? ' danger' : '') + '">' + E(labelOk || 'Confirmer') + '</button></div></div>';
+    d.innerHTML = '<div role="dialog" aria-modal="true"><h3>' + E(titre) + '</h3><p>' + E(texte) + '</p>' + (avecSaisie ? '<input id="dlgIn" type="' + (masque ? 'password' : 'text') + '" value="' + E(valeurDefaut || '') + '" autocomplete="' + (masque ? 'off' : 'off') + '">' : '') + '<div class="r"><button id="dlgNo">Annuler</button><button id="dlgOk" class="ok' + (danger ? ' danger' : '') + '">' + E(labelOk || 'Confirmer') + '</button></div></div>';
     document.body.appendChild(d);
     var inp = d.querySelector('#dlgIn'); if (inp) inp.focus(); else d.querySelector('#dlgOk').focus();
     var fin = function (v) { d.remove(); res(v); };
@@ -294,9 +294,20 @@ function dialogue(titre, texte, avecSaisie, valeurDefaut, labelOk, danger) {
   });
 }
 function fermerMenus() { document.querySelectorAll('.men > ul').forEach(function (u) { u.remove(); }); }
+/* structure protégée : la base répond « code requis » (VSF10) ; on demande le code puis on réessaie une fois */
+async function avecCode(nom, args, titre) {
+  var r = await appeler(nom, args);
+  if (r.error && (r.error.code === 'VSF10' || /Code requis/i.test(r.error.message || ''))) {
+    var code = await dialogue(titre || 'Structure protégée', 'Cette structure est protégée. Écris le code pour continuer.', true, '', 'Continuer', false, true);
+    if (!code) return { error: { message: 'Annulé.', annule: true } };
+    args = Object.assign({}, args, { p_code: code });
+    r = await appeler(nom, args);
+  }
+  return r;
+}
 async function changerStatut(id, st) {
-  var r = await appeler('vsf_admin_personne_statut', { p_user: id, p_statut: st });
-  if (r.error) { msg(r.error.message && r.error.message.length < 140 ? r.error.message : 'Échec. Réessayez.'); return; }
+  var r = await avecCode('vsf_admin_personne_statut', { p_user: id, p_statut: st }, 'Compte d’une structure protégée');
+  if (r.error) { msg(r.error.annule ? '' : (r.error.message && r.error.message.length < 140 ? r.error.message : 'Échec. Réessayez.')); return; }
   await charger(); dessiner(); if (ST.sel === id) voir(id);
 }
 document.addEventListener('click', async function (e) {
@@ -342,7 +353,16 @@ document.addEventListener('click', async function (e) {
       try { await navigator.clipboard.writeText(lien); msg('Nouveau lien copié : à transmettre à la personne. L’ancien ne marche plus.'); } catch (x) { await dialogue('Nouveau lien d’invitation', lien, false, '', 'Fermer'); } return;
     }
     if (act === 'annuler') { if (!(await dialogue('Annuler l’invitation ?', 'Le lien ne marchera plus.', false, '', 'Annuler l’invitation', true))) return; var r5 = await appeler('vsf_admin_invitation_annuler', { p_membre: id2 }); if (r5.error) { msg('Échec. Réessayez.'); return; } await charger(); dessiner(); return; }
-    if (act === 'nommer') { var n = await dialogue('Nommer l’atelier', 'Un atelier doit avoir un nom pour être validé.', true, '', 'Enregistrer'); if (!n) return; var r6 = await appeler('vsf_admin_entreprise_nommer', { p_org: id2, p_nom: n }); if (r6.error) { msg(r6.error.message && r6.error.message.length < 160 ? r6.error.message : 'Échec. Réessayez.'); return; } await charger(); dessiner(); OUVERT.entreprises = true; dessiner(); return; }
+    if (act === 'nommer') { var n = await dialogue('Nommer l’atelier', 'Un atelier doit avoir un nom pour être validé.', true, '', 'Enregistrer'); if (!n) return; var r6 = await avecCode('vsf_admin_entreprise_nommer', { p_org: id2, p_nom: n }, 'Renommer une structure protégée'); if (r6.error) { msg(r6.error.annule ? '' : (r6.error.message && r6.error.message.length < 160 ? r6.error.message : 'Échec. Réessayez.')); return; } await charger(); dessiner(); OUVERT.entreprises = true; dessiner(); return; }
+    if (act === 'code') {
+      var defini = t.getAttribute('data-defini') === '1', ancien = '';
+      if (defini) { ancien = await dialogue('Code actuel', 'Écris le code actuel de cette structure protégée.', true, '', 'Continuer', false, true); if (!ancien) return; }
+      var nouveau = await dialogue(defini ? 'Nouveau code' : 'Définir le code', 'Au moins 8 caractères. Sans ce code, la structure ne peut être ni supprimée, ni renommée, ni suspendue. Garde-le dans ton gestionnaire de mots de passe.', true, '', 'Enregistrer', false, true);
+      if (!nouveau) return;
+      var rc = await appeler('vsf_admin_code_structure', { p_org: id2, p_ancien: ancien, p_nouveau: nouveau });
+      if (rc.error) { msg(rc.error.message && rc.error.message.length < 160 ? rc.error.message : 'Échec. Réessayez.'); return; }
+      msg('Code enregistré.'); await charger(); OUVERT.entreprises = true; dessiner(); return;
+    }
     if (act === 'sigle') { var s2 = await dialogue('Sigle du collectif', 'En minuscules, de 2 à 8 lettres. Il donne l’adresse /collectif/sigle.', true, t.getAttribute('data-sigle'), 'Enregistrer'); if (!s2) return; var r7 = await appeler('vsf_admin_collectif_sigle', { p_federation: id2, p_sigle: String(s2).trim().toLowerCase() }); if (r7.error) { msg(r7.error.message && r7.error.message.length < 160 ? r7.error.message : 'Échec. Réessayez.'); return; } OUVERT.collectifs = true; await charger(); dessiner(); return; }
     if (act === 'lien-copier') { var lc = location.origin + '/acces.html?c=' + encodeURIComponent(t.getAttribute('data-code')); try { await navigator.clipboard.writeText(lc); t.textContent = 'Copié ✓'; } catch (x) { await dialogue('Lien', lc, false, '', 'Fermer'); } return; }
     if (act === 'lien-env') { var le = location.origin + '/acces.html?c=' + encodeURIComponent(t.getAttribute('data-code')); location.href = 'mailto:?subject=' + encodeURIComponent('Votre accès à VraiSavoirFaire') + '&body=' + encodeURIComponent('Bonjour,\n\nVoici votre lien pour faire le diagnostic :\n' + le + '\n\nLe mot de passe vous est transmis séparément.\n'); return; }
