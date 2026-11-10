@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Tests de la sauvegarde</title>
+<style>
+:root{--fg:#111;--bg:#fff;--mut:#6b6b6b;--ok:#009e73;--ko:#c2321f}
+@media (prefers-color-scheme:dark){:root{--fg:#f2f2f2;--bg:#111;--mut:#a0a0a0;--ok:#35c79b;--ko:#ff7a66}}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.45 Inter,system-ui,sans-serif;padding:32px clamp(16px,4vw,56px)}
+h1{font-size:clamp(28px,4vw,44px);font-weight:900;letter-spacing:-.03em;margin:0 0 6px}
+p{color:var(--mut);margin:0 0 24px;max-width:78ch}
+.t{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:12px;align-items:baseline;padding:10px 0}
+.t b{font-weight:800}.t small{display:block;color:var(--mut);font-size:13px}
+.ok{color:var(--ok)}.ko{color:var(--ko)}
+.res{font-size:22px;font-weight:900;margin:26px 0 0}
+iframe{position:absolute;left:-9999px;width:1300px;height:900px;border:0}
+</style>
+</head>
+<body>
+<h1>Tests de la sauvegarde du diagnostic</h1>
+<p>Le diagnostic v10 est ouvert dans un navigateur de test branché sur une <b>base simulée</b> (aucune donnée réelle, aucun compte). On vérifie le comportement de la page : enregistrement, reprise, deux onglets, coupure réseau, session expirée. La base réelle (droits, enregistrement serveur) se teste à part avec un compte de test.</p>
+<div id="liste"></div>
+<div class="res" id="bilan">Calcul en cours…</div>
+<div id="cadres"></div>
+<script>
+(function(){
+  var L=document.getElementById('liste'),bilan=document.getElementById('bilan'),cadres=document.getElementById('cadres'),ok=0,tot=0;
+  var pause=function(ms){return new Promise(function(r){setTimeout(r,ms);});};
+  window.__db={etat:null,maj:null};window.__reseau='ok';
+  function ligne(passe,titre,attendu,obtenu){tot++;if(passe)ok++;var d=document.createElement('div');d.className='t';
+    d.innerHTML='<span class="'+(passe?'ok':'ko')+'" aria-hidden="true">'+(passe?'✓':'✗')+'</span><span><b></b><small></small></span><span class="'+(passe?'ok':'ko')+'">'+(passe?'réussi':'échec')+'</span>';
+    d.querySelector('b').textContent=titre;d.querySelector('small').textContent='attendu : '+attendu+' · obtenu : '+obtenu;L.appendChild(d);}
+  var FAUX='<script>window.__calls=[];(function(){function ch(d){var o={select:function(){return o},eq:function(){return o},limit:function(){return Promise.resolve(d)},maybeSingle:function(){return Promise.resolve(d)}};return o;}'+
+    'var P=window.parent;window.VSF={sb:{auth:{getSession:function(){return Promise.resolve({data:{session:{user:{id:"U-TEST"}}}})}},'+
+    'from:function(t){if(t==="members")return ch({data:[{role:"gerant",establishments:{organization_id:"ORG-TEST"}}]});if(t==="vsf_diagnostics")return ch({data:{etat:P.__db.etat,maj_le:P.__db.maj}});return ch({data:null});},'+
+    'rpc:function(n,a){window.__calls.push([n,a]);'+
+    'if(n==="vsf_diagnostic_ouvrir")return Promise.resolve({data:{id:"D-TEST",statut:"en_cours"}});'+
+    'if(n==="vsf_diagnostic_enregistrer"){if(P.__reseau==="coupe")return Promise.reject(new Error("reseau"));if(P.__reseau==="expire")return Promise.resolve({error:{message:"JWT expired",code:"PGRST301"}});P.__db.etat=a.p_etat;P.__db.maj=new Date().toISOString();return Promise.resolve({data:"ok"});}'+
+    'if(n==="vsf_equipe_lister")return Promise.resolve({error:{message:"absent"}});return Promise.resolve({data:null});}}};})();<\/script>';
+  async function ouvrir(){
+    var html=await (await fetch('diagnostic-entreprise-v10.html?'+Date.now())).text();
+    html=html.replace('<script src="vsf-auth.js"><\/script>',FAUX).replace('<script src="vsf-menu.js"><\/script>','');
+    var f=document.createElement('iframe');f.srcdoc=html;cadres.appendChild(f);
+    await new Promise(function(r){f.addEventListener('load',r);});await pause(1800);return f;
+  }
+  var appels=function(f,nom){return f.contentWindow.__calls.filter(function(c){return c[0]===nom;}).length;};
+  function choisir(f,val){var d=f.contentWindow.document,s=d.getElementById('sector');s.value=val;s.dispatchEvent(new Event('change',{bubbles:true}));}
+  function quitter(f){f.contentWindow.dispatchEvent(new Event('pagehide'));}
+  var cle='vsf_v10_D-TEST';
+  (async function(){
+    try{
+      localStorage.removeItem(cle);
+      /* 1. saisie, enregistrement, fermeture de l'onglet, reprise */
+      var a=await ouvrir();
+      choisir(a,'B');await pause(5800);                                  /* la sauvegarde automatique passe toutes les 5 secondes */
+      ligne(window.__db.etat&&window.__db.etat.S&&window.__db.etat.S.sector==='B','Saisie enregistrée automatiquement (toutes les 5 secondes)','secteur B enregistré',JSON.stringify(window.__db.etat&&window.__db.etat.S&&window.__db.etat.S.sector));
+      a.remove();
+      var b=await ouvrir();
+      var rev=b.contentWindow.document.getElementById('sector').value;
+      ligne(rev==='B','Fermeture de l’onglet puis reprise : les réponses reviennent','B',rev);
+      b.remove();
+      /* 2. coupure réseau : rien n'est marqué « enregistré », une copie reste sur l'appareil, puis tout repart au retour du réseau */
+      window.__db={etat:null,maj:null};localStorage.removeItem(cle);window.__reseau='coupe';
+      var c=await ouvrir();choisir(c,'F');quitter(c);await pause(900);
+      var m1=(c.contentWindow.document.getElementById('vsfMsg')||{}).textContent||'';
+      ligne(/Enregistrement impossible/.test(m1),'Coupure réseau : le message le dit, sans perdre les réponses','« Enregistrement impossible… »',m1.slice(0,40));
+      ligne(!!localStorage.getItem(cle),'Coupure réseau : une copie reste sur l’appareil','copie présente',localStorage.getItem(cle)?'copie présente':'absente');
+      window.__reseau='ok';c.contentWindow.dispatchEvent(new Event('online'));await pause(1200);
+      ligne(!!window.__db.etat&&window.__db.etat.S.sector==='F','Retour du réseau : l’enregistrement reprend tout seul','secteur F enregistré',JSON.stringify(window.__db.etat&&window.__db.etat.S.sector));
+      var vide=!localStorage.getItem(cle);
+      ligne(vide,'Retour du réseau : la copie de secours est effacée','copie effacée',vide?'effacée':'encore là');
+      c.remove();
+      /* 3. déconnexion : session expirée, puis reconnexion */
+      window.__db={etat:null,maj:null};localStorage.removeItem(cle);window.__reseau='expire';
+      var d2=await ouvrir();choisir(d2,'H');quitter(d2);await pause(900);
+      var m2=(d2.contentWindow.document.getElementById('vsfMsg')||{}).innerHTML||'';
+      ligne(/connexion a expiré/.test(m2)&&/reconnectez-vous/.test(m2),'Session expirée : le message le dit et propose de se reconnecter','« Votre connexion a expiré… »',m2.replace(/<[^>]+>/g,'').slice(0,40));
+      window.__reseau='ok';d2.contentWindow.dispatchEvent(new Event('online'));await pause(1200);
+      ligne(!!window.__db.etat&&window.__db.etat.S.sector==='H','Reconnexion : les réponses gardées sont enregistrées','secteur H enregistré',JSON.stringify(window.__db.etat&&window.__db.etat.S.sector));
+      d2.remove();
+      /* 4. deux onglets : le second est signalé et n'écrase rien */
+      window.__db={etat:null,maj:null};localStorage.removeItem(cle);
+      var e1=await ouvrir();var e2=await ouvrir();await pause(600);
+      var lect=!!e2.contentWindow.document.getElementById('vsfLect');
+      ligne(lect,'Deux onglets : le second le dit et passe en lecture','écran « ouvert dans un autre onglet »',lect?'affiché':'absent');
+      var avant=appels(e2,'vsf_diagnostic_enregistrer');choisir(e2,'K');quitter(e2);await pause(700);
+      ligne(appels(e2,'vsf_diagnostic_enregistrer')===avant,'Deux onglets : le second n’enregistre rien','0 enregistrement',String(appels(e2,'vsf_diagnostic_enregistrer')-avant));
+      e1.remove();e2.remove();
+    }catch(e){ligne(false,'Les tests ont pu se dérouler','sans erreur',String(e&&e.message||e));}
+    localStorage.removeItem(cle);
+    bilan.textContent=ok+' réussis sur '+tot;bilan.className='res '+(ok===tot?'ok':'ko');document.title=(ok===tot?'✓ ':'✗ ')+ok+'/'+tot+' · Tests de la sauvegarde';
+  })();
+})();
+</script>
+</body>
+</html>
