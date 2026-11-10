@@ -227,6 +227,14 @@ h1{margin:10px 0 14px;font-size:clamp(34px,4.6vw,60px);font-weight:900;line-heig
 .sl .slt button.on{background:#111;box-shadow:0 0 0 5px var(--now)}
 .sl .slt button:hover{border-color:var(--now)}
 .nt .b{transition:none!important}
+
+/* savoir-faire à cocher : petits blocs sur 2 colonnes, texte sur 2 lignes au plus — la colonne de gauche garde sa largeur */
+.panel{min-width:0}
+.chips.sfl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;max-width:560px}
+.chips.sfl button{border-radius:12px;text-align:left;font-size:13px;line-height:1.25;padding:7px 11px;min-height:44px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+@media(max-width:420px){.chips.sfl{grid-template-columns:1fr}}
+/* ordinateur : l'animation reste sous les yeux pendant qu'on coche à gauche (elle ne défile plus avec la page) */
+@media(min-width:901px){.stage:not(.intro) .sky:not(.fin){position:sticky;top:var(--hh,64px);align-self:start;height:max(560px,calc(100svh - var(--hh,64px)))}}
 </style>
 <link rel="icon" href="/favicon.ico" sizes="48x48">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -396,7 +404,7 @@ function iaTxt(m){return m.ia==='faible'?'◎ le geste humain compte':(m.ia==='m
 function tTxt(m){return ['peu d’offres','recrute un peu','recrute','recrute beaucoup'][m.t];}
 /* ---------- ciel ---------- */
 var W=0,H=0;
-function layout(){var fr=$('field').getBoundingClientRect();W=fr.width;H=fr.height;
+function layout(){document.documentElement.style.setProperty('--hh',topH()+'px');var fr=$('field').getBoundingClientRect();W=fr.width;H=fr.height;
   var wide=innerWidth>=900,fin=S.st>=8,showMe=S.st>=2&&S.job;
   var cx=W*.5,cy=H*.5,R=Math.min(W,H)*.46,intro=S.st===0;
   if(fin){cx=wide?58:62;}
@@ -433,12 +441,12 @@ function nav(ok,label,why){return '<div class="nav"><button class="next'+(ok?' r
 function panel(){var h='';
   if(S.st===0)h='';
   if(S.st===1)h=prog()+'<div class="kick">Ton point de départ</div><div class="q">Quel est ton métier aujourd’hui ?</div><p class="qh">Ou le dernier que tu as exercé.</p><div class="srch'+(S.job?'':' todo')+'"><span class="caret"></span><input id="jq" autocomplete="off" placeholder="un métier…" aria-label="Ton métier" value="'+(S.job?esc(S.job.n):'')+'"></div><div class="sugg" id="js"></div>'+nav(!!S.job,null,'Cherche ton métier.');
-  if(S.st===2){var n=Object.keys(S.sf).filter(function(k){return S.sf[k];}).length;h=prog()+'<div class="kick">'+esc(S.job.n)+'</div><div class="q">Qu’est-ce que tu fais vraiment ?</div><p class="qh">Coche ce qui fait ta journée. Regarde le ciel : les métiers proches se rapprochent.</p><div class="chips'+(n?'':' todo')+'">'+S.job.sf.slice(0,18).map(function(x,k){return '<button data-sf="'+k+'" class="'+(S.sf[k]?'on':'')+'">'+x[0]+'</button>';}).join('')+'</div><p class="qh" style="margin-top:20px">Depuis combien de temps ?</p><div class="chips'+(S.dur?'':' todo')+'" role="radiogroup" aria-label="Depuis combien de temps">'+DUR.map(function(d,k){return '<button data-dur="'+k+'" role="radio" aria-checked="'+(String(k)===S.dur)+'" class="'+(String(k)===S.dur?'on':'')+'">'+d+'</button>';}).join('')+'</div>'+nav(n&&S.dur!=='',null,!n?'Coche au moins un savoir-faire.':'Dis depuis combien de temps.');}
+  if(S.st===2){var n=Object.keys(S.sf).filter(function(k){return S.sf[k];}).length;h=prog()+'<div class="kick">'+esc(S.job.n)+'</div><div class="q">Qu’est-ce que tu fais vraiment ?</div><p class="qh">Coche ce qui fait ta journée. Regarde le ciel : les métiers proches se rapprochent.</p><div class="chips sfl'+(n?'':' todo')+'">'+S.job.sf.slice(0,18).map(function(x,k){return '<button data-sf="'+k+'" class="'+(S.sf[k]?'on':'')+'">'+x[0]+'</button>';}).join('')+'</div><p class="qh" style="margin-top:20px">Depuis combien de temps ?</p><div class="chips'+(S.dur?'':' todo')+'" role="radiogroup" aria-label="Depuis combien de temps">'+DUR.map(function(d,k){return '<button data-dur="'+k+'" role="radio" aria-checked="'+(String(k)===S.dur)+'" class="'+(String(k)===S.dur?'on':'')+'">'+d+'</button>';}).join('')+'</div>'+nav(n&&S.dur!=='',null,!n?'Coche au moins un savoir-faire.':'Dis depuis combien de temps.');}
   if(S.st===3){var okp=S.prevs.every(function(p){return Object.keys(p.sf).some(function(k){return p.sf[k];})&&p.dur!=='';});
     h=prog()+'<div class="kick">Avant</div><div class="q">Un autre métier avant ?</div><p class="qh">Ce que tu as appris ailleurs compte aussi. Jusqu’à trois métiers.</p>'+
     S.prevs.map(function(p,i){var n=Object.keys(p.sf).filter(function(k){return p.sf[k];}).length;
       return '<div class="pv"><p class="qh" style="margin:18px 0 6px"><b>'+esc(p.j.n)+'</b> <button class="back" data-pdel="'+i+'" style="font-size:13px" aria-label="Retirer ce métier">× retirer</button></p>'+
-      '<div class="chips'+(n?'':' todo')+'">'+p.j.sf.slice(0,18).map(function(x,k){return '<button data-psf="'+i+':'+k+'" class="'+(p.sf[k]?'on':'')+'">'+x[0]+'</button>';}).join('')+'</div>'+
+      '<div class="chips sfl'+(n?'':' todo')+'">'+p.j.sf.slice(0,18).map(function(x,k){return '<button data-psf="'+i+':'+k+'" class="'+(p.sf[k]?'on':'')+'">'+x[0]+'</button>';}).join('')+'</div>'+
       '<p class="qh" style="margin-top:14px">Combien de temps ?</p><div class="chips'+(p.dur?'':' todo')+'" role="radiogroup" aria-label="Combien de temps">'+DUR.map(function(d,k){return '<button data-pdur="'+i+':'+k+'" role="radio" aria-checked="'+(String(k)===p.dur)+'" class="'+(String(k)===p.dur?'on':'')+'">'+d+'</button>';}).join('')+'</div></div>';}).join('')+
     (S.prevAsk&&S.prevs.length<3?'<div class="srch"><span class="caret"></span><input id="pq" autocomplete="off" placeholder="un autre métier…" aria-label="Autre métier"></div><div class="sugg" id="ps"></div>'
       :(S.prevs.length<3?'<div class="chips" style="margin-top:18px"><button id="pyes">'+(S.prevs.length?'+ Encore un autre métier':'Oui, j’en ajoute un')+'</button></div>':''))+
@@ -565,7 +573,7 @@ function render(){$('stage').classList.toggle('intro',S.st===0);panel();S.top=S.
 $('panel').addEventListener('click',function(e){var t=e.target.closest('#go,#nx,#bk,[data-sf],[data-dur],[data-psf],[data-pdur],[data-pdel],[data-a],[data-sl],[data-w],#pyes,#redo');if(!t)return;
   if(t.id==='go'){openIt();return;}
   if(t.id==='redo'){stopCalc();S.st=0;S.job=null;S.sf={};S.dur='';S.prevs=[];S.prevAsk=false;S.a=freshA();S.sit='';S.want='';S.pick=-1;S.bpick=-1;S.q=0;setTimeout(whirl,50);scrollTo(0,0);render();return;}
-  if(t.id==='bk'){if(S.st===4&&S.q>0)S.q--;else S.st--;render();return;}
+  if(t.id==='bk'){if(S.st===4&&S.q>0)S.q--;else S.st--;render();refocus();return;}
   if(t.id==='pyes'){S.prevAsk=true;render();return;}
   if(t.dataset.psf!==undefined){var q=t.dataset.psf.split(':'),pv=S.prevs[+q[0]];if(pv){pv.sf[q[1]]=!pv.sf[q[1]];render();}return;}
   if(t.dataset.pdur!==undefined){var q2=t.dataset.pdur.split(':'),pv2=S.prevs[+q2[0]];if(pv2){pv2.dur=q2[1];render();}return;}
@@ -576,9 +584,9 @@ $('panel').addEventListener('click',function(e){var t=e.target.closest('#go,#nx,
   if(t.dataset.a){var Q=QS[S.q],v=t.dataset.a;if(Q.max===1){S.a[Q.k]={};S.a[Q.k][v]=true;}else S.a[Q.k][v]=!S.a[Q.k][v];render();return;}
   if(t.dataset.w){S.want=t.dataset.w;render();return;}
   if(t.id==='nx'){if(!t.classList.contains('ready'))return;
-    if(S.st===4&&S.q<QS.length-1){S.q++;render();return;}
+    if(S.st===4&&S.q<QS.length-1){S.q++;render();refocus();return;}
     if(S.st===5){S.st=6;render();setTimeout(function(){S.st=8;S.top=pick3();if(RED)render();else calc();if(innerWidth<900)setTimeout(function(){scrollTo({top:$('field').getBoundingClientRect().top+scrollY-topH()-8,behavior:RED?'auto':'smooth'});},200);},RED?50:1300);return;}
-    S.st++;render();}});
+    S.st++;render();refocus();}});
 $('panel').addEventListener('change',function(e){if(e.target.id==='dur'){S.dur=e.target.value;render();}if(e.target.id==='sit'){S.sit=e.target.value;}});
 $('cards').addEventListener('click',function(e){var b=e.target.closest('[data-cd]');if(!b)return;S.pick=+b.dataset.cd;cards();sig();setTimeout(function(){$('sig').scrollIntoView({behavior:'smooth',block:'start'});},60);});
 document.addEventListener('click',function(e){var b=e.target.closest('.build');if(b){b.innerHTML='<span class="dot"></span>Ouverture du diagnostic complet, déjà rempli…';return;}
@@ -607,6 +615,8 @@ var TEXTES={barre:'La fin du travail',titre:'Vivre ce que t’aimes bien faire.'
 function heroHtml(){var t=TEXTES.titre.replace(/fa(i)re/,'fa<span class="mk">$1</span>re');
   return '<div class="h1x">'+esc(TEXTES.barre)+'<svg viewBox="0 0 100 10" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M1 6 C 20 3, 35 8, 52 5 S 85 7, 99 4"/></svg></div><h1 class="play">'+t+'</h1><p class="sub2">'+esc(TEXTES.accroche)+'</p><button class="start" id="go"><span class="dot"></span>Commencer →</button><div class="cap">'+esc(TEXTES.legende)+'<span>'+esc(TEXTES.legende2)+'</span></div>';}
 function poserHero(){var h=$('hero');h.innerHTML=heroHtml();h.classList.remove('play');void h.offsetWidth;h.classList.add('play');}
+/* après « Continuer » ou « Retour » : l'écran remonte pour recentrer la question et l'animation */
+function refocus(){var t=$('stage').getBoundingClientRect().top+scrollY-topH();if(scrollY>t+4)scrollTo({top:Math.max(0,t),behavior:RED?'auto':'smooth'});}
 var WH=null;
 function whirl(){clearInterval(WH);if(S.st===0&&!RED)WH=setInterval(function(){if(S.st===0)layout();},4000);}
 function openIt(){if(S.st!==0)return;S.st=1;clearInterval(WH);render();var t0=Date.now();(function f(){layout();if(Date.now()-t0<1000)requestAnimationFrame(f);})();
