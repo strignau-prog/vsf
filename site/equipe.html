@@ -991,7 +991,8 @@ window.addEventListener('scroll',function(){document.querySelector('.top').class
     var se=await sb.auth.getSession();
     if(!se.data.session){location.replace('connexion.html?suite='+encodeURIComponent(location.href));return;}
     uid=se.data.session.user.id;
-    $('em').value=se.data.session.user.email||'';S.em=$('em').value;$('em').readOnly=true;
+    var emU=se.data.session.user.email||'';if(/@acces\.vraisavoirfaire\.fr$/i.test(emU)){emU='';var emB=$('em').closest('label,div,section');}      /* l'adresse technique d'un lien sans compte ne s'affiche jamais */
+    $('em').value=emU;S.em=emU;$('em').readOnly=true;
     var pe=await sb.from('vsf_personnes').select('prenom').eq('user_id',uid).maybeSingle();
     if(pe.data&&pe.data.prenom){S.pn=pe.data.prenom;$('pn').value=S.pn;}
     var pf=P.get('f');if(pf&&!dir&&FICHES.some(function(f){return f.k===pf;})){S.f=pf;verrou(pf);}

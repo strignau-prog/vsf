@@ -45,10 +45,6 @@
 </head>
 <body>
 <script src="vsf-menu.js"></script>
-<header class="haut">
-  <a class="marque" href="./">VRAI-SAVOIRFAIRE</a>
-  <button class="bouton" id="bSortir" data-texte data-deconnexion style="display:none" onclick="sortir()">Déconnexion</button>
-</header>
 <main class="wrap large" id="app"><p class="legende">Chargement…</p></main>
 
 <script>
@@ -68,12 +64,21 @@ function messageErreur(e) {
   return 'Échec. Réessayez.';
 }
 
+/* l'en-tête d'un administrateur : Admin · Mon compte · Déconnexion (« Mon compte » et « Déconnexion » viennent du menu du site) */
+function menuAdmin() {
+  var blocs = document.querySelectorAll('#vsfMenuDroite, .vsf-mi-mobile');
+  for (var i = 0; i < blocs.length; i++) {
+    if (blocs[i].querySelector('[data-admin-lien]')) continue;
+    var a = document.createElement('a'); a.className = 'vsf-mi vsf-mi-droite on'; a.href = 'admin.html'; a.setAttribute('aria-current', 'page'); a.setAttribute('data-admin-lien', '1'); a.textContent = 'Admin';
+    blocs[i].insertBefore(a, blocs[i].firstChild);
+  }
+}
 /* ───── accès ───── */
 async function demarrer() {
   var s = await sb.auth.getSession();
   if (!s.data.session) { location.replace('connexion.html?suite=' + encodeURIComponent(location.href)); return; }
   moi.id = s.data.session.user.id;
-  $('bSortir').style.display = '';
+  menuAdmin();
   var a = await sb.rpc('vsf_est_admin');
   if (a.error || a.data !== true) {
     return $('app').innerHTML = '<h1>Accès réservé.</h1><a class="bouton" href="./">Retour</a>';
@@ -294,7 +299,7 @@ async function chargerDiagnostics() {
   var r = await sb.rpc('vsf_diagnostics_chiffres');
   if (r.error || !r.data) { $('chiffresDiag').innerHTML = ''; dire('msgDiag', 'Non installé : migration 23 à jouer.'); return; }
   var d = r.data;
-  var prix = d.tarif_defini ? euros(d.tarif_eur) : 'xx €';
+  var prix = d.tarif_defini ? euros(d.tarif_eur) : 'À fixer';
   $('chiffresDiag').innerHTML =
     '<div><b>' + d.en_cours + '</b><span>En cours</span></div>' +
     '<div><b>' + d.termines + '</b><span>Terminés</span></div>' +
@@ -316,7 +321,8 @@ async function chargerComptes() {
   var r = await sb.from('vsf_personnes').select('user_id,prenom,nom,email,statut,cree_le').order('cree_le', { ascending: false }).limit(50);
   if (r.error) { dire('msgComptes', messageErreur(r.error)); return; }
   var lignes = (r.data || []).map(function (p) {
-    var nom = ((p.prenom || '') + ' ' + (p.nom || '')).trim() || 'Sans nom';
+    var technique = /@acces\.vraisavoirfaire\.fr$/i.test(p.email || '');      // adresse fabriquée pour un lien de diagnostic sans compte : jamais montrée
+    var nom = ((p.prenom || '') + ' ' + (p.nom || '')).trim() || (technique ? 'Lien de diagnostic sans compte' : (p.email || 'À nommer'));
     var soi = p.user_id === moi.id;
     var action = soi ? '' :
       (p.statut === 'suspendu'
@@ -324,7 +330,7 @@ async function chargerComptes() {
         : '<button class="bouton petit" onclick="confirmer(this,\'Suspendre ?\',function(){changerCompte(\'' + p.user_id + '\',\'suspendu\')})">Suspendre</button>');
     // l'état normal (vérifié) ne s'écrit pas : seuls « À confirmer » et « Suspendu » se lisent
     var etat = p.statut === 'verifie' ? '' : '<span class="etat">' + ({ en_attente: 'À confirmer', suspendu: 'Suspendu' })[p.statut] + '</span>';
-    return '<div class="ligne"><div class="qui"><b>' + E(nom) + '</b><span>' + E(p.email || '') + '</span></div>' +
+    return '<div class="ligne"><div class="qui"><b>' + E(nom) + '</b><span>' + (technique ? '' : E(p.email || '')) + '</span></div>' +
       '<div class="actions">' + etat + action + '</div></div>';
   });
   $('listeComptes').innerHTML = lignes.join('');

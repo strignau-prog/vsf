@@ -304,7 +304,7 @@ async function vueSuivi() {
   var jr = await sb.from('vsf_journal').select('cree_le,auteur_email,action,cible,detail').order('cree_le', { ascending: false }).limit(30);
   var QUI = { equipe_definir: 'a donné un rôle à', equipe_retirer: 'a retiré l’accès de', collectif_renommer: 'a renommé le collectif', collectif_creer: 'a créé le collectif', ambassadeur_creer: 'a créé l’ambassadeur métier', ambassadeur_modifier: 'a modifié l’ambassadeur métier', entreprise_bloquer: 'a bloqué l’entreprise', entreprise_debloquer: 'a débloqué l’entreprise', entreprise_supprimer: 'a supprimé l’entreprise vide', collectif_modifier: 'a modifié la fiche du collectif', adhesion_active: 'a rattaché une entreprise à un collectif :', adhesion_retiree: 'a retiré une entreprise d’un collectif :', adhesion_en_attente: 'a mis en attente l’adhésion de', adhesion_suspendue: 'a suspendu l’adhésion de' };
   var lignes = (eq.data || []).map(function (x) {
-    return '<div class="ligne-suivi"><div class="qui"><b>' + E(x.email) + '</b><span>' + E(ROLES[x.role] || x.role) + '</span></div>' +
+    return '<div class="ligne-suivi"><div class="qui"><b>' + E(/@acces\.vraisavoirfaire\.fr$/i.test(x.email || '') ? 'Lien de diagnostic sans compte' : x.email) + '</b><span>' + E(ROLES[x.role] || x.role) + '</span></div>' +
       '<div class="act">' + (x.user_id === S.moi ? '<span class="etat-mini">C’est vous</span>' : '<button class="bouton petit discret" data-retirer="' + E(x.user_id) + '">Retirer</button>') + '</div></div>';
   }).join('');
   var journal = (jr.data || []).map(function (x) {

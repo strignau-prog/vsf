@@ -146,7 +146,7 @@ async function finaliser() {
     rattachements.map(function (r) { return '<a class="bouton" href="atelier/atelier-compte.html?est=' + encodeURIComponent(r.id) + '">Accéder à ' + E(r.nom) + '</a><br>'; }).join('') : '';
   ecran('<p class="etiquette">Compte vérifié</p>' +
     '<h1>Bienvenue' + prenom + '.</h1>' +
-    '<p class="legende">Votre adresse ' + E(p.email || etat.mail) + ' est confirmée. Vous pouvez revenir à l’accueil.</p>' +
+    (/@acces\.vraisavoirfaire\.fr$/i.test(p.email || etat.mail || '') ? '<p class="legende">Votre accès est confirmé. Vous pouvez revenir à l’accueil.</p>' : '<p class="legende">Votre adresse ' + E(p.email || etat.mail) + ' est confirmée. Vous pouvez revenir à l’accueil.</p>') +
     blocEntreprises +
     '<a class="bouton' + (rattachements.length ? ' discret' : '') + '" href="' + E(suite) + '">Retour à l’accueil</a><br>' +
     '<button class="bouton discret" onclick="sortir()">Me déconnecter</button>');
