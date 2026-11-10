@@ -1,5 +1,5 @@
 // Edge function « barometre-mensuel » — calcule le baromètre de L'Éclaireur avec les chiffres réels de France Travail (API « Marché du travail » v1.1).
-// Pour chacun des métiers proposés par L'Éclaireur (codes ROME) : offres ouvertes et tension de recrutement en Bretagne, rangées dans eclaireur_barometre (migration 40).
+// Pour chacun des métiers proposés par L'Éclaireur (codes ROME) : offres ouvertes et tension de recrutement (chiffres France entière : l'API renvoie des volumes nationaux), rangées dans eclaireur_barometre (migration 40).
 // Appel : POST, avec la session d'un ADMINISTRATEUR (« Verify JWT » désactivé : l'administrateur est vérifié ici par vsf_est_admin). Bouton « Mettre à jour le baromètre » du tableau de bord.
 // Durée : environ 1 minute (France Travail n'accepte qu'un appel par seconde). À lancer une fois par mois.
 // Secrets : FRANCETRAVAIL_CLIENT_ID et FRANCETRAVAIL_CLIENT_SECRET (déjà installés). Déploiement : Supabase > Edge Functions > « barometre-mensuel », « Verify JWT » DÉSACTIVÉ.
@@ -10,7 +10,7 @@ const reponse = (obj: unknown, status = 200) => new Response(JSON.stringify(obj)
 const TOKEN_URL = "https://entreprise.francetravail.fr/connexion/oauth2/access_token?realm=%2Fpartenaire";
 const BASE = "https://api.francetravail.io/partenaire/stats-offres-demandes-emploi";
 const SCOPES = "api_stats-offres-demandes-emploiv1 offresetdemandesemploi";
-const REGION = "53"; // Bretagne
+const REGION = "53"; // paramètre envoyé tel quel ; les volumes reçus sont nationaux (constaté le 10/11/2026), d'où le libellé « France » ci-dessous
 // Les codes ROME des métiers de L'Éclaireur (mêmes codes que la page eclaireur.html).
 const CODES = ["F1606", "B1302", "H2207", "B1806", "B1618", "B1201", "F1612", "B1505", "B1802", "F1602", "H2206", "F1503", "F1619", "A1208", "D1209", "F1620", "K1311", "K1207", "D1102", "I1304", "J1506", "E1205", "M1203", "M1607", "D1408", "E1108"];
 const pause = (ms: number) => new Promise((ok) => setTimeout(ok, ms));
@@ -66,7 +66,7 @@ Deno.serve(async (req) => {
         const v = l.map((p: any) => p.valeurPrincipaleDecimale ?? p.valeurPrincipaleNombre).filter((x: any) => x != null);
         if (v.length) { tension = Number(v[0]); pTen = String(l[0].libPeriode ?? ""); }
       } catch (_e) { echecs.push(code + ":tension"); }
-      if (offres != null || tension != null) lignes.push({ code_rome: code, offres, tension, periode_offres: pOff, periode_tension: pTen, region: "Bretagne", maj: new Date().toISOString() });
+      if (offres != null || tension != null) lignes.push({ code_rome: code, offres, tension, periode_offres: pOff, periode_tension: pTen, region: "France", maj: new Date().toISOString() });
     }
     if (lignes.length) { const { error } = await service.from("eclaireur_barometre").upsert(lignes, { onConflict: "code_rome" }); if (error) throw error; }
     return reponse({ metiers: lignes.length, sur: CODES.length, echecs });

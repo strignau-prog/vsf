@@ -1,6 +1,6 @@
 -- =====================================================================================================
 -- VSF — migration 40 : le baromètre de L'Éclaireur (chiffres réels de France Travail, « Marché du travail »).
--- Une ligne par métier (code ROME) : offres ouvertes et tension de recrutement en Bretagne, avec la période et la date de mise à jour.
+-- Une ligne par métier (code ROME) : offres ouvertes et tension de recrutement (France entière), avec la période et la date de mise à jour.
 -- Lecture publique (statistiques agrégées, aucune donnée personnelle) ; écriture réservée à la fonction « barometre-mensuel » (clé de service).
 -- À exécuter APRÈS vsf_39. Rejouable ; une seule transaction.
 -- =====================================================================================================
@@ -12,7 +12,7 @@ create table if not exists eclaireur_barometre (
   tension numeric,
   periode_offres text,
   periode_tension text,
-  region text not null default 'Bretagne',
+  region text not null default 'France',
   maj timestamptz not null default now()
 );
 alter table eclaireur_barometre enable row level security;

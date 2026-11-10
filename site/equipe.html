@@ -1007,6 +1007,13 @@ window.addEventListener('scroll',function(){document.querySelector('.top').class
       if(!jeton){fin(['Ce lien est incomplet.','Demandez un nouveau lien d’invitation à votre dirigeant.']);return;}
       var ap=await sb.rpc('vsf_equipe_apercu',{p_jeton:jeton});
       var a=ap.data;
+      if(a&&a.valide){                                                // le dirigeant ouvre le lien d'un salarié avec SON compte : on le dit tout de suite, avant qu'il remplisse quoi que ce soit
+        try{var mg=await sb.from('members').select('role,establishments(organization_id)').eq('user_id',uid).eq('role','gerant').limit(1);
+          var og=mg.data&&mg.data[0]&&mg.data[0].establishments&&mg.data[0].establishments.organization_id;
+          if(og){var on=await sb.from('organizations').select('name').eq('id',og).maybeSingle();
+            if(on.data&&on.data.name&&a.organisation&&on.data.name.trim().toLowerCase()===String(a.organisation).trim().toLowerCase()){
+              fin(['Ce lien est celui d’un salarié.','Vous êtes connecté·e avec le compte du dirigeant de <b>'+a.organisation+'</b> : il ne peut pas servir à une invitation. Pour l’essayer, ouvrez ce lien dans une <b>fenêtre privée</b> et créez un autre compte (une autre adresse e-mail : avec Gmail, <i>votreadresse+essai@gmail.com</i> arrive dans votre boîte habituelle).<p style="margin-top:22px"><a href="'+RETOUR+'" style="font-weight:900;color:#111">← Retour au diagnostic</a></p>']);return;}}}catch(x){}
+      }
       if(a&&a.valide){S.par=a.invite_par;$('parN').textContent=a.invite_par;$('orgN').textContent=a.organisation;$('par2').textContent=a.invite_par;lbl3('Proposer à '+a.invite_par+' →');if(a.nom&&!S.pn){S.pn=a.nom;$('pn').value=a.nom;}
         var pk=(a.poste||'').split('#')[0];if(pk&&FICHES.some(function(f){return f.k===pk;}))verrou(pk);}
       else {                                                          // lien déjà utilisé : si le compte est déjà rattaché, on le retrouve ; sinon on explique
