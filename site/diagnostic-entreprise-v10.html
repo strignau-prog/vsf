@@ -1368,7 +1368,7 @@ function teamBlocks(blk,c){
     mx+='<tr><td>'+(ART[r.k]?'◆ ':'')+r.t+'</td>'+T.map(function(p){var x=psf(p).filter(function(s){return s.st===r.id&&s.t===r.t;})[0];if(!x)return '<td class="lv"><span class="no" style="color:#d0d0d0">·</span></td>';if(!isPos(p))return '<td class="lv" style="color:#c4c4c4">?</td>';var l=lvOf(p,x.key)||0;if(l>=3)sol++;
       return '<td class="lv">'+(l?'<span class="lb4">'+[1,2,3,4].map(function(i){return '<i'+(i<=l?' class="f"':'')+'></i>';}).join('')+'</span><span class="lvn">N'+l+'</span>'+(S.tr[p.pid+'|'+x.key]?'<span class="trm" title="Accepte de transmettre">↗</span>':''):'<span class="no">—</span>')+'</td>';}).join('')+'<td class="sol'+(sol===1?' one':'')+'">'+sol+'</td></tr>';});
   mx+='</tbody></table></div><p class="hint" style="margin:10px 0 0">N1 Comprendre · N2 Faire avec repères · N3 Réaliser seul·e · N4 Maîtriser et transmettre · — ne le fait pas · ↗ accepte de transmettre · ? pas encore positionné·e. Autopositionnements, au statut déclaré : ce ne sont pas des notes.</p>';
-  h+=blk('r-team','Les compétences de l’équipe','Chacun s’est positionné sur sa fiche. Ce tableau est partagé avec toute l’équipe.',mx);
+  h+=blk('r-team','Les compétences de l’équipe','Chacun s’est positionné sur sa fiche. Ce tableau n’est visible que de vous, le dirigeant : chaque salarié ne voit que ses propres niveaux.',mx);
   return h;
 }
 
@@ -1410,7 +1410,7 @@ $('demo').onclick=function(){_demo();
   if(!P.get('demo'))$('demo').style.display='none';                       // la démo ne sert qu'avec ?demo=1 : jamais sur un vrai diagnostic
   var _ss=setStep;setStep=function(n){S._step=n;return _ss.apply(this,arguments);};
   if(demoOnly||!window.VSF||!VSF.sb)return;
-  var sb=VSF.sb,did=null,last='',lecture=false,enCours=false,moi=Math.random().toString(36).slice(2),canal=null;
+  var sb=VSF.sb,did=null,ORG=null,MEMBRES={},last='',lecture=false,enCours=false,moi=Math.random().toString(36).slice(2),canal=null;
   function msg(t){var m=document.getElementById('vsfMsg');if(!m){m=document.createElement('div');m.id='vsfMsg';document.body.appendChild(m);}m.className=t?'':'hide';m.innerHTML=t||'';}
   function cle(){return 'vsf_v10_'+did;}
   function instantane(){return JSON.stringify({v10:1,step:S._step||1,S:S});}
@@ -1440,7 +1440,7 @@ $('demo').onclick=function(){_demo();
     var o=await sb.rpc('vsf_diagnostic_ouvrir',{p_org:org});
     if(o.error||!o.data){msg('Le diagnostic ne peut pas s’ouvrir pour le moment.');return;}
     if(o.data.statut==='a_payer'){msg('Ce diagnostic est à régler : <a href="diagnostic-entreprise.html">continuer sur la page habituelle</a>.');return;}
-    did=o.data.id;
+    did=o.data.id;ORG=org;
     surveillerOnglets();
     var d=await sb.from('vsf_diagnostics').select('etat,maj_le').eq('id',did).maybeSingle();
     var e=d.data&&d.data.etat,serveurMaj=d.data&&d.data.maj_le?new Date(d.data.maj_le).getTime():0,loc=null;
@@ -1449,6 +1449,7 @@ $('demo').onclick=function(){_demo();
       try{restaurer(JSON.parse(loc.snap));last='';msg('Vos dernières réponses ont été retrouvées sur cet appareil et vont être enregistrées.');}catch(x){}
     } else if(e&&e.v10&&e.S){restaurer(e);last=instantane();}
     setInterval(sauver,5000);addEventListener('pagehide',sauver);addEventListener('online',sauver);
+    chargerEquipe();
   }
   /* un seul onglet à la fois : le premier ouvert garde la main, le second le dit et ne sauvegarde rien */
   function surveillerOnglets(){
@@ -1479,6 +1480,46 @@ $('demo').onclick=function(){_demo();
       return;}
     last=snap;try{localStorage.removeItem(cle());}catch(x){}msg('');
   }
+
+  /* ===================== volet équipe réel (migrations 41 et 42) ===================== */
+  /* Le « poste » de chaque invitation porte l'identifiant de la personne dans le diagnostic (ex. PL#1) : c'est ce qui relie la base à la carte. */
+  function pidDe(m){return m.role==='dirigeant'?'DI#1':(m.poste||'');}
+  async function chargerEquipe(){
+    if(!ORG)return;
+    var L=await sb.rpc('vsf_equipe_lister',{p_org:ORG});if(L.error)return;       // migration 41 pas encore installée : la page reste utilisable sans équipe
+    var Pz=await sb.rpc('vsf_equipe_positionnements',{p_org:ORG}),Ob=await sb.rpc('vsf_equipe_objectifs',{p_org:ORG}),dg=await sb.from('vsf_diagnostics').select('poids_equipe').eq('id',did).maybeSingle();
+    var parId={};MEMBRES={};S.names={};S.inv={};S.pos={};S.tr={};S.goal={};S.gok={};
+    (L.data||[]).forEach(function(m){var pid=pidDe(m);if(!pid)return;parId[m.membre_id]=pid;MEMBRES[pid]=m.membre_id;S.names[pid]=m.nom;
+      if(m.statut==='invite'||m.statut==='actif')S.inv[pid]='att';});
+    (Pz.data||[]).forEach(function(x){var pid=parId[x.membre_id];if(!pid)return;(S.pos[pid]=S.pos[pid]||{})[x.situation_code]=x.niveau;if(x.accepte_transmettre)S.tr[pid+'|'+x.situation_code]=true;S.inv[pid]='ok';});
+    var tout={};(Ob.data||[]).forEach(function(x){var pid=parId[x.membre_id];if(!pid)return;(S.goal[pid]=S.goal[pid]||{})[x.situation_code]=x.niveau_vise;(tout[pid]=tout[pid]||[]).push(!!x.valide_le);});
+    Object.keys(tout).forEach(function(pid){S.gok[pid]=tout[pid].every(Boolean);});
+    if(dg.data&&dg.data.poids_equipe!=null)S.w=+dg.data.poids_equipe;
+    all();drawMap();
+  }
+  /* inviter : un lien à usage unique, valable 14 jours ; « Me positionner » ouvre mon propre positionnement */
+  $('team2').addEventListener('click',async function(e){
+    var b=e.target.closest('[data-inv]');if(!b)return;e.stopImmediatePropagation();
+    var pid=b.dataset.inv,p=team().filter(function(x){return x.pid===pid;})[0];if(!p)return;
+    if(p.dir){window.open('equipe.html?org='+encodeURIComponent(ORG)+'&f=DI','_blank');return;}
+    var nom=prompt('Prénom de la personne à inviter ?',S.names[pid]||'');if(!nom||!nom.trim())return;
+    var r=await sb.rpc('vsf_equipe_inviter',{p_org:ORG,p_nom:nom.trim(),p_poste:pid});
+    if(r.error||!r.data){msg('L’invitation n’a pas pu être créée pour le moment.');return;}
+    var lien=location.origin+'/equipe.html?j='+encodeURIComponent(r.data.jeton)+'&f='+encodeURIComponent(p.k);
+    S.names[pid]=nom.trim();S.inv[pid]='att';drawTeam();
+    var l=document.querySelector('.lnkc');if(l){l.innerHTML='Lien pour <b></b> (à usage unique, valable 14 jours) : <b class="lk"></b> <button class="inv" id="cpl">Copier →</button>';l.querySelector('b').textContent=nom.trim();l.querySelector('.lk').textContent=lien.length>46?lien.slice(0,46)+'…':lien;
+      document.getElementById('cpl').onclick=function(){var t=this;(navigator.clipboard?navigator.clipboard.writeText(lien):Promise.reject()).then(function(){t.textContent='Copié ✓';},function(){prompt('Copiez ce lien :',lien);});};}
+    msg('');
+  },true);
+  /* le curseur « poids de l'équipe » est enregistré */
+  $('wseg').addEventListener('click',function(e){var b=e.target.closest('[data-w]');if(!b||!did)return;setTimeout(function(){sb.rpc('vsf_diag_poids_equipe',{p_diag:did,p_poids:S.w});},0);});
+  /* valider (ou retirer la validation de) l'objectif d'une personne */
+  $('acc').addEventListener('click',function(e){
+    var b=e.target.closest('[data-gok]');if(!b)return;var pid=b.dataset.gok,nouveau=!S.gok[pid],mid=MEMBRES[pid],G=S.goal[pid]||{};if(!mid)return;
+    Object.keys(G).forEach(function(sit){sb.rpc('vsf_objectif_valider',{p_org:ORG,p_membre:mid,p_fiche:sit.split(':')[0],p_situation:sit,p_valide:nouveau});});
+  });
+  /* qui voit quoi : les niveaux individuels ne sont vus que par le dirigeant */
+  document.querySelectorAll('.hint,p,h3,small').forEach(function(n){if(n.children.length===0&&/partagé avec toute l.équipe/i.test(n.textContent))n.textContent=n.textContent.replace(/Ce tableau est partagé avec toute l.équipe\./,'Ce tableau n’est visible que de vous, le dirigeant : chaque salarié ne voit que ses propres niveaux.');});
   ouvrir();
 })();
 })();
