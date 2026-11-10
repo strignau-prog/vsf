@@ -60,3 +60,7 @@ html.vsf-menu-on body > .top{position:static}
 /* échelle typographique commune des pages publiques (10 nov. 2026) : texte courant 16 px, grand titre identique partout (hors accroche de l'Éclaireur, dans sa colonne étroite) */
 body.page-publique,html[data-public] body{font-size:16px}
 body.page-publique main h1:not(.focus),html[data-public] main h1{font-size:clamp(2.4rem,6vw,4.4rem);letter-spacing:-.035em;line-height:1.02;max-width:none}
+
+/* nom de la personne connectée, avant « Mon compte » et « Déconnexion » */
+.vsf-mi-nom{font-weight:800;white-space:nowrap;max-width:16em;overflow:hidden;text-overflow:ellipsis;color:#111}
+@media (max-width:900px){.vsf-mi-mobile .vsf-mi-nom{display:block;padding:8px 0;max-width:none}}

@@ -48,6 +48,12 @@
       if (/^connexion\b/i.test(t)) { a.textContent = a.textContent.replace(/connexion/i, 'Déconnexion'); a.setAttribute('href', '#'); a.setAttribute('data-deconnexion', '1'); a.addEventListener('click', deconnecter); }
       else if (/^créer mon compte/i.test(t)) { a.textContent = a.textContent.replace(/créer mon compte/i, 'Mon compte'); a.setAttribute('href', 'connexion.html'); }
     }
+    // l'ordre du menu d'une personne connectée : … · Mon compte · Déconnexion
+    var decos = document.querySelectorAll('a[data-deconnexion]');
+    for (var j = 0; j < decos.length; j++) {
+      var nx = decos[j].nextElementSibling;
+      if (nx && nx.tagName === 'A' && /^mon compte/i.test(mot(nx))) decos[j].parentNode.insertBefore(nx, decos[j]);
+    }
     // pages connectées : un bouton « Déconnexion » dans l'en-tête s'il n'y en a pas
     if (document.querySelector('[data-deconnexion]')) return;
     var en = document.querySelector('.vsf-haut, header.haut, .top');

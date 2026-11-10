@@ -52,6 +52,51 @@
   });
   window.addEventListener('scroll', function () { haut.classList.toggle('sh', (window.scrollY || 0) > 4); }, { passive: true });
 
+  /* Le nom de la personne connectée (NOM Prénom) s'affiche à droite du menu, juste avant « Mon compte » et « Déconnexion ».
+     Il vient de sa propre fiche (vsf_personnes, lisible par elle seule) ; il est gardé le temps de la session pour ne pas rappeler le serveur à chaque page.
+     L'adresse technique d'un lien de diagnostic sans compte (acces-…@acces.vraisavoirfaire.fr) ne s'affiche jamais. */
+  function session() {
+    try {
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i);
+        if (/^sb-.*-auth-token$/.test(k)) { var v = JSON.parse(localStorage.getItem(k) || 'null'); if (v && v.user && v.user.id) return v; }
+      }
+    } catch (e) { /* navigation privée */ }
+    return null;
+  }
+  function poserNom(texte) {
+    if (!texte) return;
+    var blocs = haut.querySelectorAll('#vsfMenuDroite, .vsf-mi-mobile');
+    for (var i = 0; i < blocs.length; i++) {
+      var s = blocs[i].querySelector('.vsf-mi-nom');
+      if (!s) { s = document.createElement('span'); s.className = 'vsf-mi-nom'; s.setAttribute('data-nom-connecte', '1'); blocs[i].insertBefore(s, blocs[i].firstChild); }
+      s.textContent = texte; s.title = texte;
+    }
+  }
+  function mise(nom, prenom, mail) {
+    var n = [String(nom || '').trim().toUpperCase(), String(prenom || '').trim()].filter(Boolean).join(' ');
+    if (n) return n;
+    if (/@acces\.vraisavoirfaire\.fr$/i.test(mail || '')) return 'Invité·e';
+    return mail || '';
+  }
+  async function afficherNom() {
+    var v = session(); if (!v) return;
+    var cle = 'vsf_nom_menu', cache = null;
+    try { cache = JSON.parse(sessionStorage.getItem(cle) || 'null'); } catch (e) { /* rien */ }
+    if (cache && cache.id === v.user.id) { poserNom(cache.nom); return; }
+    poserNom(mise('', '', v.user.email));                               // en attendant la fiche : l'adresse (jamais l'adresse technique)
+    try {
+      var r = await fetch('https://uuuigousvpijskbdhcal.supabase.co/rest/v1/vsf_personnes?select=prenom,nom&user_id=eq.' + encodeURIComponent(v.user.id),
+        { headers: { apikey: 'sb_publishable__YuNj5XCo5YF8lwhwTu5OQ_RDM1Eesp', Authorization: 'Bearer ' + (v.access_token || '') } });
+      if (!r.ok) return;
+      var d = await r.json(), p = d && d[0];
+      var n = mise(p && p.nom, p && p.prenom, v.user.email);
+      poserNom(n);
+      try { sessionStorage.setItem(cle, JSON.stringify({ id: v.user.id, nom: n })); } catch (e) { /* rien */ }
+    } catch (e) { /* on garde ce qui est affiché */ }
+  }
+  afficherNom();
+
   /* boutons utiles des anciens bandeaux : on les garde, à droite du menu */
   function recuperer() {
     var anciens = document.querySelectorAll('body > header.haut');
