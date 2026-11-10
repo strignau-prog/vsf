@@ -334,7 +334,8 @@ S.a=freshA();
 M.forEach(function(m){var has=function(a,v){return a.indexOf(v)>=0;},l=m.p.l,a=m.p.a,tr={};
   m.u=UNIV[m.n]||[];m.e=NRG[m.n]===undefined?2:NRG[m.n];m.hr=HRS[m.n]||'jour';
   if(m.p.r==='p'){tr.patient=1;tr.minutieux=1;}else{tr.resistant=1;tr.entreprenant=1;}
-  if(has(a,'clients')||has(m.p.w,'gens'))tr.ecoute=1;if(has(m.p.w,'idees')||has(m.p.v,'creer'))tr.creatif=1;
+  if(has(a,'clients')||has(m.p.w,'gens'))tr.ecoute=1;if(m.art||has(m.sf,'compo')||has(m.sf,'couleur')||has(m.sf,'lettre')||has(m.p.v,'creer'))tr.creatif=1;      /* « créatif » : un métier qui compose, colore, dessine ou crée — pas un métier qui « cherche des idées » (comptable, traducteur…) */
+  if(has(m.p.v,'decouvrir')||has(m.p.v,'apprendre'))tr.curieux=1;
   if(m.art){tr.curieux=1;tr.patient=1;}if(has(m.sf,'gestion'))tr.organise=1;if(has(m.sf,'precision'))tr.minutieux=1;if(has(m.sf,'reparer'))tr.curieux=1;
   m.tr=Object.keys(tr);
   var out=has(l,'dehors')||has(l,'chantier'),inn=has(l,'atelier')||has(l,'bureau');m.io=out&&inn?2:(out?4:0);
