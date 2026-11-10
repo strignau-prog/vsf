@@ -167,6 +167,20 @@ h1{margin:10px 0 14px;font-size:clamp(34px,4.6vw,60px);font-weight:900;line-heig
 .src{font-size:12px;color:var(--muted);margin-top:14px}
 .hide{display:none!important}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* résultat : la hauteur suit le contenu ; la fiche vient juste dessous, puis le baromètre, comme une même histoire */
+.stage:has(.sky.fin){min-height:0}
+.sky.fin{min-height:0;height:auto}
+.sky.fin .cards{position:relative;min-height:440px;padding-block:20px}
+@media(max-width:900px){.sky.fin .cards{min-height:0}}
+.sig:not(.hide){border-top:4px solid #ffc400;padding-top:24px;max-width:none;margin:0}
+.baro{padding:28px var(--gut) 56px;max-width:none;margin:0}
+.sig,.baro{padding-left:var(--gut);padding-right:var(--gut)}
+.sg,.bg{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media(max-width:1100px){.sg,.bg{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:640px){.sg,.bg{grid-template-columns:1fr}}
+.br>span:last-child::after{content:"  → fiche";color:#767676;font-weight:700;font-size:12px}
+.cd.on::after{content:"";position:absolute;left:50%;bottom:-26px;width:0;height:26px;border-left:4px solid #ffc400;transform:translateX(-2px)}
 </style>
 <link rel="icon" href="/favicon.ico" sizes="48x48">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -244,13 +258,15 @@ var ROMEDEST=[['Peintre en lettres','F1606'],['Peintre en décor','F1606'],['Dor
 var FICHEDEST={'Peintre en lettres':'Peintre en lettres','Peintre en décor':'Peintre décorateur','Vitrailliste':'Vitrailliste','Doreur':'Doreur à la feuille'};
 M.forEach(function(m){var k=ROMEDEST.filter(function(x){return m.n.indexOf(x[0])===0;})[0];m.c=k?k[1]:null;var f=Object.keys(FICHEDEST).filter(function(x){return m.n.indexOf(x)===0;})[0];m.fiche=f?FICHEDEST[f]:null;});
 setTimeout(function(){chargerDest();},0);
+var PROFILS_PLUS={'Maroquinier':{m:['cuir']},'Tapissier':{m:['cuir']},'Céramiste':{m:['terre']},'Boulanger':{m:['aliments'],l:['cuisine']},'Plombier':{m:['eau']},'Paysagiste':{m:['eau'],v:['decouvrir']},'Fleuriste':{l:['commerce']},'Télévendeur':{l:['commerce']},'Graphiste':{m:['papier']},'Éducateur':{l:['public'],v:['apprendre']},'Infirmier':{l:['public']},'Auxiliaire':{l:['public']},'Technicien':{l:['labo']},'Traducteur':{v:['apprendre','voyager']},'Secrétaire':{l:['public']},'Restaurateur':{v:['decouvrir']},'Luthier':{v:['apprendre']},'Peintre en lettres':{v:['apprendre']}};
+M.forEach(function(m){Object.keys(PROFILS_PLUS).forEach(function(k){if(m.n.indexOf(k)===0){var e=PROFILS_PLUS[k];['m','l','v'].forEach(function(f){if(e[f])m.p[f]=m.p[f].concat(e[f]);});}});});
 var REG=['Toute la France','Bretagne','Pays de la Loire','Normandie','Île-de-France','Auvergne-Rhône-Alpes','Occitanie','Nouvelle-Aquitaine'];
 var QS=[
  {k:'w',q:'Qu’est-ce que vous préférez faire ?',h:'Deux au plus.',max:2,o:[['mains','Fabriquer de mes mains'],['gens','Être au contact des gens'],['idees','Chercher, imaginer'],['vivant','Prendre soin du vivant']]},
- {k:'m',q:'Quelle matière vous attire ?',h:'Autant que vous voulez.',o:[['bois','Le bois'],['metal','Le métal'],['verre','Le verre'],['tissu','Tissu, cuir'],['pierre','Pierre, terre'],['peinture','La peinture, la couleur'],['vegetal','Le végétal'],['ecran','L’écran']]},
- {k:'l',q:'Où vous sentez-vous bien ?',h:'Autant que vous voulez.',o:[['dehors','Dehors'],['atelier','En atelier'],['chantier','Sur un chantier'],['chez','Chez les gens'],['mouvement','En mouvement'],['bureau','Au bureau']]},
+ {k:'m',q:'Quelle matière vous attire ?',h:'Autant que vous voulez.',o:[['bois','Le bois'],['metal','Le métal'],['verre','Le verre'],['tissu','Le tissu'],['cuir','Cuir, peau'],['pierre','La pierre'],['terre','Terre, argile'],['papier','Papier, carton'],['eau','L’eau'],['aliments','Aliments'],['peinture','La peinture, la couleur'],['vegetal','Le végétal'],['ecran','L’écran']]},
+ {k:'l',q:'Où vous sentez-vous bien ?',h:'Autant que vous voulez.',o:[['dehors','Dehors'],['atelier','En atelier'],['chantier','Sur un chantier'],['chez','Chez les gens'],['mouvement','En mouvement'],['bureau','Au bureau'],['commerce','Commerce, boutique'],['public','Lieu public'],['labo','Laboratoire'],['cuisine','Cuisine']]},
  {k:'a',q:'Avec qui ?',h:'Autant que vous voulez.',o:[['seul','Seul·e, concentré·e'],['equipe','En équipe'],['clients','Avec des clients']]},
- {k:'v',q:'Qu’est-ce qui compte pour vous ?',h:'Trois au plus.',max:3,o:[['creer','Créer'],['reparer','Réparer, faire durer'],['transmettre','Transmettre'],['aider','Aider'],['fier','Être fier·e d’un résultat visible'],['securite','Sécuriser ma vie']]},
+ {k:'v',q:'Qu’est-ce qui compte pour vous ?',h:'Trois au plus.',max:3,o:[['creer','Créer'],['reparer','Réparer, faire durer'],['transmettre','Transmettre'],['aider','Aider'],['fier','Être fier·e d’un résultat visible'],['securite','Sécuriser ma vie'],['decouvrir','Découvrir'],['apprendre','Apprendre'],['voyager','Voyager']]},
  {k:'r',q:'Votre rythme ?',h:'Un seul.',max:1,o:[['p','Précision et patience'],['a','Action et variété']]}];
 var S={bpick:-1,st:0,job:null,sf:{},dur:'',prevs:[],prevAsk:false,a:{w:{},m:{},l:{},a:{},v:{},r:{}},want:'',reg:'',top:[],pick:-1,q:0};
 /* ---------- calculs ---------- */
@@ -353,11 +369,11 @@ function panel(){var h='';
       :(S.prevs.length<3?'<div class="chips" style="margin-top:18px"><button id="pyes">'+(S.prevs.length?'+ Encore un autre métier':'Oui, j’en ajoute un')+'</button></div>':''))+
     nav(okp,S.prevs.length?'Continuer →':'Non, c’est tout →',S.prevs.some(function(p){return !Object.keys(p.sf).some(function(k){return p.sf[k];});})?'Cochez au moins un savoir-faire pour chaque métier.':'Dites combien de temps pour chaque métier.');}
   if(S.st===4){var Q=QS[S.q],sel=S.a[Q.k],n2=Object.keys(sel).filter(function(x){return sel[x];}).length;h=prog()+'<div class="kick">4 · Ce qui a du sens pour vous · '+(S.q+1)+' / '+QS.length+'</div><div class="q">'+Q.q+'</div><p class="qh">'+Q.h+'</p><div class="chips'+(n2?'':' todo')+'">'+Q.o.map(function(o){var on=sel[o[0]],dis=!on&&Q.max&&Q.max>1&&n2>=Q.max;return '<button data-a="'+o[0]+'" class="'+(on?'on':'')+'"'+(dis?' disabled style="opacity:.35"':'')+'>'+o[1]+'</button>';}).join('')+'</div>'+nav(n2>0,S.q<QS.length-1?'Question suivante →':'Continuer →','Choisissez au moins une réponse.');}
-  if(S.st===5)h=prog()+'<div class="kick">5 · Ce que vous voulez voir</div><div class="q">Vers quels métiers on regarde ?</div><p class="qh">Le baromètre de VraiSavoirFaire est mis à jour chaque mois.</p><div class="chips'+(S.want?'':' todo')+'">'+[['hire','↗ Ceux qui embauchent'],['rare','◆ Les métiers rares'],['both','Les deux']].map(function(o){return '<button data-w="'+o[0]+'" class="'+(S.want===o[0]?'on':'')+'">'+o[1]+'</button>';}).join('')+'</div><div class="sel"><select id="reg" aria-label="Région">'+REG.map(function(r){return '<option'+(r===S.reg?' selected':'')+'>'+r+'</option>';}).join('')+'</select></div>'+nav(!!S.want,'Dessiner ma constellation →','Choisissez ce que vous voulez voir.');
+  if(S.st===5)h=prog()+'<div class="kick">5 · Ce que vous voulez voir</div><div class="q">Vers quels métiers on regarde ?</div><p class="qh">Le baromètre de VraiSavoirFaire est mis à jour chaque mois.</p><div class="chips'+(S.want?'':' todo')+'">'+[['hire','↗ Ceux qui embauchent'],['rare','◆ Les métiers rares'],['both','Les deux']].map(function(o){return '<button data-w="'+o[0]+'" class="'+(S.want===o[0]?'on':'')+'">'+o[1]+'</button>';}).join('')+'</div>'+nav(!!S.want,'Dessiner ma constellation →','Choisissez ce que vous voulez voir.');
   if(S.st===6)h='<div class="kick">Votre constellation se dessine…</div><div class="q" style="margin-top:12px">Nous rapprochons vos savoir-faire, ce qui compte pour vous, et le baromètre du mois.</div>';
   if(S.st>=8&&S.calc)h='<div class="kick">L’Éclaireur</div><div class="q">Trois chemins s’ouvrent devant vous…</div><div class="cnt" id="cnt">0</div><p class="qh">métiers passés au crible : vos savoir-faire, ce qui compte pour vous, le baromètre du mois.</p>';
   else if(S.st>=8){var ch=function(k){return Object.keys(S.a[k]).filter(function(x){return S.a[k][x];}).map(function(x){return QS.filter(function(q){return q.k===k;})[0].o.filter(function(o){return o[0]===x;})[0][1];});};
-    h='<div class="kick">Votre constellation</div><div class="me-card"><h3>Vous aujourd’hui</h3><div class="ln"><b>'+esc(S.job.n)+'</b> · '+DUR[+S.dur]+(S.prevs.length?' · avant : '+S.prevs.map(function(p){return esc(p.j.n);}).join(', '):'')+'</div><div class="tags">'+S.job.sf.filter(function(x,k){return S.sf[k];}).map(function(x){return '<span>'+x[0]+'</span>';}).join('')+'</div><div class="ln" style="margin-top:12px"><b>Ce qui compte :</b> '+ch('v').join(', ')+'</div><div class="ln"><b>Matière :</b> '+(ch('m').join(', ')||'—')+' · <b>Où :</b> '+(ch('l').join(', ')||'—')+'</div></div><p class="qh" style="margin-top:18px">À droite, trois métiers sont venus à vous. Cliquez celui qui vous intrigue.</p><button class="back" id="redo">↻ Recommencer</button>';}
+    h='<div class="kick">Votre constellation</div><div class="me-card"><h3>Vous aujourd’hui</h3><div class="ln"><b>'+esc(S.job.n)+'</b> · '+DUR[+S.dur]+(S.prevs.length?' · avant : '+S.prevs.map(function(p){return esc(p.j.n);}).join(', '):'')+'</div><div class="tags">'+S.job.sf.filter(function(x,k){return S.sf[k];}).map(function(x){return '<span>'+x[0]+'</span>';}).join('')+'</div><div class="ln" style="margin-top:12px"><b>Ce qui compte :</b> '+ch('v').join(', ')+'</div><div class="ln"><b>Matière :</b> '+(ch('m').join(', ')||'—')+' · <b>Où :</b> '+(ch('l').join(', ')||'—')+'</div></div><p class="qh" style="margin-top:18px">À droite, trois métiers sont venus à vous. Cliquez sur un métier pour voir sa fiche.</p><button class="back" id="redo">↻ Recommencer</button>';}
   $('panel').innerHTML=h;
   var jq=$('jq');if(jq){if(!S.job)jq.focus();jq.oninput=function(){sug(jq.value,'js',function(j){S.job=j;S.sf={};S.dur='';S.st=2;render();});};jq.onkeydown=enter('js');}
   var pq=$('pq');if(pq){pq.focus();pq.oninput=function(){sug(pq.value,'ps',function(j){S.prevs.push({j:j,sf:{},dur:''});S.prevAsk=false;render();});};pq.onkeydown=enter('ps');}
@@ -466,7 +482,7 @@ function calc(){S.calc=true;render();var names=M.map(function(m){return m.n;}),n
     render();},2900));}
 function stopCalc(){TKT.forEach(function(t){clearInterval(t);clearTimeout(t);});TKT=[];$('tks').innerHTML='';S.calc=false;}
 /* ---------- moteur ---------- */
-function render(){panel();S.top=S.st>=8?pick3():[];$('sky').classList.toggle('fin',S.st>=8);cards();layout();sig();}
+function render(){panel();S.top=S.st>=8?pick3():[];if(S.st>=8&&!S.calc&&S.pick<0&&S.top.length)S.pick=0;$('sky').classList.toggle('fin',S.st>=8);cards();layout();sig();}
 $('panel').addEventListener('click',function(e){var t=e.target.closest('#go,#nx,#bk,[data-sf],[data-dur],[data-psf],[data-pdur],[data-pdel],[data-a],[data-w],#pyes,#redo');if(!t)return;
   if(t.id==='go'){S.st=1;render();return;}
   if(t.id==='redo'){stopCalc();S.st=0;S.job=null;S.sf={};S.dur='';S.prevs=[];S.prevAsk=false;S.a={w:{},m:{},l:{},a:{},v:{},r:{}};S.want='';S.pick=-1;S.bpick=-1;S.q=0;render();return;}
