@@ -91,6 +91,13 @@ async function chargerFichesPrep() {
     return '<div class="ligne"><div class="qui"><b>' + E(f.libelle || f.code_rome) + '</b><span>ROME ' + E(f.code_rome) + ' · demandée ' + E(f.demandes) + ' fois · dernière le ' + E(jour(f.derniere)) + '</span></div></div>';
   }).join('') : '<p class="legende">Aucune fiche à préparer.</p>';
 }
+async function majBarometre(b) {
+  b.disabled = true; $('msgBaro').textContent = 'Calcul en cours, environ une minute…';
+  var r = await sb.functions.invoke('barometre-mensuel', { body: {} });
+  b.disabled = false;
+  if (r.error || !r.data || r.data.erreur) { $('msgBaro').textContent = (r.data && r.data.erreur) || 'Échec : la fonction barometre-mensuel est-elle déployée ?'; return; }
+  $('msgBaro').textContent = r.data.metiers + ' métiers mis à jour sur ' + r.data.sur + (r.data.echecs && r.data.echecs.length ? ' · manquants : ' + r.data.echecs.join(', ') : '') + '.';
+}
 async function sortir() { await sb.auth.signOut(); location.replace('./'); }
 
 /* ───── squelette ───── */
@@ -124,6 +131,10 @@ function dessiner() {
     '<h2>À reverser</h2>' +
     '<p class="legende">État de gestion, pas une facture.</p>' +
     '<p class="message" id="msgReverse" role="alert"></p><div id="listeReverse"></div>' +
+
+    '<h2>Baromètre de l’Éclaireur</h2>' +
+    '<p class="legende">Offres et tension de recrutement en Bretagne, chiffres France Travail. À mettre à jour une fois par mois (environ une minute).</p>' +
+    '<p class="message" id="msgBaro" role="alert"></p><button type="button" class="bouton petit" id="bBaro" data-texte onclick="majBarometre(this)">Mettre à jour le baromètre</button>' +
 
     '<h2>Fiches à préparer</h2>' +
     '<p class="legende">Métiers proposés par l’Éclaireur dont la fiche manque en base : la page l’a demandée à France Travail.</p>' +
