@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="color-scheme" content="light">
+<title>Personnes et structures — VRAI-SAVOIRFAIRE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;800;900&display=swap">
+<link rel="stylesheet" href="vsf.css">
+<style>
+  :root{--rouge-pale:#fdeaea;--jaune-pale:#fff6d6;--vert:#009e73;--jaune:#ffc400;--gris:#c4c4c4}
+  .adm{max-width:none;margin:0 auto;padding:8px clamp(16px,2.5vw,48px) 96px}
+  .fil{font-size:14px;color:var(--cap);margin:18px 0 0}
+  .fil a{color:inherit;text-decoration:none}.fil a:hover{color:var(--ink)}
+  h1{font-size:clamp(34px,5vw,52px);font-weight:900;letter-spacing:-.035em;line-height:1.02;margin:6px 0 22px}
+  .outils{display:grid;gap:14px;margin:0 0 6px}
+  .rech{width:100%;font:500 17px Inter,sans-serif;padding:14px 18px;border:2px solid var(--ink);border-radius:12px;background:#fff;color:var(--ink)}
+  .rech:focus{outline:none;box-shadow:0 0 0 3px #11111122}
+  .filtres{display:flex;flex-wrap:wrap;gap:8px}
+  .pil{font:700 14px Inter,sans-serif;padding:9px 16px;border:1.5px solid var(--line);border-radius:999px;background:#fff;color:var(--ink);cursor:pointer}
+  .pil:hover{border-color:var(--ink)}.pil.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .toi{font-size:14px;color:var(--cap);margin:12px 0 26px}.toi b{color:var(--ink)}
+  /* volets : titres d'abord, un clic déplie la section juste dessous */
+  .vol{border-top:1.5px solid var(--line)}
+  .vol:last-of-type{border-bottom:1.5px solid var(--line)}
+  .vol-t{display:flex;align-items:baseline;gap:12px;width:100%;text-align:left;background:none;border:0;padding:20px 4px;font:inherit;color:var(--ink);cursor:pointer}
+  .vol-t .n{font-size:clamp(22px,2.4vw,28px);font-weight:900;letter-spacing:-.02em}
+  .vol-t small{font-size:14px;color:var(--cap);font-weight:500}
+  .vol-t small b{color:#c2321f;background:var(--rouge-pale);padding:2px 8px;border-radius:999px;font-weight:800}
+  .vol-t .fl{margin-left:auto;font-size:22px;line-height:1;color:var(--cap);transition:transform .2s}
+  .vol.open .vol-t .fl{transform:rotate(90deg);color:var(--ink)}
+  .vol-c{display:grid;grid-template-rows:0fr;transition:grid-template-rows .2s ease}
+  .vol.open .vol-c{grid-template-rows:1fr}
+  .vol-i{overflow:hidden;min-height:0}
+  .vol-i > div{padding:0 4px 26px}
+  @media (prefers-reduced-motion:reduce){.vol-c,.vol-t .fl{transition:none}}
+  .regle{font-size:13.5px;color:var(--cap);margin:0 0 12px;max-width:110ch}
+  .tw{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:14.5px}
+  th{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--cap);text-align:left;padding:8px 10px;border-bottom:2px solid var(--ink);white-space:nowrap}
+  td{padding:0 10px;height:42px;border-bottom:1px solid var(--line);white-space:nowrap;vertical-align:middle}
+  tr.sel td{background:#f3f3f3}
+  tr.alerte td{background:var(--rouge-pale)}
+  td.nom{font-weight:800}
+  .pp{display:inline-block;font:800 11px Inter,sans-serif;border:1.5px solid var(--line);border-radius:999px;padding:1px 7px;margin-left:6px;color:var(--ink)}
+  .st{display:inline-flex;align-items:center;gap:7px;font-weight:700}
+  .st i{width:9px;height:9px;border-radius:50%;display:inline-block;background:var(--gris)}
+  .st.vert i{background:var(--vert)}.st.jaune i{background:var(--jaune)}.st.gris i{background:var(--gris)}
+  .mut{color:var(--cap)}
+  .act{display:flex;gap:14px;align-items:center;justify-content:flex-end}
+  .lnk{background:none;border:0;padding:0;font:800 14px Inter,sans-serif;color:var(--ink);cursor:pointer;text-decoration:none}
+  .lnk:hover{text-decoration:underline}
+  .brou{font:800 11px Inter,sans-serif;border:1.5px solid var(--ink);border-radius:999px;padding:1px 8px;margin-left:8px}
+  .plus{display:flex;justify-content:flex-end;margin:0 0 8px}
+  .vide{color:var(--cap);padding:10px 0}
+  .msg{font-weight:700;margin:0 0 10px;min-height:1.2em}
+  /* menu ⋯ */
+  .men{position:relative;display:inline-block}
+  .men > ul{position:absolute;right:0;top:100%;z-index:20;margin:4px 0 0;padding:6px;list-style:none;background:#fff;border:2px solid var(--ink);border-radius:12px;min-width:190px;box-shadow:0 10px 30px #0002}
+  .men li button{display:block;width:100%;text-align:left;background:none;border:0;padding:10px 12px;font:700 14px Inter,sans-serif;color:var(--ink);cursor:pointer;border-radius:8px}
+  .men li button:hover{background:#f3f3f3}.men li button.danger{color:#c2321f}
+  /* fiche du compte */
+  .fiche{position:fixed;top:92px;right:clamp(12px,2vw,32px);width:min(400px,calc(100vw - 24px));max-height:calc(100svh - 110px);overflow:auto;background:#fff;border:2.5px solid var(--ink);border-radius:20px;padding:22px 24px;z-index:30;box-shadow:0 18px 50px #0003}
+  .fiche[hidden]{display:none}
+  .fiche .x{position:absolute;right:16px;top:12px;background:none;border:0;font-size:24px;cursor:pointer;color:var(--ink)}
+  .fiche .cap{font-size:13px;color:var(--cap);margin:0}
+  .fiche h2{font-size:26px;font-weight:900;letter-spacing:-.02em;margin:2px 0 2px}
+  .fiche h3{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--cap);margin:22px 0 8px;padding-top:16px;border-top:1px solid var(--line)}
+  .fiche p{margin:3px 0;font-size:15px}
+  .fiche .note{background:#f6f6f6;border-radius:10px;padding:10px 12px;color:var(--cap);font-size:13.5px;margin-top:10px}
+  .fiche .btns{display:grid;gap:8px;margin-top:8px}
+  .fiche .btns button{font:800 15px Inter,sans-serif;padding:12px;border:2px solid var(--ink);border-radius:12px;background:#fff;color:var(--ink);cursor:pointer}
+  .fiche .btns button.danger{color:#c2321f;border-color:#c2321f}
+  .fiche .btns button:hover{background:#f3f3f3}
+  .dlg{position:fixed;inset:0;background:#0006;display:flex;align-items:center;justify-content:center;z-index:50;padding:16px}
+  .dlg > div{background:#fff;border-radius:20px;padding:26px;max-width:460px;width:100%}
+  .dlg h3{margin:0 0 8px;font-size:24px;font-weight:900}
+  .dlg input{font:800 20px Inter,sans-serif;width:100%;padding:10px 0;border:0;border-bottom:2px solid var(--ink);margin:10px 0 18px}
+  .dlg .r{display:flex;gap:12px;justify-content:flex-end}
+  .dlg button{font:800 15px Inter,sans-serif;padding:11px 18px;border-radius:12px;border:2px solid var(--ink);background:#fff;cursor:pointer}
+  .dlg button.ok{background:var(--ink);color:#fff}
+  .dlg button.danger.ok{background:#c2321f;border-color:#c2321f}
+  .leg{font-size:13px;color:var(--cap);margin:30px 0 0}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="vsf-auth.js"></script>
+<link rel="stylesheet" href="vsf-icones.css"><link rel="stylesheet" href="vsf-epure.css"><link rel="stylesheet" href="vsf-logo.css">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="stylesheet" href="vsf-menu.css">
+</head>
+<body>
+<script src="vsf-menu.js"></script>
+<main class="adm" id="app"><p class="mut">Chargement…</p></main>
+<aside class="fiche" id="fiche" hidden aria-label="Fiche du compte"></aside>
+
+<script>
+var $ = function (id) { return document.getElementById(id); };
+var E = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; }); };
+var sb = VSF.sb;
+var D = { personnes: [], entreprises: [], collectifs: [], ambassadeurs: [], liens: [] };
+var ST = { filtre: 'tout', q: '', sel: null, moi: null };
+var jour = function (d) { if (!d) return '—'; try { return new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }).replace('.', '') + '.'; } catch (e) { return '—'; } };
+var jourLong = function (d) { if (!d) return '—'; try { return new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }); } catch (e) { return '—'; } };
+var norm = function (s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); };
+var TYPES = { travailleur: 'Travailleur', dirigeant: 'Dirigeant', admin_collectif: 'Admin collectif', super_admin: 'Super admin' };
+
+/* ---------- accès : super administrateur en double authentification, vérifié par la base ---------- */
+function versA2F() { location.replace('admin-2fa.html?suite=' + encodeURIComponent('admin-personnes.html')); }
+async function appeler(nom, args) {
+  var r = await sb.rpc(nom, args || {});
+  if (r.error && (r.error.code === 'VSF09' || /Double authentification/i.test(r.error.message || ''))) { versA2F(); throw new Error('a2f'); }
+  return r;
+}
+async function demarrer() {
+  var s = await sb.auth.getSession();
+  if (!s.data.session) { location.replace('connexion.html?suite=' + encodeURIComponent(location.href)); return; }
+  ST.moi = s.data.session.user;
+  var et = await sb.rpc('vsf_a2f_etat');
+  if (et.error || !et.data) { $('app').innerHTML = '<h1>Pas encore disponible.</h1><p class="mut">Les migrations 46 et 47 ne sont pas installées.</p>'; return; }
+  if (!et.data.super_admin) { $('app').innerHTML = '<h1>Accès réservé.</h1><a class="lnk" href="./">Retour</a>'; return; }
+  if (!et.data.session_a2f) return versA2F();
+  menuAdmin();
+  await charger();
+  dessiner();
+}
+async function charger() {
+  var a = await Promise.all([appeler('vsf_admin_personnes'), appeler('vsf_admin_entreprises'), appeler('vsf_admin_collectifs'), appeler('vsf_admin_ambassadeurs'), sb.rpc('vsf_acces_lister')]);
+  D.personnes = (a[0].data || []); D.entreprises = (a[1].data || []); D.collectifs = (a[2].data || []); D.ambassadeurs = (a[3].data || []); D.liens = (a[4].data || []);
+  D.erreur = a[0].error ? 'La liste n’est pas disponible : la migration 47 est-elle installée ?' : '';
+}
+function menuAdmin() {
+  var blocs = document.querySelectorAll('#vsfMenuDroite, .vsf-mi-mobile');
+  for (var i = 0; i < blocs.length; i++) {
+    if (blocs[i].querySelector('[data-admin-lien]')) continue;
+    var a = document.createElement('a'); a.className = 'vsf-mi vsf-mi-droite on'; a.href = 'admin.html'; a.setAttribute('aria-current', 'page'); a.setAttribute('data-admin-lien', '1'); a.textContent = 'Admin';
+    blocs[i].insertBefore(a, blocs[i].firstChild);
+  }
+}
+
+/* ---------- outils d'affichage ---------- */
+/* le « poste » d'une invitation porte le code de la fiche (PL#1) : on affiche le nom du métier */
+var FICHES = { PL: 'Peintre en lettres', GA: 'Graphiste d’atelier', DI: 'Dirigeant·e', CO: 'Comptable', CM: 'Commercial·e', AA: 'Assistant·e', RE: 'Régisseur·se', CE: 'Chef·fe d’équipe' };
+function roleLabel(r) { var m = /^([A-Z]{2})#\d+$/.exec(String(r || '')); return m ? (FICHES[m[1]] || m[1]) : r; }
+function premierPlus(liste, f) { if (!liste || !liste.length) return '<span class="mut">—</span>'; return E(f(liste[0])) + (liste.length > 1 ? '<span class="pp">++</span>' : ''); }
+function nomCell(p) { var n = [p.nom, p.prenom].filter(Boolean).join(' '); return n || (p.sans_compte ? 'Lien de diagnostic sans compte' : (p.email || 'À nommer')); }
+function statutCell(p) {
+  var m = { verifie: ['Vérifié', 'vert'], a_confirmer: ['À confirmer', 'jaune'], invite: ['Invité le ' + jour(p.cree_le), 'jaune'], suspendu: ['Suspendu', 'gris'], archive: ['Archivé', 'gris'] }[p.statut] || [p.statut, 'gris'];
+  return '<span class="st ' + m[1] + '"><i></i>' + E(m[0]) + '</span>';
+}
+function visibleCell(p) { return ({ oui: 'Oui', non: 'Non', en_attente: '<span class="mut">En attente</span>' })[p.visible] || '<span class="mut">—</span>'; }
+function inactif(p) { if (p.invitation || p.statut === 'archive') return false; if (!p.activite) return p.statut === 'verifie'; return (Date.now() - new Date(p.activite).getTime()) > 183 * 864e5; }
+function filtre(p) {
+  if (p.statut === 'archive' && ST.filtre !== 'archives') return false;
+  var f = ST.filtre;
+  if (f === 'travailleurs' && !(p.type === 'travailleur' && !p.invitation)) return false;
+  if (f === 'dirigeants' && p.type !== 'dirigeant') return false;
+  if (f === 'admins' && p.type !== 'admin_collectif') return false;
+  if (f === 'invites' && p.statut !== 'invite') return false;
+  if (f === 'suspendus' && p.statut !== 'suspendu') return false;
+  if (f === 'archives' && p.statut !== 'archive') return false;
+  if (f === 'inactifs' && !inactif(p)) return false;
+  if (p.super) return false;                                                   // « Toi · super admin » est affiché à part
+  var q = norm(ST.q); if (!q) return true;
+  var hay = norm([p.nom, p.prenom, p.email, (p.rattachements || []).map(function (r) { return r.nom; }).join(' ')].join(' '));
+  return hay.indexOf(q) >= 0;
+}
+function compter(f) { var s = ST.filtre; ST.filtre = f; var q = ST.q; ST.q = ''; var n = D.personnes.filter(filtre).length; ST.filtre = s; ST.q = q; return n; }
+function matchQ() { var q = norm(ST.q); return function (txt) { return !q || norm(txt).indexOf(q) >= 0; }; }
+
+/* ---------- rendu ---------- */
+var OUVERT = {};
+function volet(id, num, titre, resume, rouge, contenu) {
+  return '<section class="vol' + (OUVERT[id] ? ' open' : '') + '" id="vol-' + id + '"><button type="button" class="vol-t" data-vol="' + id + '" aria-expanded="' + (OUVERT[id] ? 'true' : 'false') + '"><span class="n">' + num + ' · ' + E(titre) + '</span><small>' + E(resume) + (rouge ? ' · <b>' + rouge + ' à traiter</b>' : '') + '</small><span class="fl" aria-hidden="true">›</span></button>' +
+    '<div class="vol-c"><div class="vol-i"><div>' + contenu + '</div></div></div></section>';
+}
+function tablePersonnes() {
+  var L = D.personnes.filter(filtre);
+  var corps = L.map(function (p) {
+    var act;
+    if (p.statut === 'invite') act = '<button class="lnk" data-act="relancer" data-id="' + E(p.id) + '">Relancer</button><button class="lnk" data-act="annuler" data-id="' + E(p.id) + '">Annuler</button>';
+    else act = (p.statut === 'a_confirmer' ? '<button class="lnk" data-act="renvoyer" data-id="' + E(p.id) + '">Renvoyer l’e-mail</button>' : '<button class="lnk" data-act="voir" data-id="' + E(p.id) + '">Voir</button>') + menuPlus(p);
+    return '<tr class="' + (ST.sel === p.id ? 'sel' : '') + '"><td class="nom">' + E(nomCell(p)) + '</td><td>' + E(TYPES[p.type] || p.type) + '</td><td>' + premierPlus(p.role ? [p.role] : [], roleLabel) + '</td>' +
+      '<td>' + premierPlus(p.rattachements, function (r) { return r.nom; }) + '</td><td>' + statutCell(p) + '</td><td>' + (p.activite ? jour(p.activite) : '<span class="mut">—</span>') + '</td><td>' + visibleCell(p) + '</td><td><div class="act">' + act + '</div></td></tr>';
+  }).join('');
+  return '<div class="tw"><table><thead><tr><th>Nom Prénom</th><th>Type</th><th>Rôle</th><th>Rattachements</th><th>Statut</th><th>Activité</th><th>Visible par l’entreprise</th><th></th></tr></thead><tbody>' + (corps || '<tr><td colspan="8" class="vide">Personne ne correspond.</td></tr>') + '</tbody></table></div>';
+}
+function menuPlus(p) {
+  if (p.invitation) return '';
+  var susp = p.statut === 'suspendu', arch = p.statut === 'archive';
+  return '<span class="men"><button class="lnk" data-act="menu" data-id="' + E(p.id) + '" aria-label="Plus d’actions" aria-haspopup="true">⋯</button></span>';
+}
+function dessiner() {
+  var enAttente = D.personnes.filter(function (p) { return p.statut === 'a_confirmer'; }).length;
+  var sansReponse = D.personnes.filter(function (p) { return p.sans_reponse_15j; }).length;
+  var sansNom = D.entreprises.filter(function (e) { return e.sans_nom; }).length;
+  var visibles = D.personnes.filter(function (p) { return p.statut !== 'archive' && !p.super; });
+  var tr = function (n, f) { return '<button type="button" class="pil' + (ST.filtre === f[0] ? ' on' : '') + '" data-filtre="' + f[0] + '">' + f[1] + ' · ' + compter(f[0]) + '</button>'; };
+  var filtres = [['tout', 'Tout'], ['travailleurs', 'Travailleurs'], ['dirigeants', 'Dirigeants'], ['admins', 'Admins collectif'], ['invites', 'Invités'], ['suspendus', 'Suspendus'], ['archives', 'Archivés'], ['inactifs', 'Inactifs 6 mois']];
+  var q = matchQ();
+  var liensOk = D.liens.filter(function (a) { return a.actif && new Date(a.expire_le) > new Date(); });
+  $('app').innerHTML =
+    '<p class="fil"><a href="admin.html">Admin</a> ›</p><h1>Personnes et structures</h1>' +
+    '<div class="outils"><input class="rech" id="rech" type="search" placeholder="Rechercher un nom, une adresse, un sigle…" value="' + E(ST.q) + '" aria-label="Rechercher">' +
+    '<div class="filtres">' + filtres.map(function (f) { return tr(null, f); }).join('') + '</div></div>' +
+    '<p class="toi"><b>Toi · super admin</b> · ' + E((ST.moi && ST.moi.email) || '') + ' · double authentification active · ne peut être ni suspendu ni archivé</p>' +
+    '<p class="msg" id="msg" role="alert">' + E(D.erreur || '') + '</p>' +
+    volet('personnes', 1, 'Personnes', 'toutes les personnes qui ont un compte · ' + visibles.length, enAttente + sansReponse,
+      '<p class="regle">Un compte = une ligne. « ++ » = autres rattachements ou rôles, visibles dans « Voir ». La boussole, les échanges avec Thérèse et les niveaux détaillés ne sont jamais visibles ici.</p><div id="tPers">' + tablePersonnes() + '</div>' +
+      '<p class="regle" style="margin-top:12px">Statuts : invité · à confirmer · vérifié · suspendu · archivé. Une invitation sans réponse au bout de 15 jours remonte dans « À décider ». Suspendre bloque la connexion (réversible) · Archiver retire de la liste, restaurable · Supprimer est définitif (RGPD).</p>') +
+    volet('entreprises', 2, 'Entreprises et ateliers', D.entreprises.length + (D.entreprises.length > 1 ? ' entreprises' : ' entreprise'), sansNom, tableEntreprises(q)) +
+    volet('collectifs', 3, 'Collectifs et fédérations', D.collectifs.length + (D.collectifs.length > 1 ? ' collectifs' : ' collectif'), 0, tableCollectifs(q)) +
+    volet('ambassadeurs', 4, 'Ambassadeurs et correcteurs', D.ambassadeurs.length, 0, tableAmbassadeurs(q)) +
+    volet('liens', 5, 'Liens de diagnostic sans compte', liensOk.length + ' actif' + (liensOk.length > 1 ? 's' : '') + ' sur ' + D.liens.length, 0, tableLiens(q)) +
+    '<p class="leg">Rouge pâle = à faire par toi · jaune = en cours · vert = fait · gris = inactif.</p>';
+  var r = $('rech'); if (r) { r.oninput = function () { ST.q = r.value; majListes(); }; }
+}
+function majListes() { var t = $('tPers'); if (t) t.innerHTML = tablePersonnes(); document.querySelectorAll('.pil').forEach(function (b) { var f = b.getAttribute('data-filtre'); b.classList.toggle('on', ST.filtre === f); }); }
+function tableEntreprises(q) {
+  var L = D.entreprises.filter(function (e) { return q([e.nom, e.dirigeant, e.collectif].join(' ')); });
+  var corps = L.map(function (e) {
+    return '<tr class="' + (e.sans_nom ? 'alerte' : '') + '"><td class="nom">' + (e.sans_nom ? 'Sans nom <button class="lnk" data-act="nommer" data-id="' + E(e.id) + '">Nommer</button>' : E(e.nom)) + '</td><td class="mut">—</td><td class="mut">—</td><td>' + E(e.dirigeant || '—') + '</td><td>' + (e.membres || 0) + '</td>' +
+      '<td>' + ({ en_cours: '<span class="st jaune"><i></i>En cours</span>', termine: '<span class="st vert"><i></i>Terminé</span>', a_payer: '<span class="st gris"><i></i>À payer</span>' }[e.diagnostic] || '<span class="mut">—</span>') + '</td>' +
+      '<td>' + E((e.outils || []).join(' · ') || '—') + '</td><td>' + E(e.collectif || '—') + '</td><td><div class="act"><a class="lnk" href="entites.html">Voir</a></div></td></tr>';
+  }).join('');
+  return '<div class="tw"><table><thead><tr><th>Nom</th><th>Adresse</th><th>Secteur</th><th>Dirigeant</th><th>Membres</th><th>Diagnostic</th><th>Outils</th><th>Collectif</th><th></th></tr></thead><tbody>' + (corps || '<tr><td colspan="9" class="vide">Aucune entreprise.</td></tr>') + '</tbody></table></div>';
+}
+function tableCollectifs(q) {
+  var L = D.collectifs.filter(function (c) { return q([c.nom, c.sigle].join(' ')); });
+  var corps = L.map(function (c) {
+    return '<tr class="' + (c.statut === 'en_attente' ? 'alerte' : '') + '"><td class="nom">' + E(c.nom) + (c.statut === 'en_attente' ? '<span class="brou">brouillon</span>' : '') + '</td>' +
+      '<td>' + (c.sigle ? E(c.sigle) : '<span class="mut">—</span>') + ' <button class="lnk" data-act="sigle" data-id="' + E(c.id) + '" data-sigle="' + E(c.sigle || '') + '">' + (c.sigle ? 'Modifier' : 'Définir') + '</button></td>' +
+      '<td>' + (c.genre === 'groupe' ? 'Groupe' : 'Fédération') + '</td><td>' + E(c.parent || '—') + '</td><td>' + (c.membres || 0) + '</td><td class="mut">—</td><td class="mut">—</td><td><div class="act"><a class="lnk" href="collectifs.html">Voir</a></div></td></tr>';
+  }).join('');
+  return '<p class="regle">Le sigle est unique, en minuscules, de 2 à 8 lettres : il donne l’adresse /collectif/sigle.</p><div class="tw"><table><thead><tr><th>Nom</th><th>Sigle</th><th>Genre</th><th>Parent</th><th>Membres</th><th>Forfait groupe</th><th>Admin collectif</th><th></th></tr></thead><tbody>' + (corps || '<tr><td colspan="8" class="vide">Aucun collectif.</td></tr>') + '</tbody></table></div>';
+}
+function tableAmbassadeurs(q) {
+  var L = D.ambassadeurs.filter(function (a) { return q([a.nom, a.atelier].join(' ')); });
+  var corps = L.map(function (a) {
+    var st = { valide: '<span class="st vert"><i></i>Validé</span>', en_attente: '<span class="st jaune"><i></i>Proposé</span>', suspendu: '<span class="st gris"><i></i>Suspendu</span>' }[a.statut] || E(a.statut);
+    return '<tr><td class="nom">' + E(a.nom) + '</td><td class="mut">—</td><td>' + E(a.atelier || '—') + '</td><td>' + st + '</td><td>' + (a.offres || 0) + '</td><td>0 · <button class="lnk" disabled title="Bientôt">Habiliter</button></td><td>70 %</td></tr>';
+  }).join('');
+  return '<p class="regle">Aucune offre ne s’ouvre sans un ambassadeur validé · un correcteur est habilité à la fois par toi et par l’ambassadeur · sa rémunération est comprise dans les 70 % de l’ambassadeur.</p><div class="tw"><table><thead><tr><th>Nom Prénom</th><th>Métier</th><th>Atelier</th><th>Statut</th><th>Offres</th><th>Correcteurs</th><th>Reversement</th></tr></thead><tbody>' + (corps || '<tr><td colspan="7" class="vide">Aucun ambassadeur.</td></tr>') + '</tbody></table></div>';
+}
+function tableLiens(q) {
+  var L = D.liens.filter(function (a) { return q([a.libelle].join(' ')); });
+  var corps = L.map(function (a) {
+    var exp = new Date(a.expire_le) < new Date(), etat = !a.actif ? ['Révoqué', 'gris'] : exp ? ['Expiré', 'gris'] : (a.ouvertures ? ['Actif', 'vert'] : ['Jamais utilisé', 'gris']);
+    return '<tr data-id="' + E(a.id) + '"><td class="nom">' + E(a.libelle) + '</td><td class="mut">—</td><td>' + (a.type === 'entreprise' ? 'Entreprise' : 'Travailleur') + '</td><td>' + jour(a.cree_le) + '</td><td>' + jour(a.expire_le) + '</td><td>' + (a.ouvertures || 0) + ' fois</td><td><span class="st ' + etat[1] + '"><i></i>' + etat[0] + '</span></td>' +
+      '<td><div class="act"><button class="lnk" data-act="lien-env" data-code="' + E(a.code) + '" data-nom="' + E(a.libelle) + '">Envoyer</button><button class="lnk" data-act="lien-copier" data-code="' + E(a.code) + '">Copier</button><button class="lnk" data-act="lien-prolonger" data-id="' + E(a.id) + '">Prolonger</button><button class="lnk" data-act="lien-supprimer" data-id="' + E(a.id) + '">Supprimer</button></div></td></tr>';
+  }).join('');
+  return '<div class="plus"><a class="lnk" href="admin-acces.html">+ Créer</a></div><p class="regle">Un lien et un mot de passe pour faire un diagnostic sans créer de compte · 30 jours par défaut. Le mot de passe ne s’affiche qu’une fois, à la création. Les invitations à rejoindre une entreprise sont dans « Personnes », avec le statut « invité ».</p>' +
+    '<div class="tw"><table><thead><tr><th>Libellé</th><th>Destinataire</th><th>Diagnostic</th><th>Créé</th><th>Expire</th><th>Utilisé</th><th>Statut</th><th></th></tr></thead><tbody>' + (corps || '<tr><td colspan="8" class="vide">Aucun lien.</td></tr>') + '</tbody></table></div>';
+}
+
+/* ---------- fiche du compte (panneau de droite) ---------- */
+async function voir(id) {
+  var p = D.personnes.filter(function (x) { return x.id === id; })[0]; if (!p) return;
+  ST.sel = id; majListes();
+  var f = (await appeler('vsf_admin_personne_fiche', { p_user: id })).data || {};
+  var rt = (f.rattachements || []);
+  var arch = p.statut === 'archive', susp = p.statut === 'suspendu';
+  $('fiche').hidden = false;
+  $('fiche').innerHTML = '<button class="x" id="fx" aria-label="Fermer">×</button><p class="cap">Fiche du compte</p><h2>' + E(nomCell(p)) + '</h2><p class="cap">' + E([f.email || '', TYPES[p.type] || '', roleLabel(p.role) || ''].filter(Boolean).join(' · ')) + '</p>' +
+    '<h3>Identité</h3><p>Créé le ' + E(jourLong(f.cree_le)) + (f.verifie_le ? ' · vérifié le ' + E(jourLong(f.verifie_le)) : '') + '</p><p>Dernière connexion : ' + E(f.activite ? jourLong(f.activite) : '—') + '</p>' +
+    '<h3>Rattachements</h3>' + (rt.length ? rt.map(function (r) { return '<p>● ' + E(r.nom) + ' · ' + E(roleLabel(r.role) || '') + ' · depuis le ' + E(jourLong(r.depuis)) + '</p>'; }).join('') : '<p class="mut">Aucun</p>') +
+    '<h3>Visible par l’entreprise</h3>' + (rt.length && rt[0].accord_le && !rt[0].accord_retire_le ? '<p>Oui · accord donné le ' + E(jourLong(rt[0].accord_le)) + '</p><p class="mut">Son dirigeant voit son nom, son poste et ses niveaux. La personne peut retirer cet accord à tout moment.</p>' : (rt.length && rt[0].accord_retire_le ? '<p>Non · accord retiré le ' + E(jourLong(rt[0].accord_retire_le)) + '</p>' : '<p class="mut">—</p>')) +
+    '<h3>Diagnostics et modules</h3><p>' + (f.diagnostics || 0) + ' diagnostic' + ((f.diagnostics || 0) > 1 ? 's' : '') + ' d’entreprise</p>' +
+    '<h3>Coffre-fort</h3><p>' + (f.preuves || 0) + ' preuve' + ((f.preuves || 0) > 1 ? 's' : '') + '</p><div class="note">Contenu des preuves, boussole, échanges avec Thérèse et niveaux : non visibles en admin.</div>' +
+    '<h3>Historique</h3>' + ((f.historique || []).length ? f.historique.map(function (h) { return '<p>' + E(jourLong(h.le)) + ' · ' + E(h.action) + '</p>'; }).join('') : '<p class="mut">Rien pour l’instant.</p>') +
+    '<h3>Gérer le compte</h3><div class="btns"><button data-fa="exporter" data-id="' + E(id) + '">Exporter ses données</button>' +
+    '<button data-fa="' + (susp ? 'retablir' : 'suspendre') + '" data-id="' + E(id) + '">' + (susp ? 'Rétablir' : 'Suspendre') + '</button>' +
+    '<button data-fa="' + (arch ? 'restaurer' : 'archiver') + '" data-id="' + E(id) + '">' + (arch ? 'Restaurer' : 'Archiver') + '</button>' +
+    '<button class="danger" data-fa="supprimer" data-id="' + E(id) + '">Supprimer définitivement</button></div><p class="cap" style="margin-top:8px">Suppression : double confirmation, inscrite dans l’historique.</p>';
+}
+
+/* ---------- actions ---------- */
+function msg(t) { var m = $('msg'); if (m) m.textContent = t || ''; }
+function dialogue(titre, texte, avecSaisie, valeurDefaut, labelOk, danger) {
+  return new Promise(function (res) {
+    var d = document.createElement('div'); d.className = 'dlg';
+    d.innerHTML = '<div role="dialog" aria-modal="true"><h3>' + E(titre) + '</h3><p>' + E(texte) + '</p>' + (avecSaisie ? '<input id="dlgIn" value="' + E(valeurDefaut || '') + '" autocomplete="off">' : '') + '<div class="r"><button id="dlgNo">Annuler</button><button id="dlgOk" class="ok' + (danger ? ' danger' : '') + '">' + E(labelOk || 'Confirmer') + '</button></div></div>';
+    document.body.appendChild(d);
+    var inp = d.querySelector('#dlgIn'); if (inp) inp.focus(); else d.querySelector('#dlgOk').focus();
+    var fin = function (v) { d.remove(); res(v); };
+    d.querySelector('#dlgNo').onclick = function () { fin(null); };
+    d.querySelector('#dlgOk').onclick = function () { fin(inp ? inp.value : true); };
+    d.onclick = function (e) { if (e.target === d) fin(null); };
+    if (inp) inp.onkeydown = function (e) { if (e.key === 'Enter') fin(inp.value); if (e.key === 'Escape') fin(null); };
+  });
+}
+function fermerMenus() { document.querySelectorAll('.men > ul').forEach(function (u) { u.remove(); }); }
+async function changerStatut(id, st) {
+  var r = await appeler('vsf_admin_personne_statut', { p_user: id, p_statut: st });
+  if (r.error) { msg(r.error.message && r.error.message.length < 140 ? r.error.message : 'Échec. Réessayez.'); return; }
+  await charger(); dessiner(); if (ST.sel === id) voir(id);
+}
+document.addEventListener('click', async function (e) {
+  var t;
+  if (!e.target.closest('.men')) fermerMenus();
+  if ((t = e.target.closest('[data-vol]'))) { var id = t.getAttribute('data-vol'); OUVERT[id] = !OUVERT[id]; var s = $('vol-' + id); s.classList.toggle('open', !!OUVERT[id]); t.setAttribute('aria-expanded', OUVERT[id] ? 'true' : 'false'); return; }
+  if ((t = e.target.closest('[data-filtre]'))) { ST.filtre = t.getAttribute('data-filtre'); OUVERT.personnes = true; dessiner(); return; }
+  if (e.target.closest('#fx')) { $('fiche').hidden = true; ST.sel = null; majListes(); return; }
+  if ((t = e.target.closest('[data-fa]'))) {
+    var uid = t.getAttribute('data-id'), a = t.getAttribute('data-fa'), p = D.personnes.filter(function (x) { return x.id === uid; })[0];
+    if (a === 'suspendre') return changerStatut(uid, 'suspendu');
+    if (a === 'retablir' || a === 'restaurer') return changerStatut(uid, 'verifie');
+    if (a === 'archiver') return changerStatut(uid, 'archive');
+    if (a === 'exporter') { var f = (await appeler('vsf_admin_personne_fiche', { p_user: uid })).data || {}; var blob = new Blob([JSON.stringify(f, null, 2)], { type: 'application/json' }); var l = document.createElement('a'); l.href = URL.createObjectURL(blob); l.download = 'compte-' + uid.slice(0, 8) + '.json'; l.click(); return; }
+    if (a === 'supprimer') {
+      var c1 = await dialogue('Supprimer définitivement ?', 'Le compte de ' + nomCell(p) + ' sera effacé (RGPD). Les factures restent conservées comme la loi l’exige. Cela ne peut pas être annulé.', false, '', 'Continuer', true); if (!c1) return;
+      var c2 = await dialogue('Dernière confirmation', 'Écris SUPPRIMER pour effacer ce compte.', true, '', 'Supprimer', true); if (c2 !== 'SUPPRIMER') { msg('Suppression annulée.'); return; }
+      var r = await appeler('vsf_admin_personne_supprimer', { p_user: uid, p_confirmation: 'SUPPRIMER' });
+      if (r.error) { msg(r.error.message && r.error.message.length < 160 ? r.error.message : 'Échec. Réessayez.'); return; }
+      $('fiche').hidden = true; ST.sel = null; await charger(); dessiner(); msg('Compte supprimé. L’action est dans l’historique.'); return;
+    }
+  }
+  if ((t = e.target.closest('[data-act]'))) {
+    var act = t.getAttribute('data-act'), id2 = t.getAttribute('data-id');
+    if (act === 'voir') return voir(id2);
+    if (act === 'menu') {
+      var had = t.parentNode.querySelector('ul'); fermerMenus(); if (had) return;
+      var p2 = D.personnes.filter(function (x) { return x.id === id2; })[0], susp = p2.statut === 'suspendu', arch = p2.statut === 'archive';
+      var ul = document.createElement('ul'); ul.innerHTML = '<li><button data-fa="' + (susp ? 'retablir' : 'suspendre') + '" data-id="' + E(id2) + '">' + (susp ? 'Rétablir' : 'Suspendre') + '</button></li><li><button data-fa="' + (arch ? 'restaurer' : 'archiver') + '" data-id="' + E(id2) + '">' + (arch ? 'Restaurer' : 'Archiver') + '</button></li><li><button class="danger" data-fa="supprimer" data-id="' + E(id2) + '">Supprimer</button></li>';
+      t.parentNode.appendChild(ul); return;
+    }
+    if (act === 'renvoyer') {
+      var p3 = D.personnes.filter(function (x) { return x.id === id2; })[0];
+      if (!p3 || !p3.email) { msg('Pas d’adresse à qui écrire.'); return; }
+      var r3 = await sb.auth.signInWithOtp({ email: p3.email, options: { shouldCreateUser: false } });
+      msg(r3.error ? 'Le message n’a pas pu partir. Réessayez dans une minute.' : 'Message de confirmation renvoyé.'); return;
+    }
+    if (act === 'relancer') {
+      var r4 = await appeler('vsf_admin_invitation_relancer', { p_membre: id2 });
+      if (r4.error || !r4.data) { msg('Relance impossible.'); return; }
+      var pe = D.personnes.filter(function (x) { return x.id === id2; })[0], fk = String((pe && pe.role) || '').split('#')[0];
+      var lien = location.origin + '/equipe.html?j=' + encodeURIComponent(r4.data.jeton) + (fk ? '&f=' + encodeURIComponent(fk) : '');
+      try { await navigator.clipboard.writeText(lien); msg('Nouveau lien copié : à transmettre à la personne. L’ancien ne marche plus.'); } catch (x) { await dialogue('Nouveau lien d’invitation', lien, false, '', 'Fermer'); } return;
+    }
+    if (act === 'annuler') { if (!(await dialogue('Annuler l’invitation ?', 'Le lien ne marchera plus.', false, '', 'Annuler l’invitation', true))) return; var r5 = await appeler('vsf_admin_invitation_annuler', { p_membre: id2 }); if (r5.error) { msg('Échec. Réessayez.'); return; } await charger(); dessiner(); return; }
+    if (act === 'nommer') { var n = await dialogue('Nommer l’atelier', 'Un atelier doit avoir un nom pour être validé.', true, '', 'Enregistrer'); if (!n) return; var r6 = await appeler('vsf_admin_entreprise_nommer', { p_org: id2, p_nom: n }); if (r6.error) { msg(r6.error.message && r6.error.message.length < 160 ? r6.error.message : 'Échec. Réessayez.'); return; } await charger(); dessiner(); OUVERT.entreprises = true; dessiner(); return; }
+    if (act === 'sigle') { var s2 = await dialogue('Sigle du collectif', 'En minuscules, de 2 à 8 lettres. Il donne l’adresse /collectif/sigle.', true, t.getAttribute('data-sigle'), 'Enregistrer'); if (!s2) return; var r7 = await appeler('vsf_admin_collectif_sigle', { p_federation: id2, p_sigle: String(s2).trim().toLowerCase() }); if (r7.error) { msg(r7.error.message && r7.error.message.length < 160 ? r7.error.message : 'Échec. Réessayez.'); return; } OUVERT.collectifs = true; await charger(); dessiner(); return; }
+    if (act === 'lien-copier') { var lc = location.origin + '/acces.html?c=' + encodeURIComponent(t.getAttribute('data-code')); try { await navigator.clipboard.writeText(lc); t.textContent = 'Copié ✓'; } catch (x) { await dialogue('Lien', lc, false, '', 'Fermer'); } return; }
+    if (act === 'lien-env') { var le = location.origin + '/acces.html?c=' + encodeURIComponent(t.getAttribute('data-code')); location.href = 'mailto:?subject=' + encodeURIComponent('Votre accès à VraiSavoirFaire') + '&body=' + encodeURIComponent('Bonjour,\n\nVoici votre lien pour faire le diagnostic :\n' + le + '\n\nLe mot de passe vous est transmis séparément.\n'); return; }
+    if (act === 'lien-prolonger') { var r8 = await appeler('vsf_admin_lien_prolonger', { p_id: id2, p_jours: 30 }); if (r8.error) { await sb.rpc('vsf_acces_lister'); msg('Échec. La migration 47 est-elle installée ?'); return; } OUVERT.liens = true; await charger(); dessiner(); return; }
+    if (act === 'lien-supprimer') { if (!(await dialogue('Supprimer le lien ?', 'Il ne marchera plus et la ligne disparaîtra.', false, '', 'Supprimer', true))) return; var r9 = await appeler('vsf_admin_lien_supprimer', { p_id: id2 }); if (r9.error) { msg('Échec. Réessayez.'); return; } OUVERT.liens = true; await charger(); dessiner(); return; }
+  }
+});
+document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { fermerMenus(); var f = $('fiche'); if (f && !f.hidden) { f.hidden = true; ST.sel = null; majListes(); } } });
+demarrer();
+</script>
+<script src="vsf-icones.js"></script><script src="vsf-pop.js"></script><script src="vsf-logo.js"></script>
+</body>
+</html>
