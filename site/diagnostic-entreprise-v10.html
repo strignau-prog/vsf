@@ -594,6 +594,16 @@ td.rec .octa{font-size:17px}
 .cart button.on{color:#ffc400;cursor:pointer}
 .top .logo{display:none}
 #vsfMsg{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:90;background:#111;color:#fff;padding:12px 18px;font:700 14px/1.3 Inter,sans-serif;max-width:min(92vw,560px);text-align:center}#vsfMsg a{color:#ffc400}#vsfMsg.hide{display:none}.vsfent{position:fixed;inset:0;z-index:95;background:#fff;display:flex;flex-direction:column;justify-content:center;padding:0 clamp(16px,6vw,80px)}.vsfent h1{font-size:clamp(30px,4vw,52px);font-weight:900;margin:0 0 12px}.vsfent input{font:inherit;font-size:20px;font-weight:800;border:0;border-bottom:2px solid #111;padding:12px 0;max-width:520px;background:transparent}.vsfent button{margin-top:22px;align-self:flex-start;font:900 22px Inter,sans-serif;background:none;border:0;cursor:pointer;padding:0}
+
+/* sous le menu du site ; résultat qui suit le remplissage ; l'écran descend vers la prochaine chose à remplir */
+:root{--hh:60px}
+.top{top:var(--hh) !important;z-index:50}
+html.vsf-menu-on body > .top{position:sticky !important}      /* le bandeau des étapes reste visible sous le menu */
+@media(min-width:1000px){
+  #v1 .res{position:sticky;top:calc(var(--hh) + 68px);align-self:start;max-height:calc(100svh - var(--hh) - 84px);overflow:auto;overscroll-behavior:contain}
+  .side{top:calc(var(--hh) + 72px) !important}
+}
+.qc,.mcell,.axh,#sPostes,#sEng,#sTeam,.rb{scroll-margin-top:calc(var(--hh) + 90px)}
 </style>
 <link rel="stylesheet" href="vsf-menu.css">
 
@@ -814,7 +824,7 @@ var FIL={MA:[['MA01','Architecture et jardins'],['MA02','Ameublement et décorat
 var TRANS={MA:['DI','CM','AA','CO'],B:['DI','RE','CM','CO'],F:['DI','CE','CM','AA','CO']};
 var F=[
  {k:'DI',n:'Dirigeant·e',q:1,h:50,sf:[['Définir la finalité de l’atelier','p1'],['Suivre les indicateurs','p2'],['Animer l’équipe','p3'],['Accueillir et chiffrer','c1'],['Conseiller le client','c5'],['Facturer','s1'],['Gérer les achats','s2'],['Planifier les chantiers','s3'],['Gérer l’administratif','s4']]},
- {k:'PL',n:'Peintre en lettres',q:2,h:35,sf:[['Comprendre une demande et un lieu','c1'],['Composer l’enseigne','c2'],['Préparer le support','c3'],['Tracer, peindre, dorer','c4'],['Livrer et conseiller','c5'],['Transmettre le geste','p3']]},
+ {k:'PL',n:'Peintre en lettres',q:2,h:35,sf:[['Comprendre la demande, relever le site et chiffrer','c1',['Explique les étapes d’une commande et les règles d’enseigne de base.','Mène un relevé complet avec une liste de contrôle.','Mène seul le rendez-vous, le relevé et le devis d’une enseigne simple.','Conseille sur un projet complexe (patrimoine, ABF) et forme au relevé.']],['Concevoir la composition et préparer le tracé','c2',['Reconnaît les grandes familles de lettres et leurs époques.','Compose une enseigne simple d’après un modèle.','Dessine une composition originale adaptée au lieu.','Crée une lettre propre à un client et enseigne l’espacement à l’œil.']],['Préparer le support','c3',['Reconnaît les supports et leurs risques.','Prépare un support standard sous contrôle.','Prépare seul tout support courant et reporte le tracé.','Diagnostique et traite un support dégradé complexe.']],['Peindre les lettres et les décors, dorer (le geste rare)','c4',['Explique pinceaux, peintures et dorure.','Peint un lettrage simple sur support plan avec contrôle.','Peint seul une enseigne complète, dorure simple comprise.','Réalise sans reprise lettrages et dorures complexes, et transmet le geste.']],['Poser, contrôler et suivre','c5',['Connaît les règles du travail en hauteur.','Pose et contrôle sous supervision.','Pose seul, contrôle et clôt le chantier avec le client.','Évalue seul la sécurité d’une installation et forme à la pose.']]]},
  {k:'GA',n:'Graphiste d’atelier',q:1,h:35,sf:[['Traduire l’intention en croquis','c2'],['Maquette et BAT','c2'],['Poncifs et fichiers','c3']]},
  {k:'DO',n:'Doreur·euse',q:1,h:35,sf:[['Préparer l’assiette','c3'],['Dorer à la feuille','c4']]},
  {k:'RE',n:'Régisseur d’atelier',q:1,h:35,sf:[['Planifier les chantiers','s3'],['Gérer le stock','s2'],['Suivre les délais','p2']]},
@@ -1334,7 +1344,7 @@ function drawTeam(){
   var T=team(),st=$('sTeam');var on=engDone()&&onKeys().length;st.style.opacity=on?1:.35;st.style.pointerEvents=on?'auto':'none';
   $('team2').innerHTML=T.length?T.map(function(p){var s=S.inv[p.pid],n=psf(p).length;
     return '<div class="tmr"><span><b>'+p.nom+'</b><small>'+(p.dir?'Dirigeant·e'+(dxValid()?' · '+FK[S.dx].n:''):(ART[p.k]?'◆ ':'')+FK[p.k].n)+' · '+n+' situations à positionner</small></span>'+
-      (s==='ok'?'<span class="tst ok"><i></i>Positionné·e</span>':(s==='att'?'<span class="tst att"><i></i>Invitation envoyée</span>':'<button class="inv" data-inv="'+p.pid+'">'+(p.dir?'Me positionner →':'Inviter →')+'</button>'))+'</div>';}).join(''):'<p class="hint" style="margin-left:0">L’équipe apparaît quand vous avez coché vos postes.</p>';
+      (s==='ok'?'<span class="tst ok"><i></i>Positionné·e</span>':(s==='att'?'<span class="tst att"><i></i>'+(S.acc&&S.acc[p.pid]?'A accepté · se positionne':'Lien créé · à envoyer')+'</span><button class="inv" data-lien="'+p.pid+'">Lien →</button>':'<button class="inv" data-inv="'+p.pid+'">'+(p.dir?'Me positionner →':'Inviter →')+'</button>'))+'</div>';}).join(''):'<p class="hint" style="margin-left:0">L’équipe apparaît quand vous avez coché vos postes.</p>';
   var all2=T.length&&T.every(function(p){return S.inv[p.pid];});$('d4').className='dot'+(all2?' ok':' nil');
 }
 $('team2').addEventListener('click',function(e){var b=e.target.closest('[data-inv]');if(!b)return;S.inv[b.dataset.inv]='att';drawTeam();});
@@ -1403,12 +1413,28 @@ $('demo').onclick=function(){_demo();
   all();drawMap();
 };
 
+/* ===================== confort de remplissage (menu du site, avancée automatique) ===================== */
+(function(){
+  function hh(){var m=document.querySelector('.vsf-menu');document.documentElement.style.setProperty('--hh',(m?m.offsetHeight:0)+'px');}
+  hh();addEventListener('resize',hh);addEventListener('load',hh);
+  var RED2=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  /* après une réponse à l'étape 1, l'écran descend vers le prochain élément à remplir (en rouge pâle), s'il n'est pas déjà sous les yeux */
+  function avance1(){
+    if($('v1').hidden)return;var col=document.querySelector('#v1 .grid > div:first-child');if(!col)return;
+    var els=[].slice.call(col.querySelectorAll('.todo')).filter(function(e){return e.offsetParent!==null&&getComputedStyle(e.closest('section')||e).opacity>.5;});
+    var el=els[0];if(!el)return;var r=el.getBoundingClientRect(),h=parseInt(getComputedStyle(document.documentElement).getPropertyValue('--hh'))||60;
+    if(r.top<h+70||r.top>innerHeight-140)el.scrollIntoView({behavior:RED2?'auto':'smooth',block:'center'});
+  }
+  var gauche=document.querySelector('#v1 .grid > div:first-child');
+  if(gauche){['change','click'].forEach(function(ev){gauche.addEventListener(ev,function(e){if(e.target.closest('[data-inv]'))return;setTimeout(avance1,350);});});}
+})();
 /* ===================== branchement VSF : compte, entreprise, diagnostic ouvert, sauvegarde ===================== */
 /* Sauvegarde sûre (étape 0 du 10 nov.) : un échec n'est jamais « oublié » (on réessaie), une copie reste sur l'appareil, un second onglet est signalé, une session expirée est dite. */
 (function(){
   var P=new URLSearchParams(location.search),demoOnly=!!P.get('demo');
   if(!P.get('demo'))$('demo').style.display='none';                       // la démo ne sert qu'avec ?demo=1 : jamais sur un vrai diagnostic
   var _ss=setStep;setStep=function(n){S._step=n;return _ss.apply(this,arguments);};
+  window.V10={S:S,team:team};                                              // accroche pour les tests automatiques
   if(demoOnly||!window.VSF||!VSF.sb)return;
   var sb=VSF.sb,did=null,ORG=null,MEMBRES={},last='',lecture=false,enCours=false,moi=Math.random().toString(36).slice(2),canal=null;
   function msg(t){var m=document.getElementById('vsfMsg');if(!m){m=document.createElement('div');m.id='vsfMsg';document.body.appendChild(m);}m.className=t?'':'hide';m.innerHTML=t||'';}
@@ -1488,9 +1514,9 @@ $('demo').onclick=function(){_demo();
     if(!ORG)return;
     var L=await sb.rpc('vsf_equipe_lister',{p_org:ORG});if(L.error)return;       // migration 41 pas encore installée : la page reste utilisable sans équipe
     var Pz=await sb.rpc('vsf_equipe_positionnements',{p_org:ORG}),Ob=await sb.rpc('vsf_equipe_objectifs',{p_org:ORG}),dg=await sb.from('vsf_diagnostics').select('poids_equipe').eq('id',did).maybeSingle();
-    var parId={};MEMBRES={};S.names={};S.inv={};S.pos={};S.tr={};S.goal={};S.gok={};
+    var parId={};MEMBRES={};S.names={};S.inv={};S.pos={};S.tr={};S.goal={};S.gok={};S.acc={};S.liens=S.liens||{};
     (L.data||[]).forEach(function(m){var pid=pidDe(m);if(!pid)return;parId[m.membre_id]=pid;MEMBRES[pid]=m.membre_id;S.names[pid]=m.nom;
-      if(m.statut==='invite'||m.statut==='actif')S.inv[pid]='att';});
+      if(m.statut==='invite'||m.statut==='actif')S.inv[pid]='att';if(m.statut==='actif')S.acc[pid]=true;});
     (Pz.data||[]).forEach(function(x){var pid=parId[x.membre_id];if(!pid)return;(S.pos[pid]=S.pos[pid]||{})[x.situation_code]=x.niveau;if(x.accepte_transmettre)S.tr[pid+'|'+x.situation_code]=true;S.inv[pid]='ok';});
     var tout={};(Ob.data||[]).forEach(function(x){var pid=parId[x.membre_id];if(!pid)return;(S.goal[pid]=S.goal[pid]||{})[x.situation_code]=x.niveau_vise;(tout[pid]=tout[pid]||[]).push(!!x.valide_le);});
     Object.keys(tout).forEach(function(pid){S.gok[pid]=tout[pid].every(Boolean);});
@@ -1506,11 +1532,27 @@ $('demo').onclick=function(){_demo();
     var r=await sb.rpc('vsf_equipe_inviter',{p_org:ORG,p_nom:nom.trim(),p_poste:pid});
     if(r.error||!r.data){msg('L’invitation n’a pas pu être créée pour le moment.');return;}
     var lien=location.origin+'/equipe.html?j='+encodeURIComponent(r.data.jeton)+'&f='+encodeURIComponent(p.k);
-    S.names[pid]=nom.trim();S.inv[pid]='att';drawTeam();
-    var l=document.querySelector('.lnkc');if(l){l.innerHTML='Lien pour <b></b> (à usage unique, valable 14 jours) : <b class="lk"></b> <button class="inv" id="cpl">Copier →</button>';l.querySelector('b').textContent=nom.trim();l.querySelector('.lk').textContent=lien.length>46?lien.slice(0,46)+'…':lien;
-      document.getElementById('cpl').onclick=function(){var t=this;(navigator.clipboard?navigator.clipboard.writeText(lien):Promise.reject()).then(function(){t.textContent='Copié ✓';},function(){prompt('Copiez ce lien :',lien);});};}
-    msg('');
+    S.names[pid]=nom.trim();S.inv[pid]='att';S.liens[pid]=lien;drawTeam();afficherLien(pid);msg('');
   },true);
+  /* « Lien → » : retrouver le lien d'une personne invitée, le copier ou l'envoyer par e-mail */
+  $('team2').addEventListener('click',function(e){var b=e.target.closest('[data-lien]');if(!b)return;e.stopImmediatePropagation();afficherLien(b.dataset.lien);},true);
+  function afficherLien(pid){
+    var l=document.querySelector('.lnkc'),lien=(S.liens||{})[pid],nom=S.names[pid]||'cette personne';if(!l)return;l.style.display='';
+    if(!lien){l.innerHTML='Le lien de <b></b> n’est plus affiché (il n’est montré qu’une fois). Cliquez « Inviter → » pour en créer un nouveau.';l.querySelector('b').textContent=nom;return;}
+    var corps='Bonjour '+nom+',
+
+Je t’invite à te positionner sur ta fiche métier sur VraiSavoirFaire (environ 10 minutes). Tu crées ton compte avec ton e-mail, et seul moi verrai tes niveaux.
+
+Ton lien personnel, à usage unique, valable 14 jours :
+'+lien+'
+';
+    l.innerHTML='<b>Lien pour <span class="nm"></span></b> — à usage unique, valable 14 jours. <b>VSF ne l’envoie pas : c’est à vous de le lui transmettre.</b><br><span class="lk" style="word-break:break-all"></span><br><button class="inv" id="cpl">Copier le lien →</button> <a class="inv" id="mel" style="text-decoration:none">Écrire un e-mail →</a>';
+    l.querySelector('.nm').textContent=nom;l.querySelector('.lk').textContent=lien;
+    document.getElementById('mel').href='mailto:?subject='+encodeURIComponent('Rejoindre l’équipe sur VraiSavoirFaire')+'&body='+encodeURIComponent(corps);
+    document.getElementById('cpl').onclick=function(){var t=this;(navigator.clipboard?navigator.clipboard.writeText(lien):Promise.reject()).then(function(){t.textContent='Copié ✓';},function(){prompt('Copiez ce lien :',lien);});};
+  }
+  var lnk0=document.querySelector('.lnkc');if(lnk0)lnk0.style.display='none';          // plus de faux lien d'exemple
+  setInterval(chargerEquipe,30000);addEventListener('focus',chargerEquipe);                // le diagnostic se met à jour quand l'équipe se positionne
   /* le curseur « poids de l'équipe » est enregistré */
   $('wseg').addEventListener('click',function(e){var b=e.target.closest('[data-w]');if(!b||!did)return;setTimeout(function(){sb.rpc('vsf_diag_poids_equipe',{p_diag:did,p_poids:S.w});},0);});
   /* valider (ou retirer la validation de) l'objectif d'une personne */
