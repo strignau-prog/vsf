@@ -530,7 +530,9 @@ td.rec .octa{font-size:17px}
 .dot.nil{background:#fff;border:2px solid #c4c4c4;box-sizing:border-box}
 .opt{font-size:11px;font-weight:700;color:#767676}
 .tm2{margin-left:32px;display:flex;flex-direction:column;gap:2px}
-.tmr{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;min-height:44px;font-size:14px}
+.tmr{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:2px 16px;min-height:44px;font-size:14px;padding:4px 0}
+.tmr > span:first-child{grid-row:1/3}.tmr > .tst,.tmr > .inv{grid-column:2;justify-self:end}.tmr > .inv:only-of-type{grid-row:1/3}
+.tm2 > .tmr + .lkp{margin-top:0}
 .tmr b{font-weight:800}.tmr small{display:block;color:#767676;font-size:12px;font-weight:600}
 .tst{font-size:12.5px;font-weight:800;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 .tst i{width:10px;height:10px;border-radius:50%;display:inline-block}
@@ -600,10 +602,18 @@ td.rec .octa{font-size:17px}
 .top{top:var(--hh) !important;z-index:50}
 html.vsf-menu-on body > .top{position:sticky !important}      /* le bandeau des étapes reste visible sous le menu */
 @media(min-width:1000px){
-  #v1 .res{position:sticky;top:calc(var(--hh) + 68px);align-self:start;max-height:calc(100svh - var(--hh) - 84px);overflow:auto;overscroll-behavior:contain}
+  #v1 .res{align-self:start;position:relative;transition:transform .15s ease-out;will-change:transform}   /* suit le défilement (voir suivre()), sans ascenseur */
   .side{top:calc(var(--hh) + 72px) !important}
 }
 .qc,.mcell,.axh,#sPostes,#sEng,#sTeam,.rb{scroll-margin-top:calc(var(--hh) + 90px)}
+/* le contenu occupe toute la largeur de l'écran : plus de bandes blanches de chaque côté */
+.wrap{max-width:none !important;padding-left:clamp(16px,2.5vw,48px) !important;padding-right:clamp(16px,2.5vw,48px) !important}
+@media(min-width:1000px){.grid{grid-template-columns:minmax(340px,4fr) minmax(0,8fr) !important}}
+.lkp{grid-column:1/-1;background:#faf7ea;padding:14px 16px;margin:2px 0 10px;font-size:13.5px;line-height:1.5}
+.lkp .lk{display:block;margin:8px 0;font:600 12.5px/1.4 ui-monospace,Consolas,monospace;word-break:break-all;background:#fff;padding:8px 10px;user-select:all}
+.lkp .acts{display:flex;flex-wrap:wrap;gap:6px 22px;margin-top:6px}
+.lkp .acts .inv{font-size:14px}
+.tmr .inv.go{font-size:13.5px}
 </style>
 <link rel="stylesheet" href="vsf-menu.css">
 
@@ -1344,7 +1354,7 @@ function drawTeam(){
   var T=team(),st=$('sTeam');var on=engDone()&&onKeys().length;st.style.opacity=on?1:.35;st.style.pointerEvents=on?'auto':'none';
   $('team2').innerHTML=T.length?T.map(function(p){var s=S.inv[p.pid],n=psf(p).length;
     return '<div class="tmr"><span><b>'+p.nom+'</b><small>'+(p.dir?'Dirigeant·e'+(dxValid()?' · '+FK[S.dx].n:''):(ART[p.k]?'◆ ':'')+FK[p.k].n)+' · '+n+' situations à positionner</small></span>'+
-      (s==='ok'?'<span class="tst ok"><i></i>Positionné·e</span>':(s==='att'?'<span class="tst att"><i></i>'+(S.acc&&S.acc[p.pid]?'A accepté · se positionne':'Lien créé · à envoyer')+'</span><button class="inv" data-lien="'+p.pid+'">Lien →</button>':'<button class="inv" data-inv="'+p.pid+'">'+(p.dir?'Me positionner →':'Inviter →')+'</button>'))+'</div>';}).join(''):'<p class="hint" style="margin-left:0">L’équipe apparaît quand vous avez coché vos postes.</p>';
+      (s==='ok'?'<span class="tst ok"><i></i>Positionné·e</span>'+(p.dir?'<button class="inv go" data-inv="'+p.pid+'">Revoir mon positionnement →</button>':''):(s==='att'?'<span class="tst att"><i></i>'+(p.dir?'Positionnement en cours':(S.acc&&S.acc[p.pid]?'A accepté · se positionne':'Lien créé · à envoyer'))+'</span>'+(S.acc&&S.acc[p.pid]?(p.dir?'<button class=\"inv go\" data-inv=\"'+p.pid+'\">Continuer mon positionnement →</button>':''):'<button class="inv go" data-lien="'+p.pid+'">'+(S.liens&&S.liens[p.pid]?'Copier le lien →':'Récupérer le lien →')+'</button>'):'<button class="inv go" data-inv="'+p.pid+'">'+(p.dir?'Me positionner →':'Inviter →')+'</button>'))+'</div>'+(S.open===p.pid?'<div class="lkp" data-lkp="'+p.pid+'"></div>':'');}).join(''):'<p class="hint" style="margin-left:0">L’équipe apparaît quand vous avez coché vos postes.</p>';
   var all2=T.length&&T.every(function(p){return S.inv[p.pid];});$('d4').className='dot'+(all2?' ok':' nil');
 }
 $('team2').addEventListener('click',function(e){var b=e.target.closest('[data-inv]');if(!b)return;S.inv[b.dataset.inv]='att';drawTeam();});
@@ -1439,6 +1449,23 @@ $('demo').onclick=function(){_demo();
   if(!P.get('demo'))$('demo').style.display='none';                       // la démo ne sert qu'avec ?demo=1 : jamais sur un vrai diagnostic
   var _ss=setStep;setStep=function(n){S._step=n;return _ss.apply(this,arguments);};
   window.V10={S:S,team:team};                                              // accroche pour les tests automatiques
+  /* L'esquisse descend avec le remplissage : toujours centrée sur l'écran (ou, si elle est plus haute que l'écran, elle défile en proportion), sans ascenseur */
+  (function(){
+    var raf=0;
+    function suivre(){
+      raf=0;var res=document.querySelector('#v1 .res'),v=document.getElementById('v1');if(!res||!v)return;
+      if(v.hidden||innerWidth<1000){res.style.transform='';return;}
+      var hh=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--hh'))||0,top=hh+68,avail=innerHeight-top-16,
+          g=res.parentNode,gr=g.getBoundingClientRect(),gH=g.offsetHeight,bH=res.offsetHeight,max=Math.max(0,gH-bH),off;
+      if(bH<=avail)off=top+(avail-bH)/2-gr.top;
+      else{var pr=gH>avail?Math.min(1,Math.max(0,(top-gr.top)/(gH-avail))):0;off=top-pr*(bH-avail)-gr.top;}      /* bloc plus haut que l'écran : il reste en place puis glisse pour que tout soit atteignable */
+      off=Math.max(0,Math.min(max,off));res.style.transform='translateY('+Math.round(off)+'px)';
+    }
+    function planifier(){if(!raf)raf=setTimeout(suivre,16);}
+    addEventListener('scroll',planifier,{passive:true});addEventListener('resize',planifier);addEventListener('load',planifier);
+    var g=document.querySelector('#v1 .grid');if(g&&window.MutationObserver)new MutationObserver(planifier).observe(g,{childList:true,subtree:true,attributes:true,attributeFilter:['style','class','hidden']});
+    setInterval(planifier,1000);planifier();
+  })();
   if(demoOnly||!window.VSF||!VSF.sb)return;
   var sb=VSF.sb,did=null,ORG=null,MEMBRES={},last='',lecture=false,enCours=false,moi=Math.random().toString(36).slice(2),canal=null;
   function msg(t){var m=document.getElementById('vsfMsg');if(!m){m=document.createElement('div');m.id='vsfMsg';document.body.appendChild(m);}m.className=t?'':'hide';m.innerHTML=t||'';}
@@ -1536,19 +1563,32 @@ $('demo').onclick=function(){_demo();
     var r=await sb.rpc('vsf_equipe_inviter',{p_org:ORG,p_nom:nom.trim(),p_poste:pid});
     if(r.error||!r.data){msg('L’invitation n’a pas pu être créée pour le moment.');return;}
     var lien=location.origin+'/equipe.html?j='+encodeURIComponent(r.data.jeton)+'&f='+encodeURIComponent(p.k);
-    S.names[pid]=nom.trim();S.inv[pid]='att';S.liens[pid]=lien;drawTeam();afficherLien(pid);msg('');
+    S.names[pid]=nom.trim();S.inv[pid]='att';S.liens[pid]=lien;S.open=pid;drawTeam();var q=document.querySelector('.lkp');if(q)q.scrollIntoView({behavior:'smooth',block:'center'});msg('');
   },true);
-  /* « Lien → » : retrouver le lien d'une personne invitée, le copier ou l'envoyer par e-mail */
-  $('team2').addEventListener('click',function(e){var b=e.target.closest('[data-lien]');if(!b)return;e.stopImmediatePropagation();afficherLien(b.dataset.lien);},true);
-  function afficherLien(pid){
-    var l=document.querySelector('.lnkc'),lien=(S.liens||{})[pid],nom=S.names[pid]||'cette personne';if(!l)return;l.style.display='';
-    if(!lien){l.innerHTML='Le lien de <b></b> n’est plus affiché (il n’est montré qu’une fois). Cliquez « Inviter → » pour en créer un nouveau.';l.querySelector('b').textContent=nom;return;}
+  /* « Récupérer / Copier le lien » : un panneau s'ouvre sous la personne avec le lien, à copier ou à envoyer par e-mail */
+  $('team2').addEventListener('click',function(e){var b=e.target.closest('[data-lien]');if(!b)return;e.stopImmediatePropagation();S.open=(S.open===b.dataset.lien&&!(S.liens||{})[b.dataset.lien])?null:b.dataset.lien;drawTeam();var q=document.querySelector('.lkp');if(q)q.scrollIntoView({behavior:'smooth',block:'center'});},true);
+  var _dt=drawTeam;drawTeam=function(){_dt();remplirLien();};
+  function lienDe(pid,jeton){var p=team().filter(function(x){return x.pid===pid;})[0];return location.origin+'/equipe.html?j='+encodeURIComponent(jeton)+'&f='+encodeURIComponent(p?p.k:'');}
+  function remplirLien(){
+    var q=document.querySelector('.lkp');if(!q)return;var pid=q.getAttribute('data-lkp'),lien=(S.liens||{})[pid],nom=S.names[pid]||'cette personne';
+    if(!lien){q.innerHTML='<b>Le lien de <span class="nm"></span> n’est plus affiché.</b> Par sécurité, il n’est montré qu’une seule fois, au moment de l’invitation. Créez-en un nouveau : l’ancien cesse de fonctionner.<div class="acts"><button class="inv" data-act="nouveau" data-pid="'+pid+'">Créer un nouveau lien →</button><button class="inv" data-act="fermer">Fermer</button></div>';q.querySelector('.nm').textContent=nom;return;}
+    q.innerHTML='<b>Lien personnel pour <span class="nm"></span></b> — à usage unique, valable 14 jours.<br><b>VSF ne l’envoie pas : copiez-le, puis envoyez-le vous-même</b> (e-mail, SMS, messagerie).<span class="lk"></span><div class="acts"><button class="inv" data-act="copier" data-pid="'+pid+'">Copier le lien →</button><a class="inv" data-act="mail" style="text-decoration:none;color:inherit">Écrire un e-mail →</a>'+(navigator.share?'<button class="inv" data-act="partager" data-pid="'+pid+'">Partager →</button>':'')+'<button class="inv" data-act="fermer">Fermer</button></div>';
+    q.querySelector('.nm').textContent=nom;q.querySelector('.lk').textContent=lien;
     var corps='Bonjour '+nom+',\n\nJe t’invite à te positionner sur ta fiche métier sur VraiSavoirFaire (environ 10 minutes). Tu crées ton compte avec ton e-mail, et seul moi verrai tes niveaux.\n\nTon lien personnel, à usage unique, valable 14 jours :\n'+lien+'\n';
-    l.innerHTML='<b>Lien pour <span class="nm"></span></b> — à usage unique, valable 14 jours. <b>VSF ne l’envoie pas : c’est à vous de le lui transmettre.</b><br><span class="lk" style="word-break:break-all"></span><br><button class="inv" id="cpl">Copier le lien →</button> <a class="inv" id="mel" style="text-decoration:none">Écrire un e-mail →</a>';
-    l.querySelector('.nm').textContent=nom;l.querySelector('.lk').textContent=lien;
-    document.getElementById('mel').href='mailto:?subject='+encodeURIComponent('Rejoindre l’équipe sur VraiSavoirFaire')+'&body='+encodeURIComponent(corps);
-    document.getElementById('cpl').onclick=function(){var t=this;(navigator.clipboard?navigator.clipboard.writeText(lien):Promise.reject()).then(function(){t.textContent='Copié ✓';},function(){prompt('Copiez ce lien :',lien);});};
+    q.querySelector('[data-act=mail]').href='mailto:?subject='+encodeURIComponent('Rejoindre l’équipe sur VraiSavoirFaire')+'&body='+encodeURIComponent(corps);
   }
+  $('team2').addEventListener('click',async function(e){
+    var b=e.target.closest('[data-act]');if(!b)return;var act=b.dataset.act,pid=b.dataset.pid,lien=(S.liens||{})[pid];
+    if(act==='fermer'){S.open=null;drawTeam();return;}
+    if(act==='copier'){(navigator.clipboard?navigator.clipboard.writeText(lien):Promise.reject()).then(function(){b.textContent='Copié ✓';},function(){prompt('Copiez ce lien :',lien);});return;}
+    if(act==='partager'){try{await navigator.share({title:'VraiSavoirFaire',text:'Je t’invite à te positionner sur VraiSavoirFaire.',url:lien});}catch(x){}return;}
+    if(act==='nouveau'){
+      var mid=MEMBRES[pid],r=mid?await sb.rpc('vsf_equipe_nouveau_lien',{p_org:ORG,p_membre:mid}):{error:true};
+      if(r.error||!r.data){r=await sb.rpc('vsf_equipe_inviter',{p_org:ORG,p_nom:S.names[pid]||'Invité',p_poste:pid});}      /* migration 43 pas encore installée : on crée une nouvelle invitation */
+      if(r.error||!r.data){msg('Le lien n’a pas pu être recréé pour le moment.');return;}
+      S.liens[pid]=lienDe(pid,r.data.jeton);S.open=pid;drawTeam();
+    }
+  });
   var lnk0=document.querySelector('.lnkc');if(lnk0)lnk0.style.display='none';          // plus de faux lien d'exemple
   setInterval(chargerEquipe,30000);addEventListener('focus',chargerEquipe);                // le diagnostic se met à jour quand l'équipe se positionne
   /* le curseur « poids de l'équipe » est enregistré */
@@ -1560,6 +1600,7 @@ $('demo').onclick=function(){_demo();
   });
   /* qui voit quoi : les niveaux individuels ne sont vus que par le dirigeant */
   document.querySelectorAll('.hint,p,h3,small').forEach(function(n){if(n.children.length===0&&/partagé avec toute l.équipe/i.test(n.textContent))n.textContent=n.textContent.replace(/Ce tableau est partagé avec toute l.équipe\./,'Ce tableau n’est visible que de vous, le dirigeant : chaque salarié ne voit que ses propres niveaux.');});
+
   ouvrir();
 })();
 })();
