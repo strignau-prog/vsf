@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>L’Éclaireur — VRAI-SAVOIRFAIRE</title>
-<meta name="description" content="Trois minutes, sans compte : trois métiers qui vous ressemblent, ce que vous avez déjà en commun avec eux, et le baromètre du mois.">
+<meta name="description" content="Trois minutes, sans compte : trois métiers qui te ressemblent, ce que tu as déjà en commun avec eux, et le baromètre du mois.">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&display=swap">
 <link rel="stylesheet" href="vsf-logo.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
@@ -181,6 +181,52 @@ h1{margin:10px 0 14px;font-size:clamp(34px,4.6vw,60px);font-weight:900;line-heig
 @media(max-width:640px){.sg,.bg{grid-template-columns:1fr}}
 .br>span:last-child::after{content:"  → fiche";color:#767676;font-weight:700;font-size:12px}
 .cd.on::after{content:"";position:absolute;left:50%;bottom:-26px;width:0;height:26px;border-left:4px solid #ffc400;transform:translateX(-2px)}
+
+/* ---- refonte du 9 novembre (maquette) : ouverture plein écran, 3 chapitres, curseurs « peu importe » ---- */
+.stage{position:relative;transition:grid-template-columns .9s cubic-bezier(.6,0,.2,1)}
+.stage.intro{grid-template-columns:minmax(0,0fr) minmax(0,7fr);min-height:calc(100svh - var(--hh,64px))}
+.stage.intro .panel{padding-left:0;padding-right:0;opacity:0;overflow:hidden}
+.panel{transition:opacity .6s .35s,padding .9s cubic-bezier(.6,0,.2,1)}
+.stage.intro .sky{background:#fff;min-height:calc(100svh - var(--hh,64px))}
+.sky{transition:background .9s}
+.intro .b{transition-duration:4.2s;transition-timing-function:ease-in-out}
+.intro .b span{background:transparent}
+.intro .b.z1 span{scale:.82;opacity:.45;filter:blur(1px)}
+.intro .b.z2 span{scale:.68;opacity:.22;filter:blur(2.2px)}
+.hero{--hc:#111;--hd:#a3a3a3;--hg:rgba(255,255,255,.94);position:absolute;inset:0;z-index:6;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px var(--gut);color:var(--hc);cursor:pointer;transition:opacity .5s,transform .7s cubic-bezier(.6,0,.2,1)}
+.hero::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse 58% 42% at 50% 50%,var(--hg) 38%,rgba(255,255,255,0) 76%);pointer-events:none}
+.hero>*{position:relative}
+.stage:not(.intro) .hero{opacity:0;transform:translateY(-40px);pointer-events:none}
+.h1x{position:relative;display:inline-block;font-size:clamp(24px,3.4vw,44px);font-weight:900;letter-spacing:-.01em;line-height:1.1;color:var(--hc)}
+.h1x svg{position:absolute;left:-3%;top:48%;width:106%;height:.3em;overflow:visible}
+.h1x path{fill:none;stroke:#ff3b1f;stroke-width:2.6;stroke-linecap:round;stroke-dasharray:1 2;stroke-dashoffset:1}
+.play .h1x{animation:focus .8s 1.2s both,dim .6s 3.6s forwards}
+@keyframes dim{to{color:var(--hd)}}
+.play .h1x path{animation:drawp 1.4s 2.2s cubic-bezier(.45,0,.4,1) forwards}
+.hero h1{margin:16px 0 18px;font-size:clamp(38px,6.6vw,100px);color:var(--hc);line-height:.98;letter-spacing:-.03em;max-width:none}
+.hero h1.play{animation:grow 1.3s 3.8s cubic-bezier(.2,.75,.2,1) both}
+@keyframes grow{0%{opacity:0;transform:scale(.12);filter:blur(6px)}55%{opacity:1;filter:blur(0)}100%{opacity:1;transform:scale(1)}}
+.hero h1 .mk{animation:upw 1.1s 4.9s both}
+@keyframes upw{0%{color:var(--hc)}25%{color:var(--now);transform:translateY(-.1em)}70%{color:var(--now);transform:none}100%{color:var(--hc)}}
+.hero .sub2{font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--hd);margin:0 0 30px;animation:focus .8s 5.1s both}
+.hero .start{color:var(--hc);animation:focus .8s 5.4s both;align-self:center}
+.hero .start:hover{color:var(--now)}
+.hero .cap{position:absolute;right:var(--gut);bottom:22px;text-align:right;font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.hero .cap span{display:block;margin-top:5px;font-weight:400;letter-spacing:.06em;text-transform:none;font-size:12px}
+@media(max-width:900px){.hero::before{background:radial-gradient(ellipse 100% 36% at 50% 50%,var(--hg) 60%,rgba(255,255,255,0) 92%)}.stage.intro{grid-template-columns:1fr}.stage.intro .panel{display:none}.stage.intro .sky{height:calc(100svh - var(--hh,84px))}.stage.intro .field{height:100%}.hero .cap{left:var(--gut);right:auto;text-align:left}}
+.chap{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-bottom:24px;max-width:520px}
+.chap span{border-top:5px solid #eee;padding-top:7px;font-size:10.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#b0b0b0;line-height:1.25}
+.chap span.d{border-top-color:#111;color:#111}.chap span.n{border-top-color:var(--now);color:#111}
+.sls{display:flex;flex-direction:column;gap:22px;max-width:520px;margin-top:4px}
+.sl .sll{display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:10px;font-size:13.5px;font-weight:800;margin-bottom:10px}.sl .sll span:last-child{text-align:right}
+.sl .sll span:nth-child(2){color:var(--muted);font-weight:600;font-size:11.5px}
+.sl .slt{position:relative;display:flex;justify-content:space-between;align-items:center;height:30px}
+.sl .slt::before{content:"";position:absolute;left:14px;right:14px;top:50%;height:3px;margin-top:-1.5px;background:#111}
+.sl .slt button{position:relative;width:28px;height:28px;border-radius:50%;border:3px solid #111;background:#fff;cursor:pointer;padding:0}
+.sl .slt button:nth-child(3){width:20px;height:20px;border-width:2px}
+.sl .slt button.on{background:#111;box-shadow:0 0 0 5px var(--now)}
+.sl .slt button:hover{border-color:var(--now)}
+.nt .b{transition:none!important}
 </style>
 <link rel="icon" href="/favicon.ico" sizes="48x48">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -190,14 +236,10 @@ h1{margin:10px 0 14px;font-size:clamp(34px,4.6vw,60px);font-weight:900;line-heig
 </head>
 <body class="page-publique">
 <script src="vsf-menu.js"></script>
-<header class="top" id="top">
-  <a class="brand" href="./">VRAI-SAVOIRFAIRE</a>
-  <nav class="menu" aria-label="Menu"><a href="manifeste.html">Manifeste</a><a href="eclaireur.html" class="on" aria-current="page">L’Éclaireur</a><a href="collectifs.html">Collectifs</a><a href="travailleurs.html">Travailleurs</a><a href="tarifs.html">Tarifs</a></nav>
-  <a class="login" href="connexion.html?mode=connexion">Se connecter</a>
-</header>
-  <div class="stage">
+
+  <div class="stage intro" id="stage"><div class="hero play" id="hero" role="button" tabindex="0" aria-label="Commencer L’Éclaireur"></div>
     <div class="panel" id="panel"></div>
-    <div class="sky" id="sky" aria-hidden="true"><div class="field" id="field"><svg id="lines"></svg><div id="tks"></div><div id="bubbles"></div><div class="me hide" id="me"><div><span id="meN" style="font-size:15px;font-weight:900">Vous</span><b>●</b></div></div></div><div class="cards hide" id="cards"></div></div>
+    <div class="sky" id="sky" aria-hidden="true"><div class="field" id="field"><svg id="lines"></svg><div id="tks"></div><div id="bubbles"></div><div class="me hide" id="me"><div><span id="meN" style="font-size:15px;font-weight:900">Toi</span><b>●</b></div></div></div><div class="cards hide" id="cards"></div></div>
   </div>
   <section class="sig hide" id="sig"></section>
   <section class="baro" id="baro"></section>
@@ -261,14 +303,34 @@ setTimeout(function(){chargerDest();},0);
 var PROFILS_PLUS={'Maroquinier':{m:['cuir']},'Tapissier':{m:['cuir']},'Céramiste':{m:['terre']},'Boulanger':{m:['aliments'],l:['cuisine']},'Plombier':{m:['eau']},'Paysagiste':{m:['eau'],v:['decouvrir']},'Fleuriste':{l:['commerce']},'Télévendeur':{l:['commerce']},'Graphiste':{m:['papier']},'Éducateur':{l:['public'],v:['apprendre']},'Infirmier':{l:['public']},'Auxiliaire':{l:['public']},'Technicien':{l:['labo']},'Traducteur':{v:['apprendre','voyager']},'Secrétaire':{l:['public']},'Restaurateur':{v:['decouvrir']},'Luthier':{v:['apprendre']},'Peintre en lettres':{v:['apprendre']}};
 M.forEach(function(m){Object.keys(PROFILS_PLUS).forEach(function(k){if(m.n.indexOf(k)===0){var e=PROFILS_PLUS[k];['m','l','v'].forEach(function(f){if(e[f])m.p[f]=m.p[f].concat(e[f]);});}});});
 var REG=['Toute la France','Bretagne','Pays de la Loire','Normandie','Île-de-France','Auvergne-Rhône-Alpes','Occitanie','Nouvelle-Aquitaine'];
+var UNIV={'Peintre en lettres':['patrimoine','deco'],'Peintre en décor':['patrimoine','deco'],'Doreur·euse':['patrimoine'],'Ébéniste':['patrimoine','deco'],'Tapissier·ère d’ameublement':['deco','mode','patrimoine'],'Vitrailliste':['patrimoine'],'Céramiste':['deco','patrimoine'],'Tailleur·euse de pierre':['patrimoine','batiment'],'Restaurateur·rice de meubles':['patrimoine','deco'],'Luthier·ère':['patrimoine'],'Maroquinier·ère':['mode'],'Enseigniste':['deco','technique'],'Menuisier·ère':['batiment','deco'],'Charpentier·ère':['batiment'],'Couvreur·euse':['batiment'],'Paysagiste':['nature'],'Fleuriste':['nature','deco'],'Électricien·ne':['batiment','technique'],'Plombier·ère chauffagiste':['batiment','technique'],'Peintre en bâtiment':['batiment','deco'],'Auxiliaire de vie':['soin'],'Éducateur·rice spécialisé·e':['soin'],'Boulanger·ère':['gastro'],'Technicien·ne de maintenance':['technique'],'Infirmier·ère':['soin'],'Graphiste':['deco'],'Comptable':[],'Secrétaire':[],'Télévendeur·euse':[],'Traducteur·rice':[]};
+var NRG={'Peintre en lettres':2,'Peintre en décor':2,'Doreur·euse':1,'Ébéniste':2,'Tapissier·ère d’ameublement':2,'Vitrailliste':1,'Céramiste':1,'Tailleur·euse de pierre':4,'Restaurateur·rice de meubles':1,'Luthier·ère':1,'Maroquinier·ère':1,'Enseigniste':3,'Menuisier·ère':3,'Charpentier·ère':4,'Couvreur·euse':4,'Paysagiste':4,'Fleuriste':2,'Électricien·ne':3,'Plombier·ère chauffagiste':3,'Peintre en bâtiment':3,'Auxiliaire de vie':3,'Éducateur·rice spécialisé·e':2,'Boulanger·ère':3,'Technicien·ne de maintenance':2,'Infirmier·ère':3,'Graphiste':0,'Comptable':0,'Secrétaire':0,'Télévendeur·euse':0,'Traducteur·rice':0};
+var HRS={'Boulanger·ère':'aube','Fleuriste':'we','Infirmier·ère':'decale','Auxiliaire de vie':'decale','Éducateur·rice spécialisé·e':'decale','Couvreur·euse':'aube'};
+var LABX={dehors:'Dehors',atelier:'En atelier',chantier:'Sur un chantier',chez:'Chez les gens',mouvement:'En mouvement',bureau:'Au bureau',seul:'Seul·e',equipe:'En équipe',clients:'Avec des clients',p:'Précision et patience',a:'Action et variété'};
+var SIT=[['','Ta situation (facultatif)'],['sal','Salarié·e'],['dem','En recherche d’emploi'],['ind','Indépendant·e'],['etu','Étudiant·e'],['aut','Autre']];
+
+/* 3 chapitres : 1 · Ce que tu sais faire (étapes 1 à 3) · 2 · Qui tu es · 3 · Ce que tu veux vivre */
 var QS=[
- {k:'w',q:'Qu’est-ce que vous préférez faire ?',h:'Deux au plus.',max:2,o:[['mains','Fabriquer de mes mains'],['gens','Être au contact des gens'],['idees','Chercher, imaginer'],['vivant','Prendre soin du vivant']]},
- {k:'m',q:'Quelle matière vous attire ?',h:'Autant que vous voulez.',o:[['bois','Le bois'],['metal','Le métal'],['verre','Le verre'],['tissu','Le tissu'],['cuir','Cuir, peau'],['pierre','La pierre'],['terre','Terre, argile'],['papier','Papier, carton'],['eau','L’eau'],['aliments','Aliments'],['peinture','La peinture, la couleur'],['vegetal','Le végétal'],['ecran','L’écran']]},
- {k:'l',q:'Où vous sentez-vous bien ?',h:'Autant que vous voulez.',o:[['dehors','Dehors'],['atelier','En atelier'],['chantier','Sur un chantier'],['chez','Chez les gens'],['mouvement','En mouvement'],['bureau','Au bureau'],['commerce','Commerce, boutique'],['public','Lieu public'],['labo','Laboratoire'],['cuisine','Cuisine']]},
- {k:'a',q:'Avec qui ?',h:'Autant que vous voulez.',o:[['seul','Seul·e, concentré·e'],['equipe','En équipe'],['clients','Avec des clients']]},
- {k:'v',q:'Qu’est-ce qui compte pour vous ?',h:'Trois au plus.',max:3,o:[['creer','Créer'],['reparer','Réparer, faire durer'],['transmettre','Transmettre'],['aider','Aider'],['fier','Être fier·e d’un résultat visible'],['securite','Sécuriser ma vie'],['decouvrir','Découvrir'],['apprendre','Apprendre'],['voyager','Voyager']]},
- {k:'r',q:'Votre rythme ?',h:'Un seul.',max:1,o:[['p','Précision et patience'],['a','Action et variété']]}];
-var S={bpick:-1,st:0,job:null,sf:{},dur:'',prevs:[],prevAsk:false,a:{w:{},m:{},l:{},a:{},v:{},r:{}},want:'',reg:'',top:[],pick:-1,q:0};
+ {k:'t',ch:2,q:'On dit de toi que tu es plutôt…',h:'Trois au plus.',max:3,o:[['patient','Patient·e'],['minutieux','Minutieux·se'],['creatif','Créatif·ve'],['curieux','Curieux·se'],['resistant','Résistant·e'],['ecoute','À l’écoute'],['organise','Organisé·e'],['entreprenant','Entreprenant·e']]},
+ {k:'w',ch:2,q:'Qu’est-ce que tu préfères faire ?',h:'Deux au plus.',max:2,o:[['mains','Fabriquer de mes mains'],['gens','Être au contact des gens'],['idees','Chercher, imaginer'],['vivant','Prendre soin du vivant']]},
+ {k:'v',ch:2,q:'Qu’est-ce qui compte pour toi ?',h:'Trois au plus.',max:3,o:[['creer','Créer'],['reparer','Réparer, faire durer'],['transmettre','Transmettre'],['aider','Aider'],['fier','Être fier·e d’un résultat visible'],['securite','Sécuriser ma vie'],['decouvrir','Découvrir'],['apprendre','Apprendre'],['voyager','Voyager']]},
+ {k:'e',ch:2,sl:[['e','Plutôt calme','J’adore bouger']],q:'Tu aimes te dépenser ?',h:'Glisse sur ce qui te ressemble. Au milieu : peu importe.'},
+ {k:'u',ch:3,q:'Quel univers te plaît ?',h:'Autant que tu veux.',o:[['patrimoine','Patrimoine, art'],['mode','Mode, textile'],['deco','Maison, déco'],['batiment','Bâtiment'],['gastro','Gastronomie'],['nature','Nature, jardin'],['technique','Technique, mécanique'],['soin','Soin, aide aux personnes']]},
+ {k:'m',ch:3,q:'Quelle matière t’attire ?',h:'Autant que tu veux.',o:[['bois','Le bois'],['metal','Le métal'],['verre','Le verre'],['tissu','Le tissu'],['cuir','Cuir, peau'],['pierre','La pierre'],['terre','Terre, argile'],['papier','Papier, carton'],['eau','L’eau'],['aliments','Aliments'],['peinture','La peinture, la couleur'],['vegetal','Le végétal'],['ecran','L’écran']]},
+ {k:'l',ch:3,q:'Où te sens-tu bien ?',h:'Autant que tu veux.',o:[['dehors','Dehors'],['atelier','En atelier'],['chantier','Sur un chantier'],['chez','Chez les gens'],['mouvement','En mouvement'],['bureau','Au bureau'],['commerce','Commerce, boutique'],['public','Lieu public'],['labo','Laboratoire'],['cuisine','Cuisine']]},
+ {k:'x',ch:3,sl:[['io','Dedans','Dehors'],['team','Seul·e','En équipe']],q:'Comment tu veux travailler ?',h:'Au milieu : peu importe.'},
+ {k:'h',ch:3,q:'Ton rythme de vie ?',h:'Ce qui te va. Autant que tu veux.',o:[['jour','De jour, horaires classiques'],['aube','Tôt le matin'],['decale','Le soir, la nuit'],['we','Le week-end']]}];
+function freshA(){var a={};QS.forEach(function(q){a[q.k]={};if(q.sl)q.sl.forEach(function(x){a[q.k][x[0]]=2;});});return a;}
+var S={bpick:-1,st:0,job:null,sf:{},dur:'',prevs:[],prevAsk:false,a:null,want:'',reg:'',sit:'',top:[],pick:-1,q:0};
+S.a=freshA();
+M.forEach(function(m){var has=function(a,v){return a.indexOf(v)>=0;},l=m.p.l,a=m.p.a,tr={};
+  m.u=UNIV[m.n]||[];m.e=NRG[m.n]===undefined?2:NRG[m.n];m.hr=HRS[m.n]||'jour';
+  if(m.p.r==='p'){tr.patient=1;tr.minutieux=1;}else{tr.resistant=1;tr.entreprenant=1;}
+  if(has(a,'clients')||has(m.p.w,'gens'))tr.ecoute=1;if(has(m.p.w,'idees')||has(m.p.v,'creer'))tr.creatif=1;
+  if(m.art){tr.curieux=1;tr.patient=1;}if(has(m.sf,'gestion'))tr.organise=1;if(has(m.sf,'precision'))tr.minutieux=1;if(has(m.sf,'reparer'))tr.curieux=1;
+  m.tr=Object.keys(tr);
+  var out=has(l,'dehors')||has(l,'chantier'),inn=has(l,'atelier')||has(l,'bureau');m.io=out&&inn?2:(out?4:0);
+  m.team=has(a,'seul')&&!has(a,'equipe')?0:(has(a,'equipe')&&!has(a,'seul')?4:2);});
 /* ---------- calculs ---------- */
 /* Le calcul compare des COMPÉTENCES RÉELLES, pas des étiquettes : savoir-faire et connaissances des fiches ROME de France Travail (code de compétence identique,
    ou mots significatifs partagés) ; pour les métiers qui ont une fiche enrichie VSF (ex. Peintre en lettres, distinct de Peintre en bâtiment), on compare avec cette fiche.
@@ -309,7 +371,16 @@ async function chargerDest(essai){var sb=window.VSF&&VSF.sb;if(!sb)return;essai=
       setTimeout(function(){chargerDest(essai+1);},essai?15000:1500);}
   }catch(e){}
   DEST_PRET=true;M.forEach(function(m){m._k=null;});if(S.st>=8&&!S.calc)render();}
-function sens(m){var sc=0,n=0;['w','m','l','a','v'].forEach(function(k){var ch=Object.keys(S.a[k]).filter(function(x){return S.a[k][x];});if(!ch.length)return;n++;sc+=ch.filter(function(x){return m.p[k].indexOf(x)>=0;}).length/ch.length;});var r=Object.keys(S.a.r).filter(function(x){return S.a.r[x];})[0];if(r){n++;sc+=m.p.r===r?1:0;}return n?sc/n:0;}
+function chosen(k){return Object.keys(S.a[k]||{}).filter(function(x){return S.a[k][x]===true;});}
+function mlist(m,k){return k==='t'?m.tr:(k==='u'?m.u:(m.p[k]||[]));}
+function sens(m){var sc=0,n=0;QS.forEach(function(q){
+    if(q.sl){q.sl.forEach(function(x){var u=S.a[q.k][x[0]];if(u===2)return;n++;sc+=1-Math.abs(u-m[x[0]])/4;});return;}
+    var ch=chosen(q.k);if(!ch.length)return;n++;
+    if(q.k==='h'){sc+=m.hr==='jour'||ch.indexOf(m.hr)>=0?1:0;return;}
+    var L=mlist(m,q.k);sc+=ch.filter(function(x){return L.indexOf(x)>=0;}).length/ch.length;});return n?sc/n:0;}
+function matches(m){var r=[];QS.forEach(function(q){
+    if(q.sl){q.sl.forEach(function(x){var u=S.a[q.k][x[0]];if(u!==2&&Math.abs(u-m[x[0]])<=1)r.push(u<2?x[1]:x[2]);});return;}
+    if(q.k==='h')return;var L=mlist(m,q.k);chosen(q.k).forEach(function(v){if(L.indexOf(v)>=0)r.push(lab(q.k,v));});});return r;}
 function score(m){return S.st<2?0:prox(m)*.55+sens(m)*.45;}
 function pick3(){var L=M.filter(function(m){return !S.job||norm(m.n).indexOf(norm(S.job.n.split(' ')[0]))!==0;}).map(function(m){return {m:m,s:score(m),p:prox(m),e:sens(m)};});
   var hire=S.want!=='rare',rare=S.want!=='hire';
@@ -317,17 +388,17 @@ function pick3(){var L=M.filter(function(m){return !S.job||norm(m.n).indexOf(nor
   var a=hire?L.filter(function(x){return x.m.t>=2&&x.m.ia!=='forte'&&!x.m.art;}).sort(srt(.55,.45))[0]:L.filter(function(x){return x.m.art;}).sort(srt(.7,.3))[0];
   var b=rare?L.filter(function(x){return x.m.art&&x!==a;}).sort(srt(.4,.6))[0]:L.filter(function(x){return !x.m.art&&x!==a&&x.m.t>=2&&x.m.ia!=='forte';}).sort(srt(.4,.6))[0];
   var c=L.filter(function(x){return x!==a&&x!==b&&(rare||!x.m.art)&&(hire||x.m.art||x.m.t>=2);}).sort(srt(.25,.75))[0];
-  return [[a,hire?'La plus proche qui embauche':'La plus proche'],[b,rare?'La rare · métier d’art':'Qui embauche et a du sens'],[c,'Celle qui vous ressemble le plus']].filter(function(x){return x[0];});}
+  return [[a,hire?'La plus proche qui embauche':'La plus proche'],[b,rare?'La rare · métier d’art':'Qui embauche et a du sens'],[c,'Celle qui te ressemble le plus']].filter(function(x){return x[0];});}
 function dureeNp(np){return np<.4?'6 à 12 mois':(np<.65?'1 à 2 ans':(np<.85?'2 à 3 ans':'3 ans et plus'));}
 function dureePrudente(np){return np<.4?'6 mois à 2 ans':(np<.65?'1 à 3 ans':(np<.85?'2 à 4 ans':'3 ans et plus'));}
-function dureeM(m){var X=cx(m);if(!X.ok)return X.attente?'en préparation':'à préciser avec vous';return X.prudent?dureePrudente(npEff(m)):dureeNp(npEff(m));}
+function dureeM(m){var X=cx(m);if(!X.ok)return X.attente?'en préparation':'à préciser avec toi';return X.prudent?dureePrudente(npEff(m)):dureeNp(npEff(m));}
 function iaTxt(m){return m.ia==='faible'?'◎ le geste humain compte':(m.ia==='moyenne'?'IA : en partie transformé':'IA : très exposé');}
 function tTxt(m){return ['peu d’offres','recrute un peu','recrute','recrute beaucoup'][m.t];}
 /* ---------- ciel ---------- */
 var W=0,H=0;
 function layout(){var fr=$('field').getBoundingClientRect();W=fr.width;H=fr.height;
   var wide=innerWidth>=900,fin=S.st>=8,showMe=S.st>=2&&S.job;
-  var cx=W*.5,cy=H*.5,R=Math.min(W,H)*.46;
+  var cx=W*.5,cy=H*.5,R=Math.min(W,H)*.46,intro=S.st===0;
   if(fin){cx=wide?58:62;}
   var sc=M.map(function(m){return score(m);}),max=Math.max.apply(null,sc)||1,topIds=S.top.map(function(x){return x[0].m.i;});
   var ordered=M.map(function(m,k){return [k,sc[k]];}).sort(function(a,b){return b[1]-a[1];}),rank={};ordered.forEach(function(x,k){rank[x[0]]=k;});
@@ -337,6 +408,7 @@ function layout(){var fr=$('field').getBoundingClientRect();W=fr.width;H=fr.heig
       if(top&&!wide&&!S.calc){var r=topIds.indexOf(k);x=W-bw-12-(1-npEff(m))*W*.22;y=H*(.2+.3*r)-14;el.className='b near top3';el.style.opacity=1;}
       else{x=W*.5+Math.cos(ang)*W*.9-bw/2;y=H*.5+Math.sin(ang)*H*.9;el.className='b far';el.style.opacity=0;}
       el.style.transform='translate('+x+'px,'+y+'px)';return;}
+    if(intro){var bw0=el.firstChild.offsetWidth||120;x=Math.random()*(W-bw0-16)+8;y=Math.random()*(H-40)+8;el.className='b z'+(k%3);el.style.opacity=1;el.style.transform='translate('+x+'px,'+y+'px)';return;}
     var rad=showMe?R*(.42+.66*(1-sc[k]/max)):R*(.35+((k*53)%100)/150);
     x=cx+Math.cos(ang)*rad*1.25;y=cy+Math.sin(ang)*rad*.92;x=Math.max(8,Math.min(W-bw-8,x-bw/2));y=Math.max(8,Math.min(H-36,y-14));
     el.style.transform='translate('+x+'px,'+y+'px)';
@@ -355,25 +427,31 @@ function bubbles(){$('bubbles').innerHTML=M.map(function(m,k){return '<div class
 /* ---------- panneau ---------- */
 function prog(){var n=7;return '<div class="prog">'+Array.apply(null,{length:n}).map(function(_,k){return '<i class="'+(k<S.st-1?'d':(k===S.st-1?'n':''))+'"></i>';}).join('')+'</div>';}
 function nav(ok,label,why){return '<div class="nav"><button class="next'+(ok?' ready':'')+'" id="nx"><span class="dot"></span>'+(label||'Continuer →')+'</button>'+(S.st>1?'<button class="back" id="bk">← Retour</button>':'')+'</div><div class="why">'+(ok?'':why||'')+'</div>';}
+function chapN(){return S.st<=3?1:(S.st===4?QS[S.q].ch:3);}
+function prog(){var c=chapN();return '<div class="chap">'+['Ce que tu sais faire','Qui tu es','Ce que tu veux vivre'].map(function(t,k){return '<span class="'+(k+1<c?'d':(k+1===c?'n':''))+'">'+(k+1)+' · '+t+'</span>';}).join('')+'</div>';}
+function nav(ok,label,why){return '<div class="nav"><button class="next'+(ok?' ready':'')+'" id="nx"><span class="dot"></span>'+(label||'Continuer →')+'</button>'+(S.st>1?'<button class="back" id="bk">← Retour</button>':'')+'</div><div class="why">'+(ok?'':why||'')+'</div>';}
 function panel(){var h='';
-  if(S.st===0)h='<div class="kick">L’Éclaireur · 3 minutes · sans compte</div><h1 class="focus play">Voulez-vous enfin trouver le métier qui vous <span style="white-space:nowrap">r<span class="mk">e</span>ssemble ?</span></h1><p class="lead">Dites-nous ce que vous faites, et ce qui compte pour vous. Les métiers bougent, se rapprochent, et trois d’entre eux viennent à vous.</p><button class="start" id="go"><span class="dot"></span>Commencer →</button><p class="note">Rien n’est enregistré tant que vous ne le décidez pas.</p>';
-  if(S.st===1){h=prog()+'<div class="kick">1 · Votre point de départ</div><div class="q">Quel est votre métier aujourd’hui ?</div><p class="qh">Ou le dernier que vous avez exercé.</p><div class="srch'+(S.job?'':' todo')+'"><span class="caret"></span><input id="jq" autocomplete="off" placeholder="un métier…" aria-label="Votre métier" value="'+(S.job?esc(S.job.n):'')+'"></div><div class="sugg" id="js"></div>'+nav(!!S.job,null,'Cherchez votre métier.');}
-  if(S.st===2){var n=Object.keys(S.sf).filter(function(k){return S.sf[k];}).length;h=prog()+'<div class="kick">2 · '+esc(S.job.n)+'</div><div class="q">Qu’est-ce que vous faites vraiment ?</div><p class="qh">Cochez ce qui fait votre journée. Regardez le ciel : les métiers proches se rapprochent.</p><div class="chips'+(n?'':' todo')+'">'+S.job.sf.slice(0,18).map(function(x,k){return '<button data-sf="'+k+'" class="'+(S.sf[k]?'on':'')+'">'+x[0]+'</button>';}).join('')+'</div><p class="qh" style="margin-top:20px">Depuis combien de temps ?</p><div class="chips'+(S.dur?'':' todo')+'" role="radiogroup" aria-label="Depuis combien de temps">'+DUR.map(function(d,k){return '<button data-dur="'+k+'" role="radio" aria-checked="'+(String(k)===S.dur)+'" class="'+(String(k)===S.dur?'on':'')+'">'+d+'</button>';}).join('')+'</div>'+nav(n&&S.dur!=='',null,!n?'Cochez au moins un savoir-faire.':'Dites depuis combien de temps.');}
+  if(S.st===0)h='';
+  if(S.st===1)h=prog()+'<div class="kick">Ton point de départ</div><div class="q">Quel est ton métier aujourd’hui ?</div><p class="qh">Ou le dernier que tu as exercé.</p><div class="srch'+(S.job?'':' todo')+'"><span class="caret"></span><input id="jq" autocomplete="off" placeholder="un métier…" aria-label="Ton métier" value="'+(S.job?esc(S.job.n):'')+'"></div><div class="sugg" id="js"></div>'+nav(!!S.job,null,'Cherche ton métier.');
+  if(S.st===2){var n=Object.keys(S.sf).filter(function(k){return S.sf[k];}).length;h=prog()+'<div class="kick">'+esc(S.job.n)+'</div><div class="q">Qu’est-ce que tu fais vraiment ?</div><p class="qh">Coche ce qui fait ta journée. Regarde le ciel : les métiers proches se rapprochent.</p><div class="chips'+(n?'':' todo')+'">'+S.job.sf.slice(0,18).map(function(x,k){return '<button data-sf="'+k+'" class="'+(S.sf[k]?'on':'')+'">'+x[0]+'</button>';}).join('')+'</div><p class="qh" style="margin-top:20px">Depuis combien de temps ?</p><div class="chips'+(S.dur?'':' todo')+'" role="radiogroup" aria-label="Depuis combien de temps">'+DUR.map(function(d,k){return '<button data-dur="'+k+'" role="radio" aria-checked="'+(String(k)===S.dur)+'" class="'+(String(k)===S.dur?'on':'')+'">'+d+'</button>';}).join('')+'</div>'+nav(n&&S.dur!=='',null,!n?'Coche au moins un savoir-faire.':'Dis depuis combien de temps.');}
   if(S.st===3){var okp=S.prevs.every(function(p){return Object.keys(p.sf).some(function(k){return p.sf[k];})&&p.dur!=='';});
-    h=prog()+'<div class="kick">3 · Avant</div><div class="q">Un autre métier avant ?</div><p class="qh">Ce que vous avez appris ailleurs compte aussi. Jusqu’à trois métiers.</p>'+
+    h=prog()+'<div class="kick">Avant</div><div class="q">Un autre métier avant ?</div><p class="qh">Ce que tu as appris ailleurs compte aussi. Jusqu’à trois métiers.</p>'+
     S.prevs.map(function(p,i){var n=Object.keys(p.sf).filter(function(k){return p.sf[k];}).length;
       return '<div class="pv"><p class="qh" style="margin:18px 0 6px"><b>'+esc(p.j.n)+'</b> <button class="back" data-pdel="'+i+'" style="font-size:13px" aria-label="Retirer ce métier">× retirer</button></p>'+
       '<div class="chips'+(n?'':' todo')+'">'+p.j.sf.slice(0,18).map(function(x,k){return '<button data-psf="'+i+':'+k+'" class="'+(p.sf[k]?'on':'')+'">'+x[0]+'</button>';}).join('')+'</div>'+
       '<p class="qh" style="margin-top:14px">Combien de temps ?</p><div class="chips'+(p.dur?'':' todo')+'" role="radiogroup" aria-label="Combien de temps">'+DUR.map(function(d,k){return '<button data-pdur="'+i+':'+k+'" role="radio" aria-checked="'+(String(k)===p.dur)+'" class="'+(String(k)===p.dur?'on':'')+'">'+d+'</button>';}).join('')+'</div></div>';}).join('')+
     (S.prevAsk&&S.prevs.length<3?'<div class="srch"><span class="caret"></span><input id="pq" autocomplete="off" placeholder="un autre métier…" aria-label="Autre métier"></div><div class="sugg" id="ps"></div>'
       :(S.prevs.length<3?'<div class="chips" style="margin-top:18px"><button id="pyes">'+(S.prevs.length?'+ Encore un autre métier':'Oui, j’en ajoute un')+'</button></div>':''))+
-    nav(okp,S.prevs.length?'Continuer →':'Non, c’est tout →',S.prevs.some(function(p){return !Object.keys(p.sf).some(function(k){return p.sf[k];});})?'Cochez au moins un savoir-faire pour chaque métier.':'Dites combien de temps pour chaque métier.');}
-  if(S.st===4){var Q=QS[S.q],sel=S.a[Q.k],n2=Object.keys(sel).filter(function(x){return sel[x];}).length;h=prog()+'<div class="kick">4 · Ce qui a du sens pour vous · '+(S.q+1)+' / '+QS.length+'</div><div class="q">'+Q.q+'</div><p class="qh">'+Q.h+'</p><div class="chips'+(n2?'':' todo')+'">'+Q.o.map(function(o){var on=sel[o[0]],dis=!on&&Q.max&&Q.max>1&&n2>=Q.max;return '<button data-a="'+o[0]+'" class="'+(on?'on':'')+'"'+(dis?' disabled style="opacity:.35"':'')+'>'+o[1]+'</button>';}).join('')+'</div>'+nav(n2>0,S.q<QS.length-1?'Question suivante →':'Continuer →','Choisissez au moins une réponse.');}
-  if(S.st===5)h=prog()+'<div class="kick">5 · Ce que vous voulez voir</div><div class="q">Vers quels métiers on regarde ?</div><p class="qh">Le baromètre de VraiSavoirFaire est mis à jour chaque mois.</p><div class="chips'+(S.want?'':' todo')+'">'+[['hire','↗ Ceux qui embauchent'],['rare','◆ Les métiers rares'],['both','Les deux']].map(function(o){return '<button data-w="'+o[0]+'" class="'+(S.want===o[0]?'on':'')+'">'+o[1]+'</button>';}).join('')+'</div>'+nav(!!S.want,'Dessiner ma constellation →','Choisissez ce que vous voulez voir.');
-  if(S.st===6)h='<div class="kick">Votre constellation se dessine…</div><div class="q" style="margin-top:12px">Nous rapprochons vos savoir-faire, ce qui compte pour vous, et le baromètre du mois.</div>';
-  if(S.st>=8&&S.calc)h='<div class="kick">L’Éclaireur</div><div class="q">Trois chemins s’ouvrent devant vous…</div><div class="cnt" id="cnt">0</div><p class="qh">métiers passés au crible : vos savoir-faire, ce qui compte pour vous, le baromètre du mois.</p>';
-  else if(S.st>=8){var ch=function(k){return Object.keys(S.a[k]).filter(function(x){return S.a[k][x];}).map(function(x){return QS.filter(function(q){return q.k===k;})[0].o.filter(function(o){return o[0]===x;})[0][1];});};
-    h='<div class="kick">Votre constellation</div><div class="me-card"><h3>Vous aujourd’hui</h3><div class="ln"><b>'+esc(S.job.n)+'</b> · '+DUR[+S.dur]+(S.prevs.length?' · avant : '+S.prevs.map(function(p){return esc(p.j.n);}).join(', '):'')+'</div><div class="tags">'+S.job.sf.filter(function(x,k){return S.sf[k];}).map(function(x){return '<span>'+x[0]+'</span>';}).join('')+'</div><div class="ln" style="margin-top:12px"><b>Ce qui compte :</b> '+ch('v').join(', ')+'</div><div class="ln"><b>Matière :</b> '+(ch('m').join(', ')||'—')+' · <b>Où :</b> '+(ch('l').join(', ')||'—')+'</div></div><p class="qh" style="margin-top:18px">À droite, trois métiers sont venus à vous. Cliquez sur un métier pour voir sa fiche.</p><button class="back" id="redo">↻ Recommencer</button>';}
+    nav(okp,S.prevs.length?'Continuer →':'Non, c’est tout →',S.prevs.some(function(p){return !Object.keys(p.sf).some(function(k){return p.sf[k];});})?'Coche au moins un savoir-faire pour chaque métier.':'Dis combien de temps pour chaque métier.');}
+  if(S.st===4){var Q=QS[S.q],sel=S.a[Q.k],inC=QS.filter(function(q){return q.ch===Q.ch;}),qi=inC.indexOf(Q)+1,last=S.q===QS.length-1,nxt=last?'Continuer →':(QS[S.q+1].ch!==Q.ch?'Chapitre suivant →':'Question suivante →');
+    var head=prog()+'<div class="kick">'+(Q.ch===2?'Qui tu es':'Ce que tu veux vivre')+' · '+qi+' / '+inC.length+'</div><div class="q">'+Q.q+'</div><p class="qh">'+Q.h+'</p>';
+    if(Q.sl)h=head+'<div class="sls">'+Q.sl.map(function(x){var u=sel[x[0]];return '<div class="sl" role="radiogroup" aria-label="'+x[1]+' ou '+x[2]+'"><div class="sll"><span>'+x[1]+'</span><span>peu importe</span><span>'+x[2]+'</span></div><div class="slt">'+[0,1,2,3,4].map(function(v){return '<button data-sl="'+x[0]+'" data-v="'+v+'" class="'+(u===v?'on':'')+'" aria-label="'+(v===2?'Peu importe':(v<2?x[1]:x[2]))+'" aria-pressed="'+(u===v)+'"></button>';}).join('')+'</div></div>';}).join('')+'</div>'+nav(true,nxt);
+    else{var n2=chosen(Q.k).length;h=head+'<div class="chips'+(n2?'':' todo')+'">'+Q.o.map(function(o){var on=sel[o[0]]===true,dis=!on&&Q.max&&Q.max>1&&n2>=Q.max;return '<button data-a="'+o[0]+'" class="'+(on?'on':'')+'"'+(dis?' disabled style="opacity:.35"':'')+'>'+o[1]+'</button>';}).join('')+'</div>'+nav(n2>0,nxt,'Choisis au moins une réponse.');}}
+  if(S.st===5)h=prog()+'<div class="kick">Ce que tu veux voir</div><div class="q">Vers quels métiers on regarde ?</div><p class="qh">Le baromètre de VraiSavoirFaire est mis à jour chaque mois.</p><div class="chips'+(S.want?'':' todo')+'">'+[['hire','↗ Ceux qui embauchent'],['rare','◆ Les métiers rares'],['both','Les deux']].map(function(o){return '<button data-w="'+o[0]+'" class="'+(S.want===o[0]?'on':'')+'">'+o[1]+'</button>';}).join('')+'</div><div class="sel"><select id="sit" aria-label="Ta situation">'+SIT.map(function(o){return '<option value="'+o[0]+'"'+(o[0]===S.sit?' selected':'')+'>'+o[1]+'</option>';}).join('')+'</select></div>'+nav(!!S.want,'Dessiner ma constellation →','Choisis ce que tu veux voir.');
+  if(S.st===6)h='<div class="kick">Ta constellation se dessine…</div><div class="q" style="margin-top:12px">On rapproche tes savoir-faire, ce qui compte pour toi, et le baromètre du mois.</div>';
+  if(S.st>=8&&S.calc)h='<div class="kick">L’Éclaireur</div><div class="q">Trois chemins s’ouvrent devant toi…</div><div class="cnt" id="cnt">0</div><p class="qh">métiers passés au crible : tes savoir-faire, ce qui compte pour toi, le baromètre du mois.</p>';
+  else if(S.st>=8){var ch=function(k){return chosen(k).map(function(x){return lab(k,x);});};
+    h='<div class="kick">Ta constellation</div><div class="me-card"><h3>Toi aujourd’hui</h3><div class="ln"><b>'+esc(S.job.n)+'</b> · '+DUR[+S.dur]+(S.prevs.length?' · avant : '+S.prevs.map(function(p){return esc(p.j.n);}).join(', '):'')+'</div><div class="tags">'+S.job.sf.filter(function(x,k){return S.sf[k];}).map(function(x){return '<span>'+x[0]+'</span>';}).join('')+'</div><div class="ln" style="margin-top:12px"><b>On dit de toi :</b> '+(ch('t').join(', ')||'—')+'</div><div class="ln"><b>Ce qui compte :</b> '+(ch('v').join(', ')||'—')+'</div><div class="ln"><b>Univers :</b> '+(ch('u').join(', ')||'—')+' · <b>Matière :</b> '+(ch('m').join(', ')||'—')+'</div></div><p class="qh" style="margin-top:18px">Trois métiers sont venus à toi. Clique sur un métier pour voir sa fiche.</p><button class="back" id="redo">↻ Recommencer</button>';}
   $('panel').innerHTML=h;
   var jq=$('jq');if(jq){if(!S.job)jq.focus();jq.oninput=function(){sug(jq.value,'js',function(j){S.job=j;S.sf={};S.dur='';S.st=2;render();});};jq.onkeydown=enter('js');}
   var pq=$('pq');if(pq){pq.focus();pq.oninput=function(){sug(pq.value,'ps',function(j){S.prevs.push({j:j,sf:{},dur:''});S.prevAsk=false;render();});};pq.onkeydown=enter('ps');}
@@ -443,19 +521,20 @@ function sug(q,box,cb){
     cb(j);};}
 /* ---------- cibles et fiche signalétique ---------- */
 function cards(){var c=$('cards');if(S.st<8){c.classList.add('hide');return;}c.classList.remove('hide');c.classList.toggle('wait',!!S.calc);
-  c.innerHTML=S.top.map(function(x,k){var m=x[0].m;return '<button class="cd'+(S.pick===k?' on':'')+'" data-cd="'+k+'"><div class="ck2">'+x[1]+'</div><div class="cn">'+(m.art?'◆ ':'')+m.n+'</div><div class="bd">'+(m.t>=2?'<span class="rc">↗ '+tTxt(m)+'</span>':'')+(m.up?'<span class="rr">◆ rare qui monte</span>':'')+'<span class="'+(m.ia==='forte'?'ia':'')+'">'+iaTxt(m)+'</span></div><div class="pp">'+(function(){var X=cx(m);return X.ok?(X.prudent?('estimation prudente · ≈ '+dureeM(m)):(X.nCom+' compétences sur '+X.nTot+' déjà en commun · ≈ '+dureeM(m))):(X.attente?'L’estimation se prépare…':'durée à préciser avec vous');})()+'</div><div class="vf">Voir la fiche ↓</div></button>';}).join('');}
+  c.innerHTML=S.top.map(function(x,k){var m=x[0].m;return '<button class="cd'+(S.pick===k?' on':'')+'" data-cd="'+k+'"><div class="ck2">'+x[1]+'</div><div class="cn">'+(m.art?'◆ ':'')+m.n+'</div><div class="bd">'+(m.t>=2?'<span class="rc">↗ '+tTxt(m)+'</span>':'')+(m.up?'<span class="rr">◆ rare qui monte</span>':'')+'<span class="'+(m.ia==='forte'?'ia':'')+'">'+iaTxt(m)+'</span></div><div class="pp">'+(function(){var X=cx(m);return X.ok?(X.prudent?('estimation prudente · ≈ '+dureeM(m)):(X.nCom+' compétences sur '+X.nTot+' déjà en commun · ≈ '+dureeM(m))):(X.attente?'L’estimation se prépare…':'durée à préciser avec toi');})()+'</div><div class="vf">Voir la fiche ↓</div></button>';}).join('');}
 var TAGN={client:'La relation client',couleur:'Le sens de la couleur',compo:'La composition',matiere:'La connaissance des matières',peinture:'L’application de peinture',gestion:'L’organisation',pose:'La pose chez le client',hauteur:'Le travail en hauteur',chiffres:'Les chiffres',ecran:'Les outils numériques',precision:'La précision',reparer:'Le réflexe de réparer',support:'La préparation des supports',lettre:'Le dessin de lettre',soin:'Le soin',gens:'L’attention aux personnes',equipe:'Le travail en équipe',vivant:'Le travail du vivant',transmettre:'La transmission'};
-function lab(k,v){var q=QS.filter(function(q){return q.k===k;})[0],o=q.o.filter(function(o){return o[0]===v;})[0];return o?o[1]:v;}
+function lab(k,v){var q=QS.filter(function(q){return q.k===k&&q.o;})[0],o=q?q.o.filter(function(o){return o[0]===v;})[0]:null;return o?o[1]:(LABX[v]||v);}
+function sitTxt(){return {sal:' <b>Salarié·e :</b> regarde Transitions Pro et ton CPF.',dem:' <b>En recherche d’emploi :</b> ton conseiller France Travail peut prescrire l’immersion.',ind:' <b>Indépendant·e :</b> regarde ton CPF.',etu:' <b>Étudiant·e :</b> l’immersion passe par ton établissement ou France Travail.'}[S.sit]||'';}
 function fiche(m,label,src){var done=S.st>=8&&S.job,X=done?cx(m):null,com=X&&X.ok?X.commun:[],nw=X&&X.ok?X.nouveau:[],p=X&&X.ok?1-npEff(m):0,lst=function(a,sy){return a.slice(0,6).map(function(g){return '<li>'+sy+' '+esc(g)+'</li>';}).join('')+(a.length>6?'<li style="color:#767676">+ '+(a.length-6)+' autres</li>':'');};
-  var sj=[];if(done)['v','m','l','a','w'].forEach(function(k){Object.keys(S.a[k]).forEach(function(v){if(S.a[k][v]&&m.p[k].indexOf(v)>=0)sj.push(lab(k,v));});});
+  var sj=done?matches(m):[];
   var reg=S.reg&&S.reg!=='Toute la France'?S.reg:'Bretagne';
   var trait=[].concat(m.p.m.map(function(v){return lab('m',v);}),m.p.l.map(function(v){return lab('l',v);}),m.p.v.map(function(v){return lab('v',v);}));
   var h='<div class="kick">Fiche signalétique · '+label+'</div><h2>'+(m.art?'◆ ':'')+m.n+'</h2>'+
-   (done?'<p class="sub">De vous à '+m.n.toLowerCase()+' : ce que vous avez déjà, ce qui serait nouveau, et le temps que ça prendrait.</p>':'<p class="sub">Ce métier en bref. Faites le parcours en 3 minutes pour le comparer avec vous.</p>')+'<div class="sg">'+
-   (done?'<div><h4>Ce que vous avez déjà en commun · '+com.length+'</h4><ul>'+(X&&X.ok?(lst(com,'✓')||'<li>Rien de direct : c’est un autre métier.</li>'):'<li>La fiche de ce métier se prépare : l’estimation s’affichera ici dans un instant, et nous la précisons avec vous en entretien.</li>')+'</ul></div><div><h4>Ce qui serait nouveau · '+nw.length+'</h4><ul>'+(X&&X.ok?(nw.length>6?lst(nw,'○'):lst(nw,'○')):'')+'</ul></div><div><h4>Ce qui rejoint ce qui compte pour vous</h4><ul>'+(sj.slice(0,5).map(function(s){return '<li>● '+s+'</li>';}).join('')||'<li>Peu de points communs : à vérifier en immersion.</li>')+'</ul></div>'
-        :'<div><h4>Ce que fait ce métier</h4><ul>'+(function(){var d=DEST[m.fiche?'f:'+m.fiche:m.c];return d?lst(d.sf.map(function(z){return z.libelle;}),'○'):'<li>Chargement…</li>';})()+'</ul></div><div><h4>Ce qui le caractérise</h4><ul>'+trait.slice(0,6).map(function(s){return '<li>● '+s+'</li>';}).join('')+'</ul></div><div><h4>Et vous ?</h4><ul><li>✓ en commun</li><li>○ à apprendre</li><li>● ce qui compte pour vous</li></ul><small style="display:block;margin-top:8px;color:#4a4a4a">apparaissent après le parcours.</small></div>')+
-   '<div><h4>Durée approximative de reconversion</h4><div class="big">'+(done?dureeM(m):'?')+'<small>'+(done?(X&&X.ok?(X.prudent?'avec un accompagnement, en gardant une activité. Estimation prudente : la fiche de ce métier est encore courte. Le diagnostic complet la précise.':'avec un accompagnement, en gardant une activité. Estimation d’après les fiches France Travail : '+X.nCom+' compétences sur '+X.nTot+' déjà en commun. Le diagnostic complet la précise.'):'La fiche de ce métier se prépare : nous vous confirmons la durée.'):'calculée à partir de vos savoir-faire.')+'</small></div></div><div><h4>Où ça embauche · baromètre de novembre</h4><div class="big">'+(m.t>=3?'Beaucoup':(m.t===2?'Oui':(m.t===1?'Un peu':'Peu')))+'<small>'+(m.t>=2?reg+' en tête ; offres en hausse ce mois.':'Des offres rares, souvent par le bouche-à-oreille et les ateliers.')+(m.up?' Demande en hausse pour ce métier rare.':'')+'</small></div></div><div><h4>Repère IA</h4><div class="big" style="font-size:24px">'+iaTxt(m)+'<small>'+(m.ia==='faible'?'Le cœur du métier est un geste et un jugement humains.':(m.ia==='moyenne'?'Une partie des tâches change ; le geste reste.':'Beaucoup de tâches sont déjà automatisables.'))+'</small></div></div></div>';
-  if(done)h+='<div class="cta"><button class="start build"><span class="dot"></span>Construire mon chemin vers ce métier →</button><button class="back accb" style="font-size:16px;color:#111">Découvrir l’accompagnement VSF ↓</button></div><div class="acc hide"><div class="kick">L’accompagnement VSF · vers '+(m.art?'◆ ':'')+m.n+'</div><span class="demo" style="background:#ffc400;color:#111">Esquisse à valider</span><div class="acs"><div><b>◉</b><h5>Diagnostic complet <small class="pay">payant</small></h5><p>Fiche métier enrichie, verdict de sens entre ce métier et 2 autres.</p></div><div><b>⌂</b><h5>Immersion <small class="pay free">gratuit</small></h5><p>Jusqu’à 1 mois en atelier : un dispositif public (PMSMP). VSF vous aide à la préparer. <a href="https://www.service-public.gouv.fr/particuliers/vosdroits/F14102" target="_blank" rel="noopener">En savoir plus ↗</a></p></div><div><b>▶</b><h5>Parcours de modules</h5><p>Tutos, dépôts corrigés, mentorat, Thérèse. Module par module, tests gratuits.</p></div><div><b>★</b><h5>Reconnaissance</h5><p>Épreuve, jury, badge.</p></div></div><div class="acx"><div><h5>◇ Qui vous accompagne</h5><p>Un Ambassadeur du métier, en atelier.<br>Thérèse, entre deux rendez-vous.</p></div><div><h5>€ Financer</h5><p>Des dispositifs existent, on vous aide à les explorer.<br><a href="https://www.moncompteformation.gouv.fr" target="_blank" rel="noopener">CPF ↗</a> · <a href="https://www.service-public.gouv.fr/particuliers/vosdroits/F14018" target="_blank" rel="noopener">Transitions Pro ↗</a></p></div></div><button class="start build"><span class="dot"></span>Créer mon compte · diagnostic déjà rempli →</button></div><p class="note">Le diagnostic complet reprend tout ce que vous venez de dire : vous ne ressaisissez rien.</p><div class="keepw"><div class="keep"><input class="em" type="email" autocomplete="email" placeholder="votre e-mail, pour garder votre constellation" aria-label="E-mail"><button class="keepgo" type="button">Garder →</button></div><label class="kc"><input type="checkbox" class="cons"> J’accepte que VraiSavoirFaire garde mon e-mail et mes réponses.</label><p class="kmsg" role="status" aria-live="polite"></p></div>';
+   (done?'<p class="sub">De toi à '+m.n.toLowerCase()+' : ce que tu as déjà, ce qui serait nouveau, et le temps que ça prendrait.</p>':'<p class="sub">Ce métier en bref. Fais le parcours en 3 minutes pour le comparer avec toi.</p>')+'<div class="sg">'+
+   (done?'<div><h4>Ce que tu as déjà en commun · '+com.length+'</h4><ul>'+(X&&X.ok?(lst(com,'✓')||'<li>Rien de direct : c’est un autre métier.</li>'):'<li>La fiche de ce métier se prépare : l’estimation s’affichera ici dans un instant, et nous la précisons avec toi en entretien.</li>')+'</ul></div><div><h4>Ce qui serait nouveau · '+nw.length+'</h4><ul>'+(X&&X.ok?(nw.length>6?lst(nw,'○'):lst(nw,'○')):'')+'</ul></div><div><h4>Ce qui rejoint ce qui compte pour toi</h4><ul>'+(sj.slice(0,5).map(function(s){return '<li>● '+s+'</li>';}).join('')||'<li>Peu de points communs : à vérifier en immersion.</li>')+'</ul></div>'
+        :'<div><h4>Ce que fait ce métier</h4><ul>'+(function(){var d=DEST[m.fiche?'f:'+m.fiche:m.c];return d?lst(d.sf.map(function(z){return z.libelle;}),'○'):'<li>Chargement…</li>';})()+'</ul></div><div><h4>Ce qui le caractérise</h4><ul>'+trait.slice(0,6).map(function(s){return '<li>● '+s+'</li>';}).join('')+'</ul></div><div><h4>Et toi ?</h4><ul><li>✓ en commun</li><li>○ à apprendre</li><li>● ce qui compte pour toi</li></ul><small style="display:block;margin-top:8px;color:#4a4a4a">apparaissent après le parcours.</small></div>')+
+   '<div><h4>Durée approximative de reconversion</h4><div class="big">'+(done?dureeM(m):'?')+'<small>'+(done?(X&&X.ok?(X.prudent?'avec un accompagnement, en gardant une activité. Estimation prudente : la fiche de ce métier est encore courte. Le diagnostic complet la précise.':'avec un accompagnement, en gardant une activité. Estimation d’après les fiches France Travail : '+X.nCom+' compétences sur '+X.nTot+' déjà en commun. Le diagnostic complet la précise.'):'La fiche de ce métier se prépare : nous te confirmons la durée.'):'calculée à partir de tes savoir-faire.')+'</small></div></div><div><h4>Où ça embauche · baromètre de novembre</h4><div class="big">'+(m.t>=3?'Beaucoup':(m.t===2?'Oui':(m.t===1?'Un peu':'Peu')))+'<small>'+(m.t>=2?reg+' en tête ; offres en hausse ce mois.':'Des offres rares, souvent par le bouche-à-oreille et les ateliers.')+(m.up?' Demande en hausse pour ce métier rare.':'')+'</small></div></div><div><h4>Repère IA</h4><div class="big" style="font-size:24px">'+iaTxt(m)+'<small>'+(m.ia==='faible'?'Le cœur du métier est un geste et un jugement humains.':(m.ia==='moyenne'?'Une partie des tâches change ; le geste reste.':'Beaucoup de tâches sont déjà automatisables.'))+'</small></div></div></div>';
+  if(done)h+='<div class="cta"><button class="start build"><span class="dot"></span>Construire mon chemin vers ce métier →</button><button class="back accb" style="font-size:16px;color:#111">Découvrir l’accompagnement VSF ↓</button></div><div class="acc hide"><div class="kick">L’accompagnement VSF · vers '+(m.art?'◆ ':'')+m.n+'</div><span class="demo" style="background:#ffc400;color:#111">Esquisse à valider</span><div class="acs"><div><b>◉</b><h5>Diagnostic complet <small class="pay">payant</small></h5><p>Fiche métier enrichie, verdict de sens entre ce métier et 2 autres.</p></div><div><b>⌂</b><h5>Immersion <small class="pay free">gratuit</small></h5><p>Jusqu’à 1 mois en atelier : un dispositif public (PMSMP). VSF t’aide à la préparer. <a href="https://www.service-public.gouv.fr/particuliers/vosdroits/F14102" target="_blank" rel="noopener">En savoir plus ↗</a></p></div><div><b>▶</b><h5>Parcours de modules</h5><p>Tutos, dépôts corrigés, mentorat, Thérèse. Module par module, tests gratuits.</p></div><div><b>★</b><h5>Reconnaissance</h5><p>Épreuve, jury, badge.</p></div></div><div class="acx"><div><h5>◇ Qui t’accompagne</h5><p>Un Ambassadeur du métier, en atelier.<br>Thérèse, entre deux rendez-vous.</p></div><div><h5>€ Financer</h5><p>Des dispositifs existent, on t’aide à les explorer.'+sitTxt()+'<br><a href="https://www.moncompteformation.gouv.fr" target="_blank" rel="noopener">CPF ↗</a> · <a href="https://www.service-public.gouv.fr/particuliers/vosdroits/F14018" target="_blank" rel="noopener">Transitions Pro ↗</a></p></div></div><button class="start build"><span class="dot"></span>Créer mon compte · diagnostic déjà rempli →</button></div><p class="note">Le diagnostic complet reprend tout ce que tu viens de dire : tu ne ressaisis rien.</p><div class="keepw"><div class="keep"><input class="em" type="email" autocomplete="email" placeholder="ton e-mail, pour garder ta constellation" aria-label="E-mail"><button class="keepgo" type="button">Garder →</button></div><label class="kc"><input type="checkbox" class="cons"> J’accepte que VraiSavoirFaire garde mon e-mail et mes réponses.</label><p class="kmsg" role="status" aria-live="polite"></p></div>';
   else h+='<div class="cta"><button class="start cmp"><span class="dot"></span>Me comparer à ce métier · 3 minutes →</button></div>';
   return h+(src==='b'?'<p><button class="back shut">× Fermer</button></p>':'');}
 function sig(){var el=$('sig');if(S.pick<0||!S.top[S.pick]){el.classList.add('hide');}else{el.classList.remove('hide');var x=S.top[S.pick];el.innerHTML=fiche(x[0].m,x[1],'c');}
@@ -463,7 +542,7 @@ function sig(){var el=$('sig');if(S.pick<0||!S.top[S.pick]){el.classList.add('hi
   [].forEach.call(document.querySelectorAll('[data-bm]'),function(b){b.classList.toggle('on',+b.dataset.bm===S.bpick);});}
 /* ---------- baromètre ---------- */
 function baro(){var H=M.filter(function(m){return m.t>=3&&m.ia==='faible';}).slice(0,6),R=M.filter(function(m){return m.art&&m.up;}).slice(0,6),I=M.filter(function(m){return m.ia==='forte';}),G=M.filter(function(m){return m.ia==='faible'&&!m.art;}).slice(0,3);
-  $('baro').innerHTML='<div class="kick">Le tour de France des métiers · chaque mois</div><h2>Le baromètre de novembre 2026</h2><p class="sub">Les métiers qui recrutent et ont du sens, les métiers rares qui montent, et ceux que l’IA transforme le plus. C’est lui qui oriente votre constellation. Cliquez un métier pour sa fiche.</p><span class="demo">Données de démonstration</span>'+
+  $('baro').innerHTML='<div class="kick">Le tour de France des métiers · chaque mois</div><h2>Le baromètre de novembre 2026</h2><p class="sub">Les métiers qui recrutent et ont du sens, les métiers rares qui montent, et ceux que l’IA transforme le plus. C’est lui qui oriente ta constellation. Clique un métier pour sa fiche.</p><span class="demo">Données de démonstration</span>'+
    '<div class="bg"><div class="bc"><h3>↗ Ça recrute, et ça a du sens</h3><p>Tension forte, faible exposition à l’IA.</p>'+H.map(function(m,k){return '<button class="br" data-bm="'+m.i+'"><span>'+m.n+'<small>'+['Bretagne, Pays de la Loire','partout','Auvergne-Rhône-Alpes','Normandie','Occitanie','Île-de-France'][k]+'</small></span><span class="v up">↗ +'+(4+k*2)+' %</span></button>';}).join('')+'</div>'+
    '<div class="bc"><h3>◆ Rares, et qui montent</h3><p>Métiers d’art dont la demande grandit.</p>'+R.map(function(m,k){return '<button class="br" data-bm="'+m.i+'"><span>◆ '+m.n+'<small>'+['ateliers, patrimoine','patrimoine, hôtellerie','restauration','luxe, ateliers','monuments historiques','décoration'][k]+'</small></span><span class="v hi">'+['+18','+12','+9','+15','+7','+6'][k]+' %</span></button>';}).join('')+'</div>'+
    '<div class="bc"><h3>◎ L’IA et les métiers</h3><p>Exposition des tâches à l’IA générative.</p>'+I.map(function(m){return '<button class="br" data-bm="'+m.i+'"><span>'+m.n+'<small>beaucoup de tâches automatisables</small></span><span class="v ia">très exposé</span></button>';}).join('')+G.map(function(m){return '<button class="br" data-bm="'+m.i+'"><span>'+m.n+'<small>le geste humain compte</small></span><span class="v up">◎ peu exposé</span></button>';}).join('')+'</div></div>'+
@@ -482,10 +561,10 @@ function calc(){S.calc=true;render();var names=M.map(function(m){return m.n;}),n
     render();},2900));}
 function stopCalc(){TKT.forEach(function(t){clearInterval(t);clearTimeout(t);});TKT=[];$('tks').innerHTML='';S.calc=false;}
 /* ---------- moteur ---------- */
-function render(){panel();S.top=S.st>=8?pick3():[];if(S.st>=8&&!S.calc&&S.pick<0&&S.top.length)S.pick=0;$('sky').classList.toggle('fin',S.st>=8);cards();layout();sig();}
-$('panel').addEventListener('click',function(e){var t=e.target.closest('#go,#nx,#bk,[data-sf],[data-dur],[data-psf],[data-pdur],[data-pdel],[data-a],[data-w],#pyes,#redo');if(!t)return;
-  if(t.id==='go'){S.st=1;render();return;}
-  if(t.id==='redo'){stopCalc();S.st=0;S.job=null;S.sf={};S.dur='';S.prevs=[];S.prevAsk=false;S.a={w:{},m:{},l:{},a:{},v:{},r:{}};S.want='';S.pick=-1;S.bpick=-1;S.q=0;render();return;}
+function render(){$('stage').classList.toggle('intro',S.st===0);panel();S.top=S.st>=8?pick3():[];if(S.st>=8&&!S.calc&&S.pick<0&&S.top.length)S.pick=0;$('sky').classList.toggle('fin',S.st>=8);cards();layout();sig();}
+$('panel').addEventListener('click',function(e){var t=e.target.closest('#go,#nx,#bk,[data-sf],[data-dur],[data-psf],[data-pdur],[data-pdel],[data-a],[data-sl],[data-w],#pyes,#redo');if(!t)return;
+  if(t.id==='go'){openIt();return;}
+  if(t.id==='redo'){stopCalc();S.st=0;S.job=null;S.sf={};S.dur='';S.prevs=[];S.prevAsk=false;S.a=freshA();S.sit='';S.want='';S.pick=-1;S.bpick=-1;S.q=0;setTimeout(whirl,50);scrollTo(0,0);render();return;}
   if(t.id==='bk'){if(S.st===4&&S.q>0)S.q--;else S.st--;render();return;}
   if(t.id==='pyes'){S.prevAsk=true;render();return;}
   if(t.dataset.psf!==undefined){var q=t.dataset.psf.split(':'),pv=S.prevs[+q[0]];if(pv){pv.sf[q[1]]=!pv.sf[q[1]];render();}return;}
@@ -493,13 +572,14 @@ $('panel').addEventListener('click',function(e){var t=e.target.closest('#go,#nx,
   if(t.dataset.pdel!==undefined){S.prevs.splice(+t.dataset.pdel,1);render();return;}
   if(t.dataset.sf!==undefined){S.sf[t.dataset.sf]=!S.sf[t.dataset.sf];render();return;}
   if(t.dataset.dur!==undefined){S.dur=t.dataset.dur;render();return;}
+  if(t.dataset.sl){S.a[QS[S.q].k][t.dataset.sl]=+t.dataset.v;render();return;}
   if(t.dataset.a){var Q=QS[S.q],v=t.dataset.a;if(Q.max===1){S.a[Q.k]={};S.a[Q.k][v]=true;}else S.a[Q.k][v]=!S.a[Q.k][v];render();return;}
   if(t.dataset.w){S.want=t.dataset.w;render();return;}
   if(t.id==='nx'){if(!t.classList.contains('ready'))return;
     if(S.st===4&&S.q<QS.length-1){S.q++;render();return;}
-    if(S.st===5){S.st=6;render();setTimeout(function(){S.st=8;S.top=pick3();if(RED)render();else calc();if(innerWidth<900)setTimeout(function(){scrollTo({top:$('field').getBoundingClientRect().top+scrollY-$('top').offsetHeight-8,behavior:RED?'auto':'smooth'});},200);},RED?50:1300);return;}
+    if(S.st===5){S.st=6;render();setTimeout(function(){S.st=8;S.top=pick3();if(RED)render();else calc();if(innerWidth<900)setTimeout(function(){scrollTo({top:$('field').getBoundingClientRect().top+scrollY-topH()-8,behavior:RED?'auto':'smooth'});},200);},RED?50:1300);return;}
     S.st++;render();}});
-$('panel').addEventListener('change',function(e){if(e.target.id==='dur'){S.dur=e.target.value;render();}if(e.target.id==='reg'){S.reg=e.target.value;}});
+$('panel').addEventListener('change',function(e){if(e.target.id==='dur'){S.dur=e.target.value;render();}if(e.target.id==='sit'){S.sit=e.target.value;}});
 $('cards').addEventListener('click',function(e){var b=e.target.closest('[data-cd]');if(!b)return;S.pick=+b.dataset.cd;cards();sig();setTimeout(function(){$('sig').scrollIntoView({behavior:'smooth',block:'start'});},60);});
 document.addEventListener('click',function(e){var b=e.target.closest('.build');if(b){b.innerHTML='<span class="dot"></span>Ouverture du diagnostic complet, déjà rempli…';return;}
   if(e.target.closest('.cmp')){S.bpick=-1;sig();S.st=1;render();scrollTo({top:0,behavior:RED?'auto':'smooth'});return;}
@@ -510,19 +590,39 @@ document.addEventListener('click',function(e){var b=e.target.closest('.build');i
 document.addEventListener('click',async function(e){var b=e.target.closest('.keepgo');if(!b)return;
   var box=b.closest('.keepw'),em=box.querySelector('.em'),ck=box.querySelector('.cons'),msg=box.querySelector('.kmsg');msg.className='kmsg';
   var mail=em.value.trim();
-  if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(mail)){msg.textContent='Saisissez une adresse e-mail valide.';return;}
-  if(!ck.checked){msg.textContent='Cochez la case pour que nous gardions vos réponses.';return;}
-  if(!(window.VSF&&VSF.sb)){msg.textContent='Impossible de garder vos réponses pour le moment.';return;}
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(mail)){msg.textContent='Saisis une adresse e-mail valide.';return;}
+  if(!ck.checked){msg.textContent='Coche la case pour que nous gardions tes réponses.';return;}
+  if(!(window.VSF&&VSF.sb)){msg.textContent='Impossible de garder tes réponses pour le moment.';return;}
   b.disabled=true;
   var rep={metier:{code:S.job&&S.job.c,nom:S.job&&S.job.n,duree:DUR[+S.dur],savoir_faire:S.job?S.job.sf.filter(function(x,k){return S.sf[k];}).map(function(x){return x[0];}):[]},avant:S.prevs.map(function(p){return {code:p.j.c,nom:p.j.n,duree:DUR[+p.dur],savoir_faire:p.j.sf.filter(function(x,k){return p.sf[k];}).map(function(x){return x[0];})};}),reponses:S.a,regard:S.want,region:S.reg||null,cibles:S.top.map(function(x){return x[0].m.n;}),demo:true};
   var r=await VSF.sb.rpc('vsf_eclaireur_garder',{p_email:mail,p_reponses:rep,p_consentement:true});
   b.disabled=false;
-  if(r.error){msg.textContent=(r.error.code==='VSF08'&&r.error.message)?r.error.message:'Impossible de garder vos réponses pour le moment.';return;}
+  if(r.error){msg.textContent=(r.error.code==='VSF08'&&r.error.message)?r.error.message:'Impossible de garder tes réponses pour le moment.';return;}
   msg.className='kmsg ok';msg.textContent='C’est gardé. Rien d’autre n’est enregistré.';
 });
-bubbles();baro();render();
+
+/* ---------- ouverture : textes modifiables (eclaireur-textes.json), puis la page s'ouvre au clic, à la molette ou au glissement ---------- */
+function topH(){var e=document.querySelector('.vsf-menu');return e?e.offsetHeight:0;}
+var TEXTES={barre:'La fin du travail',titre:'Vivre ce que t’aimes bien faire.',accroche:'3 minutes · sans compte · 3 métiers viennent à toi',legende:'L’Éclaireur',legende2:'Le tour de France des métiers, chaque mois'};
+function heroHtml(){var t=TEXTES.titre.replace(/fa(i)re/,'fa<span class="mk">$1</span>re');
+  return '<div class="h1x">'+esc(TEXTES.barre)+'<svg viewBox="0 0 100 10" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M1 6 C 20 3, 35 8, 52 5 S 85 7, 99 4"/></svg></div><h1 class="play">'+t+'</h1><p class="sub2">'+esc(TEXTES.accroche)+'</p><button class="start" id="go"><span class="dot"></span>Commencer →</button><div class="cap">'+esc(TEXTES.legende)+'<span>'+esc(TEXTES.legende2)+'</span></div>';}
+function poserHero(){var h=$('hero');h.innerHTML=heroHtml();h.classList.remove('play');void h.offsetWidth;h.classList.add('play');}
+var WH=null;
+function whirl(){clearInterval(WH);if(S.st===0&&!RED)WH=setInterval(function(){if(S.st===0)layout();},4000);}
+function openIt(){if(S.st!==0)return;S.st=1;clearInterval(WH);render();var t0=Date.now();(function f(){layout();if(Date.now()-t0<1000)requestAnimationFrame(f);})();
+  if(innerWidth<900)setTimeout(function(){scrollTo({top:$('panel').getBoundingClientRect().top+scrollY-topH()-8,behavior:RED?'auto':'smooth'});},350);
+  setTimeout(function(){var q=$('jq');if(q)q.focus({preventScroll:true});},950);}
+$('hero').addEventListener('click',openIt);
+$('hero').addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();openIt();}});
+addEventListener('wheel',function(e){if(S.st===0&&e.deltaY>0&&scrollY<10){e.preventDefault();openIt();}},{passive:false});
+var ty=null;addEventListener('touchstart',function(e){ty=e.touches[0].clientY;},{passive:true});
+addEventListener('touchmove',function(e){if(S.st===0&&ty!==null&&ty-e.touches[0].clientY>30&&scrollY<10){openIt();ty=null;}},{passive:true});
+document.documentElement.style.setProperty('--hh',topH()+'px');
+poserHero();
+try{fetch('eclaireur-textes.json?'+Date.now()).then(function(r){return r.ok?r.json():null;}).then(function(j){if(j){Object.keys(j).forEach(function(k){if(typeof j[k]==='string'&&j[k].trim())TEXTES[k]=j[k];});poserHero();}}).catch(function(){});}catch(e){}
+bubbles();baro();$('bubbles').classList.add('nt');render();setTimeout(function(){$('bubbles').classList.remove('nt');layout();},60);whirl();
 addEventListener('resize',layout);
-addEventListener('scroll',function(){$('top').classList.toggle('sh',scrollY>4);},{passive:true});
+
 /* accroche pour le test automatique des paires de métiers (eclaireur-test.html) */
 window.ECL={DEST:DEST,S:S,M:M,cx:cx,npEff:npEff,dureeM:dureeM,chargerMetier:chargerMetier,pret:function(){return DEST_PRET;}};
 })();
