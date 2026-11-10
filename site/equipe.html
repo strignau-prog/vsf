@@ -1014,7 +1014,8 @@ window.addEventListener('scroll',function(){document.querySelector('.top').class
             if(on.data&&on.data.name&&a.organisation&&on.data.name.trim().toLowerCase()===String(a.organisation).trim().toLowerCase()){
               fin(['Ce lien est celui d’un salarié.','Vous êtes connecté·e avec le compte du dirigeant de <b>'+a.organisation+'</b> : il ne peut pas servir à une invitation. Pour l’essayer, ouvrez ce lien dans une <b>fenêtre privée</b> et créez un autre compte (une autre adresse e-mail : avec Gmail, <i>votreadresse+essai@gmail.com</i> arrive dans votre boîte habituelle).<p style="margin-top:22px"><a href="'+RETOUR+'" style="font-weight:900;color:#111">← Retour au diagnostic</a></p>']);return;}}}catch(x){}
       }
-      if(a&&a.valide){S.par=a.invite_par;$('parN').textContent=a.invite_par;$('orgN').textContent=a.organisation;$('par2').textContent=a.invite_par;lbl3('Proposer à '+a.invite_par+' →');if(a.nom&&!S.pn){S.pn=a.nom;$('pn').value=a.nom;}
+      if(a&&a.valide){var dp=/^(invit[ée]e?|le dirigeant)$/i.test(String(a.invite_par||'').trim())?'':a.invite_par;      /* « Invité » est le prénom par défaut d'un compte d'accès : on dit « votre dirigeant » */
+        S.par=dp;$('parN').textContent=dp||'Votre dirigeant';$('orgN').textContent=a.organisation;$('par2').textContent=dp||'Votre dirigeant';lbl3('Proposer à '+(dp||'votre dirigeant')+' →');if(a.nom&&!S.pn){S.pn=a.nom;$('pn').value=a.nom;}
         var pk=(a.poste||'').split('#')[0];if(pk&&FICHES.some(function(f){return f.k===pk;}))verrou(pk);}
       else {                                                          // lien déjà utilisé : si le compte est déjà rattaché, on le retrouve ; sinon on explique
         var mm=await sb.from('vsf_equipe_membres').select('organization_id,poste,nom').eq('user_id',uid).is('detache_le',null).limit(1);
