@@ -1,0 +1,384 @@
+{
+ "_note": "Fiches réelles du diagnostic (situations de travail, repères et preuves N1 à N4). Source unique lue par equipe.html et diagnostic-entreprise-v10.html. Format réduit du modèle de fiche (§7) : le reste de la fiche viendra avec le lot 0. Aucun nom de personne dans le contenu.",
+ "version": "2026-11-10",
+ "fiches": {
+  "PL": {
+   "nom": "Peintre en lettres",
+   "art": true,
+   "source": "Fiche VSF étalon — Peintre en lettres (10 nov. 2026)",
+   "situations": [
+    {
+     "intitule": "Comprendre la demande, relever le site et chiffrer",
+     "geste_rare": false,
+     "etape": "c1",
+     "cycle": "Commande · relevé",
+     "reperes": [
+      "explique les étapes d'une commande et les règles d'enseigne de base",
+      "mène un relevé complet avec une liste de contrôle",
+      "mène seul le rendez-vous, le relevé et le devis d'une enseigne simple",
+      "conseille sur un projet complexe (patrimoine, ABF) et forme au relevé"
+     ],
+     "preuves": [
+      "",
+      "fiche de relevé complète",
+      "devis signé et tenu",
+      "dossier patrimoine accepté"
+     ],
+     "indicateurs": "Délai : devis envoyé dans le délai annoncé · Qualité : aucune mesure manquante découverte au chantier · Performance : écart entre temps réel et temps chiffré",
+     "piege_travail_reel": "« Quelque chose qui se voit de loin » : traduire une demande floue en taille de lettre et en contraste · découvrir sur place un support différent de la photo envoyée",
+     "statut": "hypothèse (repères, preuves et seuils à valider avec le maître artisan)"
+    },
+    {
+     "intitule": "Concevoir la composition et préparer le tracé",
+     "geste_rare": false,
+     "etape": "c2",
+     "cycle": "Conception",
+     "reperes": [
+      "reconnaît les grandes familles de lettres et leurs époques",
+      "compose une enseigne simple d'après un modèle",
+      "dessine une composition originale adaptée au lieu",
+      "crée une lettre propre à un client et enseigne l'espacement à l'œil"
+     ],
+     "preuves": [
+      "",
+      "maquette validée par le tuteur",
+      "maquette validée par le client",
+      "alphabet original et son dossier"
+     ],
+     "indicateurs": "Délai : maquette livrée à la date convenue · Qualité : validée en 2 allers-retours au plus · Performance : temps de conception conforme au devis",
+     "piege_travail_reel": "Une lettre juste à l'écran paraît fausse à 6 m de haut · l'espacement mécanique crée des trous visibles",
+     "statut": "hypothèse (repères, preuves et seuils à valider avec le maître artisan)"
+    },
+    {
+     "intitule": "Préparer le support",
+     "geste_rare": false,
+     "etape": "c3",
+     "cycle": "Préparation",
+     "reperes": [
+      "reconnaît les supports et leurs risques",
+      "prépare un support standard sous contrôle",
+      "prépare seul tout support courant et reporte le tracé",
+      "diagnostique et traite un support dégradé complexe"
+     ],
+     "preuves": [
+      "",
+      "photos avant et après validées",
+      "support prêt sans reprise",
+      "diagnostic écrit d'un support dégradé"
+     ],
+     "indicateurs": "Délai : support prêt à la date prévue · Qualité : aucun décollement à 1 an · Performance : temps de préparation conforme au devis",
+     "piege_travail_reel": "Découvrir une fissure ou du salpêtre sous l'ancienne peinture · le calque glisse sur une façade bombée",
+     "statut": "hypothèse (repères, preuves et seuils à valider avec le maître artisan)"
+    },
+    {
+     "intitule": "Peindre les lettres et les décors, dorer",
+     "geste_rare": true,
+     "etape": "c4",
+     "cycle": "Réalisation",
+     "reperes": [
+      "explique pinceaux, peintures et dorure",
+      "peint un lettrage simple sur support plan avec contrôle",
+      "peint seul une enseigne complète, dorure simple comprise",
+      "réalise sans reprise lettrages et dorures complexes, et transmet le geste"
+     ],
+     "preuves": [
+      "",
+      "planche d'exercices vue par le tuteur",
+      "enseigne réelle livrée",
+      "chef-d'œuvre présenté aux pairs"
+     ],
+     "indicateurs": "Délai : réalisation dans le temps prévu · Qualité : aucune reprise visible, conforme à la maquette validée · Performance : temps passé conforme au devis",
+     "piege_travail_reel": "Sentir que le pinceau est trop chargé avant que la peinture ne coule · rattraper un pli de feuille avant que la mixtion ne sèche",
+     "statut": "hypothèse (repères, preuves et seuils à valider avec le maître artisan)"
+    },
+    {
+     "intitule": "Poser, contrôler et suivre",
+     "geste_rare": false,
+     "etape": "c5",
+     "cycle": "Pose · contrôle · suivi",
+     "reperes": [
+      "connaît les règles du travail en hauteur",
+      "pose et contrôle sous supervision",
+      "pose seul, contrôle et clôt le chantier avec le client",
+      "évalue seul la sécurité d'une installation et forme à la pose"
+     ],
+     "preuves": [
+      "",
+      "liste de pose signée par le tuteur",
+      "réception signée par le client",
+      "plan de prévention rédigé"
+     ],
+     "indicateurs": "Délai : date de pose respectée · Qualité : aucune réserve à la réception · Performance : aucun retour pour défaut",
+     "piege_travail_reel": "Un défaut invisible de près saute aux yeux depuis le trottoir d'en face",
+     "statut": "hypothèse (repères, preuves et seuils à valider avec le maître artisan)"
+    }
+   ]
+  },
+  "GA": {
+   "nom": "Graphiste d’atelier",
+   "art": false,
+   "source": "Fiche métier enrichie — Graphiste d’atelier (oct. 2026), repères N1 à N4",
+   "situations": [
+    {
+     "intitule": "Comprendre la demande et le lieu",
+     "geste_rare": false,
+     "etape": "c1",
+     "reperes": [
+      "Reconnaît les informations utiles d'un brief (texte à lettrer, lieu, support, budget, délai) et nomme ce qui manque",
+      "Mène avec appui un échange de cadrage simple et remplit le dossier de référence (photos, cotes, nuancier)",
+      "Mène seul·e le cadrage d'une demande courante, repère les contraintes du lieu et décide ce qu'il faut voir sur place",
+      "Cadre une demande floue ou complexe (patrimoine, règles locales, budget serré), arbitre et explique ses choix"
+     ],
+     "preuves": [
+      "Liste, écrite ou dite à voix haute, des questions à poser sur un brief fictif",
+      "Dossier de référence complet pour un cas simple, relu par le tuteur",
+      "Dossier de référence et intention reformulée, validés par le client sans retour de fond",
+      "Cas documenté avec ses arbitrages ; un·e junior accompagné·e sur un cadrage"
+     ],
+     "statut": "hypothèse (à valider avec le maître artisan)"
+    },
+    {
+     "intitule": "Traduire l'intention en croquis",
+     "geste_rare": false,
+     "etape": "c2",
+     "reperes": [
+      "Reconnaît ce qui rend une lettre lisible (proportion, espacement, contraste) sur des exemples d'enseignes",
+      "Dessine le croquis d'un lettrage simple d'après un modèle et corrige après retour",
+      "Propose deux ou trois pistes pour une commande réelle, les pose sur la photo du lieu et défend celle qu'il ou elle recommande",
+      "Trouve la solution juste pour un lieu difficile (formes irrégulières, identité forte) et explique ses arbitrages à un pair"
+     ],
+     "preuves": [
+      "Commentaire oral ou annoté de quelques enseignes",
+      "Planche de croquis d'un lettrage simple, retours du tuteur intégrés",
+      "Croquis en contexte pour un client réel ; intention comprise sans explication",
+      "Pièce de maîtrise : dossier de croquis et d'arbitrages, reconnu par un peintre et un pair ; un·e junior guidé·e"
+     ],
+     "statut": "hypothèse (à valider avec le maître artisan)"
+    },
+    {
+     "intitule": "Préparer la maquette et le BAT",
+     "geste_rare": false,
+     "etape": "c2",
+     "reperes": [
+      "Lit un BAT et repère les cotes, couleurs, matières ou mentions qui manquent",
+      "Prépare un BAT simple à l'échelle, avec cotes et couleurs de nuancier, et le corrige avec le tuteur",
+      "Prépare, fait valider et tient à jour le BAT d'une commande réelle, y compris les changements tardifs",
+      "Prépare le BAT d'un projet complexe (plusieurs panneaux, dorure, support irrégulier) et anticipe les écarts entre écran et peinture"
+     ],
+     "preuves": [
+      "Relevé oral ou annoté des manques sur un BAT d'exemple",
+      "BAT d'un lettrage simple relu par le peintre, exécutable sans question",
+      "BAT validé par le client ; aucune reprise due à une erreur de BAT",
+      "Dossier BAT complet d'un projet complexe ; méthode documentée ; un·e junior accompagné·e"
+     ],
+     "statut": "hypothèse (à valider avec le maître artisan)"
+    },
+    {
+     "intitule": "Préparer poncifs et fichiers",
+     "geste_rare": false,
+     "etape": "c3",
+     "reperes": [
+      "Distingue poncif, gabarit et fichier de découpe, et sait quand chacun s'emploie (périmètre à valider avec l'atelier)",
+      "Prépare un poncif ou un fichier simple, à l'échelle, avec des repères, d'après un modèle",
+      "Prépare seul·e les poncifs et fichiers d'une commande courante, les nomme et les range pour qu'on les retrouve",
+      "Découpe un grand lettrage en panneaux, place les repères de raccord et choisit le mode de report selon le support"
+     ],
+     "preuves": [
+      "Explication orale ou schéma des modes de report",
+      "Poncif ou fichier d'un lettrage simple utilisé par le peintre après correction du tuteur",
+      "Report fidèle sur le support ; fichiers retrouvés par un autre membre de l'atelier",
+      "Report d'un grand format ou d'un support irrégulier sans retouche de géométrie sur place ; fiche de méthode"
+     ],
+     "statut": "hypothèse (à valider avec le maître artisan)"
+    },
+    {
+     "intitule": "Accompagner le report et clore",
+     "geste_rare": false,
+     "etape": "c5",
+     "reperes": [
+      "Reconnaît ce que l'on contrôle à la livraison : conformité au BAT, lisibilité, finitions",
+      "Compare une réalisation au BAT avec un tuteur et note les écarts",
+      "Suit seul·e le report d'un chantier courant, ajuste avec le peintre, archive la réalisation et recueille le retour du client",
+      "Arbitre les écarts sur un chantier complexe et décide ce qui entre dans la mémoire de l'atelier"
+     ],
+     "preuves": [
+      "Liste de contrôle commentée",
+      "Compte rendu d'écarts d'un petit chantier",
+      "Chantier archivé (photos avant et après, fichiers, retour client) avec écarts documentés",
+      "Retour d'expérience partagé avec l'équipe ; cas ajouté à la bibliothèque ; un·e junior accompagné·e"
+     ],
+     "statut": "hypothèse (à valider avec le maître artisan)"
+    }
+   ]
+  },
+  "DI": {
+   "nom": "Dirigeant·e",
+   "art": false,
+   "source": "Fiche métier enrichie — Peintre en lettres dirigeant (oct. 2026), repères N1 à N4",
+   "situations": [
+    {
+     "intitule": "Fixer la finalité et la stratégie",
+     "geste_rare": false,
+     "etape": "p1",
+     "reperes": [
+      "Explique pourquoi un atelier a besoin d'une finalité écrite",
+      "Rédige sa finalité avec un modèle et la fait relire",
+      "Refuse ou accepte un chantier en s'appuyant sur la finalité",
+      "La fait vivre dans l'équipe, la révise, accompagne un autre dirigeant"
+     ],
+     "preuves": [
+      "Donne trois exemples de choix guidés par une finalité",
+      "Texte d'une page, relu par un pair",
+      "Trois décisions récentes expliquées par la finalité",
+      "L'équipe la dit avec ses mots ; un pair en a écrit une"
+     ],
+     "statut": "hypothèse (à valider avec le dirigeant d’atelier)"
+    },
+    {
+     "intitule": "Piloter par les indicateurs",
+     "geste_rare": false,
+     "etape": "p2",
+     "reperes": [
+      "Dit ce que mesurent marge, délais, reprises, trésorerie",
+      "Renseigne un tableau de bord avec aide",
+      "Décide à partir des chiffres (prix, charge, embauche)",
+      "Choisit les bons indicateurs, écarte les inutiles, forme"
+     ],
+     "preuves": [
+      "Explique chaque indicateur en une phrase",
+      "Tableau à jour chaque semaine",
+      "Deux décisions justifiées par les chiffres",
+      "Tableau resserré ; un autre dirigeant l'adopte"
+     ],
+     "statut": "hypothèse (à valider avec le dirigeant d’atelier)"
+    },
+    {
+     "intitule": "Manager et tenir les rituels",
+     "geste_rare": false,
+     "etape": "p3",
+     "reperes": [
+      "Explique le rôle d'un point d'équipe, d'un retour de chantier, d'un entretien individuel",
+      "Anime un point court avec un ordre du jour type",
+      "Corrige un geste sans casser la confiance, confie un chantier plus exigeant",
+      "Installe une culture d'apprentissage, forme des référents"
+     ],
+     "preuves": [
+      "Décrit ce qui change quand ils manquent",
+      "Point tenu à intervalle régulier",
+      "Membre de l'équipe qui progresse et le dit",
+      "Des référents tiennent eux-mêmes les rituels"
+     ],
+     "statut": "hypothèse (à valider avec le dirigeant d’atelier)"
+    },
+    {
+     "intitule": "Piloter la démarche RSE",
+     "geste_rare": false,
+     "etape": "p1",
+     "reperes": [
+      "Nomme les enjeux : matières, déchets, sécurité, conditions de travail, territoire",
+      "Met en place trois engagements concrets",
+      "Tient et suit ses engagements, les montre aux clients",
+      "Fait de la démarche un argument de valeur, forme les pairs"
+     ],
+     "preuves": [
+      "Liste et exemples de l'atelier",
+      "Engagements écrits",
+      "Preuves tenues sur un an",
+      "Référence citée par des pairs"
+     ],
+     "statut": "hypothèse (à valider avec le dirigeant d’atelier)"
+    },
+    {
+     "intitule": "Tenir les situations de cœur",
+     "geste_rare": false,
+     "etape": "c4",
+     "reperes": [
+      "Connaît les cinq situations du peintre et leurs critères",
+      "Contrôle un chantier avec une check-list de l'atelier",
+      "Distribue les chantiers selon les niveaux de chacun, reprend la main quand il faut",
+      "Tient la qualité sans tout faire, forme des référents de cœur"
+     ],
+     "preuves": [
+      "Explique le critère de chaque situation",
+      "Check-list remplie sur trois chantiers",
+      "Chantiers livrés au niveau d'exigence voulu",
+      "Un autre peintre peut tenir le contrôle final"
+     ],
+     "statut": "hypothèse (à valider avec le dirigeant d’atelier)"
+    },
+    {
+     "intitule": "Facturer et encaisser",
+     "geste_rare": false,
+     "etape": "s1",
+     "reperes": [
+      "Distingue devis, acompte, facture, relance",
+      "Établit devis et facture avec un modèle",
+      "Chiffre la préparation et le geste, relance les impayés",
+      "Construit une grille de prix qui paie le geste, forme un tiers"
+     ],
+     "preuves": [
+      "Ordonne le circuit d'un chantier",
+      "Documents conformes",
+      "Écart devis/réel suivi ; impayés réduits",
+      "Marge stable sur l'année"
+     ],
+     "statut": "hypothèse (à valider avec le dirigeant d’atelier)"
+    },
+    {
+     "intitule": "Acheter et gérer le stock",
+     "geste_rare": false,
+     "etape": "s2",
+     "reperes": [
+      "Connaît les consommables critiques (feuille d'or, mixtion, peintures)",
+      "Tient un inventaire simple",
+      "Commande avant la rupture, négocie avec les fournisseurs",
+      "Optimise stock et coûts, forme le régisseur"
+     ],
+     "preuves": [
+      "Liste avec délais d'approvisionnement",
+      "Inventaire à jour",
+      "Aucune rupture sur un chantier",
+      "Stock stable, coûts maîtrisés"
+     ],
+     "statut": "hypothèse (à valider avec le dirigeant d’atelier)"
+    },
+    {
+     "intitule": "Planifier",
+     "geste_rare": false,
+     "etape": "s3",
+     "reperes": [
+      "Lit un planning de chantiers",
+      "Remplit un planning type",
+      "Arbitre entre deux urgences, tient les délais promis",
+      "Anticipe les saisons, délègue la planification"
+     ],
+     "preuves": [
+      "Explique les dépendances (séchage, météo, accès)",
+      "Planning tenu une semaine",
+      "Délais tenus sur un trimestre",
+      "Un régisseur planifie seul"
+     ],
+     "statut": "hypothèse (à valider avec le dirigeant d’atelier)"
+    },
+    {
+     "intitule": "Administratif",
+     "geste_rare": false,
+     "etape": "s4",
+     "reperes": [
+      "Connaît les obligations de l'entreprise (assurances, comptabilité, autorisations)",
+      "Tient un classement et un calendrier",
+      "Ne rate aucune échéance, travaille avec le comptable",
+      "Délègue et contrôle, forme un successeur"
+     ],
+     "preuves": [
+      "Liste datée des échéances",
+      "Dossiers complets",
+      "Zéro pénalité sur l'année",
+      "Un tiers tient le dossier administratif"
+     ],
+     "statut": "hypothèse (à valider avec le dirigeant d’atelier)"
+    }
+   ]
+  }
+ }
+}

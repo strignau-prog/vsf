@@ -1417,6 +1417,10 @@ $('demo').onclick=function(){_demo();
 (function(){
   function hh(){var m=document.querySelector('.vsf-menu');document.documentElement.style.setProperty('--hh',(m?m.offsetHeight:0)+'px');}
   hh();addEventListener('resize',hh);addEventListener('load',hh);
+  /* les situations, repères et preuves des fiches viennent d'une source unique : data/fiches-diag.json (fiches réelles) */
+  (async function(){try{var r=await fetch('data/fiches-diag.json?'+Date.now());if(!r.ok)return;var j=await r.json();
+    Object.keys(j.fiches).forEach(function(k){var f=j.fiches[k],t=FK[k];if(!t)return;t.sf=f.situations.map(function(x){return [x.intitule,x.etape,x.reperes,x.preuves];});});
+    all();if(!$('v2').hidden)drawMap();}catch(e){}})();
   var RED2=matchMedia('(prefers-reduced-motion: reduce)').matches;
   /* après une réponse à l'étape 1, l'écran descend vers le prochain élément à remplir (en rouge pâle), s'il n'est pas déjà sous les yeux */
   function avance1(){
@@ -1539,13 +1543,7 @@ $('demo').onclick=function(){_demo();
   function afficherLien(pid){
     var l=document.querySelector('.lnkc'),lien=(S.liens||{})[pid],nom=S.names[pid]||'cette personne';if(!l)return;l.style.display='';
     if(!lien){l.innerHTML='Le lien de <b></b> n’est plus affiché (il n’est montré qu’une fois). Cliquez « Inviter → » pour en créer un nouveau.';l.querySelector('b').textContent=nom;return;}
-    var corps='Bonjour '+nom+',
-
-Je t’invite à te positionner sur ta fiche métier sur VraiSavoirFaire (environ 10 minutes). Tu crées ton compte avec ton e-mail, et seul moi verrai tes niveaux.
-
-Ton lien personnel, à usage unique, valable 14 jours :
-'+lien+'
-';
+    var corps='Bonjour '+nom+',\n\nJe t’invite à te positionner sur ta fiche métier sur VraiSavoirFaire (environ 10 minutes). Tu crées ton compte avec ton e-mail, et seul moi verrai tes niveaux.\n\nTon lien personnel, à usage unique, valable 14 jours :\n'+lien+'\n';
     l.innerHTML='<b>Lien pour <span class="nm"></span></b> — à usage unique, valable 14 jours. <b>VSF ne l’envoie pas : c’est à vous de le lui transmettre.</b><br><span class="lk" style="word-break:break-all"></span><br><button class="inv" id="cpl">Copier le lien →</button> <a class="inv" id="mel" style="text-decoration:none">Écrire un e-mail →</a>';
     l.querySelector('.nm').textContent=nom;l.querySelector('.lk').textContent=lien;
     document.getElementById('mel').href='mailto:?subject='+encodeURIComponent('Rejoindre l’équipe sur VraiSavoirFaire')+'&body='+encodeURIComponent(corps);
