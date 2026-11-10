@@ -1331,6 +1331,8 @@ function units(p){var u=[{k:p.k,h:p.dir?S.h.DI*(dxValid()?dpart():1):S.h[p.k]}];
 function psf(p){var L=[];units(p).forEach(function(u){sfs(FK[u.k]).forEach(function(x,i){if(!S.off[u.k+i])L.push({key:u.k+':'+i,t:x[0],st:x[1],k:u.k});});});return L;}
 function isPos(p){return S.inv[p.pid]==='ok';}
 function lvOf(p,key){return (S.pos[p.pid]||{})[key];}
+/* Seuils des feux calculés : réglables en admin (vsf_donnees, code « seuils_feux », migration 45) ; ces valeurs sont celles du modèle. */
+var SEUILS={qualite_vert:3,qualite_jaune:2,tenue_vert:2,tenue_jaune:1,temps_bas_vert:.25,temps_bas_jaune:.5};
 /* feux calculés d'une étape d'après les autopositionnements */
 function calcFeu(id){
   var T=team(),m=0,n=0,maxL=0,hold=0,hT=0,hLow=0,who=[];
@@ -1338,7 +1340,7 @@ function calcFeu(id){
     units(p).forEach(function(u){var sh=shares(FK[u.k])[id]||0;if(!sh)return;var l=0;on.forEach(function(x){if(x.k===u.k)l=Math.max(l,lvOf(p,x.key)||0);});if(!l)return;var hh=u.h*sh;hT+=hh;if(l<3)hLow+=hh;best=Math.max(best,l);});
     if(best){maxL=Math.max(maxL,best);if(best>=3){hold++;who.push(p.nom+' N'+best);}}});
   if(!n)return null;
-  var q=maxL>=3?'g':(maxL===2?'y':'r'), d=hold>=2?'g':(hold===1?'y':'r'), lo=hT?hLow/hT:1, e=lo<.25?'g':(lo<.5?'y':'r');
+  var q=maxL>=SEUILS.qualite_vert?'g':(maxL>=SEUILS.qualite_jaune?'y':'r'), d=hold>=SEUILS.tenue_vert?'g':(hold>=SEUILS.tenue_jaune?'y':'r'), lo=hT?hLow/hT:1, e=lo<SEUILS.temps_bas_vert?'g':(lo<SEUILS.temps_bas_jaune?'y':'r');
   return {f:[q,d,e],n:n,m:m,hold:hold,who:who,maxL:maxL,low:lo};
 }
 /* feu final : moyenne pondérée, à mi-chemin on retient le plus prudent */
@@ -1416,10 +1418,11 @@ $('acc').addEventListener('click',function(e){var b=e.target.closest('[data-gok]
 var _demo=$('demo').onclick;
 $('demo').onclick=function(){_demo();
   S.names={'DI#1':'Yann','PL#1':'Léa','GA#1':'Malo','CO#1':'Anne'};S.inv={'DI#1':'ok','PL#1':'ok','GA#1':'ok','CO#1':'att'};
-  S.pos={'DI#1':{'DI:0':3,'DI:1':2,'DI:2':3,'DI:3':4,'DI:4':4,'DI:5':2,'DI:6':2,'DI:7':2,'DI:8':1,'PL:0':4,'PL:1':4,'PL:2':4,'PL:3':4,'PL:4':4,'PL:5':4},
-         'PL#1':{'PL:0':2,'PL:1':3,'PL:2':3,'PL:3':2,'PL:4':2,'PL:5':1},'GA#1':{'GA:0':3,'GA:1':3,'GA:2':2}};
-  S.tr={'DI#1|PL:3':true,'DI#1|PL:5':true,'PL#1|PL:1':true};
-  S.goal={'PL#1':{'PL:0':3,'PL:3':3,'PL:4':3,'PL:5':2},'GA#1':{'GA:2':3}};S.gok={};S.w=.5;
+  S.pos={'DI#1':{'DI:0':3,'DI:1':2,'DI:2':3,'DI:3':4,'DI:4':4,'PL:0':4,'PL:1':4,'PL:2':4,'PL:3':4,'PL:4':4},
+         'PL#1':{'PL:0':2,'PL:1':3,'PL:2':3,'PL:3':2,'PL:4':2},'GA#1':{'GA:0':3,'GA:1':3,'GA:2':2}};
+  S.tr={'DI#1|PL:3':true,'DI#1|PL:4':true,'PL#1|PL:1':true};
+  S.goal={'PL#1':{'PL:0':3,'PL:1':4,'PL:3':3,'PL:4':3},'GA#1':{'GA:2':3}};S.gok={'PL#1':true};S.w=.5;      /* résultats de référence de la démo : 3 sur 4 positionnés, 3 regards à croiser, 6 lignes de regards croisés, panier de 4 */
+  S.lights['c4:2']='g';S.hold.c1='1';
   all();drawMap();
 };
 
@@ -1448,7 +1451,7 @@ $('demo').onclick=function(){_demo();
   var P=new URLSearchParams(location.search),demoOnly=!!P.get('demo');
   if(!P.get('demo'))$('demo').style.display='none';                       // la démo ne sert qu'avec ?demo=1 : jamais sur un vrai diagnostic
   var _ss=setStep;setStep=function(n){S._step=n;return _ss.apply(this,arguments);};
-  window.V10={S:S,team:team};                                              // accroche pour les tests automatiques
+  window.V10={S:S,team:team,setStep:function(n){setStep(n);},all:function(){all();drawMap();},calcFeu:function(i){return calcFeu(i);},gap2:function(i,j){return gap2(i,j);},SEUILS:SEUILS};                                              // accroche pour les tests automatiques
   /* L'esquisse descend avec le remplissage : toujours centrée sur l'écran (ou, si elle est plus haute que l'écran, elle défile en proportion), sans ascenseur */
   (function(){
     var raf=0;
@@ -1498,6 +1501,7 @@ $('demo').onclick=function(){_demo();
     if(o.error||!o.data){msg('Le diagnostic ne peut pas s’ouvrir pour le moment.');return;}
     if(o.data.statut==='a_payer'){msg('Ce diagnostic est à régler : <a href="diagnostic-entreprise.html">continuer sur la page habituelle</a>.');return;}
     did=o.data.id;ORG=org;
+    try{var sv=await sb.from('vsf_donnees').select('valeur').eq('code','seuils_feux').maybeSingle();var vv=sv.data&&sv.data.valeur;if(vv)Object.keys(SEUILS).forEach(function(k){var n=parseFloat(vv[k]);if(isFinite(n))SEUILS[k]=n;});}catch(x){}      /* seuils réglables en admin ; valeurs du modèle si la migration 45 n'est pas installée */
     surveillerOnglets();
     var d=await sb.from('vsf_diagnostics').select('etat,maj_le').eq('id',did).maybeSingle();
     var e=d.data&&d.data.etat,serveurMaj=d.data&&d.data.maj_le?new Date(d.data.maj_le).getTime():0,loc=null;
