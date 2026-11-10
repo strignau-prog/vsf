@@ -81,7 +81,15 @@ async function demarrer() {
   var su = await sb.rpc('vsf_est_super');
   moi.super = su.data === true;
   dessiner();
-  await Promise.all([chargerComptes(), chargerDiagnostics(), chargerFiches(), chargerDonnees(), chargerVendeurs(), chargerReversements()]);
+  await Promise.all([chargerFichesPrep(), chargerComptes(), chargerDiagnostics(), chargerFiches(), chargerDonnees(), chargerVendeurs(), chargerReversements()]);
+}
+async function chargerFichesPrep() {
+  var r = await sb.rpc('vsf_fiches_a_preparer_lister');
+  if (r.error) { $('msgFichesPrep').textContent = 'Liste non disponible (migration 39 à installer).'; return; }
+  var l = r.data || [];
+  $('listeFichesPrep').innerHTML = l.length ? l.map(function (f) {
+    return '<div class="ligne"><div class="qui"><b>' + E(f.libelle || f.code_rome) + '</b><span>ROME ' + E(f.code_rome) + ' · demandée ' + E(f.demandes) + ' fois · dernière le ' + E(jour(f.derniere)) + '</span></div></div>';
+  }).join('') : '<p class="legende">Aucune fiche à préparer.</p>';
 }
 async function sortir() { await sb.auth.signOut(); location.replace('./'); }
 
@@ -116,6 +124,10 @@ function dessiner() {
     '<h2>À reverser</h2>' +
     '<p class="legende">État de gestion, pas une facture.</p>' +
     '<p class="message" id="msgReverse" role="alert"></p><div id="listeReverse"></div>' +
+
+    '<h2>Fiches à préparer</h2>' +
+    '<p class="legende">Métiers proposés par l’Éclaireur dont la fiche manque en base : la page l’a demandée à France Travail.</p>' +
+    '<p class="message" id="msgFichesPrep" role="alert"></p><div id="listeFichesPrep"></div>' +
 
     '<h2>Accès privés <a class="bouton" href="admin-acces.html">Créer un lien</a></h2>' +
     '<p class="legende">Un lien et un mot de passe pour faire le diagnostic entreprise ou travailleur, sans créer de compte.</p>' +

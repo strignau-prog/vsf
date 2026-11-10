@@ -15,7 +15,7 @@ var PAIRES=[
  ['M1805','Développeur informatique','Maroquinier',['3 ans et plus'],'très lointain']];
 var fr=document.getElementById('f');
 fr.onload=async function(){var E=fr.contentWindow.ECL;for(var i=0;i<60&&!E.pret();i++)await new Promise(function(r){setTimeout(r,500);});
- for(var k=0;k<PAIRES.length;k++){var p=PAIRES[k];var job=await E.chargerMetier(p[0],p[1]);E.S.job=job;E.S.sf={};job.sf.forEach(function(x,j){E.S.sf[j]=true;});E.S.prev=null;E.S.st=8;
+ for(var k=0;k<PAIRES.length;k++){var p=PAIRES[k];var job=await E.chargerMetier(p[0],p[1]);E.S.job=job;E.S.sf={};job.sf.forEach(function(x,j){E.S.sf[j]=true;});E.S.prevs=[];E.S.st=8;
   var m=E.M.filter(function(x){return x.n.indexOf(p[2])===0;})[0];m._k=null;var X=E.cx(m),d=E.dureeM(m),ok=p[3].indexOf(d)>=0&&(!X.ok||X.nouveau.length>0);
   var tr=document.createElement('tr');tr.innerHTML='<td>'+p[1]+' → '+p[2]+'</td><td>'+p[4]+'</td><td>'+(m.fiche?'fiche enrichie':'ROME')+'</td><td>'+(X.ok?X.nCom+' sur '+X.nTot+'<br><small>'+X.commun.slice(0,4).join(' · ')+'</small>':'—')+'</td><td>'+(X.ok?X.nouveau.length+'<br><small>'+X.nouveau.slice(0,4).join(' · ')+'</small>':'—')+'</td><td>'+d+(X.ok?' <small>('+Math.round(X.np*100)+' % de nouveau)</small>':'')+'</td><td class="'+(ok?'ok':'ko')+'">'+(ok?'OK':'ÉCHEC')+'</td>';
   document.getElementById('t').appendChild(tr);}
