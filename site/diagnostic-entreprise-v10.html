@@ -1404,13 +1404,17 @@ $('demo').onclick=function(){_demo();
 };
 
 /* ===================== branchement VSF : compte, entreprise, diagnostic ouvert, sauvegarde ===================== */
+/* Sauvegarde sûre (étape 0 du 10 nov.) : un échec n'est jamais « oublié » (on réessaie), une copie reste sur l'appareil, un second onglet est signalé, une session expirée est dite. */
 (function(){
   var P=new URLSearchParams(location.search),demoOnly=!!P.get('demo');
   if(!P.get('demo'))$('demo').style.display='none';                       // la démo ne sert qu'avec ?demo=1 : jamais sur un vrai diagnostic
   var _ss=setStep;setStep=function(n){S._step=n;return _ss.apply(this,arguments);};
   if(demoOnly||!window.VSF||!VSF.sb)return;
-  var sb=VSF.sb,did=null,last='';
+  var sb=VSF.sb,did=null,last='',lecture=false,enCours=false,moi=Math.random().toString(36).slice(2),canal=null;
   function msg(t){var m=document.getElementById('vsfMsg');if(!m){m=document.createElement('div');m.id='vsfMsg';document.body.appendChild(m);}m.className=t?'':'hide';m.innerHTML=t||'';}
+  function cle(){return 'vsf_v10_'+did;}
+  function instantane(){return JSON.stringify({v10:1,step:S._step||1,S:S});}
+  function restaurer(e){Object.keys(e.S).forEach(function(k){S[k]=e.S[k];});try{fillSel();}catch(x){}all();drawMap();setStep(e.step||1);}
   async function ouvrir(){
     var se=await sb.auth.getSession();
     if(!se.data.session){location.replace('connexion.html?suite='+encodeURIComponent(location.href));return;}
@@ -1437,15 +1441,43 @@ $('demo').onclick=function(){_demo();
     if(o.error||!o.data){msg('Le diagnostic ne peut pas s’ouvrir pour le moment.');return;}
     if(o.data.statut==='a_payer'){msg('Ce diagnostic est à régler : <a href="diagnostic-entreprise.html">continuer sur la page habituelle</a>.');return;}
     did=o.data.id;
-    var d=await sb.from('vsf_diagnostics').select('etat').eq('id',did).maybeSingle();
-    var e=d.data&&d.data.etat;
-    if(e&&e.v10&&e.S){Object.keys(e.S).forEach(function(k){S[k]=e.S[k];});try{fillSel();}catch(x){}all();drawMap();setStep(e.step||1);last=JSON.stringify({v10:1,step:e.step||1,S:S});}
-    setInterval(sauver,5000);addEventListener('pagehide',sauver);
+    surveillerOnglets();
+    var d=await sb.from('vsf_diagnostics').select('etat,maj_le').eq('id',did).maybeSingle();
+    var e=d.data&&d.data.etat,serveurMaj=d.data&&d.data.maj_le?new Date(d.data.maj_le).getTime():0,loc=null;
+    try{loc=JSON.parse(localStorage.getItem(cle())||'null');}catch(x){}
+    if(loc&&loc.snap&&loc.t>serveurMaj+1000&&loc.snap!==JSON.stringify({v10:1,step:(e&&e.step)||1,S:(e&&e.S)||{}})){      // une copie plus récente est restée sur cet appareil (coupure, session expirée) : on la reprend
+      try{restaurer(JSON.parse(loc.snap));last='';msg('Vos dernières réponses ont été retrouvées sur cet appareil et vont être enregistrées.');}catch(x){}
+    } else if(e&&e.v10&&e.S){restaurer(e);last=instantane();}
+    setInterval(sauver,5000);addEventListener('pagehide',sauver);addEventListener('online',sauver);
+  }
+  /* un seul onglet à la fois : le premier ouvert garde la main, le second le dit et ne sauvegarde rien */
+  function surveillerOnglets(){
+    if(!window.BroadcastChannel)return;
+    canal=new BroadcastChannel('vsf-diag-'+did);
+    canal.onmessage=function(ev){var m=ev.data||{};if(m.de===moi)return;
+      if(m.t==='bonjour'&&!lecture)canal.postMessage({t:'occupe',de:moi});
+      if(m.t==='occupe'&&!lecture)passerEnLecture();
+      if(m.t==='reprise'&&!lecture)passerEnLecture();};
+    canal.postMessage({t:'bonjour',de:moi});
+  }
+  function passerEnLecture(){
+    lecture=true;var o=document.createElement('div');o.className='vsfent';o.id='vsfLect';
+    o.innerHTML='<h1>Ce diagnostic est ouvert dans un autre onglet.</h1><p style="font-size:17px;max-width:520px">Pour ne pas écraser vos réponses, on ne travaille que dans un onglet à la fois.</p><button id="vsfPrends">Continuer ici →</button>';
+    document.body.appendChild(o);
+    document.getElementById('vsfPrends').onclick=function(){if(canal)canal.postMessage({t:'reprise',de:moi});location.reload();};
   }
   async function sauver(){
-    if(!did)return;var snap=JSON.stringify({v10:1,step:S._step||1,S:S});if(snap===last)return;last=snap;
-    var r=await sb.rpc('vsf_diagnostic_enregistrer',{p_id:did,p_etat:JSON.parse(snap),p_reponses:null});
-    if(r.error)msg('Sauvegarde impossible pour le moment : vos réponses restent à l’écran.');else msg('');
+    if(!did||lecture||enCours)return;var snap=instantane();if(snap===last)return;
+    try{localStorage.setItem(cle(),JSON.stringify({t:Date.now(),snap:snap}));}catch(x){}      // copie de secours sur l'appareil
+    enCours=true;var r;
+    try{r=await sb.rpc('vsf_diagnostic_enregistrer',{p_id:did,p_etat:JSON.parse(snap),p_reponses:null});}catch(x){r={error:{message:'réseau'}};}
+    enCours=false;
+    if(r.error){      // rien n'est marqué « enregistré » : le prochain passage réessaie
+      var t=String(r.error.message||'')+' '+String(r.error.code||'');
+      if(/jwt|expired|401|PGRST30|VSF07|Connexion/i.test(t))msg('Votre connexion a expiré. Vos réponses sont gardées sur cet appareil : <a href="connexion.html?suite='+encodeURIComponent(location.href)+'">reconnectez-vous</a> pour les enregistrer.');
+      else msg('Enregistrement impossible pour le moment : vos réponses restent à l’écran et sur cet appareil, on réessaie.');
+      return;}
+    last=snap;try{localStorage.removeItem(cle());}catch(x){}msg('');
   }
   ouvrir();
 })();
