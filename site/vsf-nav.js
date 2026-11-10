@@ -20,6 +20,7 @@
     var anciens = document.querySelectorAll('nav.topnav, .topbar, header.haut, header.vsf-haut');
     for (var i = 0; i < anciens.length; i++) anciens[i].parentNode.removeChild(anciens[i]);
     var page = (location.pathname.split('/').pop() || '');
+    if (page === 'mon-passage.html') return;      // cette page a déjà ses propres étapes : menu du site + étapes de la page, pas une troisième ligne
     var ici = -1;
     ETAPES.forEach(function (e, k) { if (e[0] === page) ici = k; });
     var max = lireMax();

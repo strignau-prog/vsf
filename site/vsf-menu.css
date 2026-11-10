@@ -56,3 +56,7 @@ html.vsf-menu-on body > .top{position:static}
 .vsf-haut{padding:0 clamp(16px,4vw,56px)}
 .vsf-etapes{justify-content:center;margin:0 auto}
 .vsf-etapes a.ici .nvd{display:none}   /* l'étape en cours : couleur + point dessous (plus de rond devant) ; les étapes faites gardent leur rond vert */
+
+/* échelle typographique commune des pages publiques (10 nov. 2026) : texte courant 16 px, grand titre identique partout (hors accroche de l'Éclaireur, dans sa colonne étroite) */
+body.page-publique,html[data-public] body{font-size:16px}
+body.page-publique main h1:not(.focus),html[data-public] main h1{font-size:clamp(2.4rem,6vw,4.4rem);letter-spacing:-.035em;line-height:1.02;max-width:none}

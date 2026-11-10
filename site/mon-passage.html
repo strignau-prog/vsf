@@ -198,7 +198,9 @@
     .fixedNote{font-size:13px;color:var(--muted);margin-top:8px}
     .empty{color:var(--muted);font-size:15px}
     select.champ{width:100%;min-height:44px;border:0;border-bottom:1.5px solid #111;border-radius:0;background:transparent;font-size:17px;padding:10px 0}
-  </style>
+      /* écran final : plus de visuels « calques » ni « roue » (consigne du 10 nov.) — une seule colonne */
+    .passageGrid{grid-template-columns:1fr !important}
+</style>
 <link rel="stylesheet" href="vsf-nav.css"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script><script src="vsf-auth.js"></script><link rel="stylesheet" href="vsf-largeur.css"><link rel="stylesheet" href="vsf-icones.css"><link rel="stylesheet" href="vsf-epure.css"><link rel="stylesheet" href="vsf-logo.css"><link rel="icon" href="/favicon.ico" sizes="48x48">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -225,10 +227,13 @@ function esc(s){ return String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'
 function normaliser(s){ return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim(); }
 async function rechercherMetiers(v){
   if(v.trim().length < 2) return [];
-  const res = await fetch(ROME_SYNC_URL, { method:'POST', headers:{ 'Content-Type':'application/json', ...HEADERS }, body: JSON.stringify({ recherche: v }) });
-  if(!res.ok) throw new Error('recherche indisponible ('+res.status+')');
-  const data = await res.json();
-  return data.resultats || [];
+  // France Travail n'accepte qu'un appel par seconde : en cas de refus (429, 5xx), on attend et on réessaie (3 essais) avant d'abandonner.
+  for(let essai=1; essai<=3; essai++){
+    const res = await fetch(ROME_SYNC_URL, { method:'POST', headers:{ 'Content-Type':'application/json', ...HEADERS }, body: JSON.stringify({ recherche: v }) });
+    if(res.ok){ const data = await res.json(); return data.resultats || []; }
+    if(essai===3) throw new Error('recherche indisponible ('+res.status+')');
+    await new Promise(r=>setTimeout(r, 1300*essai));
+  }
 }
 async function fetchCompetences(codeRome){
   const res = await fetch(`${MAURICE_REST}/rome_competences_cache?code_rome=eq.${codeRome}&select=id,type,libelle,code_competence`, { headers: HEADERS });
@@ -922,10 +927,10 @@ async function calculerPistes(){
       const choix = choisirCandidat(res, new Set([...codesExistants, etat.voeu.codeRome]), referentiel);
       if(choix){ procheExistant = { ...choix.candidat, motCle:mot, metierArtTrouve:choix.metierArtTrouve }; break; }
     }catch(e){ erreurRecherche = true; }
-    await attendre(350);
+    await attendre(1200);
   }
   let procheVoeu = null;
-  await attendre(350);
+  await attendre(1200);
   try{
     const res = await rechercherMetiers(etat.voeuRequeteOriginale || etat.voeu.libelleMetier);
     const exclu = new Set([etat.voeu.codeRome, ...(procheExistant?[procheExistant.codeRome]:[])]);
@@ -1074,7 +1079,6 @@ async function renderEtapePassage(){
       </div>
       <div class="phraseCentrale">${phrase}</div>
     </div>
-    <div class="passageCol">${renderCalques(ctx)}</div>
   </div>
 
   <div class="passageGrid">
@@ -1087,7 +1091,6 @@ async function renderEtapePassage(){
       <div class="zRow"><div class="k">Conditions à vérifier</div><div>${cmp.aVerifierConditions.length?cmp.aVerifierConditions.map(esc).join(', '):'Aucune contrainte physique particulière déclarée.'} <span class="st st-doc">déclaré</span></div></div>
       <div class="zRow"><div class="k">Sources et limites</div><div>${code ? `France Travail ROME 4.0 (${code}), ${comp.length} éléments en cache.` : (ficheArt ? `Pas de fiche ROME pour ce métier — ${comp.length} éléments issus de la fiche détaillée du référentiel métiers d'art (activités, savoir-faire, savoirs), pas une vraie liste de compétences ROME.` : `Pas de fiche ROME pour ce métier — ${comp.length} phrases extraites de la définition officielle de l'Institut des Métiers d'Art (INMA), pas une vraie liste de compétences ROME.`)} ${statutArt?'Référentiel métiers d\'art V2 (livret INMA officiel).':'Référentiel métiers d\'art non chargé.'}${ficheArt?` Correspondance ROME/RNCP et fiche détaillée : recherche individuelle par métier — ${esc(ficheArt.statut)}.`:''} Comparaison par rapprochement de codes/mots-clés, jamais un score global. <a href="https://benevolent-marigold-64a0a1.netlify.app/12mars-donnees-methode" target="_blank" rel="noopener">Comment cette lecture est-elle construite ?</a></div></div>
     </div>
-    <div class="passageCol">${renderRoue(nom, (!code && ficheArt) ? classerRoueDepuisFiche(ficheArt) : classerRoue(comp), declares, code, ficheArt)}</div>
   </div>
 
   <div class="zRow" style="margin-top:26px;padding-top:22px;border-top:1px solid var(--line)"><div class="k">Repère de parcours</div><div class="repere">${rythme || "Nous pouvons décrire les apprentissages à prévoir, mais nous ne disposons pas encore de données assez solides pour proposer un ordre de grandeur utile."}<div class="fixedNote">Cette estimation est un repère de parcours, pas une promesse. Elle doit être confirmée par une mise en situation et un positionnement avec un professionnel.</div></div></div>
