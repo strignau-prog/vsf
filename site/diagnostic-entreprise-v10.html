@@ -1501,7 +1501,7 @@ $('demo').onclick=function(){_demo();
   $('team2').addEventListener('click',async function(e){
     var b=e.target.closest('[data-inv]');if(!b)return;e.stopImmediatePropagation();
     var pid=b.dataset.inv,p=team().filter(function(x){return x.pid===pid;})[0];if(!p)return;
-    if(p.dir){window.open('equipe.html?org='+encodeURIComponent(ORG)+'&f=DI','_blank');return;}
+    if(p.dir){sauver();location.href='equipe.html?org='+encodeURIComponent(ORG)+'&f=DI'+(dxValid()&&S.dx?','+encodeURIComponent(S.dx):'');return;}      /* dirigeant·e : sa fiche de dirigeant et, s'il tient un poste, la fiche de ce poste */
     var nom=prompt('Prénom de la personne à inviter ?',S.names[pid]||'');if(!nom||!nom.trim())return;
     var r=await sb.rpc('vsf_equipe_inviter',{p_org:ORG,p_nom:nom.trim(),p_poste:pid});
     if(r.error||!r.data){msg('L’invitation n’a pas pu être créée pour le moment.');return;}

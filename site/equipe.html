@@ -961,7 +961,10 @@ window.addEventListener('scroll',function(){document.querySelector('.top').class
   if(!P.get('demo'))$('demo').style.display='none';
   if(demoOnly||!window.VSF||!VSF.sb)return;
   var sb=VSF.sb,jeton=P.get('j')||'',dir=!!P.get('org'),org=P.get('org')||null,rattache=false,uid=null;
-  S.saved={lv:{},tr:{}};S.par='';
+  S.saved={lv:{},tr:{}};S.par='';var PARTS=[];
+  function loc(i){var q=PARTS.filter(function(p){return i>=p.off&&i<p.off+p.n;})[0];return q?{k:q.k,j:i-q.off}:{k:S.f,j:i};}
+  function indexDe(fiche,j){var q=PARTS.filter(function(p){return p.k===fiche;})[0];if(q)return q.off+j;return fiche===S.f?j:-1;}
+  var RETOUR='diagnostic-entreprise-v10.html';
   function msg(t){var m=document.getElementById('vsfMsg');if(!m){m=document.createElement('div');m.id='vsfMsg';document.body.appendChild(m);}m.className=t?'':'hide';m.innerHTML=t||'';}
   function fin(texte){document.body.innerHTML='<main style="max-width:640px;margin:18vh auto;padding:0 20px;font-family:Inter,sans-serif"><h1 style="font-size:36px;font-weight:900;margin:0 0 12px">'+texte[0]+'</h1><p style="font-size:17px;color:#333">'+texte[1]+'</p></main>';}
   async function depart(){
@@ -972,10 +975,13 @@ window.addEventListener('scroll',function(){document.querySelector('.top').class
     var pe=await sb.from('vsf_personnes').select('prenom').eq('user_id',uid).maybeSingle();
     if(pe.data&&pe.data.prenom){S.pn=pe.data.prenom;$('pn').value=S.pn;}
     var pf=P.get('f');if(pf&&FICHES.some(function(f){return f.k===pf;})){S.f=pf;}
-    if(dir){                                                          // le dirigeant se positionne comme tout le monde, sur sa propre fiche
+    if(dir){                                                          // le dirigeant se positionne comme tout le monde : sur sa fiche de dirigeant·e ET sur le poste qu'il tient
       S.ok=true;var sec=$('ok').closest('section');if(sec)sec.style.display='none';
-      $('lead1').innerHTML='Positionnez-vous sur votre fiche de dirigeant·e, comme chacun de votre équipe. Vos niveaux ne sont vus que par vous.';
-      FICHES=FICHES.filter(function(f){return f.k==='DI'||f.k===P.get('f');});S.f=S.f||'DI';
+      var ks=(P.get('f')||'DI').split(',').filter(function(k){return FICHES.some(function(f){return f.k===k;});});if(ks.indexOf('DI')<0)ks.unshift('DI');
+      var off=0,sfs=[],noms=[];ks.forEach(function(k){var f=FICHES.filter(function(x){return x.k===k;})[0];PARTS.push({k:k,off:off,n:f.sf.length});off+=f.sf.length;f.sf.forEach(function(x){sfs.push(x);});noms.push(f.n);});
+      FICHES=[{k:ks.join('+'),n:noms.join(' + '),art:0,off:'',sf:sfs}];S.f=FICHES[0].k;
+      $('lead1').innerHTML='Positionnez-vous sur '+(ks.length>1?'vos fiches (<b>'+noms.join('</b> et <b>')+'</b>)':'votre fiche de dirigeant·e')+', comme chacun de votre équipe. Vos niveaux ne sont vus que par vous.';
+      var rt=document.createElement('p');rt.style.cssText='margin:0 0 6px';rt.innerHTML='<a href="'+RETOUR+'" style="font-weight:800;color:#111">← Retour au diagnostic</a>';$('v1').insertBefore(rt,$('v1').firstChild);
     } else {
       if(!jeton){fin(['Ce lien est incomplet.','Demandez un nouveau lien d’invitation à votre dirigeant.']);return;}
       var ap=await sb.rpc('vsf_equipe_apercu',{p_jeton:jeton});
@@ -992,9 +998,9 @@ window.addEventListener('scroll',function(){document.querySelector('.top').class
   }
   async function chargerMoi(){
     var r=await sb.from('vsf_autopositionnements').select('fiche_code,situation_code,niveau,accepte_transmettre,cree_le').order('cree_le',{ascending:false});
-    var vu={};(r.data||[]).forEach(function(x){var k=x.fiche_code+'|'+x.situation_code;if(vu[k])return;vu[k]=1;if(x.fiche_code!==S.f)return;var i=+x.situation_code.split(':')[1];if(isNaN(i))return;S.lv[i]=x.niveau;S.tr[i]=!!x.accepte_transmettre;S.saved.lv[i]=x.niveau;S.saved.tr[i]=!!x.accepte_transmettre;});
+    var vu={};(r.data||[]).forEach(function(x){var k=x.fiche_code+'|'+x.situation_code;if(vu[k])return;vu[k]=1;var j=+x.situation_code.split(':')[1];if(isNaN(j))return;var i=indexDe(x.fiche_code,j);if(i<0)return;S.lv[i]=x.niveau;S.tr[i]=!!x.accepte_transmettre;S.saved.lv[i]=x.niveau;S.saved.tr[i]=!!x.accepte_transmettre;});
     if(org){var o=await sb.from('vsf_objectifs').select('fiche_code,situation_code,niveau_vise').eq('organization_id',org);
-      (o.data||[]).forEach(function(x){if(x.fiche_code!==S.f)return;var i=+x.situation_code.split(':')[1];if(!isNaN(i))S.goal[i]=x.niveau_vise;});}
+      (o.data||[]).forEach(function(x){var j=+x.situation_code.split(':')[1];if(isNaN(j))return;var i=indexDe(x.fiche_code,j);if(i>=0)S.goal[i]=x.niveau_vise;});}
     droits();
   }
   /* « Continuer » de l'étape 1 : rattachement (une fois) avec le consentement, puis positionnement */
@@ -1014,19 +1020,19 @@ window.addEventListener('scroll',function(){document.querySelector('.top').class
   };
   /* chaque niveau choisi est enregistré tout de suite, au nom du salarié (historique conservé) */
   $('cards').addEventListener('click',async function(){
-    if(!rattache)return;var f=S.f;
-    for(var i in S.lv){var l=S.lv[i],t=!!S.tr[i]&&l>=3;
+    if(!rattache)return;for(var i in S.lv){var l=S.lv[i],t=!!S.tr[i]&&l>=3,L=loc(+i);
       if(S.saved.lv[i]===l&&!!S.saved.tr[i]===t)continue;
-      var r=await sb.rpc('vsf_autopositionner',{p_fiche:f,p_situation:f+':'+i,p_niveau:l,p_transmettre:t});
+      var r=await sb.rpc('vsf_autopositionner',{p_fiche:L.k,p_situation:L.k+':'+L.j,p_niveau:l,p_transmettre:t});
       if(r.error){msg('Ce niveau n’a pas pu être enregistré : vérifiez votre connexion, il sera renvoyé au prochain clic.');return;}
       S.saved.lv[i]=l;S.saved.tr[i]=t;msg('');}
   });
   /* « Proposer » : un objectif par situation visée ; le dirigeant valide */
   $('next3').onclick=async function(){
     if(!this.classList.contains('ready'))return;
-    for(var i in S.goal){var r=await sb.rpc('vsf_objectif_proposer',{p_org:org,p_fiche:S.f,p_situation:S.f+':'+i,p_niveau:S.goal[i]});
+    for(var i in S.goal){var L=loc(+i);var r=await sb.rpc('vsf_objectif_proposer',{p_org:org,p_fiche:L.k,p_situation:L.k+':'+L.j,p_niveau:S.goal[i]});
       if(r.error){msg('Votre objectif n’a pas pu être envoyé. Réessayez.');return;}}
     S.sent=true;draw3();msg('');
+    if(dir){var z=$('sent');if(z)z.insertAdjacentHTML('beforeend','<p style="margin:14px 0 0"><a href="'+RETOUR+'" style="font-weight:900;color:#111;font-size:18px">← Retour au diagnostic</a></p>');}
   };
   /* mes droits : retirer mon accord, me détacher (rien n'est supprimé : tout reste dans mon compte) */
   function droits(){
