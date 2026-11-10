@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="robots" content="noindex"><title>Test de l’Éclaireur</title>
+<style>body{font:15px/1.5 Inter,system-ui,sans-serif;margin:24px;max-width:980px}td,th{padding:6px 10px;text-align:left;vertical-align:top;border-bottom:1px solid #ddd}.ok{color:#009e73;font-weight:800}.ko{color:#ff3b1f;font-weight:800}</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script><script src="vsf-auth.js"></script></head>
+<body><h1>Test de l’Éclaireur · 5 paires de métiers</h1><p>Chaque paire : métier de départ (tous ses savoir-faire cochés) → métier visé. Le test échoue si une durée sort de la fourchette attendue.</p>
+<table id="t"><tr><th>Paire</th><th>Attendu</th><th>Source</th><th>En commun</th><th>Nouveau</th><th>Durée</th><th>Test</th></tr></table>
+<iframe id="f" src="eclaireur.html" style="display:none"></iframe>
+<script>
+// [départ (code ROME, nom), visé (nom exact dans l'Éclaireur), durées acceptées, libellé attendu]
+var PAIRES=[
+ ['E1205','Graphiste','Peintre en lettres',['1 à 2 ans','2 à 3 ans'],'proche'],
+ ['F1606','Peintre en bâtiment','Peintre en décor',['6 à 12 mois','1 à 2 ans'],'proche'],
+ ['J1501','Aide-soignant·e','Auxiliaire de vie',['6 à 12 mois','1 à 2 ans'],'très proche'],
+ ['M1203','Comptable','Ébéniste',['3 ans et plus'],'lointain'],
+ ['M1805','Développeur informatique','Maroquinier',['3 ans et plus'],'très lointain']];
+var fr=document.getElementById('f');
+fr.onload=async function(){var E=fr.contentWindow.ECL;for(var i=0;i<60&&!E.pret();i++)await new Promise(function(r){setTimeout(r,500);});
+ for(var k=0;k<PAIRES.length;k++){var p=PAIRES[k];var job=await E.chargerMetier(p[0],p[1]);E.S.job=job;E.S.sf={};job.sf.forEach(function(x,j){E.S.sf[j]=true;});E.S.prev=null;E.S.st=8;
+  var m=E.M.filter(function(x){return x.n.indexOf(p[2])===0;})[0];m._k=null;var X=E.cx(m),d=E.dureeM(m),ok=p[3].indexOf(d)>=0&&(!X.ok||X.nouveau.length>0);
+  var tr=document.createElement('tr');tr.innerHTML='<td>'+p[1]+' → '+p[2]+'</td><td>'+p[4]+'</td><td>'+(m.fiche?'fiche enrichie':'ROME')+'</td><td>'+(X.ok?X.nCom+' sur '+X.nTot+'<br><small>'+X.commun.slice(0,4).join(' · ')+'</small>':'—')+'</td><td>'+(X.ok?X.nouveau.length+'<br><small>'+X.nouveau.slice(0,4).join(' · ')+'</small>':'—')+'</td><td>'+d+(X.ok?' <small>('+Math.round(X.np*100)+' % de nouveau)</small>':'')+'</td><td class="'+(ok?'ok':'ko')+'">'+(ok?'OK':'ÉCHEC')+'</td>';
+  document.getElementById('t').appendChild(tr);}
+ document.title='Test fini';};
+</script></body></html>
