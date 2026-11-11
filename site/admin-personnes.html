@@ -393,7 +393,7 @@ async function actionEntreprise(id, a) {
     if (!m) return; args.p_motif = m;
   }
   if (a === 'supprimer') {
-    if (!(await dialogue('Supprimer définitivement ?', 'L’entreprise « ' + nomE(e) + ' » sera effacée' + ((e.etablissements || 0) + (e.membres || 0) ? ' avec ses ' + pl2(e.etablissements || 0, 'atelier') + ' et ses ' + pl2(e.membres || 0, 'membre') + ' (les comptes des personnes restent)' : '') + '. Cela ne peut pas être annulé.', false, '', 'Supprimer', true))) return;
+    if (!(await dialogue('Supprimer définitivement ?', 'L’entreprise « ' + nomE(e) + ' » sera effacée' + ((e.etablissements || 0) + (e.membres || 0) ? ' avec ses ' + pl2(e.etablissements || 0, 'atelier') + ', ses ' + pl2(e.membres || 0, 'membre') + ' et toutes leurs données d’atelier : clients, projets, devis, conversations… (les comptes des personnes restent)' : '') + '. Cela ne peut pas être annulé.', false, '', 'Supprimer', true))) return;
   }
   var r = await avecCode('vsf_admin_entreprise_action', args, 'Structure protégée');
   if (r.error) { if (!r.error.annule) await dialogue(a === 'supprimer' ? 'Suppression impossible' : 'Action impossible', r.error.message && r.error.message.length < 400 ? r.error.message : 'Échec. Réessayez.', false, '', 'Compris'); return; }
