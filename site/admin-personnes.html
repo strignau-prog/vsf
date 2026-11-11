@@ -37,10 +37,12 @@
   .vol-i > div{padding:0 4px 26px}
   @media (prefers-reduced-motion:reduce){.vol-c,.vol-t .fl{transition:none}}
   .regle{font-size:13.5px;color:var(--cap);margin:0 0 12px;max-width:110ch}
-  .tw{overflow-x:auto}
-  table{width:100%;border-collapse:collapse;font-size:14.5px}
-  th{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--cap);text-align:left;padding:8px 10px;border-bottom:2px solid var(--ink);white-space:nowrap}
-  td{padding:0 10px;height:42px;border-bottom:1px solid var(--line);white-space:nowrap;vertical-align:middle}
+  /* tableaux à la largeur de l'écran : colonnes en pourcentage, une ligne par compte, texte long coupé par « … » (le texte entier au survol) ; sur petit écran, chaque ligne devient une carte */
+  .tw{overflow:visible}
+  table{width:100%;border-collapse:collapse;font-size:14px;table-layout:fixed}
+  th{font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--cap);text-align:left;padding:8px 8px;border-bottom:2px solid var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  td{padding:0 8px;height:40px;border-bottom:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:middle}
+  td.r,th.r{text-align:right}
   tr.sel td{background:#f3f3f3}
   tr.alerte td{background:var(--rouge-pale)}
   td.nom{font-weight:800}
@@ -49,12 +51,24 @@
   .st i{width:9px;height:9px;border-radius:50%;display:inline-block;background:var(--gris)}
   .st.vert i{background:var(--vert)}.st.jaune i{background:var(--jaune)}.st.gris i{background:var(--gris)}
   .mut{color:var(--cap)}
-  .act{display:flex;gap:14px;align-items:center;justify-content:flex-end}
+  .act{display:flex;gap:12px;align-items:center;justify-content:flex-end}
   .lnk{background:none;border:0;padding:0;font:800 14px Inter,sans-serif;color:var(--ink);cursor:pointer;text-decoration:none}
   .lnk:hover{text-decoration:underline}
   .brou{font:800 11px Inter,sans-serif;border:1.5px solid var(--ink);border-radius:999px;padding:1px 8px;margin-left:8px}
   .plus{display:flex;justify-content:flex-end;margin:0 0 8px}
-  .vide{color:var(--cap);padding:10px 0}
+  .vide{color:var(--cap);padding:10px 8px;white-space:normal}
+  .al{display:inline-block;font:800 10.5px Inter,sans-serif;letter-spacing:.04em;text-transform:uppercase;color:#c2321f;background:var(--rouge-pale);border-radius:999px;padding:2px 8px;margin-left:8px;vertical-align:middle}
+  @media (max-width:860px){
+    table,thead,tbody,tr,td{display:block}
+    thead{display:none}
+    tr{border:1.5px solid var(--line);border-radius:14px;padding:6px 12px;margin:0 0 10px}
+    tr.alerte{border-color:#f3c3bb}
+    td{height:auto;min-height:34px;border:0;padding:4px 0;white-space:normal;display:flex;gap:10px;justify-content:space-between;align-items:baseline;overflow:visible}
+    td::before{content:attr(data-l);font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--cap);flex:none}
+    td.nom{font-size:16px}td.nom::before,td.ac::before{display:none}
+    td.ac{justify-content:flex-start;padding-top:8px}
+    .act{justify-content:flex-start;flex-wrap:wrap}
+  }
   .msg{font-weight:700;margin:0 0 10px;min-height:1.2em}
   /* menu ⋯ */
   .men{display:inline-block}
@@ -178,16 +192,24 @@ function volet(id, num, titre, resume, rouge, contenu) {
   return '<section class="vol' + (OUVERT[id] ? ' open' : '') + '" id="vol-' + id + '"><button type="button" class="vol-t" data-vol="' + id + '" aria-expanded="' + (OUVERT[id] ? 'true' : 'false') + '"><span class="n">' + num + ' · ' + E(titre) + '</span><small>' + E(resume) + (rouge ? ' · <b>' + rouge + ' à traiter</b>' : '') + '</small><span class="fl" aria-hidden="true">›</span></button>' +
     '<div class="vol-c"><div class="vol-i"><div>' + contenu + '</div></div></div></section>';
 }
+/* un tableau : colonnes en pourcentage (somme 100), chaque cellule porte son libellé pour l'affichage en cartes sur petit écran */
+function td(l, contenu, classe, titre) { return '<td' + (classe ? ' class="' + classe + '"' : '') + ' data-l="' + E(l) + '"' + (titre ? ' title="' + E(titre) + '"' : '') + '>' + contenu + '</td>'; }
+function tbl(cols, lignes, vide) {
+  return '<div class="tw"><table><colgroup>' + cols.map(function (c) { return '<col style="width:' + c[1] + '%">'; }).join('') + '</colgroup><thead><tr>' + cols.map(function (c) { return '<th' + (c[2] ? ' class="' + c[2] + '"' : '') + ' title="' + E(c[3] || c[0]) + '">' + E(c[0]) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+    (lignes || '<tr><td colspan="' + cols.length + '" class="vide">' + E(vide) + '</td></tr>') + '</tbody></table></div>';
+}
 function tablePersonnes() {
   var L = D.personnes.filter(filtre);
   var corps = L.map(function (p) {
-    var act;
-    if (p.statut === 'invite') act = '<button class="lnk" data-act="relancer" data-id="' + E(p.id) + '">Relancer</button><button class="lnk" data-act="annuler" data-id="' + E(p.id) + '">Annuler</button>';
-    else act = (p.statut === 'a_confirmer' ? '<button class="lnk" data-act="renvoyer" data-id="' + E(p.id) + '">Renvoyer l’e-mail</button>' : '<button class="lnk" data-act="voir" data-id="' + E(p.id) + '">Voir</button>') + menuPlus(p);
-    return '<tr class="' + (ST.sel === p.id ? 'sel' : '') + '"><td class="nom">' + E(nomCell(p)) + '</td><td>' + E(TYPES[p.type] || p.type) + '</td><td>' + premierPlus(p.role ? [p.role] : [], roleLabel) + '</td>' +
-      '<td>' + premierPlus(p.rattachements, function (r) { return r.nom; }) + '</td><td>' + statutCell(p) + '</td><td>' + (p.activite ? jour(p.activite) : '<span class="mut">—</span>') + '</td><td>' + visibleCell(p) + '</td><td><div class="act">' + act + '</div></td></tr>';
+    var id = E(p.id), act;
+    if (p.statut === 'invite') act = '<button class="lnk" data-act="relancer" data-id="' + id + '">Relancer</button><button class="lnk" data-act="annuler" data-id="' + id + '">Annuler</button>';
+    else act = (p.statut === 'a_confirmer' ? '<button class="lnk" data-act="renvoyer" data-id="' + id + '">Renvoyer</button>' : '<button class="lnk" data-act="voir" data-id="' + id + '">Voir</button>') + menuPlus(p);
+    var r = (p.rattachements || [])[0], rn = r ? r.nom : '';
+    return '<tr class="' + (ST.sel === p.id ? 'sel' : '') + '">' + td('Nom', E(nomCell(p)), 'nom', nomCell(p)) + td('Type', E(TYPES[p.type] || p.type)) +
+      td('Rôle', premierPlus(p.role ? [p.role] : [], roleLabel), '', roleLabel(p.role) || '') + td('Rattachement', premierPlus(p.rattachements, function (x) { return x.nom; }), '', rn) +
+      td('Statut', statutCell(p)) + td('Activité', p.activite ? jour(p.activite) : '<span class="mut">—</span>') + td('Vu par l’entreprise', visibleCell(p)) + td('', '<div class="act">' + act + '</div>', 'ac r') + '</tr>';
   }).join('');
-  return '<div class="tw"><table><thead><tr><th>Nom Prénom</th><th>Type</th><th>Rôle</th><th>Rattachements</th><th>Statut</th><th>Activité</th><th>Visible par l’entreprise</th><th></th></tr></thead><tbody>' + (corps || '<tr><td colspan="8" class="vide">Personne ne correspond.</td></tr>') + '</tbody></table></div>';
+  return tbl([['Nom Prénom', 19], ['Type', 9], ['Rôle', 15], ['Rattachement', 17], ['Statut', 13], ['Activité', 8], ['Vu par l’entreprise', 9, '', 'Visible par l’entreprise : la personne accepte que son entreprise voie son nom, son poste et ses niveaux'], ['', 10, 'r']], corps, 'Personne ne correspond.');
 }
 function menuPlus(p) {
   if (p.invitation) return '';
@@ -222,41 +244,52 @@ function dessiner() {
 function majListes() { var t = $('tPers'); if (t) t.innerHTML = tablePersonnes(); document.querySelectorAll('.pil').forEach(function (b) { var f = b.getAttribute('data-filtre'); b.classList.toggle('on', ST.filtre === f); }); }
 function tableEntreprises(q) {
   var L = D.entreprises.filter(function (e) { return (ST.archE || !e.archivee) && q([e.nom, e.dirigeant, e.collectif, (e.ateliers || []).join(' ')].join(' ')); });
+  var OUT = { diag: 'Diagnostic', diagplus: 'Diagnostic +', atelier: 'Atelier', maurice: 'Maurice' };
   var corps = L.map(function (e) {
-    return '<tr class="' + (e.sans_nom ? 'alerte' : '') + '"><td class="nom">' + (e.sans_nom ? (E((e.ateliers || []).join(' · ') || 'Sans nom') + ' <span class="mut" style="font-weight:500">· nom de l’entreprise : ' + E(e.nom_brut || 'vide') + '</span> <button class="lnk" data-act="nommer" data-id="' + E(e.id) + '">Nommer</button>') : E(e.nom) + ((e.ateliers || []).length && (e.ateliers || []).join(' · ') !== e.nom ? ' <span class="mut" style="font-weight:500">· ' + E(e.ateliers.join(' · ')) + '</span>' : '')) + (e.protegee ? ' <span class="brou">protégée</span>' : '') + (e.archivee ? ' <span class="brou">archivée</span>' : (e.bloquee ? ' <span class="brou">suspendue</span>' : '')) + '</td><td class="mut">—</td><td class="mut">—</td><td>' + E(e.dirigeant || '—') + '</td><td>' + (e.membres || 0) + '</td>' +
-      '<td>' + ({ en_cours: '<span class="st jaune"><i></i>En cours</span>', termine: '<span class="st vert"><i></i>Terminé</span>', a_payer: '<span class="st gris"><i></i>À payer</span>' }[e.diagnostic] || '<span class="mut">—</span>') + '</td>' +
-      '<td>' + E((e.outils || []).join(' · ') || '—') + '</td><td>' + E(e.collectif || '—') + '</td><td><div class="act">' + (e.protegee ? '<button class="lnk" data-act="code" data-id="' + E(e.id) + '" data-defini="' + (e.code_defini ? '1' : '0') + '">' + (e.code_defini ? 'Changer le code' : 'Définir le code') + '</button>' : '') + '<button class="lnk" data-act="voir-e" data-id="' + E(e.id) + '">Voir</button><span class="men"><button class="lnk" data-act="menu-e" data-id="' + E(e.id) + '" aria-label="Plus d’actions" aria-haspopup="true">⋯</button></span></div></td></tr>';
+    var nom = nomE(e), id = E(e.id);
+    var nomHtml = E(nom) + (e.sans_nom ? '<span class="al" title="Nom de l’entreprise : ' + E(e.nom_brut || 'vide') + '">à nommer</span>' : '') + (e.protegee ? '<span class="brou">protégée</span>' : '') + (e.archivee ? '<span class="brou">archivée</span>' : (e.bloquee ? '<span class="brou">suspendue</span>' : ''));
+    var dg = ({ en_cours: '<span class="st jaune"><i></i>En cours</span>', termine: '<span class="st vert"><i></i>Terminé</span>', a_payer: '<span class="st gris"><i></i>À payer</span>' })[e.diagnostic] || '<span class="mut">—</span>';
+    var outils = (e.outils || []).map(function (o) { return OUT[o] || o; }).join(' · ');
+    return '<tr class="' + (e.sans_nom ? 'alerte' : '') + '">' + td('Entreprise', nomHtml, 'nom', nom + (e.sans_nom ? ' (nom de l’entreprise : ' + (e.nom_brut || 'vide') + ')' : '')) + td('Dirigeant', E(e.dirigeant || '—'), '', e.dirigeant || '') + td('Membres', String(e.membres || 0), 'r') + td('Diagnostic', dg) +
+      td('Outils', E(outils || '—'), '', outils) + td('Collectif', E(e.collectif || '—'), '', e.collectif || '') +
+      td('', '<div class="act"><button class="lnk" data-act="voir-e" data-id="' + id + '">Voir</button><span class="men"><button class="lnk" data-act="menu-e" data-id="' + id + '" aria-label="Plus d’actions" aria-haspopup="true">⋯</button></span></div>', 'ac r') + '</tr>';
   }).join('');
-  return '<div class="tw"><table><thead><tr><th>Nom</th><th>Adresse</th><th>Secteur</th><th>Dirigeant</th><th>Membres</th><th>Diagnostic</th><th>Outils</th><th>Collectif</th><th></th></tr></thead><tbody>' + (corps || '<tr><td colspan="9" class="vide">Aucune entreprise.</td></tr>') + '</tbody></table></div>' + (D.entreprises.some(function (e) { return e.archivee; }) ? '<p class="regle" style="margin-top:10px"><button class="lnk" data-act="archivees">' + (ST.archE ? 'Masquer les entreprises archivées' : 'Afficher les ' + D.entreprises.filter(function (e) { return e.archivee; }).length + ' entreprise(s) archivée(s)') + '</button></p>' : '');
+  var arch = D.entreprises.filter(function (e) { return e.archivee; }).length;
+  return tbl([['Entreprise', 27], ['Dirigeant', 19], ['Membres', 7, 'r'], ['Diagnostic', 11], ['Outils', 11], ['Collectif', 16], ['', 9, 'r']], corps, 'Aucune entreprise.') +
+    (arch ? '<p class="regle" style="margin-top:10px"><button class="lnk" data-act="archivees">' + (ST.archE ? 'Masquer les entreprises archivées' : 'Afficher les ' + arch + ' entreprise(s) archivée(s)') + '</button></p>' : '');
 }
 function tableCollectifs(q) {
   var L = D.collectifs.filter(function (c) { return q([c.nom, c.sigle].join(' ')); });
   var corps = L.map(function (c) {
-    return '<tr class="' + (c.statut === 'en_attente' ? 'alerte' : '') + '"><td class="nom">' + E(c.nom) + (c.statut === 'en_attente' ? '<span class="brou">brouillon</span>' : '') + '</td>' +
-      '<td>' + (c.sigle ? E(c.sigle) : '<span class="mut">—</span>') + ' <button class="lnk" data-act="sigle" data-id="' + E(c.id) + '" data-sigle="' + E(c.sigle || '') + '">' + (c.sigle ? 'Modifier' : 'Définir') + '</button></td>' +
-      '<td>' + (c.genre === 'groupe' ? 'Groupe' : 'Fédération') + '</td><td>' + E(c.parent || '—') + '</td><td>' + (c.membres || 0) + '</td><td class="mut">—</td><td class="mut">—</td><td><div class="act"><a class="lnk" href="collectifs.html">Voir</a></div></td></tr>';
+    var id = E(c.id);
+    return '<tr class="' + (c.statut === 'en_attente' ? 'alerte' : '') + '">' + td('Nom', E(c.nom) + (c.statut === 'en_attente' ? '<span class="brou">brouillon</span>' : ''), 'nom', c.nom) +
+      td('Sigle', (c.sigle ? E(c.sigle) : '<span class="mut">—</span>') + ' <button class="lnk" data-act="sigle" data-id="' + id + '" data-sigle="' + E(c.sigle || '') + '">' + (c.sigle ? 'Modifier' : 'Définir') + '</button>') +
+      td('Genre', c.genre === 'groupe' ? 'Groupe' : 'Fédération') + td('Parent', E(c.parent || '—'), '', c.parent || '') + td('Membres', String(c.membres || 0), 'r') +
+      td('', '<div class="act"><a class="lnk" href="collectifs.html">Voir</a></div>', 'ac r') + '</tr>';
   }).join('');
-  return '<p class="regle">Le sigle est unique, en minuscules, de 2 à 8 lettres : il donne l’adresse /collectif/sigle.</p><div class="tw"><table><thead><tr><th>Nom</th><th>Sigle</th><th>Genre</th><th>Parent</th><th>Membres</th><th>Forfait groupe</th><th>Admin collectif</th><th></th></tr></thead><tbody>' + (corps || '<tr><td colspan="8" class="vide">Aucun collectif.</td></tr>') + '</tbody></table></div>';
+  return '<p class="regle">Le sigle est unique, en minuscules, de 2 à 8 lettres : il donne l’adresse /collectif/sigle. « Forfait groupe » et « Admin collectif » s’ajouteront quand la base les gardera.</p>' +
+    tbl([['Collectif', 38], ['Sigle', 20], ['Genre', 12], ['Parent', 16], ['Membres', 7, 'r'], ['', 7, 'r']], corps, 'Aucun collectif.');
 }
 function tableAmbassadeurs(q) {
   var L = D.ambassadeurs.filter(function (a) { return q([a.nom, a.atelier].join(' ')); });
   var corps = L.map(function (a) {
     var st = { valide: '<span class="st vert"><i></i>Validé</span>', en_attente: '<span class="st jaune"><i></i>Proposé</span>', suspendu: '<span class="st gris"><i></i>Suspendu</span>' }[a.statut] || E(a.statut);
-    return '<tr><td class="nom">' + E(a.nom) + '</td><td class="mut">—</td><td>' + E(a.atelier || '—') + '</td><td>' + st + '</td><td>' + (a.offres || 0) + '</td><td>0 · <button class="lnk" disabled title="Bientôt">Habiliter</button></td><td>70 %</td></tr>';
+    return '<tr>' + td('Nom', E(a.nom), 'nom', a.nom) + td('Atelier', E(a.atelier || '—'), '', a.atelier || '') + td('Statut', st) + td('Offres', String(a.offres || 0), 'r') + td('Correcteurs', '0 · <button class="lnk" disabled title="Bientôt">Habiliter</button>') + td('Reversement', '70 %', 'r') + '</tr>';
   }).join('');
-  return '<p class="regle">Aucune offre ne s’ouvre sans un ambassadeur validé · un correcteur est habilité à la fois par toi et par l’ambassadeur · sa rémunération est comprise dans les 70 % de l’ambassadeur.</p><div class="tw"><table><thead><tr><th>Nom Prénom</th><th>Métier</th><th>Atelier</th><th>Statut</th><th>Offres</th><th>Correcteurs</th><th>Reversement</th></tr></thead><tbody>' + (corps || '<tr><td colspan="7" class="vide">Aucun ambassadeur.</td></tr>') + '</tbody></table></div>';
+  return '<p class="regle">Aucune offre ne s’ouvre sans un ambassadeur validé · un correcteur est habilité à la fois par toi et par l’ambassadeur · sa rémunération est comprise dans les 70 % de l’ambassadeur.</p>' +
+    tbl([['Nom Prénom', 28], ['Atelier', 24], ['Statut', 13], ['Offres', 8, 'r'], ['Correcteurs', 15], ['Reversement', 12, 'r']], corps, 'Aucun ambassadeur.');
 }
 function tableLiens(q) {
   var L = D.liens.filter(function (a) { return q([a.libelle].join(' ')); });
   var corps = L.map(function (a) {
     var exp = new Date(a.expire_le) < new Date(), etat = !a.actif ? ['Révoqué', 'gris'] : exp ? ['Expiré', 'gris'] : (a.ouvertures ? ['Actif', 'vert'] : ['Jamais utilisé', 'gris']);
-    return '<tr data-id="' + E(a.id) + '"><td class="nom">' + E(a.libelle) + '</td><td class="mut">—</td><td>' + (a.type === 'entreprise' ? 'Entreprise' : 'Travailleur') + '</td><td>' + jour(a.cree_le) + '</td><td>' + jour(a.expire_le) + '</td><td>' + (a.ouvertures || 0) + ' fois</td><td><span class="st ' + etat[1] + '"><i></i>' + etat[0] + '</span></td>' +
-      '<td><div class="act"><button class="lnk" data-act="lien-env" data-code="' + E(a.code) + '" data-nom="' + E(a.libelle) + '">Envoyer</button><button class="lnk" data-act="lien-copier" data-code="' + E(a.code) + '">Copier</button><button class="lnk" data-act="lien-prolonger" data-id="' + E(a.id) + '">Prolonger</button><button class="lnk" data-act="lien-supprimer" data-id="' + E(a.id) + '">Supprimer</button></div></td></tr>';
+    return '<tr data-id="' + E(a.id) + '">' + td('Libellé', E(a.libelle), 'nom', a.libelle) + td('Diagnostic', a.type === 'entreprise' ? 'Entreprise' : 'Travailleur') + td('Créé', jour(a.cree_le)) + td('Expire', jour(a.expire_le)) + td('Utilisé', (a.ouvertures || 0) + ' fois', 'r') +
+      td('Statut', '<span class="st ' + etat[1] + '"><i></i>' + etat[0] + '</span>') +
+      td('', '<div class="act"><button class="lnk" data-act="lien-env" data-code="' + E(a.code) + '" data-nom="' + E(a.libelle) + '">Envoyer</button><button class="lnk" data-act="lien-copier" data-code="' + E(a.code) + '">Copier</button><span class="men"><button class="lnk" data-act="menu-l" data-id="' + E(a.id) + '" aria-label="Plus d’actions" aria-haspopup="true">⋯</button></span></div>', 'ac r') + '</tr>';
   }).join('');
   return '<div class="plus"><a class="lnk" href="admin-acces.html">+ Créer</a></div><p class="regle">Un lien et un mot de passe pour faire un diagnostic sans créer de compte · 30 jours par défaut. Le mot de passe ne s’affiche qu’une fois, à la création. Les invitations à rejoindre une entreprise sont dans « Personnes », avec le statut « invité ».</p>' +
-    '<div class="tw"><table><thead><tr><th>Libellé</th><th>Destinataire</th><th>Diagnostic</th><th>Créé</th><th>Expire</th><th>Utilisé</th><th>Statut</th><th></th></tr></thead><tbody>' + (corps || '<tr><td colspan="8" class="vide">Aucun lien.</td></tr>') + '</tbody></table></div>';
+    tbl([['Libellé', 25], ['Diagnostic', 13], ['Créé', 9], ['Expire', 9], ['Utilisé', 9, 'r'], ['Statut', 15], ['', 20, 'r']], corps, 'Aucun lien.');
 }
-
 /* ---------- fiche du compte (panneau de droite) ---------- */
 async function voir(id) {
   var p = D.personnes.filter(function (x) { return x.id === id; })[0]; if (!p) return;
@@ -293,7 +326,7 @@ function voirE(id) {
     '<button data-fe="' + (sp ? 'retablir' : 'suspendre') + '" data-id="' + E(id) + '">' + (sp ? 'Rétablir' : 'Suspendre') + '</button>' +
     '<button data-fe="' + (ar ? 'restaurer' : 'archiver') + '" data-id="' + E(id) + '">' + (ar ? 'Restaurer' : 'Archiver') + '</button>' +
     '<button class="danger" data-fe="supprimer" data-id="' + E(id) + '">Supprimer définitivement</button></div>' +
-    '<p class="cap" style="margin-top:8px">Suppression : seulement une entreprise vide (sans atelier ni membre), nom retapé, inscrite dans l’historique. Sinon : suspendre ou archiver.' + (e.protegee ? ' Cette structure demande son code pour chaque action.' : '') + '</p>';
+    '<p class="cap" style="margin-top:8px">Suppression : seulement une entreprise vide (sans atelier ni membre), inscrite dans l’historique. Sinon : suspendre ou archiver.' + (e.protegee ? ' Cette structure demande son code pour chaque action.' : '') + '</p>';
 }
 async function actionEntreprise(id, a) {
   var e = D.entreprises.filter(function (x) { return x.id === id; })[0]; if (!e) return;
@@ -303,8 +336,7 @@ async function actionEntreprise(id, a) {
     if (!m) return; args.p_motif = m;
   }
   if (a === 'supprimer') {
-    if (!(await dialogue('Supprimer définitivement ?', 'L’entreprise « ' + nomE(e) + ' » sera effacée. Seule une entreprise vide (sans atelier ni membre) peut l’être, et cela ne peut pas être annulé.', false, '', 'Continuer', true))) return;
-    var n = await dialogue('Dernière confirmation', 'Retape le nom exact de l’entreprise : ' + (e.nom_brut || '(sans nom)'), true, '', 'Supprimer', true); if (!n) return; args.p_confirmation = n;
+    if (!(await dialogue('Supprimer définitivement ?', 'L’entreprise « ' + nomE(e) + ' » sera effacée. Seule une entreprise vide (sans atelier ni membre) peut l’être, et cela ne peut pas être annulé.', false, '', 'Supprimer', true))) return;
   }
   var r = await avecCode('vsf_admin_entreprise_action', args, 'Structure protégée');
   if (r.error) { msg(r.error.annule ? '' : (r.error.message && r.error.message.length < 200 ? r.error.message : 'Échec. Réessayez.')); return; }
@@ -385,10 +417,15 @@ document.addEventListener('click', async function (e) {
     if (act === 'menu-e') {
       var had2 = document.querySelector('.men-fl[data-pour="' + id2 + '"]'); if (had2) { fermerMenus(); return; }
       var en = D.entreprises.filter(function (x) { return x.id === id2; })[0], sp = en.bloquee && !en.archivee, ar = en.archivee;
-      ouvrirMenu(t, '<li><button data-fe="' + (sp ? 'retablir' : 'suspendre') + '" data-id="' + E(id2) + '">' + (sp ? 'Rétablir' : 'Suspendre') + '</button></li><li><button data-fe="' + (ar ? 'restaurer' : 'archiver') + '" data-id="' + E(id2) + '">' + (ar ? 'Restaurer' : 'Archiver') + '</button></li><li><button class="danger" data-fe="supprimer" data-id="' + E(id2) + '">Supprimer</button></li>');
+      ouvrirMenu(t, (en.sans_nom ? '<li><button data-act="nommer" data-id="' + E(id2) + '">Nommer</button></li>' : '') + (en.protegee ? '<li><button data-act="code" data-id="' + E(id2) + '" data-defini="' + (en.code_defini ? '1' : '0') + '">' + (en.code_defini ? 'Changer le code' : 'Définir le code') + '</button></li>' : '') + '<li><button data-fe="' + (sp ? 'retablir' : 'suspendre') + '" data-id="' + E(id2) + '">' + (sp ? 'Rétablir' : 'Suspendre') + '</button></li><li><button data-fe="' + (ar ? 'restaurer' : 'archiver') + '" data-id="' + E(id2) + '">' + (ar ? 'Restaurer' : 'Archiver') + '</button></li><li><button class="danger" data-fe="supprimer" data-id="' + E(id2) + '">Supprimer</button></li>');
       document.querySelector('.men-fl').setAttribute('data-pour', id2); return;
     }
     if (act === 'voir-e') return voirE(id2);
+    if (act === 'menu-l') {
+      var had3 = document.querySelector('.men-fl[data-pour="' + id2 + '"]'); if (had3) { fermerMenus(); return; }
+      ouvrirMenu(t, '<li><button data-act="lien-prolonger" data-id="' + E(id2) + '">Prolonger de 30 jours</button></li><li><button class="danger" data-act="lien-supprimer" data-id="' + E(id2) + '">Supprimer</button></li>');
+      document.querySelector('.men-fl').setAttribute('data-pour', id2); return;
+    }
     if (act === 'archivees') { ST.archE = !ST.archE; OUVERT.entreprises = true; dessiner(); return; }
     if (act === 'renvoyer') {
       var p3 = D.personnes.filter(function (x) { return x.id === id2; })[0];
