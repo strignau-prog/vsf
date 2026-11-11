@@ -57,10 +57,10 @@
   .vide{color:var(--cap);padding:10px 0}
   .msg{font-weight:700;margin:0 0 10px;min-height:1.2em}
   /* menu ⋯ */
-  .men{position:relative;display:inline-block}
-  .men > ul{position:absolute;right:0;top:100%;z-index:20;margin:4px 0 0;padding:6px;list-style:none;background:#fff;border:2px solid var(--ink);border-radius:12px;min-width:190px;box-shadow:0 10px 30px #0002}
-  .men li button{display:block;width:100%;text-align:left;background:none;border:0;padding:10px 12px;font:700 14px Inter,sans-serif;color:var(--ink);cursor:pointer;border-radius:8px}
-  .men li button:hover{background:#f3f3f3}.men li button.danger{color:#c2321f}
+  .men{display:inline-block}
+  .men-fl{position:fixed;z-index:60;margin:0;padding:6px;list-style:none;background:#fff;border:2px solid var(--ink);border-radius:12px;min-width:200px;box-shadow:0 12px 34px #0003}
+  .men-fl li button{display:block;width:100%;text-align:left;background:none;border:0;padding:10px 12px;font:700 14px Inter,sans-serif;color:var(--ink);cursor:pointer;border-radius:8px}
+  .men-fl li button:hover{background:#f3f3f3}.men-fl li button.danger{color:#c2321f}
   /* fiche du compte */
   .fiche{position:fixed;top:92px;right:clamp(12px,2vw,32px);width:min(400px,calc(100vw - 24px));max-height:calc(100svh - 110px);overflow:auto;background:#fff;border:2.5px solid var(--ink);border-radius:20px;padding:22px 24px;z-index:30;box-shadow:0 18px 50px #0003}
   .fiche[hidden]{display:none}
@@ -103,7 +103,7 @@ var $ = function (id) { return document.getElementById(id); };
 var E = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; }); };
 var sb = VSF.sb;
 var D = { personnes: [], entreprises: [], collectifs: [], ambassadeurs: [], liens: [] };
-var ST = { filtre: 'tout', q: '', sel: null, moi: null };
+var ST = { filtre: 'tout', q: '', sel: null, moi: null, archE: false };
 var jour = function (d) { if (!d) return '—'; try { return new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }).replace('.', '') + '.'; } catch (e) { return '—'; } };
 var jourLong = function (d) { if (!d) return '—'; try { return new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }); } catch (e) { return '—'; } };
 var norm = function (s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); };
@@ -221,13 +221,13 @@ function dessiner() {
 }
 function majListes() { var t = $('tPers'); if (t) t.innerHTML = tablePersonnes(); document.querySelectorAll('.pil').forEach(function (b) { var f = b.getAttribute('data-filtre'); b.classList.toggle('on', ST.filtre === f); }); }
 function tableEntreprises(q) {
-  var L = D.entreprises.filter(function (e) { return q([e.nom, e.dirigeant, e.collectif].join(' ')); });
+  var L = D.entreprises.filter(function (e) { return (ST.archE || !e.archivee) && q([e.nom, e.dirigeant, e.collectif, (e.ateliers || []).join(' ')].join(' ')); });
   var corps = L.map(function (e) {
-    return '<tr class="' + (e.sans_nom ? 'alerte' : '') + '"><td class="nom">' + (e.sans_nom ? (E((e.ateliers || []).join(' · ') || 'Sans nom') + ' <span class="mut" style="font-weight:500">· nom de l’entreprise : ' + E(e.nom_brut || 'vide') + '</span> <button class="lnk" data-act="nommer" data-id="' + E(e.id) + '">Nommer</button>') : E(e.nom) + ((e.ateliers || []).length && (e.ateliers || []).join(' · ') !== e.nom ? ' <span class="mut" style="font-weight:500">· ' + E(e.ateliers.join(' · ')) + '</span>' : '')) + (e.protegee ? ' <span class="brou">protégée</span>' : '') + (e.bloquee ? ' <span class="brou">suspendue</span>' : '') + '</td><td class="mut">—</td><td class="mut">—</td><td>' + E(e.dirigeant || '—') + '</td><td>' + (e.membres || 0) + '</td>' +
+    return '<tr class="' + (e.sans_nom ? 'alerte' : '') + '"><td class="nom">' + (e.sans_nom ? (E((e.ateliers || []).join(' · ') || 'Sans nom') + ' <span class="mut" style="font-weight:500">· nom de l’entreprise : ' + E(e.nom_brut || 'vide') + '</span> <button class="lnk" data-act="nommer" data-id="' + E(e.id) + '">Nommer</button>') : E(e.nom) + ((e.ateliers || []).length && (e.ateliers || []).join(' · ') !== e.nom ? ' <span class="mut" style="font-weight:500">· ' + E(e.ateliers.join(' · ')) + '</span>' : '')) + (e.protegee ? ' <span class="brou">protégée</span>' : '') + (e.archivee ? ' <span class="brou">archivée</span>' : (e.bloquee ? ' <span class="brou">suspendue</span>' : '')) + '</td><td class="mut">—</td><td class="mut">—</td><td>' + E(e.dirigeant || '—') + '</td><td>' + (e.membres || 0) + '</td>' +
       '<td>' + ({ en_cours: '<span class="st jaune"><i></i>En cours</span>', termine: '<span class="st vert"><i></i>Terminé</span>', a_payer: '<span class="st gris"><i></i>À payer</span>' }[e.diagnostic] || '<span class="mut">—</span>') + '</td>' +
-      '<td>' + E((e.outils || []).join(' · ') || '—') + '</td><td>' + E(e.collectif || '—') + '</td><td><div class="act">' + (e.protegee ? '<button class="lnk" data-act="code" data-id="' + E(e.id) + '" data-defini="' + (e.code_defini ? '1' : '0') + '">' + (e.code_defini ? 'Changer le code' : 'Définir le code') + '</button>' : '') + '<a class="lnk" href="entites.html">Voir</a></div></td></tr>';
+      '<td>' + E((e.outils || []).join(' · ') || '—') + '</td><td>' + E(e.collectif || '—') + '</td><td><div class="act">' + (e.protegee ? '<button class="lnk" data-act="code" data-id="' + E(e.id) + '" data-defini="' + (e.code_defini ? '1' : '0') + '">' + (e.code_defini ? 'Changer le code' : 'Définir le code') + '</button>' : '') + '<button class="lnk" data-act="voir-e" data-id="' + E(e.id) + '">Voir</button><span class="men"><button class="lnk" data-act="menu-e" data-id="' + E(e.id) + '" aria-label="Plus d’actions" aria-haspopup="true">⋯</button></span></div></td></tr>';
   }).join('');
-  return '<div class="tw"><table><thead><tr><th>Nom</th><th>Adresse</th><th>Secteur</th><th>Dirigeant</th><th>Membres</th><th>Diagnostic</th><th>Outils</th><th>Collectif</th><th></th></tr></thead><tbody>' + (corps || '<tr><td colspan="9" class="vide">Aucune entreprise.</td></tr>') + '</tbody></table></div>';
+  return '<div class="tw"><table><thead><tr><th>Nom</th><th>Adresse</th><th>Secteur</th><th>Dirigeant</th><th>Membres</th><th>Diagnostic</th><th>Outils</th><th>Collectif</th><th></th></tr></thead><tbody>' + (corps || '<tr><td colspan="9" class="vide">Aucune entreprise.</td></tr>') + '</tbody></table></div>' + (D.entreprises.some(function (e) { return e.archivee; }) ? '<p class="regle" style="margin-top:10px"><button class="lnk" data-act="archivees">' + (ST.archE ? 'Masquer les entreprises archivées' : 'Afficher les ' + D.entreprises.filter(function (e) { return e.archivee; }).length + ' entreprise(s) archivée(s)') + '</button></p>' : '');
 }
 function tableCollectifs(q) {
   var L = D.collectifs.filter(function (c) { return q([c.nom, c.sigle].join(' ')); });
@@ -278,6 +278,39 @@ async function voir(id) {
     '<button class="danger" data-fa="supprimer" data-id="' + E(id) + '">Supprimer définitivement</button></div><p class="cap" style="margin-top:8px">Suppression : double confirmation, inscrite dans l’historique.</p>';
 }
 
+function nomE(e) { return (e.sans_nom ? ((e.ateliers || []).join(' · ') || 'Sans nom') : e.nom) || 'Sans nom'; }
+function voirE(id) {
+  var e = D.entreprises.filter(function (x) { return x.id === id; })[0]; if (!e) return;
+  ST.sel = null; majListes();
+  var etat = e.archivee ? 'Archivée' : (e.bloquee ? 'Suspendue' : 'Active');
+  var sp = e.bloquee && !e.archivee, ar = e.archivee;
+  $('fiche').hidden = false;
+  $('fiche').innerHTML = '<button class="x" id="fx" aria-label="Fermer">×</button><p class="cap">Fiche de l’entreprise</p><h2>' + E(nomE(e)) + '</h2><p class="cap">' + E([e.protegee ? 'protégée par un code' : '', etat].filter(Boolean).join(' · ')) + '</p>' +
+    '<h3>Identité</h3><p>Nom de l’entreprise : ' + E(e.nom_brut || '—') + '</p><p>' + ((e.ateliers || []).length ? 'Ateliers : ' + E(e.ateliers.join(' · ')) : 'Aucun atelier') + '</p><p>Dirigeant : ' + E(e.dirigeant || '—') + '</p>' +
+    '<h3>Activité</h3><p>' + (e.membres || 0) + ' membre' + ((e.membres || 0) > 1 ? 's' : '') + ' · ' + (e.etablissements || 0) + ' établissement' + ((e.etablissements || 0) > 1 ? 's' : '') + '</p><p>Diagnostic : ' + E(({ en_cours: 'en cours', termine: 'terminé', a_payer: 'à payer' })[e.diagnostic] || '—') + '</p><p>Outils : ' + E((e.outils || []).join(' · ') || '—') + '</p><p>Collectif : ' + E(e.collectif || '—') + '</p>' +
+    '<div class="note">Contenu des diagnostics, devis, clients et preuves : non visibles en admin. Seuls des nombres et des états apparaissent.</div>' +
+    '<h3>Gérer l’entreprise</h3><div class="btns">' +
+    '<button data-fe="' + (sp ? 'retablir' : 'suspendre') + '" data-id="' + E(id) + '">' + (sp ? 'Rétablir' : 'Suspendre') + '</button>' +
+    '<button data-fe="' + (ar ? 'restaurer' : 'archiver') + '" data-id="' + E(id) + '">' + (ar ? 'Restaurer' : 'Archiver') + '</button>' +
+    '<button class="danger" data-fe="supprimer" data-id="' + E(id) + '">Supprimer définitivement</button></div>' +
+    '<p class="cap" style="margin-top:8px">Suppression : seulement une entreprise vide (sans atelier ni membre), nom retapé, inscrite dans l’historique. Sinon : suspendre ou archiver.' + (e.protegee ? ' Cette structure demande son code pour chaque action.' : '') + '</p>';
+}
+async function actionEntreprise(id, a) {
+  var e = D.entreprises.filter(function (x) { return x.id === id; })[0]; if (!e) return;
+  var args = { p_org: id, p_action: a };
+  if (a === 'suspendre' || a === 'archiver') {
+    var m = await dialogue(a === 'suspendre' ? 'Suspendre l’entreprise ?' : 'Archiver l’entreprise ?', 'L’accès de ses membres est fermé et ses adhésions à un collectif sont suspendues. Rien n’est effacé. Dis en quelques mots pourquoi.', true, '', a === 'suspendre' ? 'Suspendre' : 'Archiver');
+    if (!m) return; args.p_motif = m;
+  }
+  if (a === 'supprimer') {
+    if (!(await dialogue('Supprimer définitivement ?', 'L’entreprise « ' + nomE(e) + ' » sera effacée. Seule une entreprise vide (sans atelier ni membre) peut l’être, et cela ne peut pas être annulé.', false, '', 'Continuer', true))) return;
+    var n = await dialogue('Dernière confirmation', 'Retape le nom exact de l’entreprise : ' + (e.nom_brut || '(sans nom)'), true, '', 'Supprimer', true); if (!n) return; args.p_confirmation = n;
+  }
+  var r = await avecCode('vsf_admin_entreprise_action', args, 'Structure protégée');
+  if (r.error) { msg(r.error.annule ? '' : (r.error.message && r.error.message.length < 200 ? r.error.message : 'Échec. Réessayez.')); return; }
+  OUVERT.entreprises = true; $('fiche').hidden = true; await charger(); dessiner();
+  msg(a === 'supprimer' ? 'Entreprise supprimée. L’action est dans l’historique.' : 'Fait.');
+}
 /* ---------- actions ---------- */
 function msg(t) { var m = $('msg'); if (m) m.textContent = t || ''; }
 function dialogue(titre, texte, avecSaisie, valeurDefaut, labelOk, danger, masque) {
@@ -293,7 +326,16 @@ function dialogue(titre, texte, avecSaisie, valeurDefaut, labelOk, danger, masqu
     if (inp) inp.onkeydown = function (e) { if (e.key === 'Enter') fin(inp.value); if (e.key === 'Escape') fin(null); };
   });
 }
-function fermerMenus() { document.querySelectorAll('.men > ul').forEach(function (u) { u.remove(); }); }
+function fermerMenus() { document.querySelectorAll('.men-fl').forEach(function (u) { u.remove(); }); }
+/* le menu ⋯ s'ouvre sous le bouton, fixé à l'écran : jamais coupé par le tableau ni par le bord de la fenêtre */
+function ouvrirMenu(bouton, html) {
+  fermerMenus();
+  var ul = document.createElement('ul'); ul.className = 'men-fl'; ul.innerHTML = html; document.body.appendChild(ul);
+  var r = bouton.getBoundingClientRect(), w = ul.offsetWidth, h = ul.offsetHeight;
+  var gauche = Math.min(Math.max(8, r.right - w), innerWidth - w - 8), haut = r.bottom + 4;
+  if (haut + h > innerHeight - 8) haut = Math.max(8, r.top - h - 4);
+  ul.style.left = gauche + 'px'; ul.style.top = haut + 'px';
+}
 /* structure protégée : la base répond « code requis » (VSF10) ; on demande le code puis on réessaie une fois */
 async function avecCode(nom, args, titre) {
   var r = await appeler(nom, args);
@@ -312,10 +354,11 @@ async function changerStatut(id, st) {
 }
 document.addEventListener('click', async function (e) {
   var t;
-  if (!e.target.closest('.men')) fermerMenus();
+  if (!e.target.closest('.men, .men-fl')) fermerMenus();
   if ((t = e.target.closest('[data-vol]'))) { var id = t.getAttribute('data-vol'); OUVERT[id] = !OUVERT[id]; var s = $('vol-' + id); s.classList.toggle('open', !!OUVERT[id]); t.setAttribute('aria-expanded', OUVERT[id] ? 'true' : 'false'); return; }
   if ((t = e.target.closest('[data-filtre]'))) { ST.filtre = t.getAttribute('data-filtre'); OUVERT.personnes = true; dessiner(); return; }
   if (e.target.closest('#fx')) { $('fiche').hidden = true; ST.sel = null; majListes(); return; }
+  if ((t = e.target.closest('[data-fe]'))) { fermerMenus(); return actionEntreprise(t.getAttribute('data-id'), t.getAttribute('data-fe')); }
   if ((t = e.target.closest('[data-fa]'))) {
     var uid = t.getAttribute('data-id'), a = t.getAttribute('data-fa'), p = D.personnes.filter(function (x) { return x.id === uid; })[0];
     if (a === 'suspendre') return changerStatut(uid, 'suspendu');
@@ -334,11 +377,19 @@ document.addEventListener('click', async function (e) {
     var act = t.getAttribute('data-act'), id2 = t.getAttribute('data-id');
     if (act === 'voir') return voir(id2);
     if (act === 'menu') {
-      var had = t.parentNode.querySelector('ul'); fermerMenus(); if (had) return;
+      var had = document.querySelector('.men-fl[data-pour="' + id2 + '"]'); if (had) { fermerMenus(); return; }
       var p2 = D.personnes.filter(function (x) { return x.id === id2; })[0], susp = p2.statut === 'suspendu', arch = p2.statut === 'archive';
-      var ul = document.createElement('ul'); ul.innerHTML = '<li><button data-fa="' + (susp ? 'retablir' : 'suspendre') + '" data-id="' + E(id2) + '">' + (susp ? 'Rétablir' : 'Suspendre') + '</button></li><li><button data-fa="' + (arch ? 'restaurer' : 'archiver') + '" data-id="' + E(id2) + '">' + (arch ? 'Restaurer' : 'Archiver') + '</button></li><li><button class="danger" data-fa="supprimer" data-id="' + E(id2) + '">Supprimer</button></li>';
-      t.parentNode.appendChild(ul); return;
+      ouvrirMenu(t, '<li><button data-fa="' + (susp ? 'retablir' : 'suspendre') + '" data-id="' + E(id2) + '">' + (susp ? 'Rétablir' : 'Suspendre') + '</button></li><li><button data-fa="' + (arch ? 'restaurer' : 'archiver') + '" data-id="' + E(id2) + '">' + (arch ? 'Restaurer' : 'Archiver') + '</button></li><li><button class="danger" data-fa="supprimer" data-id="' + E(id2) + '">Supprimer</button></li>');
+      document.querySelector('.men-fl').setAttribute('data-pour', id2); return;
     }
+    if (act === 'menu-e') {
+      var had2 = document.querySelector('.men-fl[data-pour="' + id2 + '"]'); if (had2) { fermerMenus(); return; }
+      var en = D.entreprises.filter(function (x) { return x.id === id2; })[0], sp = en.bloquee && !en.archivee, ar = en.archivee;
+      ouvrirMenu(t, '<li><button data-fe="' + (sp ? 'retablir' : 'suspendre') + '" data-id="' + E(id2) + '">' + (sp ? 'Rétablir' : 'Suspendre') + '</button></li><li><button data-fe="' + (ar ? 'restaurer' : 'archiver') + '" data-id="' + E(id2) + '">' + (ar ? 'Restaurer' : 'Archiver') + '</button></li><li><button class="danger" data-fe="supprimer" data-id="' + E(id2) + '">Supprimer</button></li>');
+      document.querySelector('.men-fl').setAttribute('data-pour', id2); return;
+    }
+    if (act === 'voir-e') return voirE(id2);
+    if (act === 'archivees') { ST.archE = !ST.archE; OUVERT.entreprises = true; dessiner(); return; }
     if (act === 'renvoyer') {
       var p3 = D.personnes.filter(function (x) { return x.id === id2; })[0];
       if (!p3 || !p3.email) { msg('Pas d’adresse à qui écrire.'); return; }
