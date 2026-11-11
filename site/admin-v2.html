@@ -78,7 +78,7 @@ var pl = function (n, s, p) { return n + ' ' + (n > 1 ? (p || s + 's') : s); };
 function versA2F() { location.replace('admin-2fa.html?suite=' + encodeURIComponent('admin-v2.html')); }
 async function demarrer() {
   var s = await sb.auth.getSession();
-  if (!s.data.session) { location.replace('connexion.html?suite=' + encodeURIComponent(location.href)); return; }
+  if (!s.data.session) { location.replace('connexion.html?mode=connexion&suite=' + encodeURIComponent(location.href)); return; }
   var et = await sb.rpc('vsf_a2f_etat');
   if (et.error || !et.data) { $('app').innerHTML = '<h1>Pas encore disponible.</h1><p class="sous">Les migrations 46 à 48 ne sont pas installées.</p>'; return; }
   if (!et.data.super_admin) { $('app').innerHTML = '<h1>Accès réservé.</h1><a class="lk" href="./">Retour</a>'; return; }

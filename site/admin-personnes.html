@@ -138,7 +138,7 @@ async function appeler(nom, args) {
 }
 async function demarrer() {
   var s = await sb.auth.getSession();
-  if (!s.data.session) { location.replace('connexion.html?suite=' + encodeURIComponent(location.href)); return; }
+  if (!s.data.session) { location.replace('connexion.html?mode=connexion&suite=' + encodeURIComponent(location.href)); return; }
   ST.moi = s.data.session.user;
   var et = await sb.rpc('vsf_a2f_etat');
   if (et.error || !et.data) { $('app').innerHTML = '<h1>Pas encore disponible.</h1><p class="mut">Les migrations 46 et 47 ne sont pas installées.</p>'; return; }

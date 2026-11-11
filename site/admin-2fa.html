@@ -43,7 +43,7 @@ function suite() { location.replace(SUITE); }
 
 async function demarrer() {
   var s = await sb.auth.getSession();
-  if (!s.data.session) { location.replace('connexion.html?suite=' + encodeURIComponent(location.href)); return; }
+  if (!s.data.session) { location.replace('connexion.html?mode=connexion&suite=' + encodeURIComponent(location.href)); return; }
   var et = await sb.rpc('vsf_a2f_etat');
   if (et.error || !et.data) { return ecran('<h1>Pas encore disponible.</h1><p class="legende">La migration 46 n’est pas installée.</p><a class="bouton" href="./">Retour</a>'); }
   if (!et.data.super_admin) { return ecran('<h1>Accès réservé.</h1><a class="bouton" href="./">Retour</a>'); }
