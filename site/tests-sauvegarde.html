@@ -40,7 +40,7 @@ iframe{position:absolute;left:-9999px;width:1300px;height:900px;border:0}
     'if(n==="vsf_diagnostic_enregistrer"){if(P.__reseau==="coupe")return Promise.reject(new Error("reseau"));if(P.__reseau==="expire")return Promise.resolve({error:{message:"JWT expired",code:"PGRST301"}});P.__db.etat=a.p_etat;P.__db.maj=new Date().toISOString();return Promise.resolve({data:"ok"});}'+
     'if(n==="vsf_equipe_lister")return Promise.resolve({error:{message:"absent"}});return Promise.resolve({data:null});}}};})();<\/script>';
   async function ouvrir(){
-    var html=await (await fetch('diagnostic-entreprise-v10.html?'+Date.now())).text();
+    var html=await (await fetch('diagnostic-entreprise.html?'+Date.now())).text();
     html=html.replace('<script src="vsf-auth.js"><\/script>',FAUX).replace('<script src="vsf-menu.js"><\/script>','');
     var f=document.createElement('iframe');f.srcdoc=html;cadres.appendChild(f);
     await new Promise(function(r){f.addEventListener('load',r);});await pause(1800);return f;

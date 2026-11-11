@@ -981,7 +981,7 @@ window.addEventListener('scroll',function(){document.querySelector('.top').class
   S.saved={lv:{},tr:{}};S.par='';var PARTS=[];
   function loc(i){var q=PARTS.filter(function(p){return i>=p.off&&i<p.off+p.n;})[0];return q?{k:q.k,j:i-q.off}:{k:S.f,j:i};}
   function indexDe(fiche,j){var q=PARTS.filter(function(p){return p.k===fiche;})[0];if(q)return j<q.n?q.off+j:-1;var f=FICHES.filter(function(x){return x.k===S.f;})[0];return (fiche===S.f&&f&&j<f.sf.length)?j:-1;}
-  var RETOUR='diagnostic-entreprise-v10.html';
+  var RETOUR='diagnostic-entreprise.html';
   function msg(t){var m=document.getElementById('vsfMsg');if(!m){m=document.createElement('div');m.id='vsfMsg';document.body.appendChild(m);}m.className=t?'':'hide';m.innerHTML=t||'';}
   function fin(texte){document.body.innerHTML='<main style="max-width:640px;margin:18vh auto;padding:0 20px;font-family:Inter,sans-serif"><h1 style="font-size:36px;font-weight:900;margin:0 0 12px">'+texte[0]+'</h1><p style="font-size:17px;color:#333">'+texte[1]+'</p></main>';}
   function lbl3(t){var b=$('next3'),l=b&&b.querySelector('.lbl');if(l)l.textContent=t;}
