@@ -485,10 +485,10 @@ document.addEventListener('click', async function (e) {
     if (a === 'archiver') return changerStatut(uid, 'archive');
     if (a === 'exporter') { var f = (await appeler('vsf_admin_personne_fiche', { p_user: uid })).data || {}; var blob = new Blob([JSON.stringify(f, null, 2)], { type: 'application/json' }); var l = document.createElement('a'); l.href = URL.createObjectURL(blob); l.download = 'compte-' + uid.slice(0, 8) + '.json'; l.click(); return; }
     if (a === 'supprimer') {
-      var c1 = await dialogue('Supprimer définitivement ?', 'Le compte de ' + nomCell(p) + ' sera effacé (RGPD). Les factures restent conservées comme la loi l’exige. Cela ne peut pas être annulé.', false, '', 'Continuer', true); if (!c1) return;
+      var c1 = await dialogue('Supprimer définitivement ?', 'Le compte de ' + nomCell(p) + ' sera effacé (RGPD), avec ses invitations et ses rattachements. Les factures restent conservées comme la loi l’exige. Cela ne peut pas être annulé.', false, '', 'Continuer', true); if (!c1) return;
       var c2 = await dialogue('Dernière confirmation', 'Écris SUPPRIMER pour effacer ce compte.', true, '', 'Supprimer', true); if (c2 !== 'SUPPRIMER') { msg('Suppression annulée.'); return; }
-      var r = await appeler('vsf_admin_personne_supprimer', { p_user: uid, p_confirmation: 'SUPPRIMER' });
-      if (r.error) { msg(r.error.message && r.error.message.length < 160 ? r.error.message : 'Échec. Réessayez.'); return; }
+      var r = await avecCode('vsf_admin_personne_supprimer', { p_user: uid, p_confirmation: 'SUPPRIMER' }, 'Membre d’une structure protégée');
+      if (r.error) { if (!r.error.annule) await dialogue('Suppression impossible', r.error.message && r.error.message.length < 400 ? r.error.message : 'Échec. Réessayez.', false, '', 'Compris'); return; }
       $('fiche').hidden = true; ST.sel = null; await charger(); dessiner(); msg('Compte supprimé. L’action est dans l’historique.'); return;
     }
   }
