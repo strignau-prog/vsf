@@ -97,6 +97,32 @@
   }
   afficherNom();
 
+  /* Un super administrateur voit « Admin » dans le menu, sur toutes les pages. Le rôle est vérifié par la base (vsf_est_super_admin) ; la réponse est gardée le temps de la session. */
+  function poserAdmin() {
+    var blocs = haut.querySelectorAll('#vsfMenuDroite, .vsf-mi-mobile');
+    for (var i = 0; i < blocs.length; i++) {
+      if (blocs[i].querySelector('[data-admin-lien]')) continue;
+      var a = document.createElement('a'); a.className = 'vsf-mi vsf-mi-droite' + (/^admin/.test(page) ? ' on' : ''); a.href = 'admin-v2.html'; a.setAttribute('data-admin-lien', '1'); a.textContent = 'Admin';
+      if (/^admin/.test(page)) a.setAttribute('aria-current', 'page');
+      blocs[i].insertBefore(a, blocs[i].firstChild);
+    }
+  }
+  async function verifierAdmin() {
+    var v = session(); if (!v) return;
+    var cle = 'vsf_admin_menu', c = null;
+    try { c = JSON.parse(sessionStorage.getItem(cle) || 'null'); } catch (e) { /* rien */ }
+    if (c && c.id === v.user.id) { if (c.ok) poserAdmin(); return; }
+    try {
+      var r = await fetch('https://uuuigousvpijskbdhcal.supabase.co/rest/v1/rpc/vsf_est_super_admin',
+        { method: 'POST', headers: { apikey: 'sb_publishable__YuNj5XCo5YF8lwhwTu5OQ_RDM1Eesp', Authorization: 'Bearer ' + (v.access_token || ''), 'Content-Type': 'application/json' }, body: '{}' });
+      if (!r.ok) return;
+      var ok = (await r.json()) === true;
+      try { sessionStorage.setItem(cle, JSON.stringify({ id: v.user.id, ok: ok })); } catch (e) { /* rien */ }
+      if (ok) poserAdmin();
+    } catch (e) { /* le menu reste sans « Admin » */ }
+  }
+  verifierAdmin();
+
   /* boutons utiles des anciens bandeaux : on les garde, à droite du menu */
   function recuperer() {
     var anciens = document.querySelectorAll('body > header.haut');
