@@ -102,14 +102,8 @@ async function charger() {
   if (r.error && (r.error.code === 'VSF09' || /Double authentification/i.test(r.error.message || ''))) { versA2F(); return; }
   A = r.data || null; A && (A._err = ''); if (!A) A = { _err: 'Le tableau n’est pas disponible : la migration 48 est-elle installée ?', a_decider: [], personnes: {}, contenus: {}, argent: {}, conformite: {} };
 }
-function menuAdmin() {
-  var blocs = document.querySelectorAll('#vsfMenuDroite, .vsf-mi-mobile');
-  for (var i = 0; i < blocs.length; i++) {
-    if (blocs[i].querySelector('[data-admin-lien]')) continue;
-    var a = document.createElement('a'); a.className = 'vsf-mi vsf-mi-droite on'; a.href = 'admin-v2.html'; a.setAttribute('aria-current', 'page'); a.setAttribute('data-admin-lien', '1'); a.textContent = 'Admin';
-    blocs[i].insertBefore(a, blocs[i].firstChild);
-  }
-}
+/* « Admin » est posé par le menu du site (vsf-menu.js), seulement pour un super administrateur */
+function menuAdmin() { }
 function volet(id, num, titre, resume, rouge, html) {
   return '<section class="vol' + (OUVERT[id] ? ' open' : '') + '" id="vol-' + id + '"><button type="button" class="vol-t" data-vol="' + id + '" aria-expanded="' + (OUVERT[id] ? 'true' : 'false') + '"><span class="n">' + num + ' · ' + E(titre) + '</span><small>' + E(resume) + (rouge ? ' · <b>' + rouge + ' à traiter</b>' : '') + '</small><span class="fl" aria-hidden="true">›</span></button><div class="vol-c"><div class="vol-i"><div>' + html + '</div></div></div></section>';
 }

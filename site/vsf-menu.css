@@ -22,14 +22,18 @@ html.vsf-menu-on body > .top{position:static}
 .vsf-mi-droite-bloc{display:flex;align-items:center;gap:clamp(10px,1.4vw,22px);flex:none}
 .vsf-mi-mobile{display:none}
 
-/* une entrée : même taille, même graisse partout */
-.vsf-mi{position:relative;display:inline-flex;align-items:center;min-height:44px;font:700 14px/1.2 Inter,'Helvetica Neue',Helvetica,Arial,sans-serif;color:#111;text-decoration:none;white-space:nowrap;transition:color .18s ease}
-.vsf-mi:hover{color:var(--vsf-menu-on)}
-.vsf-mi.on{color:var(--vsf-menu-on)}
-.vsf-mi.on::after{content:"";position:absolute;left:50%;bottom:3px;width:7px;height:7px;margin-left:-3.5px;border-radius:50%;background:var(--vsf-menu-point)}
-.vsf-mi-cta{box-shadow:inset 0 -3px 0 #111;padding-bottom:2px}
-.vsf-mi-cta.on{box-shadow:inset 0 -3px 0 #111}
-.vsf-mi-cta.on::after{bottom:-8px}
+/* une entrée : même taille, même graisse, même couleur partout (pas de capitales, pas de jaune) ; la page courante = UN trait noir sous le mot */
+.vsf-mi{position:relative;display:inline-flex;align-items:center;min-height:44px;font:700 14px/1.2 Inter,'Helvetica Neue',Helvetica,Arial,sans-serif;color:#111;text-decoration:none;white-space:nowrap;text-transform:none;letter-spacing:0;background:none;border:0;padding:0;cursor:pointer;transition:color .18s ease}
+.vsf-mi:hover{color:#555}
+.vsf-mi .t{padding-bottom:2px}
+.vsf-mi.on .t{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:6px;text-decoration-color:#111}
+.vsf-user{position:relative;display:inline-flex;align-items:center}
+.vsf-chev{margin-left:5px;font-size:.95em;line-height:1;transition:transform .15s}
+.vsf-mi-user[aria-expanded=true] .vsf-chev{transform:rotate(180deg)}
+.vsf-user-menu{position:absolute;right:0;top:calc(100% - 2px);min-width:190px;background:#fff;border:2px solid #111;border-radius:12px;padding:6px;box-shadow:0 12px 30px rgba(0,0,0,.18);z-index:70}
+.vsf-user-menu[hidden]{display:none}
+.vsf-user-menu a,.vsf-user-menu button{display:block;width:100%;text-align:left;padding:10px 12px;font:700 14px/1.2 Inter,'Helvetica Neue',Helvetica,Arial,sans-serif;color:#111;background:none;border:0;border-radius:8px;text-decoration:none;cursor:pointer;text-transform:none;letter-spacing:0}
+.vsf-user-menu a:hover,.vsf-user-menu button:hover,.vsf-user-menu a:focus-visible,.vsf-user-menu button:focus-visible{background:#f3f3f3;outline:none}
 .vsf-menu a:focus-visible,.vsf-menu button:focus-visible{outline:2px solid #111;outline-offset:3px}
 .vsf-mi-bouton{display:none;background:none;border:0;padding:0 4px;min-height:44px;font:800 13px/1 Inter,'Helvetica Neue',Arial,sans-serif;text-transform:uppercase;letter-spacing:.08em;color:#111;cursor:pointer}
 
@@ -41,9 +45,7 @@ html.vsf-menu-on body > .top{position:static}
   .vsf-mi-liste{display:none;flex-direction:column;align-items:flex-start;gap:0;width:100%;flex-basis:100%;order:3;padding:4px 0 14px}
   .vsf-mi-liste.ouvert{display:flex}
   .vsf-mi-liste .vsf-mi{min-height:48px;font-size:18px;width:100%}
-  .vsf-mi-liste .vsf-mi.on::after{left:auto;right:0;margin-left:0;bottom:auto;top:calc(50% - 3.5px)}
   .vsf-mi-mobile{display:flex;flex-direction:column;align-items:flex-start;width:100%}
-  .vsf-mi-mobile .vsf-mi-cta{box-shadow:none}
 }
 @media (prefers-reduced-motion:reduce){.vsf-menu,.vsf-mi{transition:none}}
 @media print{.vsf-menu{display:none}}
@@ -61,24 +63,6 @@ html.vsf-menu-on body > .top{position:static}
 body.page-publique,html[data-public] body{font-size:16px}
 body.page-publique main h1:not(.focus),html[data-public] main h1{font-size:clamp(2.4rem,6vw,4.4rem);letter-spacing:-.035em;line-height:1.02;max-width:none}
 
-/* nom de la personne connectée, avant « Mon compte » et « Déconnexion » */
-.vsf-mi-nom{font-weight:800;white-space:nowrap;max-width:16em;overflow:hidden;text-overflow:ellipsis;color:#111}
-@media (max-width:900px){.vsf-mi-mobile .vsf-mi-nom{display:block;padding:8px 0;max-width:none}}
-
-/* le menu ne se chevauche jamais : logo réduit dans le menu, textes plus serrés, nom tronqué, et bascule vers « MENU » plus tôt pour une personne connectée */
+/* le menu ne se chevauche jamais : logo réduit dans le menu et espacements serrés */
 .vsf-menu a[data-logo]{font-size:clamp(1.2rem,1.8vw,1.8rem) !important;flex:none}
-.vsf-mi-nom{max-width:min(14em,14vw)}
 @media (max-width:90rem){.vsf-mi{font-size:13.5px}}
-@media (max-width:80rem){
-  html.vsf-connecte .vsf-menu-in{flex-wrap:wrap;gap:0 16px}
-  html.vsf-connecte .vsf-m-marque{margin-right:auto}
-  html.vsf-connecte .vsf-mi-bouton{display:inline-block}
-  html.vsf-connecte .vsf-mi-droite-bloc{display:none}
-  html.vsf-connecte .vsf-mi-liste{display:none;flex-direction:column;align-items:flex-start;gap:0;width:100%;flex-basis:100%;order:3;padding:4px 0 14px}
-  html.vsf-connecte .vsf-mi-liste.ouvert{display:flex}
-  html.vsf-connecte .vsf-mi-liste .vsf-mi{min-height:48px;font-size:18px;width:100%}
-  html.vsf-connecte .vsf-mi-liste .vsf-mi.on::after{left:auto;right:0;margin-left:0;bottom:auto;top:calc(50% - 3.5px)}
-  html.vsf-connecte .vsf-mi-mobile{display:flex;flex-direction:column;align-items:flex-start;width:100%}
-  html.vsf-connecte .vsf-mi-mobile .vsf-mi-cta{box-shadow:none}
-  html.vsf-connecte .vsf-mi-mobile .vsf-mi-nom{display:block;padding:8px 0;max-width:none}
-}

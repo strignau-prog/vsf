@@ -191,14 +191,8 @@ async function charger() {
   D.personnes = (a[0].data || []); D.entreprises = (a[1].data || []); D.collectifs = (a[2].data || []); D.ambassadeurs = (a[3].data || []); D.liens = (a[4].data || []); D.invitations = (a[5] && a[5].data) || [];
   D.erreur = a[0].error ? 'La liste n’est pas disponible : la migration 47 est-elle installée ?' : '';
 }
-function menuAdmin() {
-  var blocs = document.querySelectorAll('#vsfMenuDroite, .vsf-mi-mobile');
-  for (var i = 0; i < blocs.length; i++) {
-    if (blocs[i].querySelector('[data-admin-lien]')) continue;
-    var a = document.createElement('a'); a.className = 'vsf-mi vsf-mi-droite on'; a.href = 'admin.html'; a.setAttribute('aria-current', 'page'); a.setAttribute('data-admin-lien', '1'); a.textContent = 'Admin';
-    blocs[i].insertBefore(a, blocs[i].firstChild);
-  }
-}
+/* « Admin » est posé par le menu du site (vsf-menu.js), seulement pour un super administrateur */
+function menuAdmin() { }
 
 /* ---------- outils d'affichage ---------- */
 /* le « poste » d'une invitation porte le code de la fiche (PL#1) : on affiche le nom du métier */

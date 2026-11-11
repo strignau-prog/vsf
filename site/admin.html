@@ -64,15 +64,8 @@ function messageErreur(e) {
   return 'Échec. Réessayez.';
 }
 
-/* l'en-tête d'un administrateur : Admin · Mon compte · Déconnexion (« Mon compte » et « Déconnexion » viennent du menu du site) */
-function menuAdmin() {
-  var blocs = document.querySelectorAll('#vsfMenuDroite, .vsf-mi-mobile');
-  for (var i = 0; i < blocs.length; i++) {
-    if (blocs[i].querySelector('[data-admin-lien]')) continue;
-    var a = document.createElement('a'); a.className = 'vsf-mi vsf-mi-droite on'; a.href = 'admin.html'; a.setAttribute('aria-current', 'page'); a.setAttribute('data-admin-lien', '1'); a.textContent = 'Admin';
-    blocs[i].insertBefore(a, blocs[i].firstChild);
-  }
-}
+/* « Admin » est posé par le menu du site (vsf-menu.js), seulement pour un super administrateur */
+function menuAdmin() { }
 /* ───── accès ───── */
 async function demarrer() {
   var s = await sb.auth.getSession();
