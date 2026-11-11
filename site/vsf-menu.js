@@ -43,6 +43,7 @@
     '</div>';
 
   document.documentElement.classList.add('vsf-menu-on');
+  if (connecte()) document.documentElement.classList.add('vsf-connecte');
   document.body.insertBefore(haut, document.body.firstChild);
 
   var bouton = haut.querySelector('#vsfMenuBouton'), liste = haut.querySelector('#vsfMenuListe');

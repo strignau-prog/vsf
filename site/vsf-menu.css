@@ -16,10 +16,10 @@ html.vsf-menu-on body > .top{position:static}
 
 .vsf-menu{position:sticky;top:0;z-index:60;background:#fff;color:#111;font-family:Inter,'Helvetica Neue',Helvetica,Arial,sans-serif;transition:box-shadow .2s}
 .vsf-menu.sh{box-shadow:0 6px 14px -10px rgba(0,0,0,.35)}
-.vsf-menu-in{display:flex;align-items:center;gap:28px;padding:8px clamp(16px,4vw,56px);min-height:60px}
+.vsf-menu-in{display:flex;align-items:center;gap:clamp(12px,1.8vw,28px);padding:8px clamp(16px,3vw,56px);min-height:60px}
 .vsf-m-marque{flex:none;font-weight:900;color:#111;text-decoration:none;letter-spacing:-.02em;font-size:1.0625rem}
-.vsf-mi-liste{display:flex;align-items:center;justify-content:center;gap:clamp(14px,2vw,26px);flex:1;min-width:0}
-.vsf-mi-droite-bloc{display:flex;align-items:center;gap:22px;flex:none}
+.vsf-mi-liste{display:flex;align-items:center;justify-content:center;gap:clamp(10px,1.4vw,26px);flex:1 1 auto;min-width:0}
+.vsf-mi-droite-bloc{display:flex;align-items:center;gap:clamp(10px,1.4vw,22px);flex:none}
 .vsf-mi-mobile{display:none}
 
 /* une entrée : même taille, même graisse partout */
@@ -64,3 +64,21 @@ body.page-publique main h1:not(.focus),html[data-public] main h1{font-size:clamp
 /* nom de la personne connectée, avant « Mon compte » et « Déconnexion » */
 .vsf-mi-nom{font-weight:800;white-space:nowrap;max-width:16em;overflow:hidden;text-overflow:ellipsis;color:#111}
 @media (max-width:900px){.vsf-mi-mobile .vsf-mi-nom{display:block;padding:8px 0;max-width:none}}
+
+/* le menu ne se chevauche jamais : logo réduit dans le menu, textes plus serrés, nom tronqué, et bascule vers « MENU » plus tôt pour une personne connectée */
+.vsf-menu a[data-logo]{font-size:clamp(1.2rem,1.8vw,1.8rem) !important;flex:none}
+.vsf-mi-nom{max-width:min(14em,14vw)}
+@media (max-width:90rem){.vsf-mi{font-size:13.5px}}
+@media (max-width:80rem){
+  html.vsf-connecte .vsf-menu-in{flex-wrap:wrap;gap:0 16px}
+  html.vsf-connecte .vsf-m-marque{margin-right:auto}
+  html.vsf-connecte .vsf-mi-bouton{display:inline-block}
+  html.vsf-connecte .vsf-mi-droite-bloc{display:none}
+  html.vsf-connecte .vsf-mi-liste{display:none;flex-direction:column;align-items:flex-start;gap:0;width:100%;flex-basis:100%;order:3;padding:4px 0 14px}
+  html.vsf-connecte .vsf-mi-liste.ouvert{display:flex}
+  html.vsf-connecte .vsf-mi-liste .vsf-mi{min-height:48px;font-size:18px;width:100%}
+  html.vsf-connecte .vsf-mi-liste .vsf-mi.on::after{left:auto;right:0;margin-left:0;bottom:auto;top:calc(50% - 3.5px)}
+  html.vsf-connecte .vsf-mi-mobile{display:flex;flex-direction:column;align-items:flex-start;width:100%}
+  html.vsf-connecte .vsf-mi-mobile .vsf-mi-cta{box-shadow:none}
+  html.vsf-connecte .vsf-mi-mobile .vsf-mi-nom{display:block;padding:8px 0;max-width:none}
+}
