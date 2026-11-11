@@ -36,6 +36,20 @@
   .vol-i{overflow:hidden;min-height:0}
   .vol-i > div{padding:0 4px 26px}
   @media (prefers-reduced-motion:reduce){.vol-c,.vol-t .fl{transition:none}}
+  @media (max-width:700px){
+    .vol-t{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 10px;align-items:start;padding:18px 2px}
+    .vol-t .n{grid-column:1;font-size:22px;line-height:1.15}
+    .vol-t small{grid-column:1;font-size:13.5px;line-height:1.35}
+    .vol-t .fl{grid-column:2;grid-row:1;padding-top:4px}
+    .pil{padding:10px 14px}
+  }
+  @media (max-width:860px){
+    .fiche{top:var(--hh,64px);right:0;left:0;bottom:0;width:auto;max-height:none;border:0;border-radius:0;box-shadow:none;padding:0 16px calc(130px + env(safe-area-inset-bottom))}
+    .fh{margin:0 -16px 6px;padding:12px 16px}
+    .act .lnk{padding:9px 14px;border:1.5px solid var(--line);border-radius:999px;min-height:40px}
+    .act .lnk[data-act=voir],.act .lnk[data-act=voir-e],.act .lnk[data-act=voir-c]{background:var(--ink);color:#fff;border-color:var(--ink)}
+    td.ac{padding-top:10px}
+  }
   .regle{font-size:13.5px;color:var(--cap);margin:0 0 12px;max-width:110ch}
   /* tableaux à la largeur de l'écran : colonnes en pourcentage, une ligne par compte, texte long coupé par « … » (le texte entier au survol) ; sur petit écran, chaque ligne devient une carte */
   .tw{overflow:visible}
@@ -76,9 +90,16 @@
   .men-fl li button{display:block;width:100%;text-align:left;background:none;border:0;padding:10px 12px;font:700 14px Inter,sans-serif;color:var(--ink);cursor:pointer;border-radius:8px}
   .men-fl li button:hover{background:#f3f3f3}.men-fl li button.danger{color:#c2321f}
   /* fiche du compte */
-  .fiche{position:fixed;top:92px;right:clamp(12px,2vw,32px);width:min(400px,calc(100vw - 24px));max-height:calc(100svh - 110px);overflow:auto;background:#fff;border:2.5px solid var(--ink);border-radius:20px;padding:22px 24px;z-index:30;box-shadow:0 18px 50px #0003}
+  .fiche{position:fixed;top:92px;right:clamp(12px,2vw,32px);width:min(430px,calc(100vw - 24px));max-height:calc(100svh - 110px);overflow:auto;background:#fff;border:2.5px solid var(--ink);border-radius:20px;padding:0 24px 28px;z-index:30;box-shadow:0 18px 50px #0003}
+  .fh{position:sticky;top:0;z-index:3;display:flex;align-items:center;gap:14px;margin:0 -24px 6px;padding:14px 24px;background:#fff;border-bottom:1.5px solid var(--line)}
+  .fh button{flex:none;font:800 15px Inter,sans-serif;background:none;border:0;padding:8px 0;cursor:pointer;color:var(--ink)}
+  .fh b{font-weight:900;font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .fiche .aide{font-size:13px;color:var(--cap);line-height:1.45;margin:10px 0 0}
+  .fiche .ck{display:flex;gap:10px;align-items:center;margin:14px 0 0;font-weight:700;font-size:14.5px;text-transform:none;letter-spacing:0;color:var(--ink)}
+  .fiche .ck input{width:20px;height:20px;flex:none;accent-color:#111}
+  .toast{position:fixed;left:12px;right:12px;bottom:calc(18px + env(safe-area-inset-bottom));max-width:560px;margin:0 auto;background:#111;color:#fff;padding:14px 18px;border-radius:14px;z-index:80;font:700 15px/1.35 Inter,sans-serif;box-shadow:0 10px 30px #0004}
+  .toast.err{background:#c2321f}
   .fiche[hidden]{display:none}
-  .fiche .x{position:absolute;right:16px;top:12px;background:none;border:0;font-size:24px;cursor:pointer;color:var(--ink)}
   .fiche .cap{font-size:13px;color:var(--cap);margin:0}
   .fiche h2{font-size:26px;font-weight:900;letter-spacing:-.02em;margin:2px 0 2px}
   .fiche h3{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--cap);margin:22px 0 8px;padding-top:16px;border-top:1px solid var(--line)}
@@ -99,10 +120,16 @@
   .dlg h3{margin:0 0 8px;font-size:24px;font-weight:900}
   .dlg input{font:800 20px Inter,sans-serif;width:100%;padding:10px 0;border:0;border-bottom:2px solid var(--ink);margin:10px 0 18px}
   .dlg .r{display:flex;gap:12px;justify-content:flex-end}
-  .dlg button{font:800 15px Inter,sans-serif;padding:11px 18px;border-radius:12px;border:2px solid var(--ink);background:#fff;cursor:pointer}
+  .dlg button{font:800 15px Inter,sans-serif;padding:11px 18px;border-radius:12px;border:2px solid var(--ink);background:#fff;color:var(--ink);cursor:pointer;-webkit-appearance:none;appearance:none}
   .dlg button.ok{background:var(--ink);color:#fff}
+  .dlg .er{color:#c2321f;font-weight:800;margin:0 0 6px}
   .dlg button.danger.ok{background:#c2321f;border-color:#c2321f}
   .leg{font-size:13px;color:var(--cap);margin:30px 0 0}
+  /* petit écran : la fiche prend tout l'écran sous le menu (placé après les règles de base pour les remplacer) */
+  @media (max-width:860px){
+    .fiche{top:var(--hh,64px);right:0;left:0;bottom:0;width:auto;max-height:none;border:0;border-radius:0;box-shadow:none;padding:0 16px calc(130px + env(safe-area-inset-bottom))}
+    .fh{margin:0 -16px 6px;padding:12px 16px}
+  }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="vsf-auth.js"></script>
@@ -304,19 +331,22 @@ async function voir(id) {
   var f = (await appeler('vsf_admin_personne_fiche', { p_user: id })).data || {};
   var rt = (f.rattachements || []);
   var arch = p.statut === 'archive', susp = p.statut === 'suspendu';
-  $('fiche').hidden = false;
-  $('fiche').innerHTML = '<button class="x" id="fx" aria-label="Fermer">×</button><p class="cap">Fiche du compte · ID ' + E(idCourt(id)) + '</p><h2>' + E(nomCell(p)) + '</h2><p class="cap">' + E([f.email || '', TYPES[p.type] || '', roleLabel(p.role) || ''].filter(Boolean).join(' · ')) + '</p>' +
-    (p.invitation ? '' : '<h3>Modifier</h3><label for="fPrenom">Prénom</label><input type="text" id="fPrenom" value="' + E(p.prenom || '') + '" maxlength="80" autocomplete="off"><label for="fNom">Nom</label><input type="text" id="fNom" value="' + E(p.nom || '') + '" maxlength="80" autocomplete="off"><button type="button" class="sv" data-save="personne" data-id="' + E(id) + '">Enregistrer</button>') +
-    '<h3>Identité</h3><p>Créé le ' + E(jourLong(f.cree_le)) + (f.verifie_le ? ' · vérifié le ' + E(jourLong(f.verifie_le)) : '') + '</p><p>Dernière connexion : ' + E(f.activite ? jourLong(f.activite) : '—') + '</p>' +
-    '<h3>Rattachements</h3>' + (rt.length ? rt.map(function (r) { return '<p>● ' + E(r.nom) + ' · ' + E(roleLabel(r.role) || '') + ' · depuis le ' + E(jourLong(r.depuis)) + '</p>'; }).join('') : '<p class="mut">Aucun</p>') +
+  var lecture = '<h3>Informations</h3><p>Créé le ' + E(jourLong(f.cree_le)) + (f.verifie_le ? ' · vérifié le ' + E(jourLong(f.verifie_le)) : '') + '</p><p>Dernière connexion : ' + E(f.activite ? jourLong(f.activite) : '—') + '</p>' +
+    '<h3>Rattachements</h3>' + (rt.length ? rt.map(function (r) { return '<p>● ' + E(r.nom) + ' · ' + E(roleLabel(r.role) || '') + (r.depuis ? ' · depuis le ' + E(jourLong(r.depuis)) : '') + '</p>'; }).join('') : '<p class="mut">Aucun</p>') +
     '<h3>Visible par l’entreprise</h3>' + (rt.length && rt[0].accord_le && !rt[0].accord_retire_le ? '<p>Oui · accord donné le ' + E(jourLong(rt[0].accord_le)) + '</p><p class="mut">Son dirigeant voit son nom, son poste et ses niveaux. La personne peut retirer cet accord à tout moment.</p>' : (rt.length && rt[0].accord_retire_le ? '<p>Non · accord retiré le ' + E(jourLong(rt[0].accord_retire_le)) + '</p>' : '<p class="mut">—</p>')) +
-    '<h3>Diagnostics et modules</h3><p>' + (f.diagnostics || 0) + ' diagnostic' + ((f.diagnostics || 0) > 1 ? 's' : '') + ' d’entreprise</p>' +
-    '<h3>Coffre-fort</h3><p>' + (f.preuves || 0) + ' preuve' + ((f.preuves || 0) > 1 ? 's' : '') + '</p><div class="note">Contenu des preuves, boussole, échanges avec Thérèse et niveaux : non visibles en admin.</div>' +
-    '<h3>Historique</h3>' + ((f.historique || []).length ? f.historique.map(function (h) { return '<p>' + E(jourLong(h.le)) + ' · ' + E(h.action) + '</p>'; }).join('') : '<p class="mut">Rien pour l’instant.</p>') +
+    '<h3>Diagnostics et coffre-fort</h3><p>' + (f.diagnostics || 0) + ' diagnostic' + ((f.diagnostics || 0) > 1 ? 's' : '') + ' d’entreprise · ' + (f.preuves || 0) + ' preuve' + ((f.preuves || 0) > 1 ? 's' : '') + '</p><div class="note">Contenu des preuves, boussole, échanges avec Thérèse et niveaux : non visibles en admin.</div>' +
+    '<h3>Historique</h3>' + ((f.historique || []).length ? f.historique.map(function (h) { return '<p>' + E(jourLong(h.le)) + ' · ' + E(h.action) + '</p>'; }).join('') : '<p class="mut">Rien pour l’instant.</p>');
+  var form = p.invitation ? '<p class="aide">Invitation sans compte : elle se relance ou s’annule depuis la liste.</p>' :
+    '<h3>Identité</h3>' + champ('fPrenom', 'Prénom', f.prenom != null ? f.prenom : p.prenom, { max: 80 }) + champ('fNom', 'Nom', f.nom != null ? f.nom : p.nom, { max: 80 }) +
+    champ('fEmail', 'Adresse e-mail de connexion', f.email, { max: 200, mode: 'email', off: !!f.sans_compte, ph: f.sans_compte ? 'Lien de diagnostic sans compte' : '' }) +
+    '<h3>Coordonnées</h3>' + champ('fTel', 'Téléphone', f.telephone, { max: 30, mode: 'tel' }) + champ('fAdr', 'Adresse', f.adresse, { max: 300 }) +
+    '<p class="aide">Le téléphone et l’adresse sont ceux de la fiche membre de Maurice, quand la personne en a une. Changer l’adresse e-mail change aussi l’adresse avec laquelle elle se connecte.</p>' +
+    '<button type="button" class="sv" data-save="personne" data-id="' + E(id) + '">Enregistrer</button>';
+  ouvrirFiche(fh(nomCell(p)) + '<p class="cap">Compte · ID ' + E(idCourt(id)) + ' · ' + E([TYPES[p.type] || '', roleLabel(p.role) || ''].filter(Boolean).join(' · ')) + '</p>' + form + lecture +
     '<h3>Gérer le compte</h3><div class="btns"><button data-fa="exporter" data-id="' + E(id) + '">Exporter ses données</button>' +
     '<button data-fa="' + (susp ? 'retablir' : 'suspendre') + '" data-id="' + E(id) + '">' + (susp ? 'Rétablir' : 'Suspendre') + '</button>' +
     '<button data-fa="' + (arch ? 'restaurer' : 'archiver') + '" data-id="' + E(id) + '">' + (arch ? 'Restaurer' : 'Archiver') + '</button>' +
-    '<button class="danger" data-fa="supprimer" data-id="' + E(id) + '">Supprimer définitivement</button></div><p class="cap" style="margin-top:8px">Suppression : double confirmation, inscrite dans l’historique.</p>';
+    '<button class="danger" data-fa="supprimer" data-id="' + E(id) + '">Supprimer définitivement</button></div><p class="cap" style="margin-top:8px">Suppression : double confirmation, inscrite dans l’historique.</p>');
 }
 
 function pl2(n, s) { return n + ' ' + s + (n > 1 ? 's' : ''); }
@@ -324,36 +354,36 @@ var STATUTS_C = [['actif', 'Actif'], ['en_attente', 'Brouillon'], ['suspendu', '
 function voirC(id) {
   var c = D.collectifs.filter(function (x) { return x.id === id; })[0]; if (!c) return;
   ST.sel = null; majListes();
-  $('fiche').hidden = false;
-  $('fiche').innerHTML = '<button class="x" id="fx" aria-label="Fermer">×</button><p class="cap">Fiche du collectif</p><h2>' + E(c.nom) + '</h2><p class="cap">' + E((c.genre === 'groupe' ? 'Groupe' : 'Fédération') + ' · ' + pl2(c.membres || 0, 'membre')) + '</p>' +
-    '<h3>Modifier</h3><label for="cNom">Nom</label><input type="text" id="cNom" value="' + E(c.nom) + '" maxlength="160" autocomplete="off">' +
-    '<label for="cSigle">Sigle (2 à 8 lettres minuscules)</label><input type="text" id="cSigle" value="' + E(c.sigle || '') + '" maxlength="8" autocomplete="off">' +
+  ouvrirFiche(fh(c.nom) + '<p class="cap">' + E((c.genre === 'groupe' ? 'Groupe' : 'Fédération') + ' · ' + pl2(c.membres || 0, 'membre') + ' · parent : ' + (c.parent || '—')) + '</p>' +
+    '<h3>Identité</h3>' + champ('cNom', 'Nom', c.nom, { max: 160 }) + champ('cSigle', 'Sigle (2 à 8 lettres minuscules)', c.sigle, { max: 8 }) +
     '<label for="cGenre">Genre</label><select id="cGenre"><option value="federation"' + (c.genre !== 'groupe' ? ' selected' : '') + '>Fédération</option><option value="groupe"' + (c.genre === 'groupe' ? ' selected' : '') + '>Groupe</option></select>' +
     '<label for="cStatut">Statut</label><select id="cStatut">' + STATUTS_C.map(function (s) { return '<option value="' + s[0] + '"' + ((c.statut || 'actif') === s[0] ? ' selected' : '') + '>' + s[1] + '</option>'; }).join('') + '</select>' +
-    '<label for="cZone">Zone</label><input type="text" id="cZone" value="' + E(c.zone || '') + '" maxlength="120" autocomplete="off">' +
-    '<label for="cSite">Site web</label><input type="text" id="cSite" value="' + E(c.site_web || '') + '" maxlength="300" autocomplete="off" placeholder="https://">' +
+    '<h3>Présentation</h3>' + champ('cZone', 'Zone', c.zone, { max: 120 }) + champ('cSite', 'Site web', c.site_web, { max: 300, ph: 'https://' }) +
     '<label for="cDesc">Description</label><textarea id="cDesc" maxlength="2000">' + E(c.description || '') + '</textarea>' +
-    '<button type="button" class="sv" data-save="collectif" data-id="' + E(id) + '">Enregistrer</button><p class="cap" style="margin-top:8px">Adresse : /collectif/' + E(c.sigle || 'sigle') + '. Parent : ' + E(c.parent || '—') + '.</p>';
+    '<p class="aide">Adresse du collectif : /collectif/' + E(c.sigle || 'sigle') + '.</p><button type="button" class="sv" data-save="collectif" data-id="' + E(id) + '">Enregistrer</button>');
 }
+function fh(titre) { return '<div class="fh"><button type="button" id="fx">← Retour</button><b>' + E(titre) + '</b></div>'; }
+function champ(id, label, valeur, o) { o = o || {}; return '<label for="' + id + '">' + E(label) + '</label><input type="text" id="' + id + '" value="' + E(valeur == null ? '' : valeur) + '" maxlength="' + (o.max || 200) + '" autocomplete="off"' + (o.ph ? ' placeholder="' + E(o.ph) + '"' : '') + (o.off ? ' disabled' : '') + (o.mode ? ' inputmode="' + o.mode + '"' : '') + '>'; }
+function ouvrirFiche(html) { var f = $('fiche'); f.hidden = false; f.innerHTML = html; f.scrollTop = 0; }
 function nomE(e) { return (e.sans_nom ? ((e.ateliers || []).join(' · ') || 'Sans nom') : e.nom) || 'Sans nom'; }
 function voirE(id) {
   var e = D.entreprises.filter(function (x) { return x.id === id; })[0]; if (!e) return;
   ST.sel = null; majListes();
-  var etat = e.archivee ? 'Archivée' : (e.bloquee ? 'Suspendue' : 'Active');
-  var sp = e.bloquee && !e.archivee, ar = e.archivee;
-  $('fiche').hidden = false;
-  $('fiche').innerHTML = '<button class="x" id="fx" aria-label="Fermer">×</button><p class="cap">Fiche de l’entreprise</p><h2>' + E(nomE(e)) + '</h2><p class="cap">' + E([e.protegee ? 'protégée par un code' : '', etat].filter(Boolean).join(' · ')) + '</p>' +
-    '<h3>Modifier</h3><label for="fNomE">Nom de l’entreprise</label><input type="text" id="fNomE" value="' + E(/@/.test(e.nom_brut || '') ? '' : (e.nom_brut || '')) + '" maxlength="120" autocomplete="off" placeholder="' + E(e.nom_brut || '') + '">' +
-    ((e.ateliers || []).length === 1 ? '<label for="fAtelier">Nom de l’atelier</label><input type="text" id="fAtelier" value="' + E(e.ateliers[0]) + '" maxlength="120" autocomplete="off">' : ((e.ateliers || []).length > 1 ? '<p class="cap" style="margin-top:10px">Ateliers : ' + E(e.ateliers.join(' · ')) + '</p>' : '')) +
-    '<button type="button" class="sv" data-save="entreprise" data-id="' + E(id) + '">Enregistrer</button><p class="cap" style="margin-top:8px">Dirigeant : ' + E(e.dirigeant || '—') + ' (son nom se modifie dans sa fiche, section Personnes).</p>' +
-    '<h3>Identité</h3><p>Nom actuel de l’entreprise : ' + E(e.nom_brut || '—') + '</p>' +
-    '<h3>Activité</h3><p>' + (e.membres || 0) + ' membre' + ((e.membres || 0) > 1 ? 's' : '') + ' · ' + (e.etablissements || 0) + ' établissement' + ((e.etablissements || 0) > 1 ? 's' : '') + '</p><p>Diagnostic : ' + E(({ en_cours: 'en cours', termine: 'terminé', a_payer: 'à payer' })[e.diagnostic] || '—') + '</p><p>Outils : ' + E((e.outils || []).join(' · ') || '—') + '</p><p>Collectif : ' + E(e.collectif || '—') + '</p>' +
+  var etat = e.archivee ? 'Archivée' : (e.bloquee ? 'Suspendue' : 'Active'), sp = e.bloquee && !e.archivee, ar = e.archivee, un = (e.ateliers || []).length === 1;
+  var form = '<h3>Identité</h3>' + champ('fNomE', 'Nom de l’entreprise', /@/.test(e.nom_brut || '') ? '' : e.nom_brut, { max: 120, ph: e.nom_brut || '' }) +
+    (un ? '<label class="ck" for="fMeme"><input type="checkbox" id="fMeme"' + ((e.ateliers[0] === e.nom_brut || /@/.test(e.nom_brut || '')) ? ' checked' : '') + '> Même nom pour l’atelier « ' + E(e.ateliers[0]) + ' »</label>' + '<div id="fAtelierBloc" style="display:none">' + champ('fAtelier', 'Nom de l’atelier', e.ateliers[0], { max: 120 }) + '</div>' : ((e.ateliers || []).length > 1 ? '<p class="aide">Plusieurs ateliers : ' + E(e.ateliers.join(' · ')) + '. Leurs noms et coordonnées se modifient dans Maurice.</p>' : '')) +
+    '<p class="aide"><b>Entreprise</b> : la structure qui porte le diagnostic, les membres et le collectif. <b>Atelier</b> : son lieu de travail dans Maurice (devis, estimation, tarifs). Une entreprise n’a le plus souvent qu’un seul atelier : le même nom pour les deux convient.</p>' +
+    (un ? '<h3>Coordonnées de l’atelier</h3>' + champ('fSiret', 'SIRET (14 chiffres)', e.siret, { max: 20, mode: 'numeric' }) + champ('fAdrE', 'Adresse', e.adresse, { max: 300 }) + champ('fTelE', 'Téléphone', e.telephone, { max: 30, mode: 'tel' }) + champ('fMailE', 'E-mail de contact', e.email_contact, { max: 200, mode: 'email' }) : '') +
+    '<button type="button" class="sv" data-save="entreprise" data-id="' + E(id) + '">Enregistrer</button>';
+  ouvrirFiche(fh(nomE(e)) + '<p class="cap">' + E([e.protegee ? 'protégée par un code' : '', etat].filter(Boolean).join(' · ')) + '</p>' + form +
+    '<h3>Informations</h3><p>Dirigeant : ' + E(e.dirigeant || '—') + ' <span class="mut">(son nom se modifie dans sa fiche, section Personnes)</span></p><p>' + (e.membres || 0) + ' membre' + ((e.membres || 0) > 1 ? 's' : '') + ' · ' + (e.etablissements || 0) + ' établissement' + ((e.etablissements || 0) > 1 ? 's' : '') + '</p><p>Diagnostic : ' + E(({ en_cours: 'en cours', termine: 'terminé', a_payer: 'à payer' })[e.diagnostic] || '—') + '</p><p>Collectif : ' + E(e.collectif || '—') + '</p>' +
     '<div class="note">Contenu des diagnostics, devis, clients et preuves : non visibles en admin. Seuls des nombres et des états apparaissent.</div>' +
     '<h3>Gérer l’entreprise</h3><div class="btns">' +
     '<button data-fe="' + (sp ? 'retablir' : 'suspendre') + '" data-id="' + E(id) + '">' + (sp ? 'Rétablir' : 'Suspendre') + '</button>' +
     '<button data-fe="' + (ar ? 'restaurer' : 'archiver') + '" data-id="' + E(id) + '">' + (ar ? 'Restaurer' : 'Archiver') + '</button>' +
     '<button class="danger" data-fe="supprimer" data-id="' + E(id) + '">Supprimer définitivement</button></div>' +
-    '<p class="cap" style="margin-top:8px">Suppression : l’entreprise part avec ses ateliers et ses membres, inscrite dans l’historique.' + (e.protegee ? ' Cette structure est protégée : elle demande son code pour chaque modification et ne peut pas être supprimée.' : '') + '</p>';
+    '<p class="cap" style="margin-top:8px">Suppression : l’entreprise part avec ses ateliers et ses membres, inscrite dans l’historique.' + (e.protegee ? ' Cette structure est protégée : elle demande son code pour chaque modification et ne peut pas être supprimée.' : '') + '</p>');
+  var meme = $('fMeme'); if (meme) { var bloc = $('fAtelierBloc'), maj = function () { bloc.style.display = meme.checked ? 'none' : 'block'; }; meme.onchange = maj; maj(); }
 }
 async function actionEntreprise(id, a) {
   var e = D.entreprises.filter(function (x) { return x.id === id; })[0]; if (!e) return;
@@ -371,11 +401,18 @@ async function actionEntreprise(id, a) {
   msg(a === 'supprimer' ? 'Entreprise supprimée. L’action est dans l’historique.' : 'Fait.');
 }
 /* ---------- actions ---------- */
-function msg(t) { var m = $('msg'); if (m) m.textContent = t || ''; }
+function toast(texte, erreur) {
+  var ancien = document.querySelector('.toast'); if (ancien) ancien.remove();
+  if (!texte) return;
+  var d = document.createElement('div'); d.className = 'toast' + (erreur ? ' err' : ''); d.setAttribute('role', 'status'); d.textContent = texte; document.body.appendChild(d);
+  setTimeout(function () { if (d.isConnected) d.remove(); }, erreur ? 7000 : 4000);
+}
+function msg(t, erreur) { var m = $('msg'); if (m) m.textContent = t || ''; toast(t, erreur !== false && /impossible|refus|incorrect|invalide|échec|requis|déjà|trop|introuvable|liée|doit|commence|dépasse/i.test(t || '')); }
 function dialogue(titre, texte, avecSaisie, valeurDefaut, labelOk, danger, masque) {
   return new Promise(function (res) {
     var d = document.createElement('div'); d.className = 'dlg';
-    d.innerHTML = '<div role="dialog" aria-modal="true"><h3>' + E(titre) + '</h3><p>' + E(texte) + '</p>' + (avecSaisie ? '<input id="dlgIn" type="' + (masque ? 'password' : 'text') + '" value="' + E(valeurDefaut || '') + '" autocomplete="' + (masque ? 'off' : 'off') + '">' : '') + '<div class="r"><button id="dlgNo">Annuler</button><button id="dlgOk" class="ok' + (danger ? ' danger' : '') + '">' + E(labelOk || 'Confirmer') + '</button></div></div>';
+    d.innerHTML = '<div role="dialog" aria-modal="true"><h3>' + E(titre) + '</h3><p' + (/incorrect/i.test(texte) ? ' class="er"' : '') + '>' + E(texte) + '</p>' + (avecSaisie ? '<input id="dlgIn" type="' + (masque ? 'password' : 'text') + '" value="' + E(valeurDefaut || '') + '" autocomplete="off" autocapitalize="off" spellcheck="false">' : '') +
+      '<div class="r"><button type="button" id="dlgNo">Annuler</button><button type="button" id="dlgOk" class="ok' + (danger ? ' danger' : '') + '">' + E(labelOk || 'Confirmer') + '</button></div></div>';
     document.body.appendChild(d);
     var inp = d.querySelector('#dlgIn'); if (inp) inp.focus(); else d.querySelector('#dlgOk').focus();
     var fin = function (v) { d.remove(); res(v); };
@@ -398,12 +435,15 @@ function ouvrirMenu(bouton, html) {
 /* structure protégée : la base répond « code requis » (VSF10) ; on demande le code puis on réessaie une fois */
 async function avecCode(nom, args, titre) {
   var r = await appeler(nom, args);
-  if (r.error && (r.error.code === 'VSF10' || /Code requis/i.test(r.error.message || ''))) {
-    var code = await dialogue(titre || 'Structure protégée', 'Cette structure est protégée. Écris le code pour continuer.', true, '', 'Continuer', false, true);
+  var essais = 0, erreurCode = '';
+  while (r.error && (r.error.code === 'VSF10' || /Code requis|Code actuel/i.test(r.error.message || '')) && essais < 3) {
+    var code = await dialogue(titre || 'Structure protégée', (erreurCode ? erreurCode + ' ' : '') + 'Cette structure est protégée. Écris le code pour continuer.', true, '', 'Continuer', false, true);
     if (!code) return { error: { message: 'Annulé.', annule: true } };
     args = Object.assign({}, args, { p_code: code });
-    r = await appeler(nom, args);
+    r = await appeler(nom, args); essais++;
+    if (r.error && (r.error.code === 'VSF10' || /Code requis|Code actuel/i.test(r.error.message || ''))) erreurCode = 'Code incorrect.';
   }
+  if (r.error && essais >= 3) r.error.message = 'Code incorrect trois fois : réessaie dans 15 minutes.';
   return r;
 }
 async function changerStatut(id, st) {
@@ -419,15 +459,23 @@ document.addEventListener('click', async function (e) {
   if (e.target.closest('#fx')) { $('fiche').hidden = true; ST.sel = null; majListes(); return; }
   if ((t = e.target.closest('[data-save]'))) {
     var que = t.getAttribute('data-save'), sid = t.getAttribute('data-id'), rs;
-    if (que === 'personne') rs = await appeler('vsf_admin_personne_modifier', { p_user: sid, p_prenom: $('fPrenom').value, p_nom: $('fNom').value });
-    if (que === 'entreprise') { var at = $('fAtelier'); var argsE = { p_org: sid, p_nom: $('fNomE').value }; if (at) argsE.p_atelier = at.value; rs = await avecCode('vsf_admin_entreprise_modifier', argsE, 'Modifier une structure protégée'); }
-    if (que === 'collectif') rs = await appeler('vsf_admin_collectif_modifier', { p_federation: sid, p_nom: $('cNom').value, p_sigle: $('cSigle').value.trim().toLowerCase(), p_genre: $('cGenre').value, p_statut: $('cStatut').value, p_zone: $('cZone').value, p_site: $('cSite').value.trim(), p_description: $('cDesc').value });
-    if (rs.error) { msg(rs.error.annule ? '' : (rs.error.message && rs.error.message.length < 200 ? rs.error.message : 'Échec. Réessayez.')); return; }
-    var ouv = OUVERT; await charger(); dessiner();
-    if (que === 'personne') { OUVERT.personnes = true; dessiner(); voir(sid); }
+    t.disabled = true; var libelle = t.textContent; t.textContent = 'Enregistrement…';
+    try {
+      if (que === 'personne') rs = await avecCode('vsf_admin_personne_modifier', { p_user: sid, p_prenom: $('fPrenom').value, p_nom: $('fNom').value, p_email: $('fEmail').disabled ? null : $('fEmail').value, p_telephone: $('fTel').value, p_adresse: $('fAdr').value }, 'Compte d’une structure protégée');
+      if (que === 'entreprise') {
+        var nom = $('fNomE').value, meme = $('fMeme'), at = $('fAtelier'), argsE = { p_org: sid, p_nom: nom };
+        if (meme) argsE.p_atelier = meme.checked ? nom : at.value;
+        if ($('fSiret')) { argsE.p_siret = $('fSiret').value; argsE.p_adresse = $('fAdrE').value; argsE.p_telephone = $('fTelE').value; argsE.p_email_contact = $('fMailE').value; }
+        rs = await avecCode('vsf_admin_entreprise_modifier', argsE, 'Modifier une structure protégée');
+      }
+      if (que === 'collectif') rs = await appeler('vsf_admin_collectif_modifier', { p_federation: sid, p_nom: $('cNom').value, p_sigle: $('cSigle').value.trim().toLowerCase(), p_genre: $('cGenre').value, p_statut: $('cStatut').value, p_zone: $('cZone').value, p_site: $('cSite').value.trim(), p_description: $('cDesc').value });
+    } finally { if (t.isConnected) { t.disabled = false; t.textContent = libelle; } }
+    if (rs.error) { if (!rs.error.annule) toast(rs.error.message && rs.error.message.length < 220 ? rs.error.message : 'Échec. Réessayez.', true); return; }
+    await charger(); dessiner();
+    if (que === 'personne') { OUVERT.personnes = true; dessiner(); await voir(sid); }
     if (que === 'entreprise') { OUVERT.entreprises = true; dessiner(); voirE(sid); }
     if (que === 'collectif') { OUVERT.collectifs = true; dessiner(); voirC(sid); }
-    msg('Enregistré.'); return;
+    toast('Enregistré ✓'); return;
   }
   if ((t = e.target.closest('[data-fe]'))) { fermerMenus(); return actionEntreprise(t.getAttribute('data-id'), t.getAttribute('data-fe')); }
   if ((t = e.target.closest('[data-fa]'))) {
@@ -499,6 +547,7 @@ document.addEventListener('click', async function (e) {
   }
 });
 document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { fermerMenus(); var f = $('fiche'); if (f && !f.hidden) { f.hidden = true; ST.sel = null; majListes(); } } });
+(function () { function hh() { var m = document.querySelector('.vsf-menu'); document.documentElement.style.setProperty('--hh', (m ? m.offsetHeight : 64) + 'px'); } hh(); addEventListener('resize', hh); addEventListener('load', hh); setTimeout(hh, 600); })();
 demarrer();
 </script>
 <script src="vsf-icones.js"></script><script src="vsf-pop.js"></script><script src="vsf-logo.js"></script><script src="vsf-session.js"></script>

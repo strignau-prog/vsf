@@ -36,6 +36,16 @@
   .vol.open .vol-c{grid-template-rows:1fr}
   .vol-i{overflow:hidden;min-height:0}.vol-i > div{padding:0 4px 30px}
   @media (prefers-reduced-motion:reduce){.vol-c,.vol-t .fl{transition:none}}
+  @media (max-width:700px){
+    .vol-t{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 10px;align-items:start;padding:18px 2px}
+    .vol-t .n{grid-column:1;font-size:22px;line-height:1.15}
+    .vol-t small{grid-column:1;font-size:13.5px;line-height:1.35}
+    .vol-t .fl{grid-column:2;grid-row:1;padding-top:4px}
+    .dl{grid-template-columns:44px minmax(0,1fr)}
+    .dl .go{grid-column:2}
+    .dec{padding:18px 16px 20px;border-radius:18px}
+    .dec h2{font-size:24px}
+  }
   .bl{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,360px),1fr));gap:30px 40px}
   .b h3{font-size:19px;font-weight:900;margin:0 0 8px}
   .b p{margin:4px 0;color:var(--cap);font-size:15px;line-height:1.4}.b p b{color:var(--ink)}
