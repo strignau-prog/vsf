@@ -48,6 +48,10 @@ var sb = VSF.sb;
 var form = { type: 'entreprise', jours: 30, mdp: '' };
 var jour = function (d) { try { return new Date(d).toLocaleDateString('fr-FR'); } catch (e) { return ''; } };
 var lienDe = function (code) { return location.origin + '/acces.html?c=' + encodeURIComponent(code); };
+/* le message s'ouvre dans Gmail, depuis la boîte contact@vraisavoirfaire.fr (il faut y être connecté dans ce navigateur) */
+var EXPEDITEUR = 'contact@vraisavoirfaire.fr';
+function gmail(a, sujet, corps) { return 'https://mail.google.com/mail/u/' + encodeURIComponent(EXPEDITEUR) + '/?view=cm&fs=1&tf=1&to=' + encodeURIComponent(a || '') + '&su=' + encodeURIComponent(sujet) + '&body=' + encodeURIComponent(corps); }
+var MAIL_OK = /^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/;
 
 /* mot de passe lisible : 12 caractères sans lettres ambiguës (pas de l, o, i, 0, 1), par groupes de 4 */
 function motDePasse() {
@@ -90,6 +94,9 @@ function dessiner() {
     '<label class="champ" for="qui">Pour qui</label>' +
     '<input id="qui" type="text" autocomplete="off" maxlength="120" placeholder="nom de l’entreprise ou de la personne">' +
 
+    '<label class="champ" for="dest">E-mail du destinataire</label>' +
+    '<input id="dest" type="email" inputmode="email" autocomplete="off" maxlength="200" placeholder="prenom@exemple.fr">' +
+
     '<p class="etiquette">Valable</p>' +
     '<div class="chips" id="cJours" role="radiogroup" aria-label="Durée">' +
       '<button type="button" role="radio" data-j="7">7 jours</button><button type="button" role="radio" data-j="30">30 jours</button><button type="button" role="radio" data-j="90">90 jours</button></div>' +
@@ -121,7 +128,9 @@ async function creer() {
   if (qui.length < 2) { $('msg').textContent = 'Indiquez pour qui.'; $('qui').focus(); return; }
   if (mdp.length < 10) { $('msg').textContent = 'Le mot de passe doit faire au moins 10 caractères.'; return; }
   $('bCreer').disabled = true;
-  var r = await sb.rpc('vsf_acces_creer', { p_type: form.type, p_libelle: qui, p_mdp: mdp, p_jours: form.jours });
+  var dest = ($('dest').value || '').trim().toLowerCase();
+  if (dest && !MAIL_OK.test(dest)) { $('msg').textContent = 'L’adresse e-mail n’est pas valide.'; $('dest').focus(); $('bCreer').disabled = false; return; }
+  var r = await sb.rpc('vsf_acces_creer', { p_type: form.type, p_libelle: qui, p_mdp: mdp, p_jours: form.jours, p_email: dest || null });
   $('bCreer').disabled = false;
   if (r.error || !r.data) { $('msg').textContent = /permission|VSF07/i.test(String(r.error && r.error.message)) ? 'Action refusée : droit manquant.' : ((r.error && r.error.message) || 'Échec. Réessayez.'); return; }
   var lien = lienDe(r.data.code);
@@ -131,10 +140,21 @@ async function creer() {
     '<button type="button" class="bouton petit" id="cLien">Copier le lien</button>' +
     '<p class="legende" style="margin-top:18px">Mot de passe</p><span class="valeur mdp-grand">' + E(mdp) + '</span>' +
     '<button type="button" class="bouton petit" id="cMdp">Copier le mot de passe</button>' +
-    '<p class="legende" style="margin-top:18px">Notez-le : le mot de passe n’est plus affiché ensuite. Valable jusqu’au ' + E(jour(r.data.expire_le)) + '.</p>';
+    '<p class="legende" style="margin-top:18px">Notez-le : le mot de passe n’est plus affiché ensuite. Valable jusqu’au ' + E(jour(r.data.expire_le)) + '.</p>' +
+    '<p class="etiquette" style="margin-top:24px">Envoyer par e-mail' + (dest ? ' · ' + E(dest) : '') + '</p>' +
+    '<button type="button" class="bouton" id="gLien" data-texte>Écrire le message du lien (Gmail)</button><br>' +
+    '<button type="button" class="bouton discret" id="gMdp" data-texte>Écrire le message du mot de passe (Gmail)</button>' +
+    '<p class="legende">Gmail s’ouvre dans un nouvel onglet, depuis ' + E(EXPEDITEUR) + ', avec le message prêt à envoyer. Le lien et le mot de passe partent dans deux messages séparés.</p>';
+  var genre = form.type === 'entreprise' ? 'entreprise' : 'travailleur', fin = jour(r.data.expire_le);
+  $('gLien').addEventListener('click', function () {
+    window.open(gmail(dest, 'Votre accès au diagnostic VraiSavoirFaire', 'Bonjour,\n\nVoici votre accès au diagnostic ' + genre + ' de VraiSavoirFaire, préparé pour ' + qui + ' :\n\n' + lien + '\n\nLe mot de passe vous arrive dans un second message. Ce lien est valable jusqu’au ' + fin + '.\n\nCordialement,\nVraiSavoirFaire\n' + EXPEDITEUR + '\n'), '_blank', 'noopener');
+  });
+  $('gMdp').addEventListener('click', function () {
+    window.open(gmail(dest, 'Mot de passe de votre accès VraiSavoirFaire', 'Bonjour,\n\nVoici le mot de passe qui accompagne le lien reçu dans mon message précédent :\n\n' + mdp + '\n\nCordialement,\nVraiSavoirFaire\n' + EXPEDITEUR + '\n'), '_blank', 'noopener');
+  });
   $('cLien').addEventListener('click', function (e) { copier(lien, e.currentTarget); });
   $('cMdp').addEventListener('click', function (e) { copier(mdp, e.currentTarget); });
-  $('qui').value = ''; form.mdp = motDePasse(); $('mdp').value = form.mdp;
+  $('qui').value = ''; $('dest').value = ''; form.mdp = motDePasse(); $('mdp').value = form.mdp;
   await lister();
 }
 
@@ -152,7 +172,7 @@ async function lister() {
   $('liste').innerHTML = l.length ? l.map(function (a) {
     var e = etatDe(a);
     return '<div class="ligne" data-id="' + E(a.id) + '"><div class="qui"><b>' + E(a.libelle) + '</b>' +
-      '<span>' + (a.type === 'entreprise' ? 'Diagnostic entreprise' : 'Diagnostic travailleur') + ' · créé le ' + E(jour(a.cree_le)) + ' · ' +
+      '<span>' + (a.type === 'entreprise' ? 'Diagnostic entreprise' : 'Diagnostic travailleur') + (a.destinataire ? ' · ' + E(a.destinataire) : '') + ' · créé le ' + E(jour(a.cree_le)) + ' · ' +
       (a.ouvertures ? 'ouvert ' + a.ouvertures + ' fois, dernière le ' + E(jour(a.derniere_ouverture)) : 'pas encore ouvert') + '</span></div>' +
       '<div class="actions"><span class="etat' + (e[1] ? ' off' : '') + '">' + E(e[0]) + '</span>' +
       '<button type="button" class="bouton petit" data-act="lien" data-code="' + E(a.code) + '">Copier le lien</button>' +

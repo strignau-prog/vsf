@@ -31,7 +31,8 @@ var $ = function (id) { return document.getElementById(id); };
 var E = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; }); };
 var P = new URLSearchParams(location.search);
 var suite = VSF.suiteSure(P.get('suite'));
-var etat = { mode: P.get('mode') === 'connexion' ? 'connexion' : 'creation', prenom: '', nom: '', mail: '', envoye: 0 };
+var mailInvite = (P.get('mail') || '').trim().slice(0, 200);      // adresse prérenseignée par un lien d'invitation
+var etat = { mode: P.get('mode') === 'connexion' ? 'connexion' : 'creation', prenom: '', nom: '', mail: /^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(mailInvite) ? mailInvite : '', envoye: 0 };
 $('lienAccueil').href = VSF.ACCUEIL;
 
 function ecran(html) { $('app').innerHTML = html; window.scrollTo(0, 0); var f = $('app').querySelector('input'); if (f) setTimeout(function () { f.focus(); }, 30); }
