@@ -240,6 +240,9 @@ section+section{margin-top:48px}
 .lvl.pr li::before{content:"";width:13px;height:13px;border:1.5px solid #111;border-radius:3px;flex:none;margin-top:1px}
 .lvl.pr li.ck::before{background:#111}
 .lvl.pr li.ck{color:#111}
+.lvl.pr{display:flex;flex-direction:column;grid-template-columns:none;align-items:stretch;gap:6px;padding:10px 10px 8px}   /* « pr » désigne aussi la grille de la restitution : on la neutralise ici */
+.lvl.pr li{min-width:0}
+.lvl.pr li{overflow-wrap:anywhere}
 .lvl:hover .lh{color:var(--now)}
 .lvl.on{border-top-color:var(--now)}
 .lvl.on .lh{font-size:14.5px}
@@ -262,6 +265,16 @@ section+section{margin-top:48px}
 .krow.ex .kp{color:#111}
 .krow.ex .kl{color:#111}
 .krow.sp{visibility:hidden}
+.mapbar{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.mapbar #mapfit{display:none}
+@media(min-width:701px){.mapbar #mapfit{display:inline-block}}
+.res.fit{position:fixed !important;inset:0;z-index:70;background:#fff;overflow:auto;padding:10px 16px;transform:none !important}
+.res.fit .rl{margin-bottom:6px}
+.res.fit #map{width:1240px;transform-origin:0 0}
+.res.fit .rcount{margin-top:6px}
+.cf.cf-sp{visibility:hidden;border:0}
+.hsplit{display:block;margin:2px 0 6px 32px;font-size:12px;font-weight:700;color:#4a4a4a}
+.row1 .hsplit{flex:none}
 .sl{font-size:12px}
 .axr .cn small{font-weight:600;color:#767676;font-size:11px}
 .qsl{color:#111;background:#ffe9a8;padding:1px 6px}
@@ -602,7 +615,8 @@ td.rec .octa{font-size:17px}
 .top{top:var(--hh) !important;z-index:50}
 html.vsf-menu-on body > .top{position:sticky !important}      /* le bandeau des étapes reste visible sous le menu */
 @media(min-width:1000px){
-  #v1 .res{align-self:start;position:relative;transition:transform .15s ease-out;will-change:transform}   /* suit le défilement (voir suivre()), sans ascenseur */
+  #v1 .res{align-self:start;position:relative}
+  #v1 .res.stk{position:sticky;top:calc(var(--hh) + 72px)}   /* suit le défilement (voir suivre()), sans ascenseur */
   .side{top:calc(var(--hh) + 72px) !important}
 }
 .qc,.mcell,.axh,#sPostes,#sEng,#sTeam,.rb{scroll-margin-top:calc(var(--hh) + 90px)}
@@ -713,7 +727,7 @@ html.vsf-menu-on body > .top{position:sticky !important}      /* le bandeau des 
       <section>
         <h2><span class="dot" id="d22" style="background:var(--off)"></span>Ce que vous voulez alléger</h2>
         <p class="hint" style="margin-left:32px">Dans le support, cochez ce que vous aimeriez faire moins ou autrement. C'est du temps rendu au geste.</p>
-        <div class="freed"><b id="freed">0 h</b><span>par semaine rendues au cœur de métier (estimation)</span></div>
+        <div class="freed"><b id="freed">0 h</b><span>par semaine rendues au cœur de métier (estimation)</span></div><p class="hint" id="freedn" style="margin-left:32px"></p>
       </section>
       <section>
         <h2><span class="dot ok" id="d23"></span>Les niveaux de l'équipe</h2>
@@ -725,7 +739,7 @@ html.vsf-menu-on body > .top{position:sticky !important}      /* le bandeau des 
       </section>
     </div>
     <div class="res">
-      <h2>Votre carte des processus</h2>
+      <div class="mapbar"><h2>Votre carte des processus</h2><button class="lnk2" id="mapfit" type="button">⤢ Voir toute la carte à l’écran</button></div>
       <div class="rl">= Vos processus de l'étape 1 · les feux viennent de vous</div>
       <div id="map"></div>
       <div class="rcount" id="sum2"></div>
@@ -879,7 +893,21 @@ function shares(f){if(zonesOf(f).length<2&&S.mode[f.k]&&S.mode[f.k]!=='auto')S.m
 function zonesOf(f){var z=[];sfs(f).forEach(function(x,i){if(!S.off[f.k+i]){var zz=zoneOf(x[1]);if(z.indexOf(zz)<0)z.push(zz);}});return z;}
 function modesFor(f){var z=zonesOf(f),m=[MODES[0],MODES[1]];if(z.indexOf('C')>=0)m.push(MODES[2]);m.push(MODES[3]);if(z.indexOf('P')>=0)m.push(MODES[4]);if(z.indexOf('S')>=0)m.push(MODES[5]);return m;}
 function needMode(k){return zonesOf(FK[k]).length>1;}
-function posteTodo(k){return (needMode(k)&&!S.mode[k])||!S.hv[k]||(k==='DI'&&(!S.dx||(dxValid()&&!S.dpart)));}
+/* le/la dirigeant·e occupe seul(e) ce poste : ses heures viennent de ses heures de dirigeant·e, pas d’une saisie à part */
+function soloDir(k){return dxValid()&&S.dx===k&&S.q[k]<2;}
+function fh1(x){return String(Math.round(x*2)/2).replace(".",",");}
+function hrsHtml(f){
+  var k=f.k,dv=dxValid(),h=S.h.DI||0,p=dpart();
+  var ok='<button class="hok'+(S.hv[k]?' on':'')+'" data-hok="'+k+'" aria-label="Les heures sont justes" title="Les heures sont justes"></button>';
+  if(k==='DI'){
+    var det=dv?'<span class="hsplit">dont '+fh1(h*p)+' h comme dirigeant·e · '+fh1(h*(1-p))+' h comme '+FK[S.dx].n.toLowerCase()+'</span>':'';
+    return '<label class="hrs'+(S.hv[k]?'':' todo')+'"><input type="number" min="1" max="80" value="'+S.h[k]+'" data-h="'+k+'" aria-label="Heures par semaine"> h/sem'+ok+'</label>'+det;
+  }
+  if(soloDir(k)) return '<span class="hsplit">Seul·e : le/la dirigeant·e, pour '+fh1(h*(1-p))+' h par semaine (prises sur ses '+h+' h)</span>';
+  var mix=dv&&S.dx===k;
+  return '<label class="hrs'+(S.hv[k]?'':' todo')+'"><input type="number" min="1" max="80" value="'+S.h[k]+'" data-h="'+k+'" aria-label="Heures par semaine par personne'+(mix?' hors dirigeant·e':'')+'"> h/sem'+(S.q[k]<2?'':' /pers.')+ok+'</label>'+(mix?'<span class="hsplit">'+(S.q[k]-1)+' autre'+(S.q[k]>2?'s':'')+' personne'+(S.q[k]>2?'s':'')+' + le/la dirigeant·e pour '+fh1(h*(1-p))+' h</span>':'');
+}
+function posteTodo(k){return (needMode(k)&&!S.mode[k])||(!S.hv[k]&&!soloDir(k))||(k==='DI'&&(!S.dx||(dxValid()&&!S.dpart)));}
 function zshare(f){var sh=shares(f),z={P:0,C:0,S:0};for(var st in sh)z[zoneOf(st)]+=sh[st];return z;}
 /* heures hebdo portées par chaque poste (le dirigeant qui tient aussi un poste n'est compté qu'une fois) */
 function hoursOf(k){
@@ -912,7 +940,7 @@ function drawPostes(){
         if(dxValid()) h+='<div class="dq"><span class="lab">Part de votre temps sur le rôle de dirigeant·e</span>'+selHtml('','data-dp="1"',[['','À choisir'],['0.25','Un quart'],['0.5','La moitié'],['0.75','Les trois quarts']],S.dpart,'Part de votre temps de dirigeant')+'</div>';
       }
       var zs=zshare(f),md=S.mode[f.k]||'';
-      h+='<div class="adj"><div class="share">'+[['P','#c4c4c4'],['C','#ffc400'],['S','#e2e2e2']].map(function(c){return '<i style="width:'+Math.round(zs[c[0]]*100)+'%;background:'+c[1]+'"></i>'}).join('')+'</div><div class="sharel">Son temps : '+Math.round(zs.C*100)+' % cœur · '+Math.round(zs.P*100)+' % pilotage · '+Math.round(zs.S*100)+' % support</div>'+'<div class="row1">'+(zonesOf(f).length>1?selHtml('','data-mode="'+f.k+'"',modesFor(f),md,'Ajuster la répartition du temps'):'')+'<label class="hrs'+(S.hv[f.k]?'':' todo')+'"><input type="number" min="1" max="80" value="'+S.h[f.k]+'" data-h="'+f.k+'" aria-label="Heures par semaine'+(f.k==='DI'?'':' par personne')+'"> h/sem'+(f.k==='DI'||S.q[f.k]<2?'':' /pers.')+'<button class="hok'+(S.hv[f.k]?' on':'')+'" data-hok="'+f.k+'" aria-label="Les heures sont justes" title="Les heures sont justes"></button></label></div></div>';
+      h+='<div class="adj"><div class="share">'+[['P','#c4c4c4'],['C','#ffc400'],['S','#e2e2e2']].map(function(c){return '<i style="width:'+Math.round(zs[c[0]]*100)+'%;background:'+c[1]+'"></i>'}).join('')+'</div><div class="sharel">Son temps : '+Math.round(zs.C*100)+' % cœur · '+Math.round(zs.P*100)+' % pilotage · '+Math.round(zs.S*100)+' % support</div>'+'<div class="row1">'+(zonesOf(f).length>1?selHtml('','data-mode="'+f.k+'"',modesFor(f),md,'Ajuster la répartition du temps'):'')+hrsHtml(f)+'</div></div>';
       {h+='<div class="sf">'+list.map(function(x,i){var off=!!S.off[f.k+i];return '<label class="sfr'+(off?' off':'')+'" data-s="'+f.k+i+'"><span class="box sm'+(off?'':' on')+'"></span>'+x[0]+'<span class="z '+zoneOf(x[1])+'">'+zoneOf(x[1])+'</span></label>'}).join('')+'</div>';}
       h+='<button class="fold" data-o="'+f.k+'">▴ Replier</button>';
     }
@@ -989,7 +1017,7 @@ function fillSel(){
 }
 function goPostes(){setTimeout(function(){$('sPostes').scrollIntoView({behavior:'smooth',block:'start'})},150);}
 $('sector').onchange=function(){S.sector=this.value;S.fil='';fillSel();all();};
-$('fil').onchange=function(){S.fil=this.value;fillSel();all();if(S.fil)goPostes();};
+$('fil').onchange=function(){S.fil=this.value;fillSel();all();};
 function suggest(q,list,box,cb){q=norm(q.trim());if(q.length<2){box.innerHTML='';return;}
   var ws=q.split(/\s+/);var r=list.filter(function(x){var n=norm(x[1]);return ws.every(function(w){return n.indexOf(w)>=0});}).slice(0,6);
   box.innerHTML=r.length?r.map(function(x){return '<button data-k="'+x[0]+'">'+x[1]+'<small>'+x[2]+'</small></button>'}).join(''):'<p class="hint" style="margin:8px 12px">Aucun métier trouvé : essayez un autre mot.</p>';
@@ -1034,7 +1062,11 @@ function artCell(id){var m=contrib()[id]||[];return m.some(function(k){return AR
 S.hold={};
 function nR(id){return 3+exOf(id).length;}
 function nRows(id){return nR(id)+(artCell(id)?1:0);}
-function exRows(id,pad){var ex=exOf(id),h=ex.map(function(e,j){var i=3+j,v=S.lights[id+':'+i]||'';return '<div class="krow ex" title="'+ESH[e[0]]+' : '+e[1]+' (exemple à valider)"><span class="kp">⚑</span><span class="kl">'+ESH[e[0]]+'</span><span class="fxs">'+['g','y','r'].map(function(c){return '<button class="fx '+c+(v===c?' on':'')+'" data-l="'+id+':'+i+'" data-v="'+c+'" aria-label="'+ESH[e[0]]+' : '+e[1]+'"></button>'}).join('')+'</span></div>'}).join('');if(artCell(id)){var hv=S.hold[id]||'';h+='<div class="krow hold" title="Combien de personnes savent faire ce geste seules ?"><span class="kp">◆</span><span class="kl">Savent seuls</span><span class="fxs">'+['1','2','3'].map(function(o){return '<button class="hb'+(hv===o?' on':'')+(o==='1'?' one':'')+'" data-hold="'+id+'" data-hv="'+o+'">'+(o==='3'?'3+':o)+'</button>'}).join('')+holdCalc(id)+'</span></div>';}
+/* nombre de personnes de l'entreprise qui peuvent tenir ce geste : les effectifs des postes concernés, le/la dirigeant·e n'étant compté·e qu'une fois */
+function freedTxt(hrs){var lo=Math.round(hrs*.3),hi=Math.round(hrs*.45);return lo===hi?'≈ '+hi+' h':'≈ '+lo+' à '+hi+' h';}
+function holdMax(id){var ks=contrib()[id]||[],n=0;ks.forEach(function(k){n+=S.q[k]||0;});if(dxValid()&&ks.indexOf('DI')>=0&&ks.indexOf(S.dx)>=0)n-=1;return Math.max(1,n);}
+function holdOpts(id){var m=Math.min(3,holdMax(id)),o=[];for(var i=1;i<=m;i++)o.push(String(i));return o;}
+function exRows(id,pad){var ex=exOf(id),h=ex.map(function(e,j){var i=3+j,v=S.lights[id+':'+i]||'';return '<div class="krow ex" title="'+ESH[e[0]]+' : '+e[1]+' (exemple à valider)"><span class="kp">⚑</span><span class="kl">'+ESH[e[0]]+'</span><span class="fxs">'+['g','y','r'].map(function(c){return '<button class="fx '+c+(v===c?' on':'')+'" data-l="'+id+':'+i+'" data-v="'+c+'" aria-label="'+ESH[e[0]]+' : '+e[1]+'"></button>'}).join('')+'<i class="cf cf-sp"></i></span></div>'}).join('');if(artCell(id)){var hv=S.hold[id]||'';h+='<div class="krow hold" title="Combien de personnes savent faire ce geste seules ?"><span class="kp">◆</span><span class="kl">Savent seuls</span><span class="fxs">'+holdOpts(id).map(function(o){return '<button class="hb'+(hv===o?' on':'')+(o==='1'?' one':'')+'" data-hold="'+id+'" data-hv="'+o+'">'+(o==='3'?'3+':o)+'</button>'}).join('')+(holdCalc(id)||'<i class="cf cf-sp"></i>')+'</span></div>';}
 for(var k=ex.length+(artCell(id)?1:0);k<pad;k++)h+='<div class="krow sp"></div>';return h;}
 S.lights={}; S.alleger={};
 function calc(){var m=contrib(),hs={},teamH=0;onKeys().forEach(function(k){var f=FK[k],sh=shares(f),hk=hoursOf(k);teamH+=hk;for(var st in sh){hs[st]=(hs[st]||0)+hk*sh[st];}});return {m:m,hs:hs,teamH:teamH};}
@@ -1042,6 +1074,7 @@ function rated(id,n){for(var i=0;i<n;i++){if(!S.lights[id+':'+i])return false;}r
 function worst(id,n){var w='';for(var i=0;i<n;i++){var v=LF(id,i);if(v==='r')return 'r';if(v==='y')w='y';else if(v==='g'&&!w)w='g';}return w;}
 function feuxRow(id,i,label){var v=S.lights[id+':'+i]||'',x=gap2(id,i);return '<div class="krow'+(x?' x2':'')+'" title="'+KL[i]+' : '+label+(x?' · 2 crans d’écart avec les niveaux de l’équipe':'')+'"><span class="kp">'+KP[i]+'</span><span class="kl">'+KL[i]+'</span><span class="fxs">'+['g','y','r'].map(function(c){return '<button class="fx '+c+(v===c?' on':'')+'" data-l="'+id+':'+i+'" data-v="'+c+'" aria-label="'+KL[i]+' : '+({g:'maîtrisé',y:'à surveiller',r:'problème'})[c]+'"></button>'}).join('')+cdot(id,i)+'</span></div>';}
 function cellsList(){var L=[];['P','C','S'].forEach(function(z){CH[z].forEach(function(s){L.push([z,s]);});});return L;}
+function fitMap(){var r=document.querySelector('#v2 .res');if(!r||!r.classList.contains('fit'))return;var m=$('map');m.style.zoom=1;var w0=m.offsetWidth||1240,h0=m.offsetHeight||1,bar=r.querySelector('.mapbar').offsetHeight+r.querySelector('.rl').offsetHeight+$('sum2').offsetHeight+40,z=Math.min(1,(innerWidth-40)/w0,(innerHeight-bar)/h0);m.style.zoom=z;}
 function drawMap(){
   var c=calc(),b='',todo=0,total=0,cnt={g:0,y:0,r:0},frag=null,fragS=-1,freed=0;
   ['P','C','S'].forEach(function(z){
@@ -1050,10 +1083,10 @@ function drawMap(){
     CH[z].forEach(function(s,i){
       var id=s[0],ps=c.m[id]||[],num=(z==='C'?'<span class="n">'+(i+1)+'</span>':'');
       if(!ps.length){b+='<div class="mcell extc">'+num+'<span class="t">'+s[1]+'</span><span class="meta">'+(S.ext[id]?(z==='S'?'Externalisé':(z==='C'?'Sous-traité':'Personne pour l’instant')):'Non couvert')+'</span></div>';return;}
-      total++; var nn=nR(id), ok=rated(id,nn)&&(!artCell(id)||!!S.hold[id]), w=worst(id,nn); if(!ok)todo++;
+      total++; if(S.hold[id]&&+S.hold[id]>holdOpts(id).length)S.hold[id]=String(holdOpts(id).length); var nn=nR(id), ok=rated(id,nn)&&(!artCell(id)||!!S.hold[id]), w=worst(id,nn); if(!ok)todo++;
       var sc=0;for(var j=0;j<nn;j++){var v=LF(id,j);if(v)cnt[v]++;if(v==='r')sc+=2;else if(v==='y')sc+=1;} if(sc>fragS&&sc>0){fragS=sc;frag=s[1];}
       var pc=c.teamH?Math.round((c.hs[id]||0)/c.teamH*100):0;
-      if(z==='S'&&S.alleger[id])freed+=(c.hs[id]||0)*.5;
+      if(z==='S'&&S.alleger[id])freed+=(c.hs[id]||0);
       b+='<div class="mcell'+(ok?'':' todo')+(w?' w-'+w:'')+'" id="mc-'+id+'">'+num+'<span class="t">'+s[1]+(exOf(id).length?' <span class="sl" title="Concerné par vos engagements">⚑</span>':'')+'</span><span class="meta">'+ps.map(function(k){return '<span class="ini">'+(ART[k]?'◆ ':'')+k+'</span>'}).join('')+(S.part[id]?'<span class="ini" style="background:#fff;box-shadow:inset 0 0 0 1.5px #111">+ ext.</span>':'')+'<span>'+pc+' % du temps</span>'+posTxt(id)+'</span><div class="kbox">'+KPI[id].map(function(lb,j){return feuxRow(id,j,lb)}).join('')+exRows(id,padZ)+'</div>'+(z==='S'?'<label class="alg" data-a="'+id+'"><span class="box sm'+(S.alleger[id]?' on':'')+'"></span>À alléger</label>':'')+'</div>';
     });
     b+='</div></div>';
@@ -1065,23 +1098,27 @@ function drawMap(){
     }
   });
   $('map').innerHTML=b;
+  fitMap();
   var done=total-todo;
   $('p2n').textContent=done+' / '+total; $('p2b').style.width=(total?done/total*100:0)+'%';
   $('d21').className='dot'+(todo?'':' ok');
   var anyA=Object.keys(S.alleger).some(function(k){return S.alleger[k]});
   $('d22').style.background=''; $('d22').className='dot'+(anyA?' ok':'');
-  $('freed').textContent='≈ '+Math.round(freed)+' h';
-  $('sum2').innerHTML='<div><b style="color:#009e73">'+cnt.g+'</b><span>maîtrisés</span></div><div><b style="color:#c99a00">'+cnt.y+'</b><span>à surveiller</span></div><div><b style="color:#ff3b1f">'+cnt.r+'</b><span>problèmes</span></div>'+(frag?'<div><b class="frag">'+frag+'</b><span>le point le plus fragile</span></div>':'')+'<div><b>≈ '+Math.round(freed)+' h</b><span>par semaine rendues au cœur de métier</span></div>';
+  $('freed').textContent=freedTxt(freed);$('freedn').textContent=freed?'Hypothèse : on gagne 30 à 45 % des '+Math.round(freed)+' h que l’équipe passe sur les étapes de support cochées « à alléger ». Ce taux est un ordre de grandeur, pas une mesure.':'Cochez « à alléger » sur des étapes de support pour obtenir une estimation.';
+  $('sum2').innerHTML='<div><b style="color:#009e73">'+cnt.g+'</b><span>maîtrisés</span></div><div><b style="color:#c99a00">'+cnt.y+'</b><span>à surveiller</span></div><div><b style="color:#ff3b1f">'+cnt.r+'</b><span>problèmes</span></div>'+(frag?'<div><b class="frag">'+frag+'</b><span>le point le plus fragile</span></div>':'')+'<div><b>'+freedTxt(freed)+'</b><span>par semaine rendues au cœur de métier (30 à 45 % du temps des étapes à alléger)</span></div>';
   var ready=!todo;
   $('next2').classList.toggle('ready',ready); $('why2').style.display=ready?'none':'block';
   $('why2').textContent=todo+' étape'+(todo>1?'s':'')+' encore à noter (en rouge pâle).';
 }
+$('mapfit').onclick=function(){var r=document.querySelector('#v2 .res'),on=r.classList.toggle('fit');this.textContent=on?'✕ Fermer la vue complète':'⤢ Voir toute la carte à l’écran';if(!on)$('map').style.zoom='';else fitMap();};
+addEventListener('resize',fitMap);
+addEventListener('keydown',function(e){if(e.key==='Escape'&&document.querySelector('#v2 .res.fit'))$('mapfit').click();});
 function firstTodo(){var el=document.querySelector('#map .mcell.todo');return el;}
 $('nextcell').onclick=function(){var el=firstTodo();if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.animate([{outline:'4px solid #ffc400'},{outline:'4px solid rgba(255,196,0,0)'}],{duration:1200});}};
 $('map').onclick=function(e){
-  var hb=e.target.closest('[data-hold]'); if(hb){S.hold[hb.dataset.hold]=hb.dataset.hv;drawMap();return;}
+  var hb=e.target.closest('[data-hold]'); if(hb){if(holdOpts(hb.dataset.hold).indexOf(hb.dataset.hv)<0)return;S.hold[hb.dataset.hold]=hb.dataset.hv;drawMap();return;}
   var f=e.target.closest('[data-l]'); if(f){var id=f.dataset.l.split(':')[0],was=rated(id,3)||!!S.lights[f.dataset.l];S.lights[f.dataset.l]=(S.lights[f.dataset.l]===f.dataset.v?'':f.dataset.v);
-    var cid=id; drawMap(); var cell=$('mc-'+cid); if(cell&&!cell.classList.contains('todo')&&!was){var nx=firstTodo();if(nx){setTimeout(function(){nx.scrollIntoView({behavior:'smooth',block:'center'});},250);}} return;}
+    var cid=id; drawMap(); var cell=$('mc-'+cid); return;}
   var a=e.target.closest('[data-a]'); if(a){e.preventDefault();S.alleger[a.dataset.a]=!S.alleger[a.dataset.a];drawMap();}
 };
 function setStep(n){
@@ -1183,8 +1220,8 @@ function drawRest(){
   h+=blk('r-lect','Trois lectures de vos réponses','Les mêmes réponses, relues sous trois angles. Chaque barre va de 1 (informel) à 4 (piloté).',lc);
   /* 3 chaîne */
   var fragS=-1,frag='',freed=0,geste=0;
-  var ch='<div class="chain">'+['P','C','S'].map(function(z){return '<div class="chz '+z+'"><b>'+ZN[z]+'</b><div class="chips">'+CH[z].map(function(s){var id=s[0];if(!(c.m[id]||[]).length)return '<span class="chp"><i></i>'+s[1]+' <small>'+(S.ext[id]?'externalisé':'—')+'</small></span>';var nn=nR(id),w=worst(id,nn),sc=0;for(var j=0;j<nn;j++){var v=LF(id,j);if(v==='r')sc+=2;else if(v==='y')sc+=1;}if(sc>fragS){fragS=sc;frag=s[1];}var pc=c.teamH?Math.round((c.hs[id]||0)/c.teamH*100):0;if(z==='C')geste+=pc;if(z==='S'&&S.alleger[id])freed+=(c.hs[id]||0)*.5;return '<span class="chp"><i class="'+w+'"></i>'+s[1]+' <small>'+pc+' %</small></span>'}).join('')+'</div></div>'}).join('')+'</div>';
-  ch+='<div class="kpis"><div><b>'+geste+' %</b><span>du temps va au geste</span></div><div><b>≈ '+Math.round(freed)+' h</b><span>par semaine rendues au cœur de métier</span></div><div><b style="font-size:22px">'+frag+'</b><span>le point le plus fragile</span></div></div>';
+  var ch='<div class="chain">'+['P','C','S'].map(function(z){return '<div class="chz '+z+'"><b>'+ZN[z]+'</b><div class="chips">'+CH[z].map(function(s){var id=s[0];if(!(c.m[id]||[]).length)return '<span class="chp"><i></i>'+s[1]+' <small>'+(S.ext[id]?'externalisé':'—')+'</small></span>';var nn=nR(id),w=worst(id,nn),sc=0;for(var j=0;j<nn;j++){var v=LF(id,j);if(v==='r')sc+=2;else if(v==='y')sc+=1;}if(sc>fragS){fragS=sc;frag=s[1];}var pc=c.teamH?Math.round((c.hs[id]||0)/c.teamH*100):0;if(z==='C')geste+=pc;if(z==='S'&&S.alleger[id])freed+=(c.hs[id]||0);return '<span class="chp"><i class="'+w+'"></i>'+s[1]+' <small>'+pc+' %</small></span>'}).join('')+'</div></div>'}).join('')+'</div>';
+  ch+='<div class="kpis"><div><b>'+geste+' %</b><span>du temps va au geste</span></div><div><b>'+freedTxt(freed)+'</b><span>par semaine rendues au cœur de métier (30 à 45 % du temps des étapes à alléger)</span></div><div><b style="font-size:22px">'+frag+'</b><span>le point le plus fragile</span></div></div>';
   h+=blk('r-ch','Votre chaîne','Vos feux de l’étape 2. Le levier : les points rouges, c’est là que le temps et la qualité se perdent.',ch);
   h+=teamBlocks(blk,c);
   /* 4 rareté : détenteurs réels quand l'équipe s'est positionnée, sinon l'estimation */
@@ -1269,7 +1306,7 @@ function drawAcc(){
   h+=planBlock(blk);
   var rec=mods.length>=2?'D':(ones.length?'E':'G');
   var pri=A.length, ex=A[0]?A[0].t:'';
-  var fh=0;['s1','s2','s3','s4'].forEach(function(id){if(S.alleger[id])fh+=(c.hs[id]||0)*.5;});
+  var fh=0;['s1','s2','s3','s4'].forEach(function(id){if(S.alleger[id])fh+=(c.hs[id]||0);});
   function gq(n){return '<span class="gq">'+[1,2,3].map(function(i){return '<i'+(i<=n?' class="f"':'')+'></i>'}).join('')+'</span>';}
   function cell(v){return v===1?'<span class="ck">✓</span>':(v===0?'<span class="no">—</span>':v);}
   var formE=withOff.length?'✓ '+withOff.map(function(g){return '◆ '+g.t}).join(', ')+'<small>par '+withOff[0].off+'</small>':(ones.length?'<small>Aucune offre pour l’instant</small>':'<span class="no">—</span>');
@@ -1287,7 +1324,7 @@ function drawAcc(){
    ['Suivi de l’apprenti',0,0,'✓ Thérèse, jusqu’à la validation en situation réelle'],
    ['sec','Votre support'],
    ['Maurice adapté',0,0,mods.length?'✓ '+mods.map(function(m){return m[0]}).join(', '):'✓'],
-   ['Temps rendu au cœur de métier',0,0,fh?'≈ '+Math.round(fh)+' h / semaine':'à estimer'],
+   ['Temps rendu au cœur de métier',0,0,fh?freedTxt(fh)+' / semaine':'à estimer'],
    ['sec','Dans un an'],
    ['Ce que vous aurez','Un plan suivi','Des gestes transmis, des preuves','Palier '+Math.min(4,Math.floor(Math.round(overall()*10)/10)+1)+' visé, gestes transmis, support allégé, preuves prêtes']
   ];
@@ -1443,7 +1480,6 @@ $('demo').onclick=function(){_demo();
     if(r.top<h+70||r.top>innerHeight-140)el.scrollIntoView({behavior:RED2?'auto':'smooth',block:'center'});
   }
   var gauche=document.querySelector('#v1 .grid > div:first-child');
-  if(gauche){['change','click'].forEach(function(ev){gauche.addEventListener(ev,function(e){if(e.target.closest('[data-inv]'))return;setTimeout(avance1,350);});});}
 })();
 /* ===================== branchement VSF : compte, entreprise, diagnostic ouvert, sauvegarde ===================== */
 /* Sauvegarde sûre (étape 0 du 10 nov.) : un échec n'est jamais « oublié » (on réessaie), une copie reste sur l'appareil, un second onglet est signalé, une session expirée est dite. */
@@ -1457,12 +1493,10 @@ $('demo').onclick=function(){_demo();
     var raf=0;
     function suivre(){
       raf=0;var res=document.querySelector('#v1 .res'),v=document.getElementById('v1');if(!res||!v)return;
-      if(v.hidden||innerWidth<1000){res.style.transform='';return;}
-      var hh=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--hh'))||0,top=hh+68,avail=innerHeight-top-16,
-          g=res.parentNode,gr=g.getBoundingClientRect(),gH=g.offsetHeight,bH=res.offsetHeight,max=Math.max(0,gH-bH),off;
-      if(bH<=avail)off=top+(avail-bH)/2-gr.top;
-      else{var pr=gH>avail?Math.min(1,Math.max(0,(top-gr.top)/(gH-avail))):0;off=top-pr*(bH-avail)-gr.top;}      /* bloc plus haut que l'écran : il reste en place puis glisse pour que tout soit atteignable */
-      off=Math.max(0,Math.min(max,off));res.style.transform='translateY('+Math.round(off)+'px)';
+      res.style.transform='';
+      /* l'esquisse ne bouge plus d'elle-même : elle reste visible à droite quand elle tient dans l'écran, sinon elle défile normalement avec la page */
+      var hh=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--hh'))||0,avail=innerHeight-(hh+68)-16;
+      res.classList.toggle('stk',!v.hidden&&innerWidth>=1000&&res.offsetHeight<=avail);
     }
     function planifier(){if(!raf)raf=setTimeout(suivre,16);}
     addEventListener('scroll',planifier,{passive:true});addEventListener('resize',planifier);addEventListener('load',planifier);
@@ -1576,7 +1610,7 @@ $('demo').onclick=function(){_demo();
   function remplirLien(){
     var q=document.querySelector('.lkp');if(!q)return;var pid=q.getAttribute('data-lkp'),lien=(S.liens||{})[pid],nom=S.names[pid]||'cette personne';
     if(!lien){q.innerHTML='<b>Le lien de <span class="nm"></span> n’est plus affiché.</b> Par sécurité, il n’est montré qu’une seule fois, au moment de l’invitation. Créez-en un nouveau : l’ancien cesse de fonctionner.<div class="acts"><button class="inv" data-act="nouveau" data-pid="'+pid+'">Créer un nouveau lien →</button><button class="inv" data-act="fermer">Fermer</button></div>';q.querySelector('.nm').textContent=nom;return;}
-    q.innerHTML='<b>Lien personnel pour <span class="nm"></span></b> — à usage unique, valable 14 jours.<br><b>VSF ne l’envoie pas : copiez-le, puis envoyez-le vous-même</b> (e-mail, SMS, messagerie).<span class="lk"></span><div class="acts"><button class="inv" data-act="copier" data-pid="'+pid+'">Copier le lien →</button><a class="inv" data-act="mail" style="text-decoration:none;color:inherit">Écrire un e-mail →</a>'+(navigator.share?'<button class="inv" data-act="partager" data-pid="'+pid+'">Partager →</button>':'')+'<button class="inv" data-act="fermer">Fermer</button></div>';
+    q.innerHTML='<b>Lien personnel pour <span class="nm"></span></b> — à usage unique, valable 14 jours.<br><b>VSF ne l’envoie pas : copiez-le, puis envoyez-le vous-même</b> (e-mail, SMS, messagerie).<span class="lk"></span><div class="acts"><button class="inv" data-act="copier" data-pid="'+pid+'">Copier le lien →</button><a class="inv" data-act="mail" style="text-decoration:none;color:inherit">Écrire un e-mail →</a>'+'<button class="inv" data-act="fermer">Fermer</button></div>';
     q.querySelector('.nm').textContent=nom;q.querySelector('.lk').textContent=lien;
     var corps='Bonjour '+nom+',\n\nJe t’invite à te positionner sur ta fiche métier sur VraiSavoirFaire (environ 10 minutes). Tu crées ton compte avec ton e-mail, et seul moi verrai tes niveaux.\n\nTon lien personnel, à usage unique, valable 14 jours :\n'+lien+'\n';
     q.querySelector('[data-act=mail]').href='mailto:?subject='+encodeURIComponent('Rejoindre l’équipe sur VraiSavoirFaire')+'&body='+encodeURIComponent(corps);

@@ -202,6 +202,9 @@ section+section{margin-top:48px}
 .lvl.pr li::before{content:"";width:13px;height:13px;border:1.5px solid #111;border-radius:3px;flex:none;margin-top:1px}
 .lvl.pr li.ck::before{background:#111}
 .lvl.pr li.ck{color:#111}
+.lvl.pr{display:flex;flex-direction:column;grid-template-columns:none;align-items:stretch;gap:6px;padding:10px 10px 8px}   /* « pr » désigne aussi la grille de la restitution : on la neutralise ici */
+.lvl.pr li{min-width:0}
+.lvl.pr li{overflow-wrap:anywhere}
 .lvl:hover .lh{color:var(--now)}
 .lvl.on{border-top-color:var(--now)}
 .lvl.on .lh{font-size:14.5px}

@@ -903,12 +903,14 @@ var FICHES=[
 var LV=[['Je ne le fais pas','Pas dans mon travail aujourd’hui.'],['Comprendre','Je connais le vocabulaire, les outils et les critères ; je l’ai vu faire.'],['Faire avec repères','Je le fais avec quelqu’un à côté qui corrige.'],['Réaliser seul·e','Je le fais seul·e, en situation réelle, sans reprise.'],['Maîtriser et transmettre','Je règle les cas difficiles et je sais l’apprendre à quelqu’un.']];
 var S={pn:'',em:'',ok:false,f:'',lv:{},tr:{},goal:{},sent:false};
 function fic(){return FICHES.filter(function(f){return f.k===S.f;})[0];}
-function ok1(){return S.pn.trim()&&/.+@.+\..+/.test(S.em)&&S.ok&&S.f;}
+/* lien d'invitation sans compte : l'adresse est technique, on ne la demande jamais */
+function emOk(){return S.noMail||/.+@.+\..+/.test(S.em);}
+function ok1(){return S.pn.trim()&&emOk()&&S.ok&&S.f;}
 function lb4(l){return '<span class="lb4">'+[1,2,3,4].map(function(i){return '<i'+(i<=l?' class="f"':'')+'></i>';}).join('')+'</span>';}
 /* ---- 1 ---- */
 function draw1(){
-  $('pn').classList.toggle('todo',!S.pn.trim());$('em').classList.toggle('todo',!/.+@.+\..+/.test(S.em));
-  $('d11').className='dot'+(S.pn.trim()&&/.+@.+\..+/.test(S.em)?' ok':'');
+  $('pn').classList.toggle('todo',!S.pn.trim());$('em').classList.toggle('todo',!emOk());
+  $('d11').className='dot'+(S.pn.trim()&&emOk()?' ok':'');
   $('ok').className='eng2'+(S.ok?'':' todo');$('okb').className='box'+(S.ok?' on':'');$('d12').className='dot'+(S.ok?' ok':'');
   $('fl').className='fl'+(S.f?'':' todo');
   $('fl').innerHTML=FICHES.map(function(f){return '<button class="fr'+(S.f===f.k?' on':'')+'" data-f="'+f.k+'"><i></i><span>'+(f.art?'◆ ':'')+f.n+' <small>· '+f.sf.length+' situations'+(f.demo?' · démo':'')+'</small></span></button>';}).join('')+'<button class="fr" disabled style="opacity:.5;cursor:default"><i></i><span>Mon poste n’est pas dans la liste <small>· je le cherche dans le ROME</small></span></button>';
@@ -916,7 +918,7 @@ function draw1(){
   var f=fic();
   $('fiche1').innerHTML=f?'<div class="seals"><span class="seal">'+(f.art?'◆ ':'')+f.n+'</span><span class="seal" style="background:#f3f3f3;color:#111">Fiche VraiSavoirFaire · 7 sources</span></div><p class="hint" style="margin:6px 0 14px">Les situations sur lesquelles vous allez vous positionner, et l’étape de l’atelier où elles comptent.</p><div class="fsl">'+f.sf.map(function(x){return '<div><span>'+(f.art?'◆ ':'')+x[0]+'</span><small>'+CHN[x[1]]+'</small></div>';}).join('')+'</div><div class="rcount"><div><b>'+f.sf.length+'</b><span>situations</span></div><div><b>≈ '+Math.max(5,f.sf.length*2)+' min</b><span>pour vous positionner</span></div></div>':'<div class="empty2">Choisissez votre fiche métier.</div>';
   var r=ok1();$('next1').classList.toggle('ready',!!r);
-  $('why1').textContent=r?'':(!S.pn.trim()||!/.+@.+\..+/.test(S.em)?'Indiquez votre prénom et votre e-mail.':(!S.ok?'Cochez votre accord.':'Choisissez votre fiche métier.'));
+  $('why1').textContent=r?'':(!S.pn.trim()||!emOk()?(S.noMail?'Indiquez votre prénom.':'Indiquez votre prénom et votre e-mail.'):(!S.ok?'Cochez votre accord.':'Choisissez votre fiche métier.'));
 }
 $('pn').addEventListener('input',function(){S.pn=this.value;draw1();});
 $('em').addEventListener('input',function(){S.em=this.value;draw1();});
@@ -991,7 +993,7 @@ window.addEventListener('scroll',function(){document.querySelector('.top').class
     var se=await sb.auth.getSession();
     if(!se.data.session){location.replace('connexion.html?suite='+encodeURIComponent(location.href));return;}
     uid=se.data.session.user.id;
-    var emU=se.data.session.user.email||'';if(/@acces\.vraisavoirfaire\.fr$/i.test(emU)){emU='';var emB=$('em').closest('label,div,section');}      /* l'adresse technique d'un lien sans compte ne s'affiche jamais */
+    var emU=se.data.session.user.email||'';if(/@acces\.vraisavoirfaire\.fr$/i.test(emU)){emU='';S.noMail=true;$('em').style.display='none';}      /* l'adresse technique d'un lien sans compte ne s'affiche jamais */
     $('em').value=emU;S.em=emU;$('em').readOnly=true;
     var pe=await sb.from('vsf_personnes').select('prenom').eq('user_id',uid).maybeSingle();
     if(pe.data&&pe.data.prenom){S.pn=pe.data.prenom;$('pn').value=S.pn;}
