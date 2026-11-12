@@ -369,6 +369,10 @@ section+section{margin-top:48px}
 .signedb[hidden]{display:none}
 .signedb{display:flex;gap:14px;align-items:flex-start;margin-top:24px;font-size:16px;max-width:720px}
 
+.phint{margin:6px 0 0;font-size:13px;color:#4a4a4a;line-height:1.4}
+.prow2{grid-template-columns:repeat(2,minmax(0,1fr)) !important;margin-top:36px}
+@media(max-width:700px){.prow2{grid-template-columns:1fr !important}}
+.pf1{margin-bottom:14px}
 .prow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:0 0 20px}
 @media(max-width:800px){.prow{grid-template-columns:1fr}}
 .pf .lab{display:flex;align-items:center;gap:10px;font-weight:900;font-size:15px;margin-bottom:6px}
@@ -812,13 +816,15 @@ html.vsf-menu-on body > .top{position:sticky !important}      /* le bandeau des 
       <div id="rest"></div>
       <section class="rb" id="r-prio">
         <h3><i>7</i>Mes priorités</h3>
-        <p class="sub">Les actions les plus prioritaires tirées du diagnostic. Choisissez-en 3 à 5, avec qui, la grande échéance et la preuve attendue. C'est votre engagement pour l'année, sans course aux preuves.</p>
-        <div class="prow">
-          <div class="pf"><span class="lab"><span class="dot" id="d51"></span>Objectif</span><div class="sel todo" id="objw"><select id="obj" aria-label="Votre objectif"></select></div></div>
-          <div class="pf"><span class="lab"><span class="dot" id="d52"></span>Actions</span><div class="pcount"><b id="nact">0</b> choisies · entre 3 et 5</div></div>
-          <div class="pf"><span class="lab"><span class="dot" id="d53"></span>Rendez-vous annuel</span><div class="sel todo" id="rdvw"><select id="rdv" aria-label="Rendez-vous annuel"></select></div></div>
+        <p class="sub">Les actions les plus prioritaires tirées du diagnostic. Choisissez-en 3 à 5 : pour chacune, qui s'en occupe, pour quand, et la preuve attendue. Puis fixez votre palier visé et le mois de votre prochain bilan. C'est votre engagement pour l'année, sans course aux preuves.</p>
+        <div class="pf pf1"><span class="lab"><span class="dot" id="d52"></span>Vos priorités</span><div class="pcount"><b id="nact">0</b> choisies · entre 3 et 5</div></div>
+        <div id="acts"></div>
+        <div class="prow prow2">
+          <div class="pf"><span class="lab"><span class="dot" id="d51"></span>Le palier que vous visez</span><div class="sel todo" id="objw"><select id="obj" aria-label="Palier visé et délai"></select></div><p class="phint" id="objh">Le palier que vous voulez atteindre, et en combien de temps. C’est une ambition, pas une promesse.</p></div>
+          <div class="pf"><span class="lab"><span class="dot" id="d53"></span>Votre prochain bilan</span><div class="sel todo" id="rdvw"><select id="rdv" aria-label="Mois du prochain bilan"></select></div><p class="phint">Le mois où vous refaites ce diagnostic, pour voir ce qui a avancé depuis aujourd’hui.</p></div>
         </div>
-        <div id="acts"></div><div id="tools" hidden></div>
+        <div id="tools" hidden></div>
+
       </section>
       <button class="next" id="sign"><span class="dot"></span>Valider mes priorités →</button>
       <p class="why" id="why5"></p>
@@ -1269,7 +1275,8 @@ function months(){var r=[],d=new Date();for(var i=1;i<=18;i++){var x=new Date(d.
 function nPick(){return Object.keys(S.pick).filter(function(k){return S.pick[k]}).length;}
 function drawPlan(){
   var o=overall(),pal=Math.max(1,Math.min(4,Math.floor(Math.round(o*10)/10+1e-9))),nxt=Math.min(4,pal+1);
-  $('obj').innerHTML=[['','Choisir…'],['12','Palier '+nxt+' en 12 mois'],['18','Palier '+nxt+' en 18 mois'],['24','Palier '+nxt+' en 24 mois']].map(function(x){return '<option value="'+x[0]+'"'+(x[0]===S.obj?' selected':'')+'>'+x[1]+'</option>'}).join('');
+  $('obj').innerHTML=[['','Choisir…'],['12','Palier '+nxt+', dans 12 mois'],['18','Palier '+nxt+', dans 18 mois'],['24','Palier '+nxt+', dans 24 mois']].map(function(x){return '<option value="'+x[0]+'"'+(x[0]===S.obj?' selected':'')+'>'+x[1]+'</option>'}).join('');
+  $('objh').textContent='Vous êtes aujourd’hui au palier '+pal+'. Choisissez le palier suivant et le délai que vous vous donnez : c’est une ambition, pas une promesse.';
   $('rdv').innerHTML='<option value="">Choisir le mois…</option>'+months().slice(10).map(function(m){return '<option value="'+m[0]+'"'+(m[0]===S.rdv?' selected':'')+'>'+m[1]+'</option>'}).join('');
   var A=actions(),np=nPick(),who=[['','Qui : à choisir']].concat(onKeys().map(function(k){return [k,FK[k].n]})),mo=[['','Échéance : à choisir']].concat(months().slice(0,12));
   $('acts').innerHTML=A.map(function(a,i){var on=!!S.pick[a.k],d=S.det[a.k]||{},full=on&&d.w&&d.m&&d.p;
@@ -1282,7 +1289,7 @@ function drawPlan(){
   $('nact').textContent=np;
   var ready=!!S.obj&&!!S.rdv&&np>=3&&np<=5&&allD;
   $('sign').classList.toggle('ready',ready);$('why5').style.display=ready||S.signed?'none':'block';
-  $('why5').textContent=!S.obj?'Choisissez votre objectif.':(np<3?'Cochez au moins 3 actions ('+np+' pour l’instant).':(!allD?'Précisez qui, quand et quelle preuve pour chaque action (en rouge pâle).':'Choisissez la date du rendez-vous annuel.'));
+  $('why5').textContent=np<3?'Cochez au moins 3 actions ('+np+' pour l’instant).':(!allD?'Précisez qui, quand et quelle preuve pour chaque action (en rouge pâle).':(!S.obj?'Choisissez le palier que vous visez.':'Choisissez le mois de votre prochain bilan.'));
 }
 $('acts').onclick=function(e){var b=e.target.closest('[data-pk]');if(!b)return;var k=b.dataset.pk;if(!S.pick[k]&&nPick()>=5)return;S.pick[k]=!S.pick[k];drawPlan();};
 $('acts').onchange=function(e){var t=e.target;if(!t.dataset.dk)return;S.det[t.dataset.dk]=S.det[t.dataset.dk]||{};S.det[t.dataset.dk][t.dataset.f]=t.value;drawPlan();};
