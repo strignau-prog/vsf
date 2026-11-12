@@ -816,12 +816,12 @@ html.vsf-menu-on body > .top{position:sticky !important}      /* le bandeau des 
       <div id="rest"></div>
       <section class="rb" id="r-prio">
         <h3><i>7</i>Mes priorités</h3>
-        <p class="sub">Les actions les plus prioritaires tirées du diagnostic. Choisissez-en 3 à 5 : pour chacune, qui s'en occupe, pour quand, et la preuve attendue. Puis fixez votre palier visé et le mois de votre prochain bilan. C'est votre engagement pour l'année, sans course aux preuves.</p>
+        <p class="sub">Les actions les plus prioritaires tirées du diagnostic. Choisissez-en 3 à 5 : pour chacune, qui s'en occupe, pour quand, et comment on saura que c'est fait (la preuve). Puis fixez votre palier visé et le mois de votre prochain bilan. C'est votre engagement pour l'année, sans course aux preuves.</p>
         <div class="pf pf1"><span class="lab"><span class="dot" id="d52"></span>Vos priorités</span><div class="pcount"><b id="nact">0</b> choisies · entre 3 et 5</div></div>
         <div id="acts"></div>
         <div class="prow prow2">
           <div class="pf"><span class="lab"><span class="dot" id="d51"></span>Le palier que vous visez</span><div class="sel todo" id="objw"><select id="obj" aria-label="Palier visé et délai"></select></div><p class="phint" id="objh">Le palier que vous voulez atteindre, et en combien de temps. C’est une ambition, pas une promesse.</p></div>
-          <div class="pf"><span class="lab"><span class="dot" id="d53"></span>Votre prochain bilan</span><div class="sel todo" id="rdvw"><select id="rdv" aria-label="Mois du prochain bilan"></select></div><p class="phint">Le mois où vous refaites ce diagnostic, pour voir ce qui a avancé depuis aujourd’hui.</p></div>
+          <div class="pf"><span class="lab"><span class="dot" id="d53"></span>Votre prochain bilan</span><div class="sel todo" id="rdvw"><select id="rdv" aria-label="Délai du prochain bilan"></select></div><p class="phint">Dans combien de temps vous refaites ce diagnostic, pour voir ce qui a avancé depuis aujourd’hui.</p></div>
         </div>
         <div id="tools" hidden></div>
 
@@ -1270,15 +1270,18 @@ function actions(){
   if(low)L.push({k:'ax'+low[0][0],t:'Progresser sur « '+low[0][1]+' » (moyenne '+fr(low[1])+')',tag:'Axe le plus bas',s:5.5});
   L.sort(function(a,b){return b.s-a.s});var seen={};return L.filter(function(a){if(seen[a.t])return false;seen[a.t]=1;return true;}).slice(0,8);
 }
-var PROOF=[['','Preuve : à choisir'],['decl','Déclaré'],['doc','Documenté'],['obs','Observé'],['val','Validé']];
+var PROOF=[['','Comment le prouver ?'],['decl','Je le déclare'],['doc','Un document le montre'],['obs','On le constate sur place'],['val','Un tiers extérieur le valide']];
+var ECH=[['','Pour quand ?'],['1','D’ici 1 mois'],['3','D’ici 3 mois'],['6','D’ici 6 mois'],['12','D’ici 12 mois']];
+var BIL=[['','Choisir…'],['6','Dans 6 mois'],['12','Dans 12 mois'],['18','Dans 18 mois']];
+function echLab(v){var r=ECH.filter(function(x){return x[0]===v})[0];if(r)return r[1].replace('D’ici','dans');var m=months().filter(function(x){return x[0]===v})[0];return m?m[1]:'';}
 function months(){var r=[],d=new Date();for(var i=1;i<=18;i++){var x=new Date(d.getFullYear(),d.getMonth()+i,1);r.push([x.getFullYear()+'-'+(x.getMonth()+1),x.toLocaleDateString('fr-FR',{month:'long',year:'numeric'})]);}return r;}
 function nPick(){return Object.keys(S.pick).filter(function(k){return S.pick[k]}).length;}
 function drawPlan(){
   var o=overall(),pal=Math.max(1,Math.min(4,Math.floor(Math.round(o*10)/10+1e-9))),nxt=Math.min(4,pal+1);
   $('obj').innerHTML=[['','Choisir…'],['12','Palier '+nxt+', dans 12 mois'],['18','Palier '+nxt+', dans 18 mois'],['24','Palier '+nxt+', dans 24 mois']].map(function(x){return '<option value="'+x[0]+'"'+(x[0]===S.obj?' selected':'')+'>'+x[1]+'</option>'}).join('');
   $('objh').textContent='Vous êtes aujourd’hui au palier '+pal+'. Choisissez le palier suivant et le délai que vous vous donnez : c’est une ambition, pas une promesse.';
-  $('rdv').innerHTML='<option value="">Choisir le mois…</option>'+months().slice(10).map(function(m){return '<option value="'+m[0]+'"'+(m[0]===S.rdv?' selected':'')+'>'+m[1]+'</option>'}).join('');
-  var A=actions(),np=nPick(),who=[['','Qui : à choisir']].concat(onKeys().map(function(k){return [k,FK[k].n]})),mo=[['','Échéance : à choisir']].concat(months().slice(0,12));
+  $('rdv').innerHTML=BIL.map(function(m){return '<option value="'+m[0]+'"'+(m[0]===S.rdv?' selected':'')+'>'+m[1]+'</option>'}).join('');
+  var A=actions(),np=nPick(),who=[['','Qui : à choisir']].concat(onKeys().map(function(k){return [k,FK[k].n]})),mo=ECH;
   $('acts').innerHTML=A.map(function(a,i){var on=!!S.pick[a.k],d=S.det[a.k]||{},full=on&&d.w&&d.m&&d.p;
     return '<div class="act'+(on?' on':'')+(!on&&np>=5?' off':'')+'"><span class="rk">'+(i+1)+'</span><button class="box'+(on?' on':'')+'" data-pk="'+a.k+'" aria-label="Choisir cette action"></button><div class="tx"><small>'+a.tag+'</small><b>'+a.t+'</b></div>'+(on?'<div class="det">'+selHtml('','data-dk="'+a.k+'" data-f="w"',who,d.w||'','Qui')+selHtml('','data-dk="'+a.k+'" data-f="m"',mo,d.m||'','Échéance')+selHtml('','data-dk="'+a.k+'" data-f="p"',PROOF,d.p||'','Preuve')+'</div>':'')+'</div>'}).join('');
   var art=hasArt(),ones=stepsAll().filter(function(x){return artCell(x.id)&&holdN(x.id)===1}).length;
@@ -1289,7 +1292,7 @@ function drawPlan(){
   $('nact').textContent=np;
   var ready=!!S.obj&&!!S.rdv&&np>=3&&np<=5&&allD;
   $('sign').classList.toggle('ready',ready);$('why5').style.display=ready||S.signed?'none':'block';
-  $('why5').textContent=np<3?'Cochez au moins 3 actions ('+np+' pour l’instant).':(!allD?'Précisez qui, quand et quelle preuve pour chaque action (en rouge pâle).':(!S.obj?'Choisissez le palier que vous visez.':'Choisissez le mois de votre prochain bilan.'));
+  $('why5').textContent=np<3?'Cochez au moins 3 actions ('+np+' pour l’instant).':(!allD?'Précisez qui, quand et quelle preuve pour chaque action (en rouge pâle).':(!S.obj?'Choisissez le palier que vous visez.':'Choisissez le délai de votre prochain bilan.'));
 }
 $('acts').onclick=function(e){var b=e.target.closest('[data-pk]');if(!b)return;var k=b.dataset.pk;if(!S.pick[k]&&nPick()>=5)return;S.pick[k]=!S.pick[k];drawPlan();};
 $('acts').onchange=function(e){var t=e.target;if(!t.dataset.dk)return;S.det[t.dataset.dk]=S.det[t.dataset.dk]||{};S.det[t.dataset.dk][t.dataset.f]=t.value;drawPlan();};
@@ -1307,8 +1310,8 @@ function drawAcc(){
   var A=actions().filter(function(a){return S.pick[a.k]}),h='',toc=[],n=0,c=calc();
   function blk(id,t,sub,b){n++;toc.push([id,n,t]);return '<section class="rb" id="'+id+'"><h3><i>'+n+'</i>'+t+'</h3>'+(sub?'<p class="sub">'+sub+'</p>':'')+b+'</section>';}
   var mi='<div class="two-m"><div class="mode2"><b>Sans abonnement</b>Un suivi simple sur VraiSavoirFaire : les micro-actions, un rappel discret, la preuve à déposer.</div><div class="mode2"><b>Avec Thérèse</b>Ces micro-actions deviennent le point de départ de son accompagnement, au plus 2 par semaine et par personne.</div></div>';
-  mi+=A.map(function(a){var d=S.det[a.k]||{},kind=a.k.slice(0,2)==='ax'?'ax':a.k[0],ms=MICRO[kind]||MICRO.r,lab=(months().filter(function(m){return m[0]===d.m})[0]||['',''])[1];
-    return '<div class="mic"><h4>'+a.t+'</h4><div class="meta">'+(d.w?FK[d.w].n:'')+(lab?' · échéance '+lab:'')+'</div><div class="mtl">'+ms.map(function(m,i){return '<div><b>Semaine '+[1,3,6][i]+'</b>'+m+'</div>'}).join('')+'<div class="end"><b>'+(lab||'Échéance')+'</b>Preuve : '+(({decl:'déclaré',doc:'documenté',obs:'observé',val:'validé'})[d.p]||'')+'</div></div></div>'}).join('');
+  mi+=A.map(function(a){var d=S.det[a.k]||{},kind=a.k.slice(0,2)==='ax'?'ax':a.k[0],ms=MICRO[kind]||MICRO.r,lab=echLab(d.m);
+    return '<div class="mic"><h4>'+a.t+'</h4><div class="meta">'+(d.w?FK[d.w].n:'')+(lab?' · '+lab:'')+'</div><div class="mtl">'+ms.map(function(m,i){return '<div><b>Semaine '+[1,3,6][i]+'</b>'+m+'</div>'}).join('')+'<div class="end"><b>'+(lab||'Échéance')+'</b>Preuve : '+((PROOF.filter(function(x){return x[0]===d.p})[0]||['',''])[1].toLowerCase())+'</div></div></div>'}).join('');
   h+=blk('a-suivi','Le suivi de vos priorités','Avant chaque échéance, des micro-actions semaine après semaine.',mi);
   var mods=[];Object.keys(MOD).forEach(function(id){var nn=nR(id),w=worst(id,nn);if((c.m[id]||[]).length&&(w==='r'||S.alleger[id]))mods.push(MOD[id].concat([w==='r'?'feu rouge':'à alléger']));});
   h+=blk('a-maurice','Maurice, adapté à votre organisation','Seulement les modules utiles, choisis d’après vos feux et ce que vous voulez alléger.','<div class="mods">'+(mods.length?mods.map(function(m){return '<div class="mod"><b>'+m[0]+'</b>'+m[1]+'<br><small>Parce que : '+m[2]+'</small></div>'}).join(''):'<div class="mod">Aucun module prioritaire relevé.</div>')+'</div>');
