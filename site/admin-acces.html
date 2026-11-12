@@ -48,9 +48,18 @@ var sb = VSF.sb;
 var form = { type: 'entreprise', jours: 30, mdp: '' };
 var jour = function (d) { try { return new Date(d).toLocaleDateString('fr-FR'); } catch (e) { return ''; } };
 var lienDe = function (code) { return location.origin + '/acces.html?c=' + encodeURIComponent(code); };
-/* le message s'ouvre dans Gmail, depuis la boîte contact@vraisavoirfaire.fr (il faut y être connecté dans ce navigateur) */
+/* le message s'ouvre dans Gmail : le compte Gmail de Stéphane (où contact@vraisavoirfaire.fr est rapatrié), avec le message prêt à envoyer.
+   Gmail ne permet pas de choisir l'expéditeur dans l'adresse : l'envoi part de l'adresse par défaut du compte (à régler sur contact@ dans les réglages Gmail). */
 var EXPEDITEUR = 'contact@vraisavoirfaire.fr';
-function gmail(a, sujet, corps) { return 'https://mail.google.com/mail/u/' + encodeURIComponent(EXPEDITEUR) + '/?view=cm&fs=1&tf=1&to=' + encodeURIComponent(a || '') + '&su=' + encodeURIComponent(sujet) + '&body=' + encodeURIComponent(corps); }
+var COMPTE_GMAIL = 'skolantreuz@gmail.com';
+function gmail(a, sujet, corps) { return 'https://mail.google.com/mail/?authuser=' + encodeURIComponent(COMPTE_GMAIL) + '&view=cm&fs=1&tf=1&to=' + encodeURIComponent(a || '') + '&su=' + encodeURIComponent(sujet) + '&body=' + encodeURIComponent(corps); }
+/* le message d'un accès : le lien ET le mot de passe dans le même mail */
+function messageAcces(type, qui, lien, mdp, fin) {
+  return 'Bonjour,\n\nVoici votre accès au diagnostic ' + (type === 'entreprise' ? 'entreprise' : 'travailleur') + ' de VraiSavoirFaire, préparé pour ' + qui + ' :\n\nLien : ' + lien + '\nMot de passe : ' + mdp + '\n\nCe lien est valable jusqu’au ' + fin + '.\n\nCordialement,\nVraiSavoirFaire\n' + EXPEDITEUR + '\n';
+}
+/* ouvre Gmail dans un nouvel onglet : on ouvre l'onglet tout de suite (sur le clic), puis on y place le message une fois prêt, pour ne pas être bloqué par le navigateur */
+function ongletVide() { try { return window.open('', '_blank'); } catch (e) { return null; } }
+function allerA(w, url) { if (w) { try { w.opener = null; } catch (e) { /* rien */ } w.location.href = url; return true; } return false; }
 var MAIL_OK = /^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/;
 
 /* mot de passe lisible : 12 caractères sans lettres ambiguës (pas de l, o, i, 0, 1), par groupes de 4 */
@@ -85,77 +94,52 @@ function dessiner() {
   $('app').innerHTML =
     '<p class="etiquette">Admin</p>' +
     '<h1>Liens de diagnostic sans compte</h1>' +
-    '<p class="legende">Un lien et un mot de passe pour faire un diagnostic, sans créer de compte. Envoyez le lien et le mot de passe par deux canaux différents.</p>' +
 
-    '<p class="etiquette">Diagnostic</p>' +
-    '<div class="chips" id="cType" role="radiogroup" aria-label="Diagnostic">' +
-      '<button type="button" role="radio" data-t="entreprise">Entreprise</button><button type="button" role="radio" data-t="travailleur">Travailleur</button></div>' +
+    '<label class="champ" for="qui">Nom de l’entreprise ou de la personne</label>' +
+    '<input id="qui" type="text" autocomplete="off" maxlength="120">' +
 
-    '<label class="champ" for="qui">Pour qui</label>' +
-    '<input id="qui" type="text" autocomplete="off" maxlength="120" placeholder="nom de l’entreprise ou de la personne">' +
-
-    '<label class="champ" for="dest">E-mail du destinataire</label>' +
-    '<input id="dest" type="email" inputmode="email" autocomplete="off" maxlength="200" placeholder="prenom@exemple.fr">' +
-
-    '<p class="etiquette">Valable</p>' +
-    '<div class="chips" id="cJours" role="radiogroup" aria-label="Durée">' +
-      '<button type="button" role="radio" data-j="7">7 jours</button><button type="button" role="radio" data-j="30">30 jours</button><button type="button" role="radio" data-j="90">90 jours</button></div>' +
-
-    '<label class="champ" for="mdp">Mot de passe</label>' +
-    '<div class="mdp-ligne"><input id="mdp" type="text" autocomplete="off" spellcheck="false" value="' + E(form.mdp) + '">' +
-      '<button type="button" class="bouton petit" id="bNouveau">Un autre</button></div>' +
+    '<label class="champ" for="dest">E-mail</label>' +
+    '<input id="dest" type="email" inputmode="email" autocomplete="off" maxlength="200">' +
 
     '<p class="message" id="msg" role="alert"></p>' +
     '<button type="button" class="bouton" id="bCreer" data-texte>Créer l’accès</button>' +
-    '<div class="resultat" id="resultat"></div>' +
 
     '<h2>Accès créés</h2>' +
     '<p class="message" id="msgListe" role="alert"></p><div id="liste"></div>';
-  marquer();
-  $('cType').addEventListener('click', function (e) { var b = e.target.closest('[data-t]'); if (!b) return; form.type = b.getAttribute('data-t'); marquer(); });
-  $('cJours').addEventListener('click', function (e) { var b = e.target.closest('[data-j]'); if (!b) return; form.jours = parseInt(b.getAttribute('data-j'), 10); marquer(); });
-  $('bNouveau').addEventListener('click', function () { form.mdp = motDePasse(); $('mdp').value = form.mdp; });
   $('bCreer').addEventListener('click', creer);
 }
-function marquer() {
-  [].forEach.call($('cType').querySelectorAll('button'), function (b) { var on = b.getAttribute('data-t') === form.type; b.classList.toggle('on', on); b.setAttribute('aria-checked', on); });
-  [].forEach.call($('cJours').querySelectorAll('button'), function (b) { var on = parseInt(b.getAttribute('data-j'), 10) === form.jours; b.classList.toggle('on', on); b.setAttribute('aria-checked', on); });
+
+/* Créer l'accès : on le crée (diagnostic entreprise, 30 jours, mot de passe fabriqué ici) et Gmail s'ouvre aussitôt avec le lien et le mot de passe. */
+async function creer() {
+  var qui = $('qui').value.trim(), dest = ($('dest').value || '').trim().toLowerCase();
+  $('msg').textContent = '';
+  if (qui.length < 2) { $('msg').textContent = 'Indiquez le nom de l’entreprise ou de la personne.'; $('qui').focus(); return; }
+  if (!MAIL_OK.test(dest)) { $('msg').textContent = 'Indiquez une adresse e-mail valide.'; $('dest').focus(); return; }
+  var onglet = ongletVide();
+  $('bCreer').disabled = true;
+  var mdp = motDePasse();
+  var r = await sb.rpc('vsf_acces_creer', { p_type: form.type, p_libelle: qui, p_mdp: mdp, p_jours: form.jours, p_email: dest });
+  $('bCreer').disabled = false;
+  if (r.error || !r.data) { if (onglet) onglet.close(); $('msg').textContent = /permission|VSF07/i.test(String(r.error && r.error.message)) ? 'Action refusée : droit manquant.' : ((r.error && r.error.message) || 'Échec. Réessayez.'); return; }
+  var url = gmail(dest, 'Votre accès au diagnostic VraiSavoirFaire', messageAcces(form.type, qui, lienDe(r.data.code), mdp, jour(r.data.expire_le)));
+  if (!allerA(onglet, url)) { $('msg').innerHTML = 'L’accès est créé, mais le navigateur a bloqué l’ouverture de Gmail. <a href="' + E(url) + '" target="_blank" rel="noopener">Ouvrir Gmail →</a>'; }
+  $('qui').value = ''; $('dest').value = '';
+  await lister();
 }
 
-async function creer() {
-  var qui = $('qui').value.trim(), mdp = $('mdp').value.trim();
-  $('msg').textContent = '';
-  if (qui.length < 2) { $('msg').textContent = 'Indiquez pour qui.'; $('qui').focus(); return; }
-  if (mdp.length < 10) { $('msg').textContent = 'Le mot de passe doit faire au moins 10 caractères.'; return; }
-  $('bCreer').disabled = true;
-  var dest = ($('dest').value || '').trim().toLowerCase();
-  if (dest && !MAIL_OK.test(dest)) { $('msg').textContent = 'L’adresse e-mail n’est pas valide.'; $('dest').focus(); $('bCreer').disabled = false; return; }
-  var r = await sb.rpc('vsf_acces_creer', { p_type: form.type, p_libelle: qui, p_mdp: mdp, p_jours: form.jours, p_email: dest || null });
-  $('bCreer').disabled = false;
-  if (r.error || !r.data) { $('msg').textContent = /permission|VSF07/i.test(String(r.error && r.error.message)) ? 'Action refusée : droit manquant.' : ((r.error && r.error.message) || 'Échec. Réessayez.'); return; }
-  var lien = lienDe(r.data.code);
-  $('resultat').innerHTML =
-    '<p class="etiquette">Accès créé · ' + (form.type === 'entreprise' ? 'diagnostic entreprise' : 'diagnostic travailleur') + ' · ' + E(qui) + '</p>' +
-    '<p class="legende">Lien</p><span class="valeur">' + E(lien) + '</span>' +
-    '<button type="button" class="bouton petit" id="cLien">Copier le lien</button>' +
-    '<p class="legende" style="margin-top:18px">Mot de passe</p><span class="valeur mdp-grand">' + E(mdp) + '</span>' +
-    '<button type="button" class="bouton petit" id="cMdp">Copier le mot de passe</button>' +
-    '<p class="legende" style="margin-top:18px">Notez-le : le mot de passe n’est plus affiché ensuite. Valable jusqu’au ' + E(jour(r.data.expire_le)) + '.</p>' +
-    '<p class="etiquette" style="margin-top:24px">Envoyer par e-mail' + (dest ? ' · ' + E(dest) : '') + '</p>' +
-    '<button type="button" class="bouton" id="gLien" data-texte>Écrire le message du lien (Gmail)</button><br>' +
-    '<button type="button" class="bouton discret" id="gMdp" data-texte>Écrire le message du mot de passe (Gmail)</button>' +
-    '<p class="legende">Gmail s’ouvre dans un nouvel onglet, depuis ' + E(EXPEDITEUR) + ', avec le message prêt à envoyer. Le lien et le mot de passe partent dans deux messages séparés.</p>';
-  var genre = form.type === 'entreprise' ? 'entreprise' : 'travailleur', fin = jour(r.data.expire_le);
-  $('gLien').addEventListener('click', function () {
-    window.open(gmail(dest, 'Votre accès au diagnostic VraiSavoirFaire', 'Bonjour,\n\nVoici votre accès au diagnostic ' + genre + ' de VraiSavoirFaire, préparé pour ' + qui + ' :\n\n' + lien + '\n\nLe mot de passe vous arrive dans un second message. Ce lien est valable jusqu’au ' + fin + '.\n\nCordialement,\nVraiSavoirFaire\n' + EXPEDITEUR + '\n'), '_blank', 'noopener');
-  });
-  $('gMdp').addEventListener('click', function () {
-    window.open(gmail(dest, 'Mot de passe de votre accès VraiSavoirFaire', 'Bonjour,\n\nVoici le mot de passe qui accompagne le lien reçu dans mon message précédent :\n\n' + mdp + '\n\nCordialement,\nVraiSavoirFaire\n' + EXPEDITEUR + '\n'), '_blank', 'noopener');
-  });
-  $('cLien').addEventListener('click', function (e) { copier(lien, e.currentTarget); });
-  $('cMdp').addEventListener('click', function (e) { copier(mdp, e.currentTarget); });
-  $('qui').value = ''; $('dest').value = ''; form.mdp = motDePasse(); $('mdp').value = form.mdp;
-  await lister();
+/* Renvoyer : le mot de passe n'est pas conservé en clair, donc on en fabrique un nouveau (l'ancien cesse de marcher) et Gmail s'ouvre avec le lien et ce mot de passe. */
+async function renvoyer(a, b) {
+  var mail = (a.destinataire || '').trim();
+  if (!MAIL_OK.test(mail)) { mail = (window.prompt('E-mail du destinataire pour « ' + a.libelle + ' »') || '').trim().toLowerCase(); if (!MAIL_OK.test(mail)) return; }
+  if (a.ouvertures > 0 && !window.confirm('Ce lien a déjà été ouvert. Un nouveau mot de passe va être créé : l’ancien ne marchera plus. Continuer ?')) return;
+  var onglet = ongletVide(), mdp = motDePasse();
+  b.disabled = true;
+  var r = await sb.rpc('vsf_acces_nouveau_mdp', { p_id: a.id, p_mdp: mdp });
+  b.disabled = false;
+  if (r.error || !r.data) { if (onglet) onglet.close(); $('msgListe').textContent = (r.error && r.error.code === 'VSF08' && r.error.message) ? r.error.message : 'Échec : la migration 58 est-elle installée ?'; return; }
+  $('msgListe').textContent = '';
+  var url = gmail(mail, 'Votre accès au diagnostic VraiSavoirFaire', messageAcces(r.data.type, r.data.libelle, lienDe(r.data.code), mdp, jour(r.data.expire_le)));
+  if (!allerA(onglet, url)) { $('msgListe').innerHTML = 'Le navigateur a bloqué l’ouverture de Gmail. <a href="' + E(url) + '" target="_blank" rel="noopener">Ouvrir Gmail →</a>'; }
 }
 
 function etatDe(a) {
@@ -164,24 +148,26 @@ function etatDe(a) {
   if (a.bloque) return ['Bloqué 15 min', true];
   return ['Valable jusqu’au ' + jour(a.expire_le), false];
 }
+var LISTE = [];
 async function lister() {
   var r = await sb.rpc('vsf_acces_lister');
   if (r.error) { $('msgListe').textContent = 'La liste n’est pas disponible. La migration 38 est-elle installée ?'; return; }
   $('msgListe').textContent = '';
   var l = r.data || [];
+  LISTE = l;
   $('liste').innerHTML = l.length ? l.map(function (a) {
     var e = etatDe(a);
     return '<div class="ligne" data-id="' + E(a.id) + '"><div class="qui"><b>' + E(a.libelle) + '</b>' +
       '<span>' + (a.type === 'entreprise' ? 'Diagnostic entreprise' : 'Diagnostic travailleur') + (a.destinataire ? ' · ' + E(a.destinataire) : '') + ' · créé le ' + E(jour(a.cree_le)) + ' · ' +
       (a.ouvertures ? 'ouvert ' + a.ouvertures + ' fois, dernière le ' + E(jour(a.derniere_ouverture)) : 'pas encore ouvert') + '</span></div>' +
       '<div class="actions"><span class="etat' + (e[1] ? ' off' : '') + '">' + E(e[0]) + '</span>' +
-      '<button type="button" class="bouton petit" data-act="lien" data-code="' + E(a.code) + '">Copier le lien</button>' +
+      (a.actif && !e[1] ? '<button type="button" class="bouton petit" data-act="envoyer">Envoyer</button>' : '') +
       (a.actif ? '<button type="button" class="bouton petit" data-act="revoquer">Révoquer</button>' : '') + '</div></div>';
   }).join('') : '<p class="legende">Aucun accès pour l’instant.</p>';
 }
 document.addEventListener('click', async function (e) {
   var b = e.target.closest('[data-act]'); if (!b) return;
-  if (b.getAttribute('data-act') === 'lien') { copier(lienDe(b.getAttribute('data-code')), b); return; }
+  if (b.getAttribute('data-act') === 'envoyer') { var ligne = b.closest('[data-id]'); var acc = LISTE.filter(function (x) { return x.id === ligne.getAttribute('data-id'); })[0]; if (acc) renvoyer(acc, b); return; }
   if (b.getAttribute('data-act') === 'revoquer') {
     if (b.getAttribute('data-sur') !== '1') { b.setAttribute('data-sur', '1'); b.textContent = 'Confirmer'; setTimeout(function () { if (b.isConnected) { b.removeAttribute('data-sur'); b.textContent = 'Révoquer'; } }, 4000); return; }
     var id = b.closest('[data-id]').getAttribute('data-id');

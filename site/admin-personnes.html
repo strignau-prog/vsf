@@ -321,8 +321,37 @@ function tableAmbassadeurs(q) {
 }
 
 /* ---------- invitations : inviter une entreprise, une personne ou un collectif à créer son compte ---------- */
+/* Gmail s'ouvre sur le compte de Stéphane (où contact@vraisavoirfaire.fr est rapatrié), message prêt à envoyer.
+   L'adresse d'envoi ne se règle pas dans l'URL : elle vient de l'adresse par défaut du compte (à régler sur contact@ dans les réglages Gmail). */
 var EXPEDITEUR = 'contact@vraisavoirfaire.fr';
-function gmail(a, sujet, corps) { return 'https://mail.google.com/mail/u/' + encodeURIComponent(EXPEDITEUR) + '/?view=cm&fs=1&tf=1&to=' + encodeURIComponent(a || '') + '&su=' + encodeURIComponent(sujet) + '&body=' + encodeURIComponent(corps); }
+var COMPTE_GMAIL = 'skolantreuz@gmail.com';
+function gmail(a, sujet, corps) { return 'https://mail.google.com/mail/?authuser=' + encodeURIComponent(COMPTE_GMAIL) + '&view=cm&fs=1&tf=1&to=' + encodeURIComponent(a || '') + '&su=' + encodeURIComponent(sujet) + '&body=' + encodeURIComponent(corps); }
+/* mot de passe lisible : 12 caractères sans lettres ambiguës (pas de l, o, i, 0, 1), par groupes de 4 */
+function motDePasse() {
+  var alpha = 'abcdefghjkmnpqrstuvwxyz23456789', n = 12, out = [], oct = new Uint8Array(n * 2), i = 0;
+  crypto.getRandomValues(oct);
+  while (out.length < n && i < oct.length) { if (oct[i] < 248) out.push(alpha[oct[i] % alpha.length]); i++; }   // 248 = 31 × 8 : tirage sans biais
+  while (out.length < n) { var o = new Uint8Array(1); crypto.getRandomValues(o); if (o[0] < 248) out.push(alpha[o[0] % alpha.length]); }
+  return out.join('').replace(/(.{4})(?=.)/g, '$1-');
+}
+function messageAcces(type, qui, lien, mdp, fin) {
+  return 'Bonjour,\n\nVoici votre accès au diagnostic ' + (type === 'entreprise' ? 'entreprise' : 'travailleur') + ' de VraiSavoirFaire, préparé pour ' + qui + ' :\n\nLien : ' + lien + '\nMot de passe : ' + mdp + '\n\nCe lien est valable jusqu’au ' + fin + '.\n\nCordialement,\nVraiSavoirFaire\n' + EXPEDITEUR + '\n';
+}
+/* renvoyer un accès : le mot de passe n'est pas conservé en clair, on en fabrique un nouveau (l'ancien cesse de marcher), puis Gmail s'ouvre.
+   L'onglet est ouvert tout de suite, sur le clic, pour ne pas être bloqué par le navigateur ; le message y arrive quand il est prêt. */
+async function envoyerAcces(a, bouton) {
+  var mail = (a.destinataire || '').trim();
+  if (!MAIL_OK.test(mail)) { mail = String((await dialogue('E-mail du destinataire', 'Pour « ' + a.libelle + ' ».', true, '', 'Continuer')) || '').trim().toLowerCase(); if (!MAIL_OK.test(mail)) return; }
+  if (a.ouvertures > 0 && !(await dialogue('Envoyer à nouveau ?', 'Ce lien a déjà été ouvert. Un nouveau mot de passe va être créé : l’ancien ne marchera plus.', false, '', 'Envoyer'))) return;
+  var onglet = null; try { onglet = window.open('', '_blank'); } catch (e) { /* rien */ }
+  var mdp = motDePasse(); bouton.disabled = true;
+  var r = await sb.rpc('vsf_acces_nouveau_mdp', { p_id: a.id, p_mdp: mdp });
+  bouton.disabled = false;
+  if (r.error || !r.data) { if (onglet) onglet.close(); await dialogue('Envoi impossible', (r.error && r.error.code === 'VSF08' && r.error.message) ? r.error.message : 'Échec : la migration 58 est-elle installée ?', false, '', 'Fermer'); return; }
+  var url = gmail(mail, 'Votre accès au diagnostic VraiSavoirFaire', messageAcces(r.data.type, r.data.libelle, location.origin + '/acces.html?c=' + encodeURIComponent(r.data.code), mdp, new Date(r.data.expire_le).toLocaleDateString('fr-FR')));
+  if (onglet) { try { onglet.opener = null; } catch (e) { /* rien */ } onglet.location.href = url; }
+  else { await dialogue('Gmail a été bloqué', 'Le navigateur a bloqué l’ouverture. Autorisez les fenêtres pour ce site, puis réessayez.', false, '', 'Fermer'); }
+}
 var MAIL_OK = /^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/;
 var TYPES_INV = { entreprise: 'Entreprise', personne: 'Personne', collectif: 'Collectif' };
 var STAT_INV = { a_envoyer: ['À envoyer', 'gris'], envoyee: ['Envoyée', 'jaune'], ouverte: ['Lien ouvert', 'jaune'], compte_cree: ['Compte créé', 'vert'], a_rattacher: ['Compte créé · à rattacher', 'jaune'], expiree: ['Expirée', 'gris'], annulee: ['Annulée', 'gris'] };
@@ -389,7 +418,7 @@ function tableLiens(q) {
       td('Statut', '<span class="st ' + etat[1] + '"><i></i>' + etat[0] + '</span>') +
       td('', '<div class="act"><button class="lnk" data-act="lien-env" data-code="' + E(a.code) + '" data-nom="' + E(a.libelle) + '">Envoyer</button><button class="lnk" data-act="lien-copier" data-code="' + E(a.code) + '">Copier</button><span class="men"><button class="lnk" data-act="menu-l" data-id="' + E(a.id) + '" aria-label="Plus d’actions" aria-haspopup="true">⋯</button></span></div>', 'ac r') + '</tr>';
   }).join('');
-  return '<div class="plus"><a class="lnk" href="admin-acces.html">+ Créer</a></div><p class="regle">Un lien et un mot de passe pour faire un diagnostic sans créer de compte · 30 jours par défaut. Le mot de passe ne s’affiche qu’une fois, à la création. Les invitations à rejoindre une entreprise sont dans « Personnes », avec le statut « invité ».</p>' +
+  return '<div class="plus"><a class="lnk" href="admin-acces.html">+ Créer</a></div><p class="regle">Un lien et un mot de passe pour faire un diagnostic sans créer de compte · 30 jours par défaut. « Envoyer » crée un nouveau mot de passe et ouvre Gmail avec le lien et le mot de passe. Les invitations à rejoindre une entreprise sont dans « Personnes », avec le statut « invité ».</p>' +
     tbl([['Libellé', 25], ['Diagnostic', 13], ['Créé', 9], ['Expire', 9], ['Utilisé', 9, 'r'], ['Statut', 15], ['', 20, 'r']], corps, 'Aucun lien.');
 }
 /* ---------- fiche du compte (panneau de droite) ---------- */
@@ -621,7 +650,7 @@ document.addEventListener('click', async function (e) {
     }
     if (act === 'sigle') { var s2 = await dialogue('Sigle du collectif', 'En minuscules, de 2 à 8 lettres. Il donne l’adresse /collectif/sigle.', true, t.getAttribute('data-sigle'), 'Enregistrer'); if (!s2) return; var r7 = await appeler('vsf_admin_collectif_sigle', { p_federation: id2, p_sigle: String(s2).trim().toLowerCase() }); if (r7.error) { msg(r7.error.message && r7.error.message.length < 160 ? r7.error.message : 'Échec. Réessayez.'); return; } OUVERT.collectifs = true; await charger(); dessiner(); return; }
     if (act === 'lien-copier') { var lc = location.origin + '/acces.html?c=' + encodeURIComponent(t.getAttribute('data-code')); try { await navigator.clipboard.writeText(lc); t.textContent = 'Copié ✓'; } catch (x) { await dialogue('Lien', lc, false, '', 'Fermer'); } return; }
-    if (act === 'lien-env') { var le = location.origin + '/acces.html?c=' + encodeURIComponent(t.getAttribute('data-code')); location.href = 'mailto:?subject=' + encodeURIComponent('Votre accès à VraiSavoirFaire') + '&body=' + encodeURIComponent('Bonjour,\n\nVoici votre lien pour faire le diagnostic :\n' + le + '\n\nLe mot de passe vous est transmis séparément.\n'); return; }
+    if (act === 'lien-env') { var lig = D.liens.filter(function (x) { return x.code === t.getAttribute('data-code'); })[0]; if (lig) envoyerAcces(lig, t); return; }
     if (act === 'lien-prolonger') { var r8 = await appeler('vsf_admin_lien_prolonger', { p_id: id2, p_jours: 30 }); if (r8.error) { await sb.rpc('vsf_acces_lister'); msg('Échec. La migration 47 est-elle installée ?'); return; } OUVERT.liens = true; await charger(); dessiner(); return; }
     if (act === 'lien-supprimer') { if (!(await dialogue('Supprimer le lien ?', 'Il ne marchera plus et la ligne disparaîtra.', false, '', 'Supprimer', true))) return; var r9 = await appeler('vsf_admin_lien_supprimer', { p_id: id2 }); if (r9.error) { msg('Échec. Réessayez.'); return; } OUVERT.liens = true; await charger(); dessiner(); return; }
   }
