@@ -494,6 +494,14 @@ td.rec .octa{font-size:17px}
 .next.ready{color:#111;cursor:pointer}
 .next.ready:hover{color:var(--now)}
 .next .dot{background:var(--off)} .next.ready .dot{background:var(--now)}
+/* bouton « suite » actif : bloc jaune plein, impossible à manquer (halo discret qui pulse) */
+.next.ready{align-self:flex-start;width:fit-content;background:#ffc400;color:#111;padding:16px 26px;box-shadow:0 0 0 0 rgba(255,196,0,.75);animation:halo 2.4s ease-out infinite}
+.next.ready:hover{background:#111;color:#ffc400;animation:none}
+.next.ready .dot{background:#111;animation:none}
+.next.ready:hover .dot{background:#ffc400}
+.next.ready.go .lbl{animation:none;background:none;color:inherit;-webkit-text-fill-color:currentColor}
+@keyframes halo{0%{box-shadow:0 0 0 0 rgba(255,196,0,.75)}70%,100%{box-shadow:0 0 0 16px rgba(255,196,0,0)}}
+@media(prefers-reduced-motion:reduce){.next.ready{animation:none;box-shadow:6px 6px 0 #111}}
 .why{font-size:13px;color:#b42318;margin:8px 0 0 34px}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 
