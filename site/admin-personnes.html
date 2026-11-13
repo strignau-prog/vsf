@@ -314,10 +314,10 @@ function tableAmbassadeurs(q) {
   var L = D.ambassadeurs.filter(function (a) { return q([a.nom, a.atelier].join(' ')); });
   var corps = L.map(function (a) {
     var st = { valide: '<span class="st vert"><i></i>Validé</span>', en_attente: '<span class="st jaune"><i></i>Proposé</span>', suspendu: '<span class="st gris"><i></i>Suspendu</span>' }[a.statut] || E(a.statut);
-    return '<tr>' + td('Nom', E(a.nom), 'nom', a.nom) + td('Atelier', E(a.atelier || '—'), '', a.atelier || '') + td('Statut', st) + td('Offres', String(a.offres || 0), 'r') + td('Correcteurs', '0 · <button class="lnk" disabled title="Bientôt">Habiliter</button>') + td('Reversement', '70 %', 'r') + '</tr>';
+    return '<tr>' + td('Nom', E(a.nom), 'nom', a.nom) + td('Atelier', E(a.atelier || '—'), '', a.atelier || '') + td('Statut', st) + td('Offres', String(a.offres || 0), 'r') + td('Correcteurs', '0 · <button class="lnk" disabled title="Bientôt">Habiliter</button>') + td('Reversement', '70 %', 'r') + td('Formation', '<a class="lnk" href="production.html">Tableau de bord</a> · <a class="lnk" href="production.html#R">Relecture</a>', 'r') + '</tr>';
   }).join('');
   return '<p class="regle">Aucune offre ne s’ouvre sans un ambassadeur validé · un correcteur est habilité à la fois par toi et par l’ambassadeur · sa rémunération est comprise dans les 70 % de l’ambassadeur.</p>' +
-    tbl([['Nom Prénom', 28], ['Atelier', 24], ['Statut', 13], ['Offres', 8, 'r'], ['Correcteurs', 15], ['Reversement', 12, 'r']], corps, 'Aucun ambassadeur.');
+    tbl([['Nom Prénom', 18], ['Atelier', 16], ['Statut', 11], ['Offres', 7, 'r'], ['Correcteurs', 12], ['Reversement', 10, 'r'], ['Formation premium', 26, 'r']], corps, 'Aucun ambassadeur.');
 }
 
 /* ---------- invitations : inviter une entreprise, une personne ou un collectif à créer son compte ---------- */

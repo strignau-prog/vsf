@@ -1206,6 +1206,7 @@ async function charger(){
   } else {
     S.t='R';document.querySelectorAll('#tabs button').forEach(function(b){if(b.dataset.t!=='R')b.style.display='none';});
   }
+  if(admin){var hh=(location.hash||'').slice(1);if('KFCASR'.indexOf(hh)>-1&&hh.length===1)S.t=hh;}
   snapAll();dit('ok','Enregistré');render();
 }
 document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden'&&DB.role){clearTimeout(DB.timer);flush();}});
