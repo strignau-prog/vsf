@@ -43,8 +43,8 @@ iframe{position:absolute;left:-9999px;width:1400px;height:900px;border:0}
         ligne(/^3 regards/.test(x2c),'3 regards à croiser','3 regards',x2c.slice(0,16));
         V.setStep(4);await pause(600);var n=d.querySelectorAll('.crr').length;
         ligne(n===6,'6 lignes dans les regards croisés','6',String(n));
-        V.setStep(5);await pause(600);var c=(d.querySelector('.cart b')||{}).textContent;
-        ligne(c==='4','4 modules dans le panier','4',String(c));
+        V.setStep(5);await pause(600);var c=parseInt(((d.querySelectorAll('.s5foot .tot b')[1])||{}).textContent,10);
+        ligne(c===4,'4 modules d’objectifs validés (pied de la section Formule)','4',String(c));
         /* les seuils sont réglables : un seuil plus exigeant change le feu */
         var S=V.SEUILS,av=V.calcFeu('c2');
         ligne(!!av&&av.f[0]==='g','Étape « Concevoir » : qualité verte avec les seuils du modèle','vert',av?av.f[0]:'—');

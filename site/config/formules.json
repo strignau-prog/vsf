@@ -1,0 +1,122 @@
+{
+  "_note": "Contenu PROVISOIRE de l'étape 5 « Votre stratégie » du diagnostic entreprise (formules, prix, grille par problèmes, outils, modules de Maurice, règle de recommandation). À éditer ici : rien de tout cela n'est écrit dans la page. Prix : null = « … € / mois », 0 = « Gratuit », un nombre = « N € / mois ». Conditions d'affichage possibles : toujours, geste_rare, label_epv, offre_existe. Les réponses des cases sont du HTML court (<b> pour l'outil).",
+
+  "formules": [
+    { "id": "decouvrir", "nom": "Découvrir", "prix": 0, "pour_qui": "Pour avancer seul·e, à votre rythme." },
+    { "id": "engager", "nom": "S’engager", "prix": null, "pour_qui": "Pour être accompagné·e sur vos 3 priorités." },
+    { "id": "durer", "nom": "Durer", "prix": null, "pour_qui": "Pour transmettre vos gestes rares et alléger tout le support." }
+  ],
+
+  "regle_recommandation": {
+    "_note": "Évaluée de haut en bas : la première formule dont une condition est vraie est recommandée. Conditions : geste_rare_6_mois (une priorité sur un geste tenu par une seule personne, échéance de 6 mois ou plus), label_epv (le dossier EPV est visé), priorites_surtout_support (la moitié au moins des priorités portent sur le support).",
+    "si": [
+      { "formule": "durer", "conditions": ["geste_rare_6_mois", "label_epv"] },
+      { "formule": "engager", "conditions": ["priorites_surtout_support"] }
+    ],
+    "sinon": "decouvrir"
+  },
+
+  "pourquoi": {
+    "durer": {
+      "geste_rare_6_mois": "{n} de vos gestes ne tiennent qu’à une personne. Les transmettre prend plus de 6 mois et demande des preuves.",
+      "geste_rare_6_mois_1": "Un de vos gestes ne tient qu’à une personne. Le transmettre prend plus de 6 mois et demande des preuves.",
+      "label_epv": "Vous visez le label EPV : il demande des preuves suivies jusqu’à l’échéance."
+    },
+    "engager": {
+      "priorites_surtout_support": "Vos priorités portent surtout sur le support : un accompagnement à chaque échéance suffit pour les tenir."
+    },
+    "decouvrir": {
+      "defaut": "Vos priorités sont à votre portée : avancez seul·e, à votre rythme, et reprenez le diagnostic à l’échéance."
+    }
+  },
+
+  "cap": {
+    "finalite": "Les transmettre, et libérer du temps des tâches sans valeur pour le réinvestir dans le geste."
+  },
+
+  "aides": {
+    "formation": { "nom": "Formation par un maître artisan" },
+    "kit": { "nom": "Kit de transmission", "usage": "pour transmettre dans l’atelier" },
+    "therese": { "nom": "Thérèse (option)", "usage": "une question courte, au plus 2 par semaine" }
+  },
+
+  "modules_maurice": [
+    { "id": "devis", "nom": "Devis et facturation", "usage": "devis rapides, factures sans erreur, relances", "etapes": ["s1", "c1"] },
+    { "id": "achats", "nom": "Achats et stock", "usage": "le bon matériel au bon moment", "etapes": ["s2"] },
+    { "id": "planning", "nom": "Planning", "usage": "chantiers et équipe planifiés, replanification simple", "etapes": ["s3"] },
+    { "id": "admin", "nom": "Administratif", "usage": "dossiers et échéances à jour", "etapes": ["s4"] },
+    { "id": "tdb", "nom": "Tableau de bord", "usage": "vos délais et indicateurs, mesurés sans saisie", "etapes": ["p2"], "criteres": [1] },
+    { "id": "chantier", "nom": "Suivi de chantier", "usage": "avancement, temps passé, reprises", "etapes": ["c4"] }
+  ],
+
+  "problemes": [
+    {
+      "id": "gestes_rares",
+      "phrase": "« Si je m’arrête, l’atelier s’arrête. »",
+      "sous_titre": "Priorités sur les gestes rares",
+      "condition_affichage": "geste_rare",
+      "formules": {
+        "decouvrir": { "niveau": 1, "reponse": "Des rappels semaine après semaine. Vous transmettez seul·e." },
+        "engager": { "niveau": 2, "reponse": "<b>Kit de transmission</b> pour former votre binôme, et <b>Thérèse</b> pour le faire progresser au travail." },
+        "durer": { "niveau": 3, "reponse": "<b>Un maître artisan forme votre binôme</b>, avec le kit et Thérèse. Les gestes filmés restent dans l’atelier." }
+      }
+    },
+    {
+      "id": "devis",
+      "phrase": "« Les clients attendent trop leur devis. »",
+      "sous_titre": "Réponse au client",
+      "condition_affichage": "toujours",
+      "formules": {
+        "decouvrir": { "niveau": 1, "reponse": "Des rappels pour mesurer le délai et tester une amélioration." },
+        "engager": { "niveau": 3, "reponse": "<b>Maurice</b> prépare le devis en quelques clics et relance pour vous. Le délai se mesure tout seul." },
+        "durer": { "niveau": 3, "reponse": "<b>Maurice</b> prépare le devis en quelques clics et relance pour vous, et <b>Thérèse</b> aide chacun à tenir le délai au quotidien." }
+      }
+    },
+    {
+      "id": "support",
+      "phrase": "« Je passe mes soirées en administratif. »",
+      "sous_titre": "Support : du temps rendu au geste",
+      "condition_affichage": "toujours",
+      "formules": {
+        "decouvrir": { "niveau": 0, "reponse": "" },
+        "engager": { "niveau": 1, "reponse": "Factures et relances seulement." },
+        "durer": { "niveau": 3, "reponse": "Achats, planning et papiers dans <b>Maurice</b> : {temps_rendu}." }
+      }
+    },
+    {
+      "id": "equipe",
+      "phrase": "« Mon équipe ne sait pas où elle en est. »",
+      "sous_titre": "Équipe : la progression de chacun",
+      "condition_affichage": "toujours",
+      "formules": {
+        "decouvrir": { "niveau": 1, "reponse": "Chacun fait son autopositionnement et propose son objectif." },
+        "engager": { "niveau": 2, "reponse": "<b>Thérèse</b> pour vous seul·e." },
+        "durer": { "niveau": 3, "reponse": "<b>Thérèse</b> pour chacun : une question courte au travail, jamais de note." }
+      }
+    },
+    {
+      "id": "preuves",
+      "phrase": "« Je dois prouver mon savoir-faire. »",
+      "sous_titre": "Label EPV, clients, assureurs",
+      "condition_affichage": "label_epv",
+      "formules": {
+        "decouvrir": { "niveau": 1, "reponse": "Vous déposez vos preuves." },
+        "engager": { "niveau": 2, "reponse": "Vos preuves sont validées par un pair." },
+        "durer": { "niveau": 3, "reponse": "Preuves suivies jusqu’à l’échéance : <b>dossier EPV prêt</b>." }
+      }
+    }
+  ],
+
+  "outils": [
+    { "id": "therese", "nom": "Thérèse", "picto": "T", "probleme": "On apprend peu en travaillant, faute de temps pour en parler.", "solution": "Chaque semaine, une question courte à chacun, pendant le travail. Jamais de note.", "condition_affichage": "toujours" },
+    { "id": "maurice", "nom": "Maurice", "picto": "M", "probleme": "Devis, achats, planning et papiers mangent le temps du geste.", "solution": "Tout le support dans un seul outil, réglé sur votre atelier.", "condition_affichage": "toujours" },
+    { "id": "kit", "nom": "Kit de transmission", "picto": "K", "probleme": "On ne sait pas par où commencer pour former quelqu’un.", "solution": "Les étapes, les fiches et les vidéos à tourner pour former un binôme dans l’atelier.", "condition_affichage": "toujours" },
+    { "id": "maitre", "nom": "Maître artisan", "picto": "◆", "probleme": "Personne en interne n’a le temps ou le niveau pour enseigner le geste.", "solution": "Un maître du métier forme votre binôme, module par module.", "condition_affichage": "offre_existe" }
+  ],
+
+  "offres_demo": {
+    "_note": "Utilisé SEULEMENT en mode démonstration (?demo=1). Sur un vrai diagnostic, les offres sont lues dans la base (vsf_offres pilote ou publiée, vendeur validé) : aucun nom d'Ambassadeur n'est écrit dans la page.",
+    "ambassadeurs": { "PL": { "nom": "Tristan Gesret", "titre": "Ambassadeur peintre en lettres" } },
+    "collectif": { "nom": "votre Fédération des peintres en lettres", "metiers": ["PL"] }
+  }
+}

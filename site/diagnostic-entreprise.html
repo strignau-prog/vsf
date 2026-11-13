@@ -17,7 +17,7 @@
 <!--
 v10 = v9 + le volet équipe : chaque salarié se rattache, choisit sa fiche et s'autopositionne (N1→N4).
 Ses niveaux donnent un feu calculé à côté de celui du dirigeant ; un curseur unique règle leur poids.
-Restitution : regards croisés, compétences de l'équipe, rareté réelle. Accompagnement : plans individuels et panier de modules.
+Restitution : regards croisés, compétences de l'équipe, rareté réelle. Votre stratégie : le cap, les priorités, l'équipe et la formule.
 
 Proposition « Étape 1 : Mon secteur et mes postes clés » (v9), pour validation avant d'adapter les autres étapes. Données fictives.
 Idées clés :
@@ -640,6 +640,147 @@ html.vsf-menu-on body > .top{position:sticky !important}      /* le bandeau des 
 .lkp .acts{display:flex;flex-wrap:wrap;gap:6px 22px;margin-top:6px}
 .lkp .acts .inv{font-size:14px}
 .tmr .inv.go{font-size:13.5px}
+/* ===== étape 5 : Votre stratégie (le fil, le cap, les priorités, l'équipe, la formule) ===== */
+@media(max-width:999px){#v5 .side{display:none}}
+.fil5 .t{font-weight:900;font-size:20px;margin:0 0 14px}
+.fil5 ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.fil5 li a{display:grid;grid-template-columns:22px 1fr;gap:8px;padding:9px 0;text-decoration:none;font-weight:700;font-size:14px;color:#111}
+.fil5 li a:hover b{color:#ffc400}
+.fil5 li small{display:block;font-weight:500;color:#767676;font-size:12px}
+.fil5 .m{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#767676;margin:14px 0 2px}
+.pin5{width:14px;height:14px;border-radius:50%;margin-top:3px;display:inline-block;flex:none}
+.pin5.r{background:#ff3b1f}.pin5.y{background:#ffc400}.pin5.g{background:#009e73}.pin5.k{background:#111}.pin5.o{border:2px solid #111}
+#acc .s5s{scroll-margin-top:calc(var(--hh,0px) + var(--th,0px) + 16px)}
+#acc .s5s+.s5s{margin-top:72px}
+#acc .s5s h2{margin:0 0 6px;font-size:26px;font-weight:900;letter-spacing:-.01em}
+#acc .s5sub{color:#767676;margin:0 0 22px;font-size:14.5px;max-width:760px}
+.s5cap{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
+@media(min-width:720px){.s5cap{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr)}}
+.s5bl{background:#f5f5f5;padding:22px 24px}
+.s5pal{display:flex;align-items:center;gap:18px;font-weight:900}
+.s5pal .n{font-size:54px;line-height:1;letter-spacing:-.03em}
+.s5pal .ar{font-size:28px;color:#767676}
+.s5pal small{display:block;font-size:12px;font-weight:700;color:#767676;letter-spacing:.06em;text-transform:uppercase}
+.s5fin{font-size:17px;font-weight:800;margin:0}
+.s5fin span{color:#767676;font-weight:500;display:block;font-size:14px;margin-top:6px}
+.s5all{margin-top:14px;display:flex;flex-direction:column;gap:8px;font-size:14px}
+.s5all div{display:flex;gap:10px;align-items:flex-start}
+.s5p{border-top:3px solid #111;padding-top:20px;scroll-margin-top:calc(var(--hh,0px) + var(--th,0px) + 16px)}
+.s5p+.s5p{margin-top:44px}
+.s5ph{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.s5ph .num{font-size:13px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:#767676}
+.s5ph h3{margin:0;font-size:22px;font-weight:900;flex:1;min-width:240px}
+.s5ph .ech{font-weight:800;font-size:14px}
+.s5ch{display:grid;grid-template-columns:minmax(0,1fr);margin-top:18px}
+@media(min-width:820px){.s5ch{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.s5c{padding:16px 18px 18px;position:relative}
+.s5c .lab{font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:#767676;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.s5c.c1{background:#fdecea}.s5c.c2{background:#fff4cc}.s5c.c3{background:#f5f5f5}
+.s5c p{margin:0;font-weight:700}
+.s5c p small{display:block;font-weight:500;color:#4a4a4a;margin-top:4px;font-size:13.5px}
+@media(min-width:820px){.s5c.c1::after,.s5c.c2::after{content:"→";position:absolute;right:-9px;top:14px;font-weight:900;font-size:18px;z-index:2}}
+.s5ai{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+.s5a{display:flex;gap:10px;align-items:flex-start;font-size:14px;font-weight:700}
+.s5a small{display:block;font-weight:500;color:#4a4a4a;font-size:12.5px}
+.s5ic{width:22px;height:22px;flex:none;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;background:#111;color:#fff;font-size:11px;font-weight:900}
+.s5ic.sq{border-radius:4px}
+.s5ic.dm{background:none;color:#111;font-size:16px}
+.s5mi{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin-top:18px}
+@media(max-width:700px){.s5mi{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:14px}.s5m:nth-child(2n)::after{display:none}}
+.s5m{padding-right:14px;position:relative;font-size:13.5px}
+.s5m::before{content:"";display:block;width:14px;height:14px;border-radius:50%;border:2px solid #111;margin-bottom:8px;background:#fff;position:relative;z-index:1}
+.s5m::after{content:"";position:absolute;left:14px;right:0;top:7px;height:2px;background:#c4c4c4}
+.s5m:last-child::after{display:none}
+.s5m:last-child::before{border-color:#ffc400;background:#ffc400}
+.s5m b{display:block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:2px}
+.s5note{font-size:12.5px;color:#767676;margin:12px 0 0}
+.s5eq{display:flex;flex-direction:column}
+.s5r{border-top:1px solid #e4e4e4}
+.s5r:last-child{border-bottom:1px solid #e4e4e4}
+.s5r summary{list-style:none;display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1.4fr) auto;gap:16px;align-items:center;padding:16px 0;cursor:pointer}
+.s5r summary::-webkit-details-marker{display:none}
+@media(max-width:700px){.s5r summary{grid-template-columns:minmax(0,1fr);gap:4px}}
+.s5r .nm{font-weight:900;font-size:16px}
+.s5r .nm small{display:block;font-weight:500;color:#767676;font-size:13px}
+.s5r .st{font-size:14px}
+.s5r summary:hover .nm{color:#ffc400}
+.s5tag{font-size:12px;font-weight:800;padding:5px 10px;white-space:nowrap;justify-self:start}
+.s5tag.todo{background:#fdecea;color:#b42318}
+.s5tag.ok{background:#e6f5ef;color:#007a58}
+.s5tag.wait{background:#f5f5f5;color:#767676}
+.s5d{padding:0 0 18px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 24px;font-size:14px;max-width:640px}
+.s5d span:nth-child(even){font-weight:800;white-space:nowrap}
+.s5d .more{grid-column:1/-1;color:#767676}
+.s5d .act{grid-column:1/-1;margin-top:10px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.s5d .nt{grid-column:1/-1;font-size:13px;color:#4a4a4a;margin:0}
+.s5btn{display:inline-flex;align-items:center;gap:8px;border:0;background:#111;color:#fff;font:inherit;font-weight:800;padding:12px 18px;cursor:pointer}
+.s5btn:hover{color:#ffc400}
+.s5btn.ghost{background:none;color:#111;padding:12px 0}
+.s5btn.on{background:#e6f5ef;color:#007a58}
+.s5btn.on:hover{color:#111}
+.s5lk{background:none;border:0;padding:0;font:inherit;font-weight:800;font-size:13px;cursor:pointer;color:#111}
+.s5lk:hover{color:#ffc400}
+.s5why{background:#fff4cc;padding:16px 20px;font-size:14.5px;margin:0 0 22px;max-width:860px}
+.s5why b{font-weight:900}
+.s5offers{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:18px 0}
+.s5off{width:100%;font:inherit;color:#111;background:#fff;border:2px solid #e4e4e4;padding:26px 18px 22px;cursor:pointer;display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;position:relative;transition:border-color .2s}
+.s5off:hover{border-color:#111}
+.s5off.sel{border-color:#111;box-shadow:0 0 0 1px #111}
+.s5off.rec{background:#111;color:#fff;border-color:#111}
+.s5off .badge{position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:#ffc400;color:#111;font-size:10.5px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;padding:4px 10px;max-width:calc(100% - 8px);text-align:center;line-height:1.25}
+.s5off .on{font-size:26px;font-weight:900;letter-spacing:-.01em}
+.s5off .op{font-size:15px;font-weight:800;color:#767676}
+.s5off.rec .op{color:#ffc400}
+.s5off .opr{font-size:13.5px;line-height:1.35;max-width:220px;margin-top:4px}
+.s5off.rec .opr{color:#ddd}
+.s5g{margin-top:26px}
+.s5gh,.s5gr{display:grid;grid-template-columns:minmax(0,1.25fr) repeat(3,minmax(0,1fr))}
+.s5gh{position:sticky;top:calc(var(--hh,0px) + var(--th,0px));background:#fff;z-index:3}
+.s5gh div{text-align:center;font-weight:900;font-size:15px;padding:12px 8px}
+.s5gh div.rc{background:#111;color:#fff}
+.s5gr{border-top:1px solid #e9e9e9}
+.s5gr:last-child{border-bottom:1px solid #e9e9e9}
+.s5pb{padding:18px 16px 18px 0}
+.s5pb .q{font-weight:900;font-size:16px;line-height:1.25}
+.s5pb .w{display:block;font-size:12px;font-weight:700;color:#767676;margin-top:6px;letter-spacing:.04em}
+.s5cl{padding:18px 14px;font-size:13.5px;display:flex;flex-direction:column;gap:8px;align-items:center;text-align:center}
+.s5cl.rc{background:#fafafa}
+.s5cl .t{color:#333}
+.s5cl .t b{color:#111}
+.s5cl.zero .t{color:#c4c4c4}
+.s5lv{display:flex;gap:3px}
+.s5lv i{width:16px;height:6px;background:#e4e4e4;display:block}
+.s5lv i.f{background:#111}
+.s5cl.rc .s5lv i.f{background:#ffc400}
+.s5h3{font-size:20px;font-weight:900;margin:52px 0 16px}
+.s5out{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.s5ou{display:flex;gap:14px;background:#f5f5f5;padding:18px}
+.s5ou b{font-size:16px;font-weight:900}
+.s5ou p{margin:4px 0 0;font-size:13.5px}
+.s5ou .pb{color:#b42318;font-weight:700}
+.s5ou .pb::before{content:"Problème : ";color:#767676;font-weight:800}
+.s5ou p:not(.pb)::before{content:"Solution : ";color:#767676;font-weight:800}
+.s5foot{display:flex;flex-wrap:wrap;gap:16px 28px;align-items:center;justify-content:space-between;margin-top:28px;padding:22px 24px;background:#f5f5f5}
+.s5foot .tot{font-size:14px}
+.s5foot .tot b{font-size:16px}
+.s5keep{margin-top:18px;font-size:13.5px;color:#767676;max-width:760px}
+.s5ok{margin:14px 0 0;font-size:14px;font-weight:700;color:#007a58}
+@media(max-width:760px){
+  .s5offers{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;position:sticky;top:calc(var(--hh,0px) + var(--th,0px));z-index:4;background:#fff;padding:14px 0 8px;margin:0}
+  .s5off{padding:14px 4px 10px;gap:2px}
+  .s5off .on{font-size:15px}
+  .s5off .op{font-size:11.5px}
+  .s5off .opr{display:none}
+  .s5off .badge{font-size:0;padding:3px 7px;position:static;transform:none;order:-1;margin-bottom:2px}
+  .s5off .badge::after{content:"Pour vous";font-size:9px}
+  .s5gh{display:none}
+  .s5gr{grid-template-columns:minmax(0,1fr);padding:6px 0}
+  .s5pb{padding:14px 0 4px}
+  .s5cl{display:none;align-items:flex-start;text-align:left;padding:4px 0 16px;background:none !important}
+  .s5g[data-sel="0"] .s5cl[data-o="0"],.s5g[data-sel="1"] .s5cl[data-o="1"],.s5g[data-sel="2"] .s5cl[data-o="2"]{display:flex}
+  .s5cl .t{font-size:15px}
+  .s5out{grid-template-columns:minmax(0,1fr)}
+}
 </style>
 <link rel="stylesheet" href="vsf-menu.css">
 
@@ -832,14 +973,13 @@ html.vsf-menu-on body > .top{position:sticky !important}      /* le bandeau des 
   </div>
   </div>
 
-  <!-- ===================== ÉTAPE 5 ===================== -->
+  <!-- ===================== ÉTAPE 5 : VOTRE STRATÉGIE ===================== -->
   <div id="v5" hidden>
   <div class="kick">Étape 5 sur 5</div>
-  <h1>Accompagnement</h1>
-  <p class="lead">Comment VraiSavoirFaire vous aide à tenir vos priorités, à partir de ce que le diagnostic a montré.</p>
-  <div class="okb"><span class="dot ok"></span><div><b>Vos priorités sont validées.</b> Elles restent modifiables. Le diagnostic et vos priorités vous appartiennent, que vous choisissiez une formule ou non.</div></div>
+  <h1>Votre stratégie</h1>
+  <p class="lead">Ce que le diagnostic a montré, ce que vous allez faire, et ce qui vous aide. Votre stratégie vous appartient, que vous choisissiez une formule ou non.</p>
   <div class="grid">
-    <div class="side"><section><h2>Sommaire</h2><nav class="toc" id="toc5"></nav></section></div>
+    <aside class="side fil5" id="fil5" aria-label="Le fil de votre stratégie"></aside>
     <div id="acc"></div>
   </div>
   </div>
@@ -1300,58 +1440,256 @@ $('sign').onclick=function(){if(!this.classList.contains('ready'))return;S.signe
 
 /* ===== priorités dans la restitution + accompagnement ===== */
 var _drawRest=drawRest; drawRest=function(){_drawRest();var nb=$('toc').querySelectorAll('a').length+1;$('toc').innerHTML+='<a href="#r-prio"><i>'+nb+'</i>Mes priorités</a>';document.querySelector('#r-prio h3 i').textContent=nb;drawPlan();};
-var MICRO={h:['Choisir le binôme et un créneau chaque semaine','Filmer le geste une première fois et le décrire','Faire refaire le geste, observé par le maître'],r:['Mesurer la situation pendant 2 semaines','Tester une amélioration simple','Comparer, décider et l’écrire'],e:['Lister les preuves déjà réunies','Combler une preuve manquante','Faire relire le dossier'],a:['Noter ce qui prend du temps','Supprimer, simplifier ou confier une tâche','Mesurer le temps rendu au cœur de métier'],y:['Repérer quand ça dérape','Fixer un repère partagé','Vérifier sur 3 chantiers'],ax:['Choisir une question où progresser','Mettre en place l’observable du niveau suivant','Faire le point en équipe']};
-var MOD={s1:['Devis et facturation','Devis rapides, factures sans erreur, relances'],s2:['Achats et stock','Bon matériel au bon moment'],s3:['Planning','Chantiers et équipe planifiés, replanification simple'],s4:['Administratif','Dossiers et échéances à jour'],p2:['Tableau de bord','Vos indicateurs clés, sans saisie inutile'],c4:['Suivi de chantier','Avancement, temps passé, reprises']};
-function drawAcc(){
-  var A=actions().filter(function(a){return S.pick[a.k]}),h='',toc=[],n=0,c=calc();
-  function blk(id,t,sub,b){n++;toc.push([id,n,t]);return '<section class="rb" id="'+id+'"><h3><i>'+n+'</i>'+t+'</h3>'+(sub?'<p class="sub">'+sub+'</p>':'')+b+'</section>';}
-  var mi='<div class="two-m"><div class="mode2"><b>Sans abonnement</b>Un suivi simple sur VraiSavoirFaire : les micro-actions, un rappel discret, la preuve à déposer.</div><div class="mode2"><b>Avec Thérèse</b>Ces micro-actions deviennent le point de départ de son accompagnement, au plus 2 par semaine et par personne.</div></div>';
-  mi+=A.map(function(a){var d=S.det[a.k]||{},kind=a.k.slice(0,2)==='ax'?'ax':a.k[0],ms=MICRO[kind]||MICRO.r,lab=echLab(d.m);
-    return '<div class="mic"><h4>'+a.t+'</h4><div class="meta">'+(d.w?FK[d.w].n:'')+(lab?' · '+lab:'')+'</div><div class="mtl">'+ms.map(function(m,i){return '<div><b>Semaine '+[1,3,6][i]+'</b>'+m+'</div>'}).join('')+'<div class="end"><b>'+(lab||'Échéance')+'</b>Preuve : '+((PROOF.filter(function(x){return x[0]===d.p})[0]||['',''])[1].toLowerCase())+'</div></div></div>'}).join('');
-  h+=blk('a-suivi','Le suivi de vos priorités','Avant chaque échéance, des micro-actions semaine après semaine.',mi);
-  var mods=[];Object.keys(MOD).forEach(function(id){var nn=nR(id),w=worst(id,nn);if((c.m[id]||[]).length&&(w==='r'||S.alleger[id]))mods.push(MOD[id].concat([w==='r'?'feu rouge':'à alléger']));});
-  h+=blk('a-maurice','Maurice, adapté à votre organisation','Seulement les modules utiles, choisis d’après vos feux et ce que vous voulez alléger.','<div class="mods">'+(mods.length?mods.map(function(m){return '<div class="mod"><b>'+m[0]+'</b>'+m[1]+'<br><small>Parce que : '+m[2]+'</small></div>'}).join(''):'<div class="mod">Aucun module prioritaire relevé.</div>')+'</div>');
-  h+=blk('a-therese','Thérèse, en situation de travail','Pour chaque personne, y compris le/la dirigeant·e : une question courte à la fois, jamais de note, jamais hors des heures de travail.','<div class="mods">'+onKeys().map(function(k){return '<div class="mod"><b>'+(ART[k]?'◆ ':'')+FK[k].n+'</b><small>'+S.q[k]+' pers.</small></div>'}).join('')+'</div>');
-  var ones=stepsAll().filter(function(x){return artCell(x.id)&&holdN(x.id)===1});
-  /* formation : seulement s'il existe une offre d'un Ambassadeur métier ou du collectif de rattachement */
-  var gform=ones.map(function(x){var ks=(c.m[x.id]||[]).filter(function(k){return ART[k]});var off=null;ks.forEach(function(k){if(!off&&AMB[k])off=AMB[k];if(!off&&COLL&&COLL.offers.indexOf(k)>=0)off=COLL.name;});return {t:x.t,off:off};});
-  var withOff=gform.filter(function(g){return g.off});
-  if(ones.length)h+=blk('a-form','Transmettre vos gestes rares','Pour chaque geste qui ne tient qu’à une personne : une formation par un maître artisan quand une offre existe, et dans tous les cas un kit pour transmettre dans l’atelier.','<div class="mods">'+gform.map(function(g){return '<div class="mod"><b>◆ '+g.t+'</b>'+(g.off?'Formation par <b style="display:inline">'+g.off+'</b>':'<small>Pas encore d’offre de formation pour ce geste.</small> <button class="lnk3">Être prévenu·e →</button>')+'</div>'}).join('')+'</div>');
-  h+=planBlock(blk);
-  var rec=mods.length>=2?'D':(ones.length?'E':'G');
-  var pri=A.length, ex=A[0]?A[0].t:'';
-  var fh=0;['s1','s2','s3','s4'].forEach(function(id){if(S.alleger[id])fh+=(c.hs[id]||0);});
-  function gq(n){return '<span class="gq">'+[1,2,3].map(function(i){return '<i'+(i<=n?' class="f"':'')+'></i>'}).join('')+'</span>';}
-  function cell(v){return v===1?'<span class="ck">✓</span>':(v===0?'<span class="no">—</span>':v);}
-  var formE=withOff.length?'✓ '+withOff.map(function(g){return '◆ '+g.t}).join(', ')+'<small>par '+withOff[0].off+'</small>':(ones.length?'<small>Aucune offre pour l’instant</small>':'<span class="no">—</span>');
-  var rows=[
-   ['sec','Votre diagnostic'],
-   ['Restitution et priorités',1,1,1],
-   ['Preuves de vos priorités','Coffre-fort personnel de chaque salarié','+ niveaux de formation validés au passeport','<b>Chaque preuve tracée</b> : dépôt, validation par un tuteur ou un pair, avancement jusqu’à l’échéance, dossier prêt'+(engActive().length?' ('+engActive().map(function(c){return ESH[c]}).join(', ')+')':'')],
-   ['sec','Vos '+pri+' priorités'],
-   ['Suivi',gq(1)+'Rappels simples',gq(2)+'+ bilan à chaque échéance',gq(3)+'Thérèse chaque semaine, en situation'],
-   ['Exemple : '+ex,'Vous avancez seul·e','Point d’étape à l’échéance','Micro-actions guidées jusqu’à la preuve'],
-   ['sec','Votre cœur de métier'],
-   ['Formation par un maître artisan',0,formE,formE],
-   ['Kit de transmission',0,'✓ fiche du geste, binôme, guide vidéo','✓'],
-   ['Bibliothèque des gestes de l’atelier',0,0,'✓ gestes filmés, décrits, rangés dans Maurice'],
-   ['Suivi de l’apprenti',0,0,'✓ Thérèse, jusqu’à la validation en situation réelle'],
-   ['sec','Votre support'],
-   ['Maurice adapté',0,0,mods.length?'✓ '+mods.map(function(m){return m[0]}).join(', '):'✓'],
-   ['Temps rendu au cœur de métier',0,0,fh?freedTxt(fh)+' / semaine':'à estimer'],
-   ['sec','Dans un an'],
-   ['Ce que vous aurez','Un plan suivi','Des gestes transmis, des preuves','Palier '+Math.min(4,Math.floor(Math.round(overall()*10)/10)+1)+' visé, gestes transmis, support allégé, preuves prêtes']
-  ];
-  var COLS=[['G','Découvrir','Gratuit'],['E','S’engager','Ponctuel · prix à fixer'],['D','Durer','Abonnement · prix à fixer']];
-  var t='<div class="otabs">'+COLS.map(function(c2){return '<button data-oc="'+c2[0]+'"'+(c2[0]===rec?' class="on"':'')+'>'+c2[1]+'</button>'}).join('')+'</div><table class="cmpt" data-col="'+rec+'"><thead><tr><th></th>'+COLS.map(function(c2){return '<th class="c'+c2[0]+(c2[0]===rec?' rec':'')+'">'+(c2[0]===rec?'<span class="rtag">Recommandée pour vous</span>':'')+'<b>'+c2[1]+'</b><span>'+c2[2]+'</span></th>'}).join('')+'</tr></thead><tbody>'+rows.map(function(r){if(r[0]==='sec')return '<tr class="sec"><td colspan="4">'+r[1]+'</td></tr>';return '<tr><td class="rl2">'+r[0]+'</td>'+['G','E','D'].map(function(cc,k){return '<td class="c'+cc+(cc===rec?' rec':'')+'">'+cell(r[k+1])+'</td>'}).join('')+'</tr>'}).join('')+'</tbody><tfoot><tr><td></td>'+COLS.map(function(c2){return '<td class="c'+c2[0]+(c2[0]===rec?' rec':'')+'"><button class="octa">Choisir '+c2[1]+' →</button></td>'}).join('')+'</tr></tfoot></table>';
-  h+=blk('a-offre','Votre formule','Comparez ce que chaque formule change concrètement pour votre entreprise. Celle qui correspond le mieux à votre diagnostic est mise en avant.',t);
-  $('acc').innerHTML=h;$('toc5').innerHTML=toc.map(function(t){return '<a href="#'+t[0]+'"><i>'+t[1]+'</i>'+t[2]+'</a>'}).join('');
+/* ===================== ÉTAPE 5 : VOTRE STRATÉGIE ===================== */
+/* Le contenu des formules, de la grille et des outils vient de config/formules.json (provisoire, éditable) ; rien n'est écrit en dur ici. */
+var FORM=null,FORMERR=false,OFFRES=null,OFFRES_CH=false;
+function esc5(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function nb5(n){return ['Aucun','Un','Deux','Trois','Quatre','Cinq','Six','Sept','Huit','Neuf'][n]||String(n);}
+function redessiner5(){var y=scrollY;drawAcc();scrollTo(0,y);}
+function chargerFormules(cb){
+  fetch('config/formules.json?'+Date.now()).then(function(r){if(!r.ok)throw new Error(r.status);return r.json();}).then(function(j){FORM=j;cb();}).catch(function(){FORMERR=true;cb();});
+}
+/* offres de formation : seulement celles qui existent (offre pilote ou publiée d'un Ambassadeur validé, ou du collectif de rattachement) */
+function chargerOffres(){
+  if(OFFRES||OFFRES_CH)return;
+  var demo=!!new URLSearchParams(location.search).get('demo');
+  if(demo||!window.VSF||!VSF.sb){
+    var d=(FORM&&FORM.offres_demo)||{};OFFRES={};
+    Object.keys(d.ambassadeurs||{}).forEach(function(k){var a=d.ambassadeurs[k];OFFRES[k]={lib:a.nom+', '+a.titre,titre:a.titre};});
+    if(d.collectif)OFFRES._coll=d.collectif;return;
+  }
+  OFFRES_CH=true;
+  VSF.sb.from('vsf_offres').select('intitule,statut,vendeur:vsf_vendeurs(nom)').in('statut',['pilote','publiee']).then(function(r){
+    var m={};(r.data||[]).forEach(function(o){var t=norm(o.intitule||'');Object.keys(ART).forEach(function(k){if(FK[k]&&o.vendeur&&o.vendeur.nom&&t.indexOf(norm(FK[k].n))>=0){var ti='Ambassadeur '+FK[k].n.toLowerCase();m[k]={lib:o.vendeur.nom+', '+ti,titre:ti};}});});
+    OFFRES=m;OFFRES_CH=false;if(!$('v5').hidden)redessiner5();
+  },function(){OFFRES={};OFFRES_CH=false;});
+}
+function offerFor(k){
+  if(!ART[k]||!OFFRES)return null;
+  if(OFFRES[k])return OFFRES[k];
+  var cl=OFFRES._coll;if(cl&&cl.metiers.indexOf(k)>=0)return {lib:cl.nom,titre:cl.nom};
+  return null;
+}
+function offerOfStep(id){var c=calc(),o=null;(c.m[id]||[]).forEach(function(k){if(!o)o=offerFor(k);});return o;}
+function modsOf(p){var g=S.goal[p.pid]||{},L=[];psf(p).forEach(function(x){var t=g[x.key];if(!t)return;var cur=lvOf(p,x.key)||0;for(var l=Math.max(1,cur+1);l<=t;l++)L.push({t:x.t,l:l,k:x.k,off:offerFor(x.k)});});return L;}
+
+/* ---- les priorités validées à l'étape 4, dans l'ordre de la restitution ---- */
+var PROOFS={decl:'je le déclare',doc:'un document le montre',obs:'on le constate sur place',val:'un tiers extérieur le valide'};
+function prioOf(a,i){
+  var k=a.k,kind=k.slice(0,2)==='ax'?'ax':k[0],id=kind==='ax'?'':k.slice(1,3),j=kind==='ax'?'':k.slice(3),d=S.det[k]||{},st=STEPN[id]||'',c=calc(),zone='',cons,eng;
+  stepsAll().forEach(function(x){if(x.id===id)zone=x.z;});
+  if(kind==='h'){
+    cons={pin:'r',tit:'◆ Geste rare, une seule personne',txt:'Une seule personne sait faire « '+st+' » seule. Si elle s’arrête, le geste s’arrête.'};
+    eng='Une 2ᵉ personne fait « '+st+' » seule, sans reprise.';
+  }else if(kind==='r'){
+    cons={pin:'r',tit:'Feu rouge sur « '+KPI[id][+j]+' »',txt:'Sur l’étape « '+st+' », le critère « '+KL[+j].toLowerCase()+' » est au rouge : c’est là que le temps et la qualité se perdent.'};
+    eng='« '+KPI[id][+j]+' » repasse au vert sur « '+st+' ».';
+  }else if(kind==='e'){
+    var ex=exOf(id)[+j]||['',''];
+    cons={pin:S.lights[id+':'+(3+(+j))]==='r'?'r':'y',tit:'Engagement '+(ESH[ex[0]]||'')+' à consolider',txt:'« '+ex[1]+' » n’est pas encore tenu sur l’étape « '+st+' ».'};
+    eng='« '+ex[1]+' » est tenu sur « '+st+' ».';
+  }else if(kind==='a'){
+    var hh=c.hs[id]||0;
+    cons={pin:worst(id,nR(id))||'y',tit:'Support à alléger',txt:'« '+st+' » prend du temps qui ne va pas au geste'+(hh?' : environ '+fh1(hh)+' h par semaine.':'.')};
+    eng='Moins de temps passé sur « '+st+' », rendu au cœur de métier.';
+  }else if(kind==='y'){
+    cons={pin:'y',tit:'À surveiller · '+KL[+j],txt:'« '+KPI[id][+j]+' » est au jaune sur « '+st+' » : ça tient, mais pas encore partout.'};
+    eng='« '+KPI[id][+j]+' » tient sur trois chantiers de suite.';
+  }else{
+    var axn=(AXM.filter(function(x){return x[0]===k.slice(2);})[0]||['','l’axe'])[1],mv=avg(k.slice(2));
+    cons={pin:'y',tit:'Axe le plus bas',txt:'Sur « '+axn+' », vos réponses donnent une moyenne de '+fr(mv)+' / 4.'};
+    eng='Un repère du niveau suivant est en place sur « '+axn+' ».';
+  }
+  var proof=PROOFS[d.p]||'';
+  return {a:a,i:i,k:k,kind:kind,id:id,j:j,zone:zone,st:st,d:d,cons:cons,eng:eng,proof:proof,mois:+d.m||3,lab:echLab(d.m),porteur:(d.w&&FK[d.w])?FK[d.w].n:''};
+}
+function prios(){return actions().filter(function(a){return S.pick[a.k];}).map(prioOf);}
+
+/* modules de Maurice qui agissent sur l'étape (ou le critère) d'une priorité */
+function modulesOf(p){
+  return (FORM.modules_maurice||[]).filter(function(m){
+    if(p.id&&m.etapes.indexOf(p.id)>=0)return true;
+    return (p.kind==='r'||p.kind==='y')&&m.criteres&&m.criteres.indexOf(+p.j)>=0&&(calc().m[p.id]||[]).length>0;
+  });
+}
+/* micro-actions : elles dépendent du type de priorité, et chaque frise cite l'étape ou le critère concerné (deux frises ne sont jamais identiques) */
+function microOf(p){
+  var k=p.id&&KPI[p.id]&&p.j!==''?KPI[p.id][+p.j]:'',st=p.st,t;
+  if(p.kind==='h'){
+    t=p.id==='c2'?['Choisir le binôme et un créneau fixe chaque semaine','Filmer une conception et la commenter ensemble','Le binôme conçoit, vous corrigez']
+     :p.id==='c4'?['Choisir le binôme et une première pièce simple','Travailler côte à côte, un seul point à soigner','Le binôme réalise seul·e, vous contrôlez']
+     :['Choisir le binôme et un créneau fixe pour « '+st+' »','Filmer le geste une première fois et le décrire','Faire refaire le geste, observé par celui ou celle qui le maîtrise'];
+  }else if(p.kind==='r'){
+    t=[['Relever les défauts de « '+k+' » pendant 2 semaines','Tester un contrôle simple avant la livraison','Comparer, décider et l’écrire'],
+       ['Mesurer le délai de « '+k+' » pendant 2 semaines','Tester une amélioration simple du délai','Comparer, décider et l’écrire'],
+       ['Noter le temps passé sur « '+k+' » pendant 2 semaines','Supprimer, simplifier ou confier une tâche','Mesurer le temps gagné']][+p.j]||[];
+  }else if(p.kind==='y'){
+    t=[['Repérer quand « '+k+' » dérape','Fixer un repère partagé','Vérifier sur 3 chantiers'],
+       ['Repérer les retards sur « '+k+' »','Fixer un point d’alerte partagé','Vérifier sur 3 chantiers'],
+       ['Repérer le temps perdu sur « '+k+' »','Fixer un temps cible partagé','Vérifier sur 3 chantiers']][+p.j]||[];
+  }else if(p.kind==='e'){
+    var ex=exOf(p.id)[+p.j]||['',''];
+    t=['Lister les preuves déjà réunies pour « '+ex[1]+' »','Combler la preuve manquante','Faire relire le dossier '+(ESH[ex[0]]||'')];
+  }else if(p.kind==='a'){
+    t=['Noter ce qui prend du temps dans « '+st+' »','Supprimer, simplifier ou confier une tâche','Mesurer le temps rendu au cœur de métier'];
+  }else{
+    var axn=(AXM.filter(function(x){return x[0]===p.k.slice(2);})[0]||['','l’axe'])[1];
+    t=['Choisir une question où progresser sur « '+axn+' »','Mettre en place le repère du niveau suivant','Faire le point en équipe'];
+  }
+  var W=Math.max(4,Math.round(p.mois*4.3)),s2=Math.max(2,Math.round(W*.25)),s3=Math.max(s2+1,Math.round(W*.6));
+  return [['Semaine 1',t[0]],['Semaine '+s2,t[1]],['Semaine '+s3,t[2]],['Mois '+p.mois,p.proof?'Preuve : '+p.proof+'.':'Échéance']];
+}
+function aidesOf(p){
+  var A=(FORM.aides||{}),L=[];
+  if(p.kind==='h'){var of=offerOfStep(p.id);if(of)L.push(['dm','◆',(A.formation||{}).nom||'Formation par un maître artisan',of.lib]);L.push(['sq','K',(A.kit||{}).nom||'Kit de transmission',(A.kit||{}).usage||'']);}
+  modulesOf(p).forEach(function(m){L.push(['sq','M','Maurice · '+m.nom,m.usage]);});
+  L.push(['','T',(A.therese||{}).nom||'Thérèse',(A.therese||{}).usage||'']);
+  return L;
 }
 
-/* rattachement de l'entreprise et offres de formation existantes (démo) */
-var AMB={PL:'Tristan Gesret, Ambassadeur peintre en lettres'};
-var COLL={name:'votre Fédération des peintres en lettres',offers:['PL']};
-$('acc').addEventListener('click',function(e){var b=e.target.closest('[data-oc]');if(!b)return;var t=$('acc').querySelector('.cmpt');t.dataset.col=b.dataset.oc;$('acc').querySelectorAll('[data-oc]').forEach(function(x){x.classList.toggle('on',x===b)});});
+/* ---- conditions d'affichage et recommandation (la règle est dans la configuration) ---- */
+function ctx5(P){
+  var ones=stepsAll().filter(function(x){return artCell(x.id)&&holdN(x.id)===1;});
+  return {ones:ones,geste_rare:ones.length>0,
+    geste_rare_6_mois:P.some(function(p){return p.kind==='h'&&p.mois>=6;}),
+    label_epv:engActive().indexOf('EPV')>=0,
+    offre_existe:onKeys().some(function(k){return !!offerFor(k);}),
+    priorites_surtout_support:P.length>0&&P.filter(function(p){return p.zone==='S'||p.kind==='a';}).length*2>=P.length};
+}
+function cond5(n,cx){return !n||n==='toujours'||!!cx[n];}
+function reco5(cx){
+  var r=FORM.regle_recommandation||{},hit=null;
+  (r.si||[]).forEach(function(x){if(hit)return;var c=(x.conditions||[]).filter(function(n){return cx[n];})[0];if(c)hit={f:x.formule,c:c};});
+  return hit||{f:r.sinon||FORM.formules[0].id,c:'defaut'};
+}
+function prix5(f){return f.prix===0?'Gratuit':(f.prix==null?'… € / mois':f.prix+' € / mois');}
+
+/* ---- le fil, à gauche ---- */
+function filHtml(P,cx,pal,vise,nObj){
+  var h='<p class="t">Le fil</p><ol><li><a href="#s5-cap"><span class="pin5 k"></span><span><b>Le cap</b><small>'+(vise>pal?'Palier '+pal+' → '+vise+' en un an':'Palier '+pal)+'</small></span></a></li><li class="m">Vos '+P.length+' priorités</li>';
+  P.forEach(function(p){h+='<li><a href="#s5-p'+(p.i+1)+'"><span class="pin5 '+p.cons.pin+'"></span><span><b>'+esc5(p.a.t)+'</b><small>'+(p.lab||'')+'</small></span></a></li>';});
+  h+='<li class="m">Puis</li><li><a href="#s5-equipe"><span class="pin5 '+(nObj?'y':'g')+'"></span><span><b>Votre équipe</b><small>'+(nObj?nObj+' objectif'+(nObj>1?'s':'')+' à valider':'à jour')+'</small></span></a></li>';
+  h+='<li><a href="#s5-formule"><span class="pin5 o"></span><span><b>Votre formule</b><small>'+(S.cmd?'choix noté':'à choisir')+'</small></span></a></li></ol>';
+  return h;
+}
+
+/* ---- le cap ---- */
+function capHtml(P,cx,pal,vise){
+  var c=calc(),n=cx.ones.length,phrase;
+  if(n)phrase=nb5(n)+(n>1?' gestes rares ne tiennent qu’à une personne.':' geste rare ne tient qu’à une personne.');
+  else if(P.length)phrase='Le point le plus fragile : « '+esc5(P[0].a.t)+' ».';
+  else phrase='Votre diagnostic est posé : il reste à choisir vos priorités.';
+  var b1='<div class="s5bl"><div class="s5pal"><div><small>Acquis</small><span class="n">'+pal+'</span></div>'+(vise>pal?'<span class="ar">→</span><div><small>Visé dans un an</small><span class="n">'+vise+'</span></div>':'')+'</div><p class="s5fin" style="margin-top:16px">'+phrase+'<span>'+esc5((FORM.cap||{}).finalite||'')+'</span></p></div>';
+  /* modules de Maurice qui ne servent à aucune priorité, avec l'étape exacte au rouge sur la carte */
+  var fh=0;['s1','s2','s3','s4'].forEach(function(id){if(S.alleger[id])fh+=(c.hs[id]||0);});
+  var L=[];(FORM.modules_maurice||[]).forEach(function(m){
+    if(P.some(function(p){return modulesOf(p).some(function(x){return x.id===m.id;});}))return;
+    var due=null;m.etapes.forEach(function(id){if(due||!(c.m[id]||[]).length)return;
+      for(var j=0;j<3&&!due;j++){if(LF(id,j)==='r')due={pin:'r',t:'feu rouge sur « '+KPI[id][j]+' »'};}
+      if(!due&&S.alleger[id])due={pin:worst(id,nR(id))==='r'?'r':'o',t:'à alléger : « '+STEPN[id]+' »'};});
+    if(due)L.push('<div><span class="pin5 '+due.pin+'"></span><span><b>'+esc5(m.nom)+'</b> · '+due.t+'</span></div>');});
+  var b2='<div class="s5bl"><p class="s5fin">'+(fh?freedTxt(fh)+' rendues par semaine<span>au cœur de métier, en allégeant le support :</span>':'Temps rendu au cœur de métier : à estimer<span>'+(Object.keys(S.alleger).some(function(x){return S.alleger[x];})?'Les heures passées sur ces étapes ne sont pas encore renseignées.':'Cochez les étapes support à alléger à l’étape 2 pour le chiffrer.')+'</span>')+'</p>'+
+    (L.length?'<div class="s5all">'+L.join('')+'</div>':'<p class="s5note">Aucun module de Maurice en plus de ceux de vos priorités.</p>')+'</div>';
+  return '<section class="s5s" id="s5-cap"><h2>Le cap</h2><p class="s5sub">En une ligne : où vous en êtes, où vous allez, pourquoi.</p><div class="s5cap">'+b1+b2+'</div></section>';
+}
+
+/* ---- les priorités ---- */
+function prioHtml(P){
+  var h='<section class="s5s" id="s5-prio"><h2>Vos '+P.length+' priorités</h2><p class="s5sub">Chaque priorité se lit de gauche à droite : le constat, l’engagement, ce qui vous aide. Modifiables à tout moment.</p>';
+  P.forEach(function(p){
+    var ai=aidesOf(p).map(function(x){return '<div class="s5a"><span class="s5ic '+x[0]+'">'+x[1]+'</span><span>'+esc5(x[2])+(x[3]?'<small>'+esc5(x[3])+'</small>':'')+'</span></div>';}).join('');
+    h+='<article class="s5p" id="s5-p'+(p.i+1)+'"><div class="s5ph"><span class="num">Priorité '+(p.i+1)+'</span><h3>'+esc5(p.a.t)+'</h3><span class="ech">'+esc5([p.porteur,p.lab].filter(Boolean).join(' · '))+'</span></div>'+
+      '<div class="s5ch"><div class="s5c c1"><div class="lab"><span class="pin5 '+p.cons.pin+'"></span>Constat</div><p>'+esc5(p.cons.tit)+'<small>'+esc5(p.cons.txt)+'</small></p></div>'+
+      '<div class="s5c c2"><div class="lab">Engagement</div><p>'+esc5(p.eng)+(p.proof?'<small>Preuve : '+esc5(p.proof)+'.</small>':'')+'</p></div>'+
+      '<div class="s5c c3"><div class="lab">Ce qui vous aide</div><div class="s5ai">'+ai+'</div></div></div>'+
+      '<div class="s5mi">'+microOf(p).map(function(m){return '<div class="s5m"><b>'+esc5(m[0])+'</b>'+esc5(m[1])+'</div>';}).join('')+'</div></article>';});
+  return h+'<p class="s5note">Les micro-actions arrivent semaine après semaine, avant chaque échéance : sur VraiSavoirFaire, ou par Thérèse selon la formule.</p></section>';
+}
+
+/* ---- l'équipe : un objectif par personne, à valider ---- */
+function nomPers(p,i){var n=(S.names[p.pid]||'').trim();if(p.dir)return 'Vous';return (!n||/^invit/i.test(n))?'Personne '+(i+1):n;}
+function equipeInfo(){
+  var T=team(),tot=0,nObj=0;
+  var rows=T.map(function(p,i){
+    var pos=isPos(p),g=S.goal[p.pid],ok=!!S.gok[p.pid],M=g?modsOf(p):[],withOff=M.filter(function(m){return m.off;}),sit=[];
+    if(g)psf(p).forEach(function(x){var t=g[x.key];if(!t)return;var cur=lvOf(p,x.key)||0;if(t>cur)sit.push({t:x.t,a:Math.max(1,cur),b:t});});
+    var propose=pos&&g&&sit.length,tag=!propose?'wait':(ok?'ok':'todo');
+    if(propose&&ok)tot+=withOff.length;if(propose&&!ok)nObj++;
+    return {p:p,i:i,pos:pos,g:g,ok:ok,M:M,withOff:withOff,sit:sit,propose:propose,tag:tag};
+  });
+  return {rows:rows,tot:tot,nObj:nObj};
+}
+function equipeHtml(E){
+  if(!E.rows.length)return '';
+  var h='<section class="s5s" id="s5-equipe"><h2>Votre équipe</h2><p class="s5sub">Chacun propose son objectif, vous le validez. L’écart entre son niveau et son objectif donne ses modules.</p><div class="s5eq">';
+  E.rows.forEach(function(r){
+    var p=r.p,nom=esc5(nomPers(p,r.i)),poste=p.dir?'Dirigeant·e'+(dxValid()&&FK[S.dx]?' · '+FK[S.dx].n:''):(ART[p.k]?'◆ ':'')+FK[p.k].n,resume,det;
+    if(!r.pos){resume='Autopositionnement pas encore fait';det='<span>Lui envoyer une relance</span><span><button class="s5lk" data-relance="'+p.pid+'">→</button></span>';}
+    else if(!r.propose){resume=r.g?'Aucun écart avec son objectif':'Objectif pas encore proposé';det='<p class="nt">'+(p.dir?'Vous n’avez pas encore proposé votre objectif : vous le faites depuis votre positionnement, comme chacun.':'Il ou elle propose son objectif depuis son compte ; vous le validerez ici.')+'</p>'+(p.dir?'<div class="act"><button class="s5btn ghost" data-modif="'+p.pid+'">Proposer mon objectif →</button></div>':'');}
+    else{
+      var lo=Math.min.apply(null,r.sit.map(function(x){return x.a;})),hi=Math.max.apply(null,r.sit.map(function(x){return x.b;}));
+      resume=r.sit.length+' situation'+(r.sit.length>1?'s':'')+' · N'+lo+' → N'+hi+' · '+(r.withOff.length?r.withOff.length+' module'+(r.withOff.length>1?'s':'')+' disponible'+(r.withOff.length>1?'s':''):'modules pas encore proposés');
+      det=r.sit.slice(0,3).map(function(x){return '<span>'+esc5(x.t)+'</span><span>N'+x.a+' → N'+x.b+'</span>';}).join('')+
+        (r.sit.length>3?'<span class="more">+ '+(r.sit.length-3)+' autre'+(r.sit.length-3>1?'s':'')+' situation'+(r.sit.length-3>1?'s':'')+'</span>':'')+
+        (r.M.length>r.withOff.length?'<span class="more"><button class="s5lk" data-prevenir="'+p.pid+'" data-geste="'+encodeURIComponent(JSON.stringify(r.M.filter(function(m){return !m.off;}).map(function(m){return m.t;}).filter(function(t,i,a){return a.indexOf(t)===i;})))+'">Être prévenu·e quand une offre existe →</button></span>':'')+
+        '<div class="act"><button class="s5btn'+(r.ok?' on':'')+'" data-gok="'+p.pid+'" title="'+(r.ok?'Cliquer pour retirer la validation':'')+'">'+(r.ok?'Objectif validé ✓':'Valider l’objectif')+'</button><button class="s5btn ghost" data-modif="'+p.pid+'">Modifier</button></div><p class="nt" data-note="'+p.pid+'" hidden></p>';
+    }
+    h+='<details class="s5r"><summary><span class="nm">'+nom+'<small>'+esc5(poste)+'</small></span><span class="st">'+resume+'</span><span class="s5tag '+r.tag+'">'+({wait:'En attente',ok:'Validé',todo:'À valider'})[r.tag]+'</span></summary><div class="s5d">'+det+'</div></details>';});
+  return h+'</div></section>';
+}
+
+/* ---- la formule ---- */
+function formuleHtml(P,cx,E){
+  var F=FORM.formules,rc=reco5(cx),sel=F.some(function(f){return f.id===S.formule;})?S.formule:rc.f,fi=0;
+  F.forEach(function(f,i){if(f.id===sel)fi=i;});
+  var rn=F.filter(function(f){return f.id===rc.f;})[0]||F[0],pq=(FORM.pourquoi||{})[rc.f]||{},n=cx.ones.length;
+  var pt=(n===1&&pq[rc.c+'_1'])||pq[rc.c]||'';pt=pt.replace('{n}',nb5(n));
+  var h='<section class="s5s" id="s5-formule"><h2>Votre formule</h2><p class="s5sub">Ce que chaque formule règle pour vous, problème par problème.</p><div class="s5offers" id="s5offers">';
+  F.forEach(function(f,i){var r=f.id===rc.f;h+='<button class="s5off'+(r?' rec':'')+(f.id===sel?' sel':'')+'" data-fo="'+f.id+'" data-i="'+i+'">'+(r?'<span class="badge">Recommandée pour vous</span>':'')+'<span class="on">'+esc5(f.nom)+'</span><span class="op">'+prix5(f)+'</span><span class="opr">'+esc5(f.pour_qui)+'</span></button>';});
+  h+='</div>'+(pt?'<p class="s5why"><b>Pourquoi '+esc5(rn.nom)+' ?</b> '+esc5(pt)+'</p>':'');
+  /* grille par problèmes */
+  var c=calc(),fh=0;['s1','s2','s3','s4'].forEach(function(id){if(S.alleger[id])fh+=(c.hs[id]||0);});
+  var tr=fh?'<b>'+freedTxt(fh)+' rendues par semaine</b>':'du temps rendu au cœur de métier';
+  h+='<div class="s5g" id="s5g" data-sel="'+fi+'"><div class="s5gh"><div></div>'+F.map(function(f){return '<div class="'+(f.id===rc.f?'rc':'')+'">'+esc5(f.nom)+'</div>';}).join('')+'</div>';
+  (FORM.problemes||[]).filter(function(q){return cond5(q.condition_affichage,cx);}).forEach(function(q){
+    h+='<div class="s5gr"><div class="s5pb"><div class="q">'+esc5(q.phrase)+'</div><span class="w">'+esc5(q.sous_titre||'')+'</span></div>';
+    F.forEach(function(f,i){var x=(q.formules||{})[f.id]||{niveau:0,reponse:''},niv=Math.max(0,Math.min(3,+x.niveau||0));
+      h+='<div class="s5cl'+(f.id===rc.f?' rc':'')+(niv===0?' zero':'')+'" data-o="'+i+'"><span class="s5lv">'+[1,2,3].map(function(k){return '<i'+(k<=niv?' class="f"':'')+'></i>';}).join('')+'</span><span class="t">'+(x.reponse?String(x.reponse).replace('{temps_rendu}',tr):'Pas d’aide sur ce point.')+'</span></div>';});
+    h+='</div>';});
+  h+='</div><h3 class="s5h3">Les outils, en clair</h3><div class="s5out">'+(FORM.outils||[]).filter(function(o){return cond5(o.condition_affichage,cx);}).map(function(o){return '<div class="s5ou"><span class="s5ic'+(o.picto==='◆'?' dm':(o.picto==='T'?'':' sq')+'')+'">'+esc5(o.picto)+'</span><div><b>'+esc5(o.nom)+'</b><p class="pb">'+esc5(o.probleme)+'</p><p>'+esc5(o.solution)+'</p></div></div>';}).join('')+'</div>';
+  h+='<div class="s5foot"><div class="tot">Formule <b id="s5fsel">'+esc5(F[fi].nom)+'</b> + modules des objectifs validés : <b>'+E.tot+' module'+(E.tot>1?'s':'')+'</b> <span style="color:#767676">(prix à fixer)</span></div><button class="s5btn" id="s5go">'+(S.cmd?'Choix noté ✓':'Continuer avec '+esc5(F[fi].nom)+' →')+'</button></div>'+
+    (S.cmd?'<p class="s5ok">Votre choix est noté. Aucun paiement n’est demandé : les prix ne sont pas encore fixés.</p>':'')+
+    '<p class="s5keep">Vous pouvez aussi ne rien choisir : votre diagnostic, votre stratégie et vos priorités restent à vous, sur votre compte.</p></section>';
+  return h;
+}
+
+function drawAcc(){
+  if(!FORM&&!FORMERR){$('acc').innerHTML='<p class="s5sub">Chargement de votre stratégie…</p>';chargerFormules(function(){if(!$('v5').hidden)drawAcc();});return;}
+  if(FORMERR){$('acc').innerHTML='<p class="s5sub">La configuration de la stratégie n’a pas pu être chargée. Rechargez la page.</p>';return;}
+  chargerOffres();
+  var o=overall(),pal=Math.max(1,Math.min(4,Math.floor(Math.round(o*10)/10+1e-9))),vise=Math.min(4,pal+1);
+  var P=prios(),cx=ctx5(P),E=equipeInfo();
+  $('acc').innerHTML=capHtml(P,cx,pal,vise)+prioHtml(P)+equipeHtml(E)+formuleHtml(P,cx,E);
+  $('fil5').innerHTML=filHtml(P,cx,pal,vise,E.nObj);
+}
+
+/* ---- gestes de l'étape 5 ---- */
+$('acc').addEventListener('click',function(e){
+  var t=e.target,b;
+  if((b=t.closest('[data-gok]'))){S.gok[b.dataset.gok]=!S.gok[b.dataset.gok];var y=scrollY,op=[].slice.call(document.querySelectorAll('#acc details[open]')).map(function(d){return d.querySelector('[data-gok]')&&d.querySelector('[data-gok]').dataset.gok;});redessiner5();document.querySelectorAll('#acc details').forEach(function(d){var g=d.querySelector('[data-gok]');if(g&&op.indexOf(g.dataset.gok)>=0)d.open=true;});scrollTo(0,y);return;}
+  if((b=t.closest('[data-fo]'))){S.formule=b.dataset.fo;if(S.cmd){S.cmd=false;redessiner5();return;}document.querySelectorAll('#s5offers .s5off').forEach(function(x){x.classList.toggle('sel',x===b);});$('s5g').dataset.sel=b.dataset.i;$('s5fsel').textContent=b.querySelector('.on').textContent;if(!S.cmd)$('s5go').textContent='Continuer avec '+b.querySelector('.on').textContent+' →';return;}
+  if(t.closest('#s5go')){S.cmd=true;redessiner5();return;}
+  if((b=t.closest('[data-modif]'))){var pid=b.dataset.modif;
+    if(pid==='DI#1'){var bt=$('team2').querySelector('[data-inv="DI#1"]');if(bt){bt.click();return;}}
+    var nt=document.querySelector('#acc [data-note="'+pid+'"]');if(nt){nt.textContent='L’objectif se modifie depuis le compte de la personne, qui le propose de nouveau ; vous le validerez ensuite.';nt.hidden=!nt.hidden;}return;}
+  if((b=t.closest('[data-relance]'))){var q=b.dataset.relance;setStep(1);var lb=$('team2').querySelector('[data-lien="'+q+'"],[data-inv="'+q+'"]');if(lb){lb.click();lb.scrollIntoView({block:'center'});}return;}
+  if((b=t.closest('[data-prevenir]'))){
+    var gs=[];try{gs=JSON.parse(decodeURIComponent(b.dataset.geste||'[]'));}catch(x){}
+    var org=window.V10&&V10.org&&V10.org(),demo=!!new URLSearchParams(location.search).get('demo');
+    if(org&&window.VSF&&VSF.sb){b.textContent='Envoi…';Promise.all(gs.map(function(g){return VSF.sb.rpc('vsf_demander_etre_prevenu',{p_org:org,p_geste:g});})).then(function(rs){b.textContent=rs.some(function(r){return r.error;})?'Pas enregistré, réessayez →':'Noté : vous serez prévenu·e ✓';});}
+    else b.textContent=demo?'Noté (démo : rien n’est enregistré) ✓':'Pas enregistré, réessayez →';
+    return;}
+});
 
 /* écran de calcul (~8 s) entre les questions et la restitution */
 var CSTEPS=['Lecture de votre carte des processus et de vos feux','Calcul du temps rendu au cœur de métier','Croisement de vos réponses sur les 4 axes','Comparaison avec les fiches VraiSavoirFaire (7 sources)','Classement de vos priorités'];
@@ -1445,26 +1783,6 @@ function teamBlocks(blk,c){
   return h;
 }
 
-/* étape 5 : plans individuels et panier */
-function offerFor(k){return ART[k]&&(AMB[k]||(COLL&&COLL.offers.indexOf(k)>=0))?(AMB[k]||COLL.name):null;}
-function modsOf(p){var g=S.goal[p.pid]||{},L=[];psf(p).forEach(function(x){var t=g[x.key];if(!t)return;var cur=lvOf(p,x.key)||0;for(var l=Math.max(1,cur+1);l<=t;l++)L.push({t:x.t,l:l,k:x.k,off:offerFor(x.k)});});return L;}
-function planBlock(blk){
-  var T=team();if(!T.some(isPos))return '';var tot=0;
-  var cards=T.map(function(p){var M=modsOf(p),g=S.goal[p.pid],ok=S.gok[p.pid],withOff=M.filter(function(m){return m.off;});if(ok)tot+=withOff.length;
-    var body;
-    if(!isPos(p))body='<p class="off2">En attente de son positionnement.</p>';
-    else if(!g)body='<p class="off2">'+(p.dir?'Vous n’avez pas encore proposé votre objectif : vous le faites depuis votre compte, comme chacun.':'Pas encore d’objectif proposé. Il ou elle le propose depuis son compte.')+'</p>';
-    else{var by={};M.forEach(function(m){var k=m.t;(by[k]=by[k]||[]).push(m.l);});
-      body='<ul>'+Object.keys(by).map(function(t){var ls=by[t];return '<li><span>'+t+'</span><b>N'+(ls[0]-1||'—')+' → N'+ls[ls.length-1]+' · '+ls.length+' module'+(ls.length>1?'s':'')+'</b></li>';}).join('')+'</ul>'+
-       (withOff.length?'<p class="off2">'+withOff.length+' module'+(withOff.length>1?'s':'')+' par '+withOff[0].off+' · prix à fixer</p>':'')+
-       (M.length>withOff.length?'<p class="off2">'+(M.length-withOff.length)+' module'+(M.length-withOff.length>1?'s':'')+' sans offre pour l’instant. <button class="lnk3">Être prévenu·e →</button></p>':'')+
-       '<button class="gok'+(ok?' on':'')+'" data-gok="'+p.pid+'"><span class="box sm'+(ok?' on':'')+'"></span>'+(ok?'Objectif validé':'Valider son objectif')+'</button>';}
-    return '<div class="ipc"><h4>'+p.nom+'</h4><span class="ps">'+(p.dir?'Dirigeant·e':(ART[p.k]?'◆ ':'')+FK[p.k].n)+(g?' · objectif proposé'+(p.dir?'':' par '+p.nom):'')+'</span>'+body+'</div>';}).join('');
-  var cart='<div class="cart"><b>'+tot+'</b><span>module'+(tot>1?'s':'')+' dans le panier de l’entreprise<br>objectifs validés seulement · prix à fixer</span><button class="'+(tot?'on':'')+'" id="cmdb">'+(S.cmd?'Commande envoyée ✓':'Commander les modules →')+'</button></div>';
-  return blk('a-plans','Les plans individuels','Chaque personne propose son objectif, situation par situation ; vous le validez. Son écart donne ses modules, achetés au module par l’entreprise.','<div class="ip">'+cards+'</div>'+cart);
-}
-$('acc').addEventListener('click',function(e){var b=e.target.closest('[data-gok],#cmdb');if(!b)return;if(b.dataset.gok){S.gok[b.dataset.gok]=!S.gok[b.dataset.gok];}else{if(!b.classList.contains('on'))return;S.cmd=true;}var y=scrollY;drawAcc();scrollTo(0,y);});
-
 /* démo : l'équipe de l'atelier (noms fictifs) */
 var _demo=$('demo').onclick;
 $('demo').onclick=function(){_demo();
@@ -1479,7 +1797,7 @@ $('demo').onclick=function(){_demo();
 
 /* ===================== confort de remplissage (menu du site, avancée automatique) ===================== */
 (function(){
-  function hh(){var m=document.querySelector('.vsf-menu');document.documentElement.style.setProperty('--hh',(m?m.offsetHeight:0)+'px');}
+  function hh(){var m=document.querySelector('.vsf-menu'),t=document.querySelector('.top');document.documentElement.style.setProperty('--hh',(m?m.offsetHeight:0)+'px');document.documentElement.style.setProperty('--th',(t?t.offsetHeight:0)+'px');}
   hh();addEventListener('resize',hh);addEventListener('load',hh);
   /* les situations, repères et preuves des fiches viennent d'une source unique : data/fiches-diag.json (fiches réelles) */
   (async function(){try{var r=await fetch('data/fiches-diag.json?'+Date.now());if(!r.ok)return;var j=await r.json();
@@ -1501,7 +1819,7 @@ $('demo').onclick=function(){_demo();
   var P=new URLSearchParams(location.search),demoOnly=!!P.get('demo');
   if(!P.get('demo'))$('demo').style.display='none';                       // la démo ne sert qu'avec ?demo=1 : jamais sur un vrai diagnostic
   var _ss=setStep;setStep=function(n){S._step=n;return _ss.apply(this,arguments);};
-  window.V10={S:S,team:team,setStep:function(n){setStep(n);},all:function(){all();drawMap();},calcFeu:function(i){return calcFeu(i);},gap2:function(i,j){return gap2(i,j);},SEUILS:SEUILS};                                              // accroche pour les tests automatiques
+  window.V10={org:function(){return ORG;},S:S,team:team,setStep:function(n){setStep(n);},all:function(){all();drawMap();},calcFeu:function(i){return calcFeu(i);},gap2:function(i,j){return gap2(i,j);},SEUILS:SEUILS};                                              // accroche pour les tests automatiques
   /* L'esquisse descend avec le remplissage : toujours centrée sur l'écran (ou, si elle est plus haute que l'écran, elle défile en proportion), sans ascenseur */
   (function(){
     var raf=0;
@@ -1647,7 +1965,7 @@ $('demo').onclick=function(){_demo();
   $('wseg').addEventListener('click',function(e){var b=e.target.closest('[data-w]');if(!b||!did)return;setTimeout(function(){sb.rpc('vsf_diag_poids_equipe',{p_diag:did,p_poids:S.w});},0);});
   /* valider (ou retirer la validation de) l'objectif d'une personne */
   $('acc').addEventListener('click',function(e){
-    var b=e.target.closest('[data-gok]');if(!b)return;var pid=b.dataset.gok,nouveau=!S.gok[pid],mid=MEMBRES[pid],G=S.goal[pid]||{};if(!mid)return;
+    var b=e.target.closest('[data-gok]');if(!b)return;var pid=b.dataset.gok,nouveau=!!S.gok[pid],mid=MEMBRES[pid],G=S.goal[pid]||{};if(!mid)return;
     Object.keys(G).forEach(function(sit){sb.rpc('vsf_objectif_valider',{p_org:ORG,p_membre:mid,p_fiche:sit.split(':')[0],p_situation:sit,p_valide:nouveau});});
   });
   /* qui voit quoi : les niveaux individuels ne sont vus que par le dirigeant */
