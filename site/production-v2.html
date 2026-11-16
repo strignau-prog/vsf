@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Offre Ambassadeurs — VRAI-SAVOIRFAIRE</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&display=swap">
+<link rel="stylesheet" href="vsf-logo.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="vsf-auth.js"></script>
+<style>
+:root{--fg:#111;--muted:#767676;--off:#c4c4c4;--now:#ffc400;--ok:#009e73;--alert:#d92d20;--todo:#fdecea;--todo-b:#f6c6bf;--soft:#f3f3f3;--jaune:#fff4cc;
+  /* les 5 familles de modalités (provisoires, avant le choix du logo) */
+  --f-faire:#111111;--f-recevoir:#2F67B1;--f-mesurer:#7B4FB8;--f-dire:#13878A;--f-regard:#8B5A2B;
+  --font:'Inter','Helvetica Neue',Arial,sans-serif;color-scheme:light}
+*{box-sizing:border-box}
+body{margin:0;background:#fff;color:var(--fg);font-family:var(--font);font-size:15px;line-height:1.4;-webkit-font-smoothing:antialiased}
+[hidden]{display:none !important}
+a{color:inherit}
+.wrap{max-width:1500px;margin:0 auto;padding:8px clamp(16px,2.5vw,48px) 120px}
+.menu{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 28px}
+.menu button,.menu a{font:inherit;font-weight:800;font-size:13px;letter-spacing:.06em;text-transform:uppercase;border:0;background:var(--soft);color:var(--fg);padding:10px 16px;cursor:pointer;text-decoration:none;border-radius:2px}
+.menu .on{background:#111;color:#fff}
+.kick{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:700}
+h1{margin:6px 0 8px;font-size:clamp(30px,4.5vw,50px);font-weight:900;letter-spacing:-.02em;line-height:1.02;display:flex;align-items:center;gap:14px}
+.dot{width:18px;height:18px;border-radius:50%;background:var(--now);flex:none}
+.lead{font-size:16px;max-width:760px;margin:0 0 32px}
+h2{margin:0 0 6px;font-size:22px;font-weight:900;display:flex;align-items:center;gap:12px}
+.hint{font-size:13px;color:var(--muted);margin:0 0 16px}
+section{margin-top:44px}
+.todo4{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}
+.todo4 a{display:flex;align-items:center;gap:14px;background:var(--todo);padding:14px 16px;text-decoration:none;font-weight:800;font-size:14px;cursor:pointer}
+.todo4 a b{font-size:26px;font-weight:900;color:var(--alert);min-width:34px}
+.todo4 a.zero{background:var(--soft);color:var(--muted)} .todo4 a.zero b{color:var(--muted)}
+.big4{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:28px 24px}
+.big4 b{display:block;font-size:34px;font-weight:900;line-height:1}
+.big4 b i{font-style:normal;font-size:18px;color:var(--muted);font-weight:700}
+.big4 span{display:block;font-size:13px;color:#4a4a4a;margin-top:6px}
+.sel{display:inline-flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
+.sel button{font:inherit;font-weight:800;font-size:13px;border:2px solid #111;background:#fff;padding:8px 14px;cursor:pointer;border-radius:999px}
+.sel button.on{background:#111;color:#fff}
+.sel button[disabled]{border-color:#d8d8d8;color:#b0b0b0;cursor:default}
+/* la frise : la FORME dit l'état, pas la couleur */
+.band{margin:0 0 22px}
+.band .bh{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:8px;font-weight:800}
+.band .bh span{font-weight:600;color:var(--muted);font-size:13px}
+.cells{display:flex;flex-wrap:wrap;gap:6px}
+.cell{width:24px;height:24px;border:2px solid #111;background:#fff;border-radius:5px;padding:0;cursor:pointer;position:relative}
+.cell.pret{background:#111}
+.cell.cours{border-width:5px}
+.cell.rev{border-style:dashed}
+.cell.sel,.row.sel{box-shadow:0 0 0 3px var(--now)}
+.cell.ghost{opacity:.18}
+.cell.ep{border-radius:50%}
+.band .bf{font-size:12.5px;color:#4a4a4a;margin-top:8px}
+.leg{display:flex;flex-wrap:wrap;gap:18px;font-size:13px;color:#4a4a4a;margin-top:14px}
+.leg span{display:inline-flex;align-items:center;gap:8px}.leg .cell{cursor:default;width:16px;height:16px}
+.leg .cell.cours{border-width:4px}
+.bloc a.bl{display:flex;gap:14px;align-items:flex-start;text-decoration:none;padding:12px 0;cursor:pointer}
+.bloc a.bl i{width:12px;height:12px;border-radius:50%;flex:none;margin-top:5px;border:2px solid #111}
+.bloc a.bl i.r{background:var(--alert);border-color:var(--alert)} .bloc a.bl i.j{background:var(--now);border-color:var(--now)}
+.bloc a.bl b{display:block}.bloc a.bl small{display:block;color:#4a4a4a;font-size:13px}
+.bloc a.bl em{margin-left:auto;font-style:normal;font-weight:800;font-size:13px;white-space:nowrap}
+table.t{width:100%;border-collapse:collapse}
+table.t th{text-align:left;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700;padding:0 12px 10px 0}
+table.t td{padding:14px 12px 14px 0;vertical-align:top}
+table.t tr.vide td{background:var(--todo);padding-left:10px}
+table.t td small{display:block;color:var(--muted);font-size:12.5px;font-weight:500}
+.btn{font:inherit;font-weight:800;font-size:13px;border:0;background:#111;color:#fff;padding:10px 16px;cursor:pointer;text-decoration:none;display:inline-block}
+.btn.l{background:none;color:#111;padding:6px 0;text-decoration:underline}
+.pill{display:inline-block;font-size:12px;font-weight:800;padding:3px 9px;border-radius:999px;background:var(--soft)}
+.pill.ok{background:#e3f4ee;color:#00694c}.pill.no{background:var(--todo);color:#b42318}
+.barre{height:8px;background:var(--soft);margin:2px 0 6px;max-width:220px}.barre i{display:block;height:100%;background:#111}
+.fiche{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;margin-bottom:26px}
+.fiche div b{display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:4px}
+.chaine{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.chaine div{background:var(--soft);padding:12px 14px}.chaine b{font-size:26px;font-weight:900;display:block}.chaine span{font-size:12.5px;color:#4a4a4a}
+.chaine .alerte{background:var(--jaune)}
+/* croisement */
+.cx{display:grid;grid-template-columns:minmax(150px,1.3fr) repeat(4,minmax(70px,1fr));gap:4px;align-items:stretch}
+.cx .h{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700;padding:6px}
+.cx .s{font-weight:800;padding:10px 6px;font-size:14px}
+.cx button{font:inherit;border:0;background:var(--soft);padding:10px 6px;cursor:pointer;text-align:center}
+.cx button b{font-size:20px;font-weight:900;display:block}.cx button small{font-size:11px;color:#4a4a4a;display:block}
+.cx button.zero{background:var(--todo)}.cx button.un{background:var(--jaune)}
+.cx button.trou{background:repeating-linear-gradient(135deg,var(--jaune) 0 8px,#fff 8px 14px);outline:2px dashed #111}
+.tuiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+.tuiles div{background:var(--soft);padding:12px 14px}.tuiles b{font-size:22px;font-weight:900}.tuiles span{display:block;font-size:13px;margin-bottom:6px;font-weight:700}
+.tuiles .barre i{background:var(--c,#111)}
+/* référentiel : arbre + panneau */
+.ref{display:grid;grid-template-columns:minmax(0,1fr);gap:28px}
+@media(min-width:1100px){.ref.arb{grid-template-columns:minmax(0,1fr) 340px}}
+.filtre{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 16px}
+.filtre label{font-size:13px;font-weight:700;display:inline-flex;gap:6px;align-items:center;margin-left:auto}
+.axe>button{width:100%;display:flex;align-items:center;gap:12px;border:0;background:none;font:inherit;font-weight:900;font-size:17px;padding:12px 0;cursor:pointer;text-align:left}
+.axe>button small{font-weight:600;color:var(--muted);font-size:13px}
+.sc{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:12px 0 4px 30px}
+.row{display:grid;grid-template-columns:22px 28px minmax(0,1fr) 120px 150px 110px;gap:10px;align-items:center;padding:9px 6px 9px 8px;cursor:pointer;font-size:14px}
+.row:hover{background:var(--soft)}
+.row .cell{width:18px;height:18px;border-width:2px}.row .cell.cours{border-width:4px}
+.row b{font-weight:800}.row small{color:var(--muted);font-size:12px;display:block}
+.row.ext{opacity:.5}
+.row .ni{font-size:12.5px;color:#4a4a4a}
+.row .sp{display:flex;gap:3px}.sp i{width:11px;height:11px;border-radius:50%;border:2px solid #111;box-sizing:border-box}.sp i.p{background:#111}.sp i.n{border-color:#d8d8d8}
+.row .pa{display:flex;gap:4px;flex-wrap:wrap}.pa i{font-style:normal;font-size:10.5px;font-weight:800;color:#fff;padding:2px 5px;border-radius:3px}
+.row .et{font-size:12px;font-weight:700}
+.poignee{color:#b0b0b0;letter-spacing:-2px;font-weight:900}
+.panneau{background:var(--soft);padding:18px;align-self:start;position:sticky;top:12px}
+.panneau h3{margin:4px 0 10px;font-size:18px;font-weight:900}
+.panneau dl{margin:0}.panneau dt{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-top:12px}.panneau dd{margin:3px 0 0}
+.etapes{display:grid;grid-template-columns:repeat(6,1fr);gap:3px;margin-top:4px}.etapes span{font-size:10px;text-align:center;font-weight:700}.etapes .cell{display:block;width:100%;height:12px;border-radius:2px;border-width:2px;margin-bottom:3px}
+.etapes .cell.cours{border-width:4px}
+.msg{padding:24px 0;font-size:16px}
+details.rep summary{cursor:pointer;list-style:none;font-weight:900;font-size:18px;display:flex;gap:12px;align-items:center}
+details.rep summary::-webkit-details-marker{display:none}
+.note{font-size:12px;color:var(--muted);margin-top:30px}
+.demo{display:inline-block;background:#ff3b1f;color:#fff;font-weight:900;font-size:11px;letter-spacing:.1em;text-transform:uppercase;padding:4px 8px;margin:0 0 14px}
+@media(max-width:900px){.row{grid-template-columns:22px 26px minmax(0,1fr)}.row .ni,.row .sp,.row .pa,.row .et{display:none}}
+</style>
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="vsf-menu.css">
+</head>
+<body>
+<script src="vsf-menu.js"></script>
+<div class="wrap" id="app"><p class="kick">Chargement…</p></div>
+<script>(function(){
+function $(i){return document.getElementById(i);}
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+/* ---------- constantes du cadre de l'offre (réglages à venir : migration 66) ---------- */
+var CADRE={masterclass:18,videosParJournee:6,audiosParSeance:10,delaiRelectureJoursOuvres:5};
+var NIV=['','N1 · Comprendre','N2 · Faire avec repères','N3 · Réaliser seul·e','N4 · Maîtriser et transmettre'];
+var AXES={B0:'B0 · Socle transverse du métier',B1:'B1 · Tracé & lettrage',B2:'B2 · Préparation & application de la peinture',B3:'B3 · Dorure & effets métalliques',B4:'B4 · Effets décoratifs & ornementation',B5:'B5 · Adaptation aux supports & matériaux',B6:'B6 · Restauration & conservation',B7:'B7 · Finitions & protection',B8:'B8 · Épreuves intégratives multi-axes'};
+var ETAT={ecr:['À écrire','ecr'],tou:['À tourner','cours'],mon:['Au montage','cours'],rel:['À relire','cours'],pret:['Prêt à vendre','pret'],rep:['À revoir','rev']};
+var FAM={fiche:['Recevoir','--f-recevoir'],video_mere:['Recevoir','--f-recevoir'],audio:['Recevoir','--f-recevoir'],capsule:['Recevoir','--f-recevoir'],planche:['Recevoir','--f-recevoir'],auto_test:['Mesurer','--f-mesurer'],quiz:['Mesurer','--f-mesurer'],exercice:['Faire','--f-faire'],exercice_chronometre:['Faire','--f-faire'],exercice_depot:['Le regard des autres','--f-regard'],masterclass:['Recevoir','--f-recevoir']};
+var TYPEN={fiche:'Fiches',video_mere:'Vidéos-mères',audio:'Audios',auto_test:'Auto-tests',exercice:'Exercices',exercice_depot:'Exercices avec dépôt'};
+var D={mods:[],lien:[],rang:[],etap:[],cont:[],parc:null,fiches:[],sit:[],plan:{},offre:null,comm:[],err:[]};
+var S={tab:'K',view:'frise',sit:'',prio:false,sel:'',open:{B0:1},cell:''};
+var TEST=false;
+
+function mods(){return D.mods.filter(function(m){return m.genre==='module';});}
+function exts(){return D.mods.filter(function(m){return m.genre==='ressource_externe';});}
+function eps(){return D.mods.filter(function(m){return m.genre==='epreuve_niveau';}).sort(function(a,b){return a.ordre-b.ordre;});}
+function byCode(c){return D.mods.filter(function(m){return m.code===c;})[0];}
+function liensDe(c){return D.lien.filter(function(l){return l.module_code===c;});}
+function isP(l){return l.role==='principal';}
+function cellMods(sit,niv,role){return D.lien.filter(function(l){return l.situation_code===sit&&l.niveau===niv&&(!role||l.role===role)&&(byCode(l.module_code)||{}).genre==='module';}).map(function(l){return byCode(l.module_code);});}
+function sitsPL(){return D.sit.filter(function(s){return s.fiche_code==='PL';}).sort(function(a,b){return a.idx-b.idx;});}
+function sitNom(s){return s.nom||s.intitule;}
+function shape(m){return ETAT[m.etat]?ETAT[m.etat][1]:'ecr';}
+function cnt(L,f){return L.filter(f).length;}
+function pct(a,b){return b?Math.round(100*a/b):0;}
+function barre(a,b,c){return '<div class="barre"><i style="width:'+pct(a,b)+'%'+(c?';background:var('+c+')':'')+'"></i></div>';}
+function holes(){var o=[];sitsPL().forEach(function(s){[1,2,3,4].forEach(function(n){var P=cellMods(s.situation_code,n,'principal');var ch=cellMods(s.situation_code,n);if(!P.length)o.push({sit:s,niv:n,n:0,aussi:ch.length});});});return o;}
+function trous(){var o=[];sitsPL().forEach(function(s){[1,2,3,4].forEach(function(n){var P=cellMods(s.situation_code,n,'principal');var T=P.filter(function(m){return m.trou_signale&&m.etat==='ecr';});if(T.length)o.push({sit:s,niv:n,mods:T});});});return o;}
+function rangsNiveau(n){return D.rang.filter(function(r){return r.niveau===n;}).sort(function(a,b){return a.rang-b.rang;});}
+function bandMods(n){return rangsNiveau(n).map(function(r){return byCode(r.module_code);}).filter(function(m){return m&&m.genre==='module'&&m.niveau_entree===n;});}
+
+/* ---------- rendu : tableau de bord (A1) ---------- */
+function todoBloc(){
+  var h=holes().length,p1=cnt(mods(),function(m){return m.priorite==='P1'&&m.etat==='ecr';}),ex=cnt(exts(),function(m){return !m.ext;}),mc=Math.max(0,CADRE.masterclass-cnt(mods(),function(m){return m.atelier&&m.atelier.masterclass;}));
+  var L=[[h,'cases du métier sans module principal','F:cx'],[p1,'modules prioritaires à écrire','F:arbre'],[ex,'ressources externes à décider','F:arbre'],[mc,'masterclass à désigner','F:arbre']];
+  return '<section><h2><i class="dot"></i>À faire aujourd’hui</h2><div class="todo4" style="margin-top:12px">'+L.map(function(x){return '<a data-go="'+x[2]+'" class="'+(x[0]?'':'zero')+'"><b>'+x[0]+'</b>'+x[1]+'</a>';}).join('')+'</div></section>';
+}
+function chiffres(){
+  var M=mods(),E=eps(),tot=M.length+E.length,pr=cnt(M,function(m){return m.etat==='pret';})+cnt(E,function(m){return m.etat==='pret';});
+  var rel=D.mods.filter(function(m){return m.etat==='rel'&&(m.genre==='module'||m.genre==='epreuve_niveau');});
+  var plus=rel.length?Math.max.apply(null,rel.map(function(m){return Math.floor((Date.now()-new Date(m.maj_le).getTime())/86400000);})):0;
+  var V=D.cont.filter(function(c){return c.type==='video_mere';}),A=D.cont.filter(function(c){return c.type==='audio';});
+  var q=function(L){return L.reduce(function(a,c){return a+c.quantite;},0);},fait=function(L){return L.filter(function(c){return c.etat==='mon'||c.etat==='rel'||c.etat==='pret';}).reduce(function(a,c){return a+c.quantite;},0);};
+  var jours=Math.ceil(q(V)/CADRE.videosParJournee)+Math.ceil(q(A)/CADRE.audiosParSeance),dates=Object.keys(D.plan.dates||{}).filter(function(k){return D.plan.dates[k];}).length;
+  var sc=sitsPL().filter(function(s){return [1,2,3,4].some(function(n){return cellMods(s.situation_code,n,'principal').length;});}).length;
+  return '<section><div class="big4">'+
+   '<div><b>'+pr+'<i> / '+tot+'</i></b><span>modules prêts à vendre · '+M.length+' modules + '+E.length+' épreuves de niveau</span></div>'+
+   '<div><b>'+rel.length+'</b><span>à relire chez le maître artisan'+(rel.length?' · le plus ancien attend depuis '+plus+' jours':'')+'</span></div>'+
+   '<div><b>'+fait(V)+'<i> / '+q(V)+'</i></b><span>vidéos-mères tournées · '+fait(A)+' / '+q(A)+' audios · '+dates+' / '+jours+' journées planifiées</span></div>'+
+   '<div><b>'+sc+'<i> / '+sitsPL().length+'</i></b><span>situations de la fiche couvertes · '+holes().length+' case(s) sans module principal</span></div></div></section>';
+}
+function frise(L){
+  var h='';[1,2,3,4].forEach(function(n){var B=bandMods(n);
+    var c={pret:cnt(B,function(m){return m.etat==='pret';}),cours:cnt(B,function(m){return ETAT[m.etat][1]==='cours';}),rev:cnt(B,function(m){return m.etat==='rep';}),ecr:cnt(B,function(m){return m.etat==='ecr';})};
+    h+='<div class="band"><div class="bh"><div>'+NIV[n]+'</div><span>'+B.length+' modules</span></div><div class="cells">'+B.map(function(m){return cellHtml(m,L);}).join('')+'</div><div class="bf"><b>'+c.pret+' prêts</b> · '+c.cours+' en cours · '+c.rev+' à revoir · '+c.ecr+' à écrire</div></div>';});
+  var E=eps();
+  h+='<div class="band"><div class="bh"><div>Épreuves de niveau</div><span>'+E.length+' épreuves</span></div><div class="cells">'+E.map(function(m){return '<button class="cell ep '+shape(m)+(S.sel===m.code?' sel':'')+'" data-sel="'+esc(m.code)+'" title="'+esc(m.code+' · '+m.titre)+'"></button>';}).join('')+'</div><div class="bf">'+cnt(E,function(m){return m.etat==='pret';})+' prête(s) · grilles à écrire · N1, N2, N3, N4 préparation, N4 finale (jury)</div></div>';
+  h+='<div class="band"><div class="bh"><div>◇ Branche A</div><span>Situations Skolantreuz · option</span></div><div class="bf">Gestion de l’entreprise, façon de travailler. Les modules transverses viendront avec l’espace du Socle ; le corpus de tutos reste à relier aux situations.</div></div>';
+  h+='<div class="leg"><span><i class="cell pret"></i>prêt à vendre</span><span><i class="cell cours"></i>en cours · tournage, montage, relecture</span><span><i class="cell rev"></i>à revoir · ordre changé ou reprise demandée</span><span><i class="cell"></i>à écrire</span></div>';
+  return h;
+}
+function cellHtml(m,L){var ghost=L&&!L(m);return '<button class="cell '+shape(m)+(S.sel===m.code?' sel':'')+(ghost?' ghost':'')+'" data-sel="'+esc(m.code)+'" title="'+esc(m.code+' · '+m.titre+' · '+ETAT[m.etat][0])+'"></button>';}
+function bloque(){
+  var o=[];
+  holes().forEach(function(x){o.push(['r','Aucun module principal sur « '+sitNom(x.sit)+' », N'+x.niv,x.aussi?x.aussi+' module(s) transverse(s) la touchent, aucun ne la fait progresser en premier.':'Aucun module ne la touche.','Ouvrir la case →','F:cx']);});
+  trous().forEach(function(x){o.push(['j','Trou à combler : « '+sitNom(x.sit)+' », N'+x.niv,x.mods.map(function(m){return m.code;}).join(', ')+' est signalé, pas encore écrit.','Ouvrir la case →','F:cx']);});
+  var rev=cnt(mods(),function(m){return m.etat==='rep';});if(rev)o.push(['j',rev+' module(s) à revoir','Reprise demandée, ou ordre changé.','Ouvrir dans la frise →','F:frise']);
+  var rel=cnt(D.mods,function(m){return m.etat==='rel';});if(rel)o.push(['j',rel+' relecture(s) en attente chez le maître artisan','Délai annoncé : '+CADRE.delaiRelectureJoursOuvres+' jours ouvrés.','Voir les relectures →','R']);
+  if(!Object.keys(D.plan.dates||{}).some(function(k){return D.plan.dates[k];}))o.push(['o','Aucune journée de tournage planifiée','Les vidéos-mères et les audios restent à tourner.','Planifier →','T']);
+  return '<section class="bloc"><h2><i class="dot"></i>Ce qui bloque</h2><p class="hint">Classé du plus urgent au moins urgent. Chaque ligne mène à l’endroit où on le règle.</p>'+
+   (o.length?o.map(function(x){return '<a class="bl" data-go="'+x[4]+'"><i class="'+x[0]+'"></i><span><b>'+esc(x[1])+'</b><small>'+esc(x[2])+'</small></span><em>'+x[3]+'</em></a>';}).join(''):'<p class="msg">Rien ne bloque.</p>')+'</section>';
+}
+function metiers(){
+  var M=mods(),E=eps(),all=M.concat(E),n=all.length,pr=cnt(all,function(m){return m.etat==='pret';}),co=cnt(all,function(m){return ETAT[m.etat][1]==='cours';}),ec=cnt(all,function(m){return m.etat==='ecr';});
+  var mt=D.offre&&D.offre.vendeur&&D.offre.vendeur.statut==='valide';
+  var h='<section><h2><i class="dot"></i>Les métiers et leurs Ambassadeurs</h2><p class="hint">Chaque métier a son maître artisan et son référentiel formation, croisé avec les situations de sa fiche VSF.</p><table class="t"><thead><tr><th>Métier</th><th>Maître artisan</th><th>Référentiel formation</th><th>Production</th><th>Prochaine étape</th><th></th></tr></thead><tbody>';
+  var pl=D.fiches.filter(function(f){return f.code==='PL';})[0];
+  if(pl)h+='<tr><td><b>◆ '+esc(pl.nom)+'</b><small>filière test</small></td><td><span class="pill '+(mt?'ok':'no')+'">'+(mt?'désigné':'à désigner')+'</span></td><td>'+M.length+' modules + '+E.length+' épreuves de niveau<small>'+sitsPL().length+' situations × 4 niveaux</small></td><td>'+barre(pr+co,n)+'<small>'+pr+' prêts · '+co+' en cours · '+ec+' à écrire</small></td><td>'+(cnt(M,function(m){return m.etat==='ecr'&&m.priorite==='P1';})?'Écrire les modules prioritaires':'Relire et ranger')+'</td><td><a class="btn" data-go="F">Ouvrir →</a></td></tr>';
+  D.fiches.filter(function(f){return f.code!=='PL'&&f.type==='metier';}).forEach(function(f){h+='<tr class="vide"><td><b>'+esc(f.nom)+'</b></td><td><span class="pill no">à désigner</span></td><td>fiche VSF · '+D.sit.filter(function(s){return s.fiche_code===f.code;}).length+' situations<small>pas encore de parcours de formation</small></td><td>pas commencé</td><td>Structurer le référentiel</td><td></td></tr>';});
+  h+='<tr><td><b>◇ Situations Skolantreuz</b><small>branche A · tous métiers · option</small></td><td>Skolantreuz</td><td>corpus de tutos<small>situations à définir</small></td><td>à relier aux situations</td><td>Écrire les situations de la branche A</td><td></td></tr>';
+  h+='<tr><td><b>Les 281 métiers d’art</b></td><td>à recruter</td><td>fiches du moteur · aucun module</td><td>pas de production</td><td>—</td><td></td></tr></tbody></table></section>';
+  return h;
+}
+function chezMaitre(){
+  var rel=cnt(D.mods,function(m){return m.etat==='rel';}),mc=cnt(mods(),function(m){return m.atelier&&m.atelier.masterclass;});
+  return '<section><h2><i class="dot"></i>Chez le maître artisan · Peintre en lettres</h2><p class="hint">Ce qu’il a devant lui, tel qu’il le voit sur son propre tableau de bord.</p><div class="big4"><div><b>'+rel+'</b><span>Relectures en attente</span></div><div><b>—</b><span>Tournages cette semaine</span></div><div><b>'+mc+'<i> / '+CADRE.masterclass+'</i></b><span>Masterclass désignées</span></div><div><b>—</b><span>Dernière activité</span></div></div>'+
+   '<h2 style="margin-top:30px"><i class="dot"></i>Valideurs</h2><p class="hint">Un valideur est habilité par double accord : Skolantreuz et le maître artisan du métier.</p><p>Aucun valideur habilité pour l’instant. <span class="hint">(la gestion des rôles arrive avec la migration 68)</span></p></section>';
+}
+function ventes(){return '<section><details class="rep"><summary><i class="dot"></i>Ventes et argent <span class="hint" style="margin:0">Replié · les ventes ne sont pas encore ouvertes</span></summary><div class="big4" style="margin-top:18px"><div><b>—</b><span>modules vendus ce mois</span></div><div><b>—</b><span>encaissés ce mois</span></div><div><b>—</b><span>apprenants actifs</span></div><div><b>—</b><span>diagnostics entreprise + travailleur</span></div></div><p class="hint" style="margin-top:14px">Skolantreuz encaisse tout ; 70 % reviennent au maître artisan, dont il paie ses valideurs. Les modules de la branche A restent à Skolantreuz. Affichage seulement : aucun virement n’est lancé d’ici. Les chiffres s’afficheront à l’ouverture des ventes.</p></details></section>';}
+function vueK(){
+  return '<div class="kick">Skolantreuz · admin</div><h1><i class="dot"></i>Offre Ambassadeurs</h1><p class="lead">Où en est la production des modules, métier par métier, et ce qui bloque aujourd’hui. Les ventes s’afficheront ici quand elles seront ouvertes.</p>'+
+   todoBloc()+chiffres()+
+   '<section><h2><i class="dot"></i>La production · ◆ Peintre en lettres</h2><p class="hint">La frise de production, au cran 3 : une case par module, dans l’ordre du parcours. La forme dit l’état. Un clic sur une case ouvre le module dans le référentiel.</p>'+frise()+'</section>'+
+   bloque()+metiers()+chezMaitre()+ventes();
+}
+
+/* ---------- rendu : parcours et référentiel (A2, A3, A4) ---------- */
+function ficheParcours(){
+  var M=mods(),E=eps(),mt=D.offre&&D.offre.vendeur&&D.offre.vendeur.statut==='valide',ok=mt&&D.offre.vendeur.contrat_accepte_le;
+  return '<div class="fiche"><div><b>Maître artisan</b>'+(mt?'désigné'+(ok?' · accord signé · 70 %':' · accord à signer'):'à désigner')+'</div><div><b>Référentiel</b>'+M.length+' modules · '+E.length+' épreuves de niveau<br><span class="hint">'+sitsPL().length+' situations × 4 niveaux · version '+(D.parc?D.parc.version:1)+'</span></div><div><b>Prix du module</b>à fixer</div><div><b>Ouverture des ventes</b>date à fixer</div></div>';
+}
+function chaine(){
+  var all=mods().concat(eps()),c=function(e){return cnt(all,function(m){return m.etat===e;});};
+  var L=[['ecr','À écrire','Skolantreuz'],['tou','À tourner','avec le maître artisan'],['mon','Au montage','Skolantreuz'],['rel','À relire','le maître artisan'],['pret','Prêt à vendre','']];
+  return '<div class="chaine">'+L.map(function(x){return '<div><b>'+c(x[0])+'</b><span>'+x[1]+(x[2]?' · '+x[2]:'')+'</span></div>';}).join('')+'</div>'+(c('rep')?'<div class="chaine" style="margin-top:10px"><div class="alerte"><b>'+c('rep')+'</b><span>à revoir · reprise demandée ou ordre changé</span></div></div>':'');
+}
+function croisement(){
+  var h='<div class="cx"><div class="h"></div>'+[1,2,3,4].map(function(n){return '<div class="h">N'+n+'</div>';}).join('');
+  sitsPL().forEach(function(s){h+='<div class="s">'+esc(sitNom(s))+'</div>';[1,2,3,4].forEach(function(n){var P=cellMods(s.situation_code,n,'principal'),A=cellMods(s.situation_code,n,'aussi');
+    var tr=P.some(function(m){return m.trou_signale&&m.etat==='ecr';});
+    h+='<button data-cell="'+s.situation_code+'|'+n+'" class="'+(tr?'trou':(!P.length?'zero':(P.length===1?'un':'')))+'"><b>'+P.length+'</b><small>'+(tr?'à combler':(!P.length?'aucun principal':(A.length?'+ '+A.length+' aussi':'')))+'</small></button>';});});
+  h+='</div><p class="hint" style="margin-top:10px">Dans chaque case : le nombre de modules principaux. Rouge pâle : aucun module principal (trou à combler). Jaune pâle : un seul module (fragile). Hachuré : le module est signalé comme trou, pas encore écrit.</p>';
+  if(S.cell){var k=S.cell.split('|'),s=D.sit.filter(function(x){return x.situation_code===k[0];})[0],n=+k[1],P=cellMods(k[0],n,'principal'),A=cellMods(k[0],n,'aussi');
+    h+='<div class="panneau" style="position:static;margin-top:14px"><h3>'+esc(s?sitNom(s):k[0])+' · N'+n+'</h3><dl><dt>Principaux</dt><dd>'+(P.length?P.map(function(m){return '<a data-sel="'+esc(m.code)+'" style="cursor:pointer;text-decoration:underline">'+esc(m.code+' '+m.titre)+'</a>';}).join('<br>'):'Aucun')+'</dd><dt>Servent aussi</dt><dd>'+(A.length?A.map(function(m){return esc(m.code+' '+m.titre);}).join('<br>'):'Aucun')+'</dd></dl></div>';}
+  return h;
+}
+function tuiles(){
+  var T=['fiche','video_mere','audio','auto_test','exercice','exercice_depot'];
+  return '<div class="tuiles">'+T.map(function(t){var L=D.cont.filter(function(c){return c.type===t;}),q=L.reduce(function(a,c){return a+c.quantite;},0),f=L.filter(function(c){return c.etat==='pret';}).reduce(function(a,c){return a+c.quantite;},0);
+    return '<div style="--c:var('+FAM[t][1]+')"><span>'+TYPEN[t]+'</span><b>'+f+' <small style="font-size:14px;color:#767676;font-weight:700">/ '+q+'</small></b>'+barre(f,q,FAM[t][1])+'<small style="color:#4a4a4a">'+FAM[t][0]+'</small></div>';}).join('')+'<div><span>Capsules · planches · masterclass</span><b style="font-size:16px">à définir</b><small style="color:#4a4a4a">pas encore dans le référentiel</small></div></div>';
+}
+function pasteTypes(m){var s={};D.cont.filter(function(c){return c.module_code===m.code;}).forEach(function(c){s[c.type]=1;});return Object.keys(s).map(function(t){return '<i style="background:var('+FAM[t][1]+')" title="'+esc(TYPEN[t]||t)+'">'+({fiche:'fiche',video_mere:'vidéo',audio:'audio',auto_test:'test',exercice:'exo',exercice_depot:'dépôt'}[t]||t)+'</i>';}).join('');}
+function sitDots(m){var L=liensDe(m.code);return '<span class="sp">'+sitsPL().map(function(s){var l=L.filter(function(x){return x.situation_code===s.situation_code;});return '<i class="'+(l.some(isP)?'p':(l.length?'':'n'))+'" title="'+esc(sitNom(s))+(l.some(isP)?' · principal':(l.length?' · sert aussi':''))+'"></i>';}).join('')+'</span>';}
+function ligne(m){
+  var ext=m.genre==='ressource_externe';
+  return '<div class="row'+(S.sel===m.code?' sel':'')+(ext?' ext':'')+'" data-sel="'+esc(m.code)+'"><span class="poignee" title="Réordonner : à venir">⋮⋮</span><i class="cell '+shape(m)+'"></i><span><b>'+esc(m.code)+'</b> '+esc(m.titre)+(m.priorite==='P1'?' <small style="display:inline;color:#111;font-weight:800">· prioritaire</small>':'')+(m.trou_signale?' <small style="display:inline;color:#b42318;font-weight:800">· trou à combler</small>':'')+(ext?'<small>ressource externe · '+(m.ext?{lien:'lien conseillé',part:'partenariat à négocier',out:'retirée'}[m.ext]:'à décider')+'</small>':'')+'</span><span class="ni">'+esc(m.niveaux)+'</span>'+(ext?'<span></span>':sitDots(m))+'<span class="pa">'+pasteTypes(m)+'</span><span class="et">'+ETAT[m.etat][0]+'</span></div>';
+}
+function arbre(){
+  var L=D.mods.filter(function(m){return m.genre==='module'||m.genre==='ressource_externe'||m.genre==='epreuve_niveau'||m.genre==='quiz_niveau';});
+  if(S.sit)L=L.filter(function(m){return liensDe(m.code).some(function(l){return l.situation_code===S.sit;});});
+  if(S.prio)L=L.filter(function(m){return m.priorite==='P1';});
+  L.sort(function(a,b){return a.ordre-b.ordre;});
+  var h='',ax=Object.keys(AXES);
+  ax.forEach(function(a){var R=L.filter(function(m){return m.axe===a;});if(!R.length)return;
+    var op=S.open[a]||S.sit||S.prio||(S.sel&&byCode(S.sel)&&byCode(S.sel).axe===a);
+    h+='<div class="axe"><button data-axe="'+a+'"><span>'+(op?'▾':'▸')+'</span>'+esc(AXES[a])+'<small>'+R.length+' ligne(s)</small></button>';
+    if(op){var sc='';R.forEach(function(m){if(m.sous_chapitre!==sc){sc=m.sous_chapitre;h+='<div class="sc">'+esc(sc)+'</div>';}h+=ligne(m);});}
+    h+='</div>';});
+  return h||'<p class="msg">Aucun module pour ce filtre.</p>';
+}
+function panneau(){
+  var m=byCode(S.sel);if(!m)return '<div class="panneau"><p class="hint">Cliquez sur un module pour voir sa fiche, sa place dans le parcours et l’avancement de ses 6 étapes.</p></div>';
+  var L=liensDe(m.code),sit=sitsPL(),lv=D.rang.filter(function(r){return r.module_code===m.code;}).sort(function(a,b){return a.niveau-b.niveau;});
+  var place=lv.map(function(r){var N=rangsNiveau(r.niveau).filter(function(x){var mm=byCode(x.module_code);return mm&&mm.genre==='module';}),i=N.findIndex(function(x){return x.module_code===m.code;});var av=N[i-1],ap=N[i+1];
+    return 'N'+r.niveau+' · '+(i+1)+'ᵉ sur '+N.length+'<br><span class="hint">avant : '+(av?esc(av.module_code):'—')+' · après : '+(ap?esc(ap.module_code):'—')+'</span>';}).join('<br>');
+  var et=D.etap.filter(function(e){return e.module_code===m.code;});
+  var ET=['essayer','constater','regarder','faire','comparer','ancrer'],EL={essayer:'Essayer',constater:'Constater',regarder:'Regarder',faire:'Faire',comparer:'Comparer',ancrer:'Ancrer'};
+  var etr=ET.map(function(k){var e=et.filter(function(x){return x.etape===k;})[0],sh=e?ETAT[e.etat][1]:'ecr';if(k==='essayer'&&m.essai_securise===false)return '<div><i class="cell" style="background:#e6e6e6;border-color:#c4c4c4"></i><span style="color:#767676">'+EL[k]+'<br>non sécurisé</span></div>';return '<div><i class="cell '+sh+'"></i><span>'+EL[k]+'</span></div>';}).join('');
+  return '<div class="panneau"><div class="kick">'+esc(m.code)+' · '+esc(m.genre==='module'?'module':m.genre.replace('_',' '))+'</div><h3>'+esc(m.titre)+'</h3><dl>'+
+   '<dt>Niveaux</dt><dd>'+esc(m.niveaux)+(m.modalite?' · '+esc(m.modalite):'')+'</dd>'+
+   '<dt>Situations travaillées</dt><dd>'+(L.length?sit.map(function(s){var l=L.filter(function(x){return x.situation_code===s.situation_code;});return l.length?'<b>'+esc(sitNom(s))+'</b> · '+(l.some(isP)?'principal':'sert aussi')+' N'+l.map(function(x){return x.niveau;}).sort().join(',N'):'';}).filter(Boolean).join('<br>'):'Aucune')+'</dd>'+
+   (place?'<dt>Place dans le parcours</dt><dd>'+place+'</dd>':'')+
+   '<dt>Essai sécurisé</dt><dd>'+(m.essai_securise===true?'oui · le rituel commence par Essayer':(m.essai_securise===false?'non · le rituel commence par Constater':'à fixer par l’auteur · le module ne peut pas passer « prêt à vendre »'))+'</dd>'+
+   '<dt>Les 6 étapes du rituel</dt><dd><div class="etapes">'+etr+'</div></dd>'+
+   '<dt>État</dt><dd>'+ETAT[m.etat][0]+'</dd></dl><p style="margin:14px 0 0"><button class="btn l" data-vue="frise">Le voir dans la frise</button></p></div>';
+}
+function vueF(){
+  var sit=sitsPL();
+  var fl='<div class="filtre"><span class="sel" style="margin:0"><button data-fs="" class="'+(S.sit?'':'on')+'">Toutes les situations</button>'+sit.map(function(s){return '<button data-fs="'+s.situation_code+'" class="'+(S.sit===s.situation_code?'on':'')+'">'+esc(sitNom(s))+'</button>';}).join('')+'<button disabled title="Arrive avec l’espace du Socle">◇ + Situations Skolantreuz</button></span><label><input type="checkbox" id="prio"'+(S.prio?' checked':'')+'> Prioritaires seulement</label><button class="btn" disabled style="opacity:.4" title="À venir">+ Module</button></div>';
+  var lf=S.sit?function(m){return liensDe(m.code).some(function(l){return l.situation_code===S.sit;});}:null;
+  return '<div class="kick">Skolantreuz · production · ◆ Peintre en lettres</div><h1><i class="dot"></i>Le parcours</h1><p class="lead">La fiche du parcours, la chaîne de production, le croisement des situations et des niveaux, puis le référentiel en arbre et en frise.</p>'+
+   ficheParcours()+'<section id="s-chaine" style="margin-top:0"><h2><i class="dot"></i>La chaîne de production</h2><p class="hint">Ce qui est à faire à chaque étape, et par qui.</p>'+chaine()+'</section>'+
+   '<section id="s-cx"><h2><i class="dot"></i>Le croisement situations × niveaux</h2><p class="hint">Vue de contrôle : un clic sur une case liste ses modules.</p>'+croisement()+'</section>'+
+   '<section><h2><i class="dot"></i>Ce qu’il reste à produire</h2><p class="hint">Fait (prêt) sur prévu, par type de contenu.</p>'+tuiles()+'</section>'+
+   '<section id="s-ref"><h2><i class="dot"></i>Le référentiel</h2><div class="sel"><button data-vue="frise" class="'+(S.view==='frise'?'on':'')+'">Frise · le parcours</button><button data-vue="arbre" class="'+(S.view==='arbre'?'on':'')+'">Arbre · la construction</button></div>'+fl+
+   '<div class="ref'+(S.view==='arbre'?' arb':'')+'"><div>'+(S.view==='arbre'?arbre():frise(lf))+'</div>'+(S.view==='arbre'?panneau():'')+'</div>'+(S.view==='frise'&&S.sel?'<div style="margin-top:20px">'+panneau()+'</div>':'')+'</section>'+
+   '<section><h2><i class="dot"></i>Les derniers échanges</h2><p class="hint">Les commentaires du maître artisan sur les modules, avec le moment de la vidéo et l’issue.</p>'+(D.comm.length?D.comm.slice(0,8).map(function(c){return '<p><b>'+esc(c.module_code)+'</b> · '+esc(c.texte)+'</p>';}).join(''):'<p class="msg" style="padding:0">Aucun échange pour l’instant.</p>')+'</section>';
+}
+function vueAutre(t){
+  var nom=t==='T'?'Tournages':'Relectures';
+  return '<div class="kick">Skolantreuz · production</div><h1><i class="dot"></i>'+nom+'</h1><p class="lead">Cet écran fonctionne bien : il reste, pour l’instant, celui de l’ancienne page de production. Il sera relié ici sans changer.</p><p><a class="btn" href="production.html#'+(t==='T'?'S':'R')+'">Ouvrir '+nom.toLowerCase()+' (ancienne page) →</a></p>';
+}
+function menu(){return '<nav class="menu" id="menu"><button data-t="K" class="'+(S.tab==='K'?'on':'')+'">Tableau de bord</button><button data-t="F" class="'+(S.tab==='F'?'on':'')+'">Référentiel · arbre et frise</button><button data-t="T" class="'+(S.tab==='T'?'on':'')+'">Tournages</button><button data-t="R" class="'+(S.tab==='R'?'on':'')+'">Relectures</button></nav>';}
+function render(){
+  $('app').innerHTML=(TEST?'<span class="demo">Données de test locales</span>':'')+menu()+(S.tab==='K'?vueK():(S.tab==='F'?vueF():vueAutre(S.tab)))+'<p class="note">Copie de test de la nouvelle page de production, sans lien depuis le site. L’ancienne page reste en place. Réordonner par glisser-déposer, le cran 2 et le cran 1 (fiche module) arrivent à l’étape suivante.</p>'+(D.err.length?'<p class="note">Données non lues : '+esc(D.err.join(', '))+'</p>':'');
+}
+function aller(x){var p=x.split(':');S.tab=p[0];if(p[1]==='arbre')S.view='arbre';if(p[1]==='frise')S.view='frise';render();var t={cx:'s-cx',arbre:'s-ref',frise:'s-ref'}[p[1]];if(t&&$(t))$(t).scrollIntoView({behavior:'smooth',block:'start'});else scrollTo(0,0);}
+document.addEventListener('click',function(e){
+  var t=e.target.closest('[data-t],[data-go],[data-sel],[data-vue],[data-fs],[data-axe],[data-cell]');if(!t)return;var d=t.dataset;
+  if(d.t){S.tab=d.t;location.hash=d.t;render();scrollTo(0,0);return;}
+  if(d.go){aller(d.go);return;}
+  if(d.cell!==undefined){S.cell=S.cell===d.cell?'':d.cell;render();return;}
+  if(d.axe){S.open[d.axe]=!S.open[d.axe];render();return;}
+  if(d.fs!==undefined){S.sit=d.fs;render();return;}
+  if(d.vue){S.view=d.vue;if(S.tab==='K'){S.tab='F';}render();var r=$('s-ref');if(r)r.scrollIntoView({behavior:'smooth',block:'start'});return;}
+  if(d.sel){S.sel=S.sel===d.sel&&S.view==='arbre'?'':d.sel;if(S.tab==='K'){S.tab='F';S.view='frise';}var m=byCode(S.sel);if(m&&S.view==='arbre')S.open[m.axe]=true;render();var r2=$('s-ref');if(r2&&S.tab==='F'&&e.target.closest('.cell'))r2.scrollIntoView({behavior:'smooth',block:'start'});return;}
+});
+document.addEventListener('change',function(e){if(e.target.id==='prio'){S.prio=e.target.checked;render();}});
+
+/* ---------- chargement ---------- */
+async function lire(nom,q){try{var r=await q;if(r.error){D.err.push(nom);return [];}return r.data||[];}catch(x){D.err.push(nom);return [];}}
+async function charger(){
+  var sb=window.VSF&&VSF.sb;
+  if(TEST){return;}
+  var s=await sb.auth.getSession();
+  if(!s.data.session){location.replace('connexion.html?suite='+encodeURIComponent(location.href));return;}
+  var a=await sb.rpc('vsf_est_admin'),rl=await sb.rpc('vsf_est_relecteur');
+  if(a.data!==true){$('app').innerHTML='<div class="kick">Offre Ambassadeurs</div><h1><i class="dot"></i>Accès réservé</h1><p class="lead">'+(rl.data===true?'Votre vue de maître artisan arrive à l’étape suivante. En attendant, utilisez la page de relecture.':'Cette page est réservée à Skolantreuz.')+'</p><p><a class="btn" href="'+(rl.data===true?'production.html#R':'./')+'">'+(rl.data===true?'Ouvrir la relecture →':'Retour')+'</a></p>';return;}
+  var q=function(t,c){return sb.from(t).select(c||'*');};
+  var r=await Promise.all([lire('modules',q('vsf_prod_modules').order('ordre')),lire('liens',q('vsf_form_module_situations')),lire('rangs',q('vsf_form_rangs_calcules')),lire('étapes',q('vsf_form_module_etapes')),lire('contenus',q('vsf_form_contenus')),
+    lire('parcours',q('vsf_form_parcours')),lire('fiches',q('vsf_fiches_metiers')),lire('situations',q('vsf_fiche_situations')),lire('planning',q('vsf_prod_planning','cle,valeur')),lire('offre',sb.from('vsf_offres').select('intitule,statut,vendeur:vsf_vendeurs(statut,contrat_accepte_le)').ilike('intitule','%lettres%').limit(1)),lire('échanges',q('vsf_form_commentaires').order('cree_le',{ascending:false}).limit(8))]);
+  D.mods=r[0];D.lien=r[1];D.rang=r[2];D.etap=r[3];D.cont=r[4];D.parc=r[5][0]||null;D.fiches=r[6];D.sit=r[7];(r[8]||[]).forEach(function(x){D.plan[x.cle]=x.valeur;});D.offre=r[9][0]||null;D.comm=r[10];
+  if(!D.mods.length){$('app').innerHTML='<div class="kick">Offre Ambassadeurs</div><h1><i class="dot"></i>Rien à afficher</h1><p class="lead">Aucun module : les migrations 36 à 65 ne sont pas toutes installées.</p>';return;}
+  var h=(location.hash||'').slice(1);if('KFTR'.indexOf(h)>-1&&h.length===1)S.tab=h;
+  render();
+}
+/* branche de test : seulement en local, avec un jeu de données fictif ou copié, jamais en ligne */
+window.PV2={init:function(data){TEST=true;D=Object.assign(D,data);D.plan=D.plan||{};D.err=[];render();},etat:function(){return {S:S,D:D};}};
+if(location.hostname==='localhost'||location.hostname==='127.0.0.1'){fetch('pv2-test-data.json').then(function(r){return r.ok?r.json():null;}).then(function(j){if(j)window.PV2.init(j);else charger();}).catch(charger);}else charger();
+})();
+</script>
+<script src="vsf-logo.js"></script>
+</body>
+</html>
