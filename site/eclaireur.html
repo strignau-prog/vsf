@@ -258,7 +258,7 @@ h1{margin:10px 0 14px;font-size:clamp(34px,4.6vw,60px);font-weight:900;line-heig
     <div class="sky" id="sky" aria-hidden="true"><div class="field" id="field"><svg id="lines"></svg><div id="tks"></div><div id="bubbles"></div><div class="me hide" id="me"><div><span id="meN" style="font-size:15px;font-weight:900">Toi</span><b>●</b></div></div></div><div class="cards hide" id="cards"></div></div>
   </div>
   <section class="sig hide" id="sig"></section>
-  <section class="baro" id="baro"></section>
+  <section class="baro" id="baro" hidden></section>
 </main>
 
 <script>
@@ -709,7 +709,8 @@ function calc(){S.calc=true;render();var names=M.map(function(m){return m.n;}),n
     render();},2900));}
 function stopCalc(){TKT.forEach(function(t){clearInterval(t);clearTimeout(t);});TKT=[];$('tks').innerHTML='';S.calc=false;}
 /* ---------- moteur ---------- */
-function render(){$('stage').classList.toggle('intro',S.st===0);panel();S.top=S.st>=8?pick3():[];if(S.st>=8&&!S.calc&&S.pick<0&&S.top.length)S.pick=0;$('sky').classList.toggle('fin',S.st>=8);cards();layout();sig();}
+function render(){$('stage').classList.toggle('intro',S.st===0);panel();S.top=S.st>=8?pick3():[];if(S.st>=8&&!S.calc&&S.pick<0&&S.top.length)S.pick=0;$('sky').classList.toggle('fin',S.st>=8);$('baro').hidden=!(S.st>=8&&!S.calc);      /* le baromètre n'apparaît qu'une fois les 3 métiers proposés */
+  cards();layout();sig();}
 $('panel').addEventListener('click',function(e){var t=e.target.closest('#go,#nx,#bk,#rskip,[data-sf],[data-dur],[data-psf],[data-pdur],[data-pdel],[data-a],[data-sl],[data-w],[data-mode],[data-stg],#pyes,#redo');if(!t)return;
   if(t.dataset.mode){if(S.mode!==t.dataset.mode){S.mode=t.dataset.mode;S.job=null;S.sf={};S.dur='';S.prevs=[];S.prevAsk=false;}render();return;}
   if(t.dataset.stg){S.start[t.dataset.stg]=!S.start[t.dataset.stg];render();return;}
