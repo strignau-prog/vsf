@@ -477,7 +477,16 @@ function layout(){document.documentElement.style.setProperty('--hh',topH()+'px')
   $('lines').innerHTML=lines;
   var me=$('me');me.classList.toggle('hide',!showMe);if(showMe){me.style.transform='translate('+(cx-46)+'px,'+(cy-46)+'px)';}
 }
-function bubbles(){$('bubbles').innerHTML=M.map(function(m,k){return '<div class="b" id="b'+k+'"><span style="animation-delay:-'+(k%7)+'s">'+(m.art?'<i>◆</i>':'')+m.n+(m.t>=3?'<i class="tg">↗</i>':'')+'</span></div>';}).join('');}
+function bubbles(){
+  /* les bulles recréées reprennent la place des anciennes (ou, la première fois, une place au hasard sur tout le champ) : sans cela elles repartaient toutes du coin haut gauche */
+  var bx=$('bubbles'),fr=$('field').getBoundingClientRect(),w=fr.width||innerWidth,h=fr.height||innerHeight,prev=M.map(function(m,k){var o=$('b'+k);return o?{t:getComputedStyle(o).transform,o:o.style.opacity}:null;});
+  bx.innerHTML=M.map(function(m,k){return '<div class="b" id="b'+k+'"><span style="animation-delay:-'+(k%7)+'s">'+(m.art?'<i>◆</i>':'')+m.n+(m.t>=3?'<i class="tg">↗</i>':'')+'</span></div>';}).join('');
+  M.forEach(function(m,k){var el=$('b'+k),p=prev[k];el.style.transition='none';
+    el.style.transform=(p&&p.t&&p.t!=='none')?p.t:'translate('+Math.round(Math.random()*Math.max(0,w-150)+8)+'px,'+Math.round(Math.random()*Math.max(0,h-40)+8)+'px)';
+    if(p&&p.o!=='')el.style.opacity=p.o;});
+  void bx.offsetWidth;
+  M.forEach(function(m,k){$('b'+k).style.transition='';});
+}
 /* ---------- panneau ---------- */
 function prog(){var n=7;return '<div class="prog">'+Array.apply(null,{length:n}).map(function(_,k){return '<i class="'+(k<S.st-1?'d':(k===S.st-1?'n':''))+'"></i>';}).join('')+'</div>';}
 function nav(ok,label,why){return '<div class="nav"><button class="next'+(ok?' ready':'')+'" id="nx"><span class="dot"></span>'+(label||'Continuer →')+'</button>'+(S.st>1?'<button class="back" id="bk">← Retour</button>':'')+'</div><div class="why">'+(ok?'':why||'')+'</div>';}
