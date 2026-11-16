@@ -115,7 +115,7 @@ async function lireMotsLibres(b) {
   var n = c.data;
   if (c.error && !n) { try { n = await c.error.context.json(); } catch (x) { n = null; } }
   if (!n || n.erreur) { b.disabled = false; $('msgLecture').textContent = (n && n.erreur) || 'Échec : la fonction eclaireur-lecture est-elle déployée ?'; return; }
-  if (!n.en_attente) { b.disabled = false; $('msgLecture').textContent = 'Aucun mot libre en attente.'; return; }
+  if (!n.en_attente) { b.disabled = false; $('msgLecture').textContent = 'Aucun mot libre en attente (il faut « Garder » + diagnostic approfondi payé).'; return; }
   if (!confirm(n.en_attente + ' réponse(s) en attente. Lire jusqu’à 10 réponses : environ 0,01 à 0,03 $ chacune, pris sur le plafond mensuel de l’IA. Continuer ?')) { b.disabled = false; $('msgLecture').textContent = ''; return; }
   $('msgLecture').textContent = 'Lecture en cours…';
   var r = await sb.functions.invoke('eclaireur-lecture', { body: { limite: 10 } });
@@ -171,7 +171,7 @@ function dessiner() {
     '<p class="message" id="msgProfils" role="alert"></p><button type="button" class="bouton petit" id="bProfils" data-texte onclick="profilsPilote(this)">Lancer le pilote (20 métiers)</button><div id="listeProfils"></div>' +
 
     '<h2>Mots libres de l’Éclaireur</h2>' +
-    '<p class="legende">Ce que les personnes ont écrit dans « Qu’est-ce que tu as toujours aimé faire… » et « Qu’est-ce qui t’a retenu·e ? », seulement si elles ont cliqué « Garder ». L’IA les rapproche des repères du ciel (jamais l’e-mail ; l’IA doit être allumée, le plafond mensuel s’applique). Lecture à la main, 10 réponses par lot.</p>' +
+    '<p class="legende">Ce que les personnes ont écrit dans « Qu’est-ce que tu as toujours aimé faire… » et « Qu’est-ce qui t’a retenu·e ? », seulement si elles ont cliqué « Garder » ET payé le diagnostic approfondi (sans paiement, l’IA ne lit rien). L’IA les rapproche des repères du ciel (jamais l’e-mail ; l’IA doit être allumée, le plafond mensuel s’applique). Lecture à la main, 10 réponses par lot.</p>' +
     '<p class="message" id="msgLecture" role="alert"></p><button type="button" class="bouton petit" id="bLecture" data-texte onclick="lireMotsLibres(this)">Lire les mots libres en attente</button><div id="listeLecture"></div>' +
 
     '<h2>Fiches à préparer</h2>' +

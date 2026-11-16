@@ -1,7 +1,9 @@
 // Edge function « eclaireur-lecture » — l'IA lit les mots libres que des personnes ont laissés dans L'Éclaireur puis les rapproche des repères du ciel.
 // Appel : POST { limite?: 1..20, compter?: true } par un ADMINISTRATEUR connecté. « compter » ne dépense rien : il dit seulement combien de réponses attendent.
 // « Verify JWT » DÉSACTIVÉ : l'administrateur est vérifié ici (vsf_est_admin).
-// Qui est lu : seulement les réponses gardées avec consentement (table vsf_eclaireur_gardes) qui contiennent un mot libre et n'ont pas encore de lecture.
+// Qui est lu : seulement les réponses gardées avec consentement (table vsf_eclaireur_gardes) qui contiennent un mot libre, n'ont pas encore de lecture
+// ET dont la personne a PAYÉ LE DIAGNOSTIC APPROFONDI (colonne diag_paye_le, migration 61). Règle fixée par Stéphane le 16 nov. 2026 : pas de paiement, pas d'IA.
+// Sans paiement, la page lit déjà les mots-clés elle-même (gratuit, rien ne part).
 // Ce qui part à l'IA : le texte libre et les cases cochées. Jamais l'e-mail. Le texte est traité comme une DONNÉE : aucune consigne qu'il contient n'est suivie.
 // RÈGLE DE DÉPENSE (migrations 28 et 44) : l'IA doit être ALLUMÉE dans l'admin et le plafond mensuel ne doit pas être dépassé, vérifié avant chaque appel.
 // Un appel par réponse, jamais de nouvelle tentative automatique ; chaque appel est journalisé (vsf_ia_journal).
@@ -47,8 +49,8 @@ Deno.serve(async (req) => {
   if (estAdmin !== true) return reponse({ erreur: "Réservé à l'administrateur." }, 403);
 
   const corps = await req.json().catch(() => ({})) as { limite?: number; compter?: boolean };
-  const attente = await admin.from("vsf_eclaireur_gardes").select("id,reponses,cree_le").is("lecture_ia", null).order("cree_le", { ascending: true }).limit(500);
-  if (attente.error) return reponse({ erreur: "Lecture impossible : la migration 60 est-elle exécutée ?" }, 500);
+  const attente = await admin.from("vsf_eclaireur_gardes").select("id,reponses,cree_le").is("lecture_ia", null).not("diag_paye_le", "is", null).order("cree_le", { ascending: true }).limit(500);
+  if (attente.error) return reponse({ erreur: "Lecture impossible : les migrations 60 et 61 sont-elles exécutées ?" }, 500);
   const aLire = (attente.data ?? []).filter((r: any) => String(r.reponses?.libre ?? "").trim().length > 1 || String(r.reponses?.frein_autre ?? "").trim().length > 1);
   if (corps.compter) return reponse({ en_attente: aLire.length });
   if (!aLire.length) return reponse({ en_attente: 0, lues: 0, resultats: [] });
