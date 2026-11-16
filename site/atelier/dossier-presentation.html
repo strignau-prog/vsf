@@ -311,6 +311,18 @@ async function pagesDePdf(f){
 }
 function statutDepot(texte, alerte){ const s = document.getElementById('statutDepot'); if(s){ s.textContent = texte||''; s.classList.toggle('alerte', !!alerte); } }
 
+let projetDevine = false;
+const MOTS_REPERES = /[\s_\-–—]*\b(proposition|propositions|propo|croquis|esquisse|maquette|version|v\d+|vf|final|def|enseigne|vitrine|vitrines|jambage|jambages|pignon|v[eé]hicule|stop[\s-]?trottoir|ardoise|ardoises|drapeau|logo|page)\b/i;
+function nomDepuisFichiers(titres){
+  const compte = {};
+  titres.forEach(t=>{
+    const m = MOTS_REPERES.exec(t);
+    const avant = (m ? t.slice(0, m.index) : '').replace(/[\s_\-–—.]+$/,'').trim();
+    if(avant.length >= 2) compte[avant] = (compte[avant]||0) + 1;
+  });
+  const tri = Object.entries(compte).sort((a,b)=>b[1]-a[1]);
+  return tri.length ? tri[0][0] : '';
+}
 async function ajouterFichiers(liste, cible){
   const fs = Array.from(liste||[]).sort((a,b)=>a.name.localeCompare(b.name,'fr',{numeric:true,sensitivity:'base'}));
   const refus = [];
@@ -331,6 +343,11 @@ async function ajouterFichiers(liste, cible){
         throw new Error('format non lu');
       }
     }catch(e){ refus.push(f.name + ' (' + (e.message||'illisible') + ')'); }
+  }
+  // Le nom du projet se déduit du nom des fichiers (« Café des Arts - Proposition 1.pdf » → « Café des Arts »), seulement s'il est encore vide.
+  if(cible!=='photo' && !formulaireManuel.projetNom){
+    const n = nomDepuisFichiers(fichiers.map(f=>f.titre));
+    if(n){ formulaireManuel.projetNom = n; projetDevine = true; }
   }
   render();
   if(refus.length) statutDepot('Non lus : ' + refus.join(' ; ') + '. Formats acceptés : JPG, PNG, WebP, SVG et PDF. Un fichier Illustrator, Photoshop ou InDesign s\'exporte d\'abord en PDF ou PNG.', true);
@@ -407,7 +424,7 @@ function renderFormulaireManuel(){
     <h2>Dossier de présentation</h2>
     ${renderDepot()}
     <div class="grid2">
-      <div class="field"><label>Nom du projet / enseigne</label><input class="input" value="${escapeHtml(f.projetNom)}" onchange="majFormulaireManuel('projetNom', this.value)"></div>
+      <div class="field"><label>Nom du projet / enseigne${projetDevine ? ' <span class="tiny">— déduit du nom des fichiers, corrigez si besoin</span>' : ''}</label><input class="input" value="${escapeHtml(f.projetNom)}" onchange="projetDevine=false;majFormulaireManuel('projetNom', this.value)"></div>
       <div class="field"><label>Localisation</label><input class="input" value="${escapeHtml(f.ville)}" onchange="majFormulaireManuel('ville', this.value)"></div>
       <div class="field"><label>Nom du client</label><input class="input" value="${escapeHtml(f.clientNom)}" onchange="majFormulaireManuel('clientNom', this.value)"></div>
       <div class="field"><label>Téléphone client</label><input class="input" value="${escapeHtml(f.clientTelephone)}" onchange="majFormulaireManuel('clientTelephone', this.value)"></div>
