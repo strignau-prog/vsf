@@ -322,20 +322,71 @@ var REG=['Toute la France','Bretagne','Pays de la Loire','Normandie','Île-de-Fr
 var UNIV={'Peintre en lettres':['patrimoine','deco'],'Peintre en décor':['patrimoine','deco'],'Doreur·euse':['patrimoine'],'Ébéniste':['patrimoine','deco'],'Tapissier·ère d’ameublement':['deco','mode','patrimoine'],'Vitrailliste':['patrimoine'],'Céramiste':['deco','patrimoine'],'Tailleur·euse de pierre':['patrimoine','batiment'],'Restaurateur·rice de meubles':['patrimoine','deco'],'Luthier·ère':['patrimoine'],'Maroquinier·ère':['mode'],'Enseigniste':['deco','technique'],'Menuisier·ère':['batiment','deco'],'Charpentier·ère':['batiment'],'Couvreur·euse':['batiment'],'Paysagiste':['nature'],'Fleuriste':['nature','deco'],'Électricien·ne':['batiment','technique'],'Plombier·ère chauffagiste':['batiment','technique'],'Peintre en bâtiment':['batiment','deco'],'Auxiliaire de vie':['soin'],'Éducateur·rice spécialisé·e':['soin'],'Boulanger·ère':['gastro'],'Technicien·ne de maintenance':['technique'],'Infirmier·ère':['soin'],'Graphiste':['deco'],'Comptable':[],'Secrétaire':[],'Télévendeur·euse':[],'Traducteur·rice':[]};
 var NRG={'Peintre en lettres':2,'Peintre en décor':2,'Doreur·euse':1,'Ébéniste':2,'Tapissier·ère d’ameublement':2,'Vitrailliste':1,'Céramiste':1,'Tailleur·euse de pierre':4,'Restaurateur·rice de meubles':1,'Luthier·ère':1,'Maroquinier·ère':1,'Enseigniste':3,'Menuisier·ère':3,'Charpentier·ère':4,'Couvreur·euse':4,'Paysagiste':4,'Fleuriste':2,'Électricien·ne':3,'Plombier·ère chauffagiste':3,'Peintre en bâtiment':3,'Auxiliaire de vie':3,'Éducateur·rice spécialisé·e':2,'Boulanger·ère':3,'Technicien·ne de maintenance':2,'Infirmier·ère':3,'Graphiste':0,'Comptable':0,'Secrétaire':0,'Télévendeur·euse':0,'Traducteur·rice':0};
 var HRS={'Boulanger·ère':'aube','Fleuriste':'we','Infirmier·ère':'decale','Auxiliaire de vie':'decale','Éducateur·rice spécialisé·e':'decale','Couvreur·euse':'aube'};
-var LABX={dehors:'Dehors',atelier:'En atelier',chantier:'Sur un chantier',chez:'Chez les gens',mouvement:'En mouvement',bureau:'Au bureau',seul:'Seul·e',equipe:'En équipe',clients:'Avec des clients',p:'Précision et patience',a:'Action et variété'};
+var LABX={creer:'Créer',transmettre:'Transmettre',gastro:'Gastronomie',nature:'Nature, jardin',soin:'Soin, aide aux personnes',cuisine:'Cuisine',dehors:'Dehors',atelier:'En atelier',chantier:'Sur un chantier',chez:'Chez les gens',mouvement:'En mouvement',bureau:'Au bureau',seul:'Seul·e',equipe:'En équipe',clients:'Avec des clients',p:'Précision et patience',a:'Action et variété'};
 var SIT=[['','Ta situation (facultatif)'],['sal','Salarié·e'],['dem','En recherche d’emploi'],['ind','Indépendant·e'],['etu','Étudiant·e'],['aut','Autre']];
 
-/* 3 chapitres : 1 · Ce que tu sais faire (étapes 1 à 3) · 2 · Qui tu es · 3 · Ce que tu veux vivre */
+/* 3 chapitres : 1 · Ce que tu sais faire (étapes 1 à 3) · 2 · Qui tu es · 3 · Ce que tu veux vivre
+   Pas de redite : la question « Qu'est-ce que tu as toujours aimé faire… » (r) porte déjà ce que demandaient « Tu préfères faire quoi ? », « Créer / Transmettre », la cuisine, la nature, le soin et le dehors.
+   Ces réponses sont DÉDUITES de r (et des mots libres) au lieu d'être redemandées : voir R_OPT, FT_REG et impl(). Les chapitres 2 et 3 ne gardent que ce que r ne dit pas. */
 var QS=[
  {k:'t',ch:2,q:'On dit de toi que tu es plutôt…',h:'Trois au plus.',max:3,o:[['patient','Patient·e'],['minutieux','Minutieux·se'],['creatif','Créatif·ve'],['curieux','Curieux·se'],['resistant','Résistant·e'],['ecoute','À l’écoute'],['organise','Organisé·e'],['entreprenant','Entreprenant·e']]},
- {k:'w',ch:2,q:'Qu’est-ce que tu préfères faire ?',h:'Deux au plus.',max:2,o:[['mains','Fabriquer de mes mains'],['gens','Être au contact des gens'],['idees','Chercher, imaginer'],['vivant','Prendre soin du vivant']]},
- {k:'v',ch:2,q:'Qu’est-ce qui compte pour toi ?',h:'Trois au plus.',max:3,o:[['creer','Créer'],['reparer','Réparer, faire durer'],['transmettre','Transmettre'],['aider','Aider'],['fier','Être fier·e d’un résultat visible'],['securite','Sécuriser ma vie'],['decouvrir','Découvrir'],['apprendre','Apprendre'],['voyager','Voyager']]},
+ {k:'r',ch:2,cu:'r',q:'Qu’est-ce que tu as toujours aimé faire, sans jamais oser en faire ton métier ?',h:'Plusieurs possibles. Écris la tienne si elle n’y est pas.'},
+ {k:'f',ch:2,cu:'f',q:'Qu’est-ce qui t’a retenu·e ?',h:'Plusieurs possibles. Tu peux aussi ne rien cocher.'},
+ {k:'v',ch:2,q:'Et dans un travail, qu’est-ce qui compte pour toi ?',h:'Trois au plus.',max:3,o:[['reparer','Réparer, faire durer'],['aider','Aider'],['fier','Être fier·e d’un résultat visible'],['securite','Sécuriser ma vie'],['decouvrir','Découvrir'],['apprendre','Apprendre'],['voyager','Voyager']]},
  {k:'e',ch:2,sl:[['e','Plutôt calme','J’adore bouger']],q:'Tu aimes te dépenser ?',h:'Glisse sur ce qui te ressemble. Au milieu : peu importe.'},
- {k:'u',ch:3,q:'Quel univers te plaît ?',h:'Autant que tu veux.',o:[['patrimoine','Patrimoine, art'],['mode','Mode, textile'],['deco','Maison, déco'],['batiment','Bâtiment'],['gastro','Gastronomie'],['nature','Nature, jardin'],['technique','Technique, mécanique'],['soin','Soin, aide aux personnes']]},
+ {k:'u',ch:3,q:'Quel univers te plaît ?',h:'Autant que tu veux.',o:[['patrimoine','Patrimoine, art'],['mode','Mode, textile'],['deco','Maison, déco'],['batiment','Bâtiment'],['technique','Technique, mécanique']]},
  {k:'m',ch:3,q:'Quelle matière t’attire ?',h:'Autant que tu veux.',o:[['bois','Le bois'],['metal','Le métal'],['verre','Le verre'],['tissu','Le tissu'],['cuir','Cuir, peau'],['pierre','La pierre'],['terre','Terre, argile'],['papier','Papier, carton'],['eau','L’eau'],['aliments','Aliments'],['peinture','La peinture, la couleur'],['vegetal','Le végétal'],['ecran','L’écran']]},
- {k:'l',ch:3,q:'Où te sens-tu bien ?',h:'Autant que tu veux.',o:[['dehors','Dehors'],['atelier','En atelier'],['chantier','Sur un chantier'],['chez','Chez les gens'],['mouvement','En mouvement'],['bureau','Au bureau'],['commerce','Commerce, boutique'],['public','Lieu public'],['labo','Laboratoire'],['cuisine','Cuisine']]},
+ {k:'l',ch:3,q:'Où te sens-tu bien ?',h:'Autant que tu veux.',o:[['atelier','En atelier'],['chantier','Sur un chantier'],['chez','Chez les gens'],['bureau','Au bureau'],['commerce','Commerce, boutique'],['public','Lieu public'],['labo','Laboratoire']]},
  {k:'x',ch:3,sl:[['io','Dedans','Dehors'],['team','Seul·e','En équipe']],q:'Comment tu veux travailler ?',h:'Au milieu : peu importe.'},
  {k:'h',ch:3,q:'Ton rythme de vie ?',h:'Ce qui te va. Autant que tu veux.',o:[['jour','De jour, horaires classiques'],['aube','Tôt le matin'],['decale','Le soir, la nuit'],['we','Le week-end']]}];
+
+/* Question « toujours aimé faire » : chaque réponse en dit plusieurs à la fois ; on les traduit dans les repères du ciel (w : ce que je préfère faire · v : ce qui compte · u : univers · m : matière · l : lieu). */
+var R_OPT=[
+ ['mains','Travailler de mes mains, fabriquer un objet',{w:['mains'],v:['creer']}],
+ ['dessin','Dessiner, peindre, tracer des lettres',{w:['mains'],v:['creer'],u:['patrimoine'],m:['peinture']}],
+ ['reparer','Réparer, restaurer ce qui est abîmé',{w:['mains'],v:['reparer'],u:['patrimoine']}],
+ ['matieres','Travailler le bois, le métal, la pierre, le verre',{w:['mains']}],
+ ['cuisine','Cuisiner, transformer des produits',{w:['mains'],u:['gastro'],m:['aliments'],l:['cuisine']}],
+ ['terre','Cultiver, travailler la terre, soigner des animaux',{w:['vivant'],u:['nature'],m:['vegetal']}],
+ ['dehors','Travailler dehors, en mouvement',{l:['dehors','mouvement']}],
+ ['transmettre','Transmettre, apprendre à quelqu’un',{w:['gens'],v:['transmettre']}],
+ ['soin','Prendre soin des autres',{w:['gens','vivant'],v:['aider'],u:['soin']}],
+ ['deco','Créer, décorer, mettre en beauté un lieu',{v:['creer'],u:['deco']}]];
+var F_OPT=[['argent','L’argent'],['regard','Le regard des autres'],['pasmetier','Je ne savais pas que c’était un métier'],['formation','Pas de formation près de chez moi'],['age','L’âge'],['autre','Autre : …']];
+/* Lecture des mots libres, sans IA et sans envoi : on repère des mots-clés (accents et majuscules ignorés) et on les traduit comme les cases ci-dessus.
+   Les mots écrits ne sont gardés qu'avec les réponses, si la personne clique « Garder » (consentement) : ils pourront alors être analysés plus finement par l'IA, dans le plafond mensuel et sur décision de l'administrateur. */
+var FT_REG=[
+ [/\b(bois|menuis|ebenist|charpent|marqueter)/,{m:['bois'],w:['mains']},'le bois'],
+ [/\b(metal|forge|forgeron|soud|ferronn|acier|serrur|coutel|orfevr|bijou)/,{m:['metal'],w:['mains']},'le métal'],
+ [/\b(verre|vitrail|souffl)/,{m:['verre'],w:['mains']},'le verre'],
+ [/\b(pierre|macon|muret)/,{m:['pierre'],u:['patrimoine','batiment']},'la pierre'],
+ [/\b(cuir|maroquin|sellier|chaussur)/,{m:['cuir'],u:['mode'],w:['mains']},'le cuir'],
+ [/\b(couture|coudre|tissu|tricot|broder|broderie|textile|tisser|tissage|tapiss)/,{m:['tissu'],u:['mode'],w:['mains']},'le tissu'],
+ [/\b(poterie|potier|ceramique|argile|terre cuite|modelage|sculpt)/,{m:['terre'],w:['mains']},'la terre'],
+ [/\b(papier|reliure|relieur|calligraph|enlumin|gravure)/,{m:['papier'],u:['patrimoine'],w:['mains']},'le papier'],
+ [/\b(peindre|peinture|dessin|aquarelle|couleur|fresque|lettre)/,{m:['peinture'],v:['creer'],w:['mains']},'la peinture, le dessin'],
+ [/\b(cuisin|patisser|boulang|chocolat|fromag|confiture|traiteur)/,{u:['gastro'],m:['aliments'],l:['cuisine'],w:['mains']},'la cuisine'],
+ [/\b(jardin|potager|plante|fleur|arbre|ferme|animaux|cheval|chevaux|abeille|apicult|vigne|paysan|elevage)/,{u:['nature'],m:['vegetal'],w:['vivant']},'le vivant, la terre'],
+ [/\b(soigner|accompagn|enfant|ancien|malade|ecoute|aide a la personne|handicap)/,{u:['soin'],w:['gens'],v:['aider']},'prendre soin'],
+ [/\b(enseign|transmett|apprendre a|former|montrer|initier|pedagog)/,{w:['gens'],v:['transmettre']},'transmettre'],
+ [/\b(repar|restaur|retaper|remettre en etat|brocante|chiner)/,{v:['reparer'],u:['patrimoine'],w:['mains']},'réparer, restaurer'],
+ [/\b(maison|deco|decor|amenag|interieur|renov)/,{u:['deco']},'la maison, la déco'],
+ [/\b(batiment|chantier|toit|couvr|isol|plomb|electri|construire|construction)/,{u:['batiment'],l:['chantier']},'le bâtiment'],
+ [/\b(musique|instrument|guitare|violon|luth|piano)/,{u:['patrimoine'],m:['bois'],w:['mains']},'les instruments'],
+ [/\b(velo|moto|moteur|mecani|voiture|engin)/,{u:['technique'],m:['metal'],w:['mains']},'la mécanique'],
+ [/\b(dehors|exterieur|plein air|randonn|nature)/,{l:['dehors']},'le dehors'],
+ [/\b(voyag|decouvr|explorer)/,{v:['voyager','decouvrir']},'découvrir, voyager']];
+function ftHits(t){var n=norm(String(t||'')),r=[];if(n.trim().length<3)return r;FT_REG.forEach(function(x){if(x[0].test(n))r.push(x);});return r;}
+var _ik='',_iv=null;
+function impl(){var key=(S.libre||'')+'|'+Object.keys(S.a.r||{}).filter(function(k){return S.a.r[k]===true;}).join(',');
+  if(key===_ik&&_iv)return _iv;
+  var o={w:{},v:{},u:{},m:{},l:{}};var add=function(map){Object.keys(map).forEach(function(k){map[k].forEach(function(v){o[k][v]=true;});});};
+  R_OPT.forEach(function(x){if(S.a.r&&S.a.r[x[0]]===true)add(x[2]);});
+  ftHits(S.libre).forEach(function(x){add(x[1]);});
+  _ik=key;_iv=o;return o;}
+/* le repère « ce que je préfère faire » (w) n'est plus demandé : il se déduit de r ; on garde sa liste pour le calcul et les libellés */
+var QW={k:'w',ch:0,o:[['mains','Fabriquer de mes mains'],['gens','Être au contact des gens'],['idees','Chercher, imaginer'],['vivant','Prendre soin du vivant']]};
+var ALLQ=QS.concat([QW]);
 
 /* ---------- « Je démarre » : ce que tu as déjà fait de tes mains (jobs, stages, passions, bricolage) ----------
    Chaque puce porte quelques formulations proches des compétences ROME : le calcul de proximité est le même que pour « Je travaille ». */
@@ -371,9 +422,9 @@ function startJob(){      /* « Toi » : un métier de départ fait de ce que tu
   S.job={n:'Toi',c:'',sf:sfx,sv:[],start:true};S.sf={};sfx.forEach(function(x,k){S.sf[k]=!!S.start[START_TAGS[x[3]][0]];});S.dur='0';S.prevs=[];S.prevAsk=false;}
 function startN(){return Object.keys(S.start).filter(function(k){return S.start[k];}).length;}
 function formation(m,np){var art=!!m.art;return np<.4?'1 an environ':(np<.65?'1 à 2 ans':(np<.85?'2 ans':'2 à 3 ans'));}
-function freshA(){var a={};QS.forEach(function(q){a[q.k]={};if(q.sl)q.sl.forEach(function(x){a[q.k][x[0]]=2;});});return a;}
+function freshA(){var a={};ALLQ.forEach(function(q){a[q.k]={};if(q.sl)q.sl.forEach(function(x){a[q.k][x[0]]=2;});});return a;}
 var S={bpick:-1,st:0,job:null,sf:{},dur:'',prevs:[],prevAsk:false,a:null,want:'',reg:'',sit:'',top:[],pick:-1,q:0};
-S.a=freshA();S.mode='work';S.start={};
+S.a=freshA();S.mode='work';S.start={};S.libre='';S.libF='';S.rskip=false;
 M.forEach(function(m){var has=function(a,v){return a.indexOf(v)>=0;},l=m.p.l,a=m.p.a,tr={};
   m.u=UNIV[m.n]||[];m.e=NRG[m.n]===undefined?2:NRG[m.n];m.hr=HRS[m.n]||'jour';
   if(m.p.r==='p'){tr.patient=1;tr.minutieux=1;}else{tr.resistant=1;tr.entreprenant=1;}
@@ -423,17 +474,18 @@ async function chargerDest(essai){var sb=window.VSF&&VSF.sb;if(!sb)return;essai=
       setTimeout(function(){chargerDest(essai+1);},essai?15000:1500);}
   }catch(e){}
   DEST_PRET=true;M.forEach(function(m){m._k=null;});if(S.st>=8&&!S.calc)render();}
-function chosen(k){return Object.keys(S.a[k]||{}).filter(function(x){return S.a[k][x]===true;});}
+function chosen(k){var ex=Object.keys(S.a[k]||{}).filter(function(x){return S.a[k][x]===true;}),im=impl()[k];if(im)Object.keys(im).forEach(function(x){if(ex.indexOf(x)<0)ex.push(x);});return ex;}      /* ce que la personne a coché + ce que ses réponses « toujours aimé » et ses mots disent déjà */
 function mlist(m,k){return k==='t'?m.tr:(k==='u'?m.u:(m.p[k]||[]));}
-function sens(m){var sc=0,n=0;QS.forEach(function(q){var wt=({u:2,m:1.5,l:1.5})[q.k]||1;      /* l'univers, la matière et le lieu pèsent plus : un choix net doit se voir dans le ciel */
+function sens(m){var sc=0,n=0;ALLQ.forEach(function(q){if(q.cu)return;var wt=({u:2,m:1.5,l:1.5})[q.k]||1;      /* l'univers, la matière et le lieu pèsent plus : un choix net doit se voir dans le ciel */
     if(q.sl){q.sl.forEach(function(x){var u=S.a[q.k][x[0]];if(u===2)return;n+=wt;sc+=wt*(1-Math.abs(u-m[x[0]])/4);});return;}
     var ch=chosen(q.k);if(!ch.length)return;n+=wt;
     if(q.k==='h'){sc+=wt*(m.hr==='jour'||ch.indexOf(m.hr)>=0?1:0);return;}
     var L=mlist(m,q.k);sc+=wt*ch.filter(function(x){return L.indexOf(x)>=0;}).length/ch.length;});return n?sc/n:0;}
-function matches(m){var r=[];QS.forEach(function(q){
+function matches(m){var r=[];ALLQ.forEach(function(q){if(q.cu)return;
     if(q.sl){q.sl.forEach(function(x){var u=S.a[q.k][x[0]];if(u!==2&&Math.abs(u-m[x[0]])<=1)r.push(u<2?x[1]:x[2]);});return;}
     if(q.k==='h')return;var L=mlist(m,q.k);chosen(q.k).forEach(function(v){if(L.indexOf(v)>=0)r.push(lab(q.k,v));});});return r;}
-function pull(m){if(S.st!==4)return 0;var Q=QS[S.q];if(!Q||Q.sl||Q.k==='h')return 0;var ch=chosen(Q.k);if(!ch.length)return 0;var L=mlist(m,Q.k);return ch.filter(function(x){return L.indexOf(x)>=0;}).length/ch.length;}      /* ce que tu viens de cocher attire tout de suite les métiers concernés */
+function pullR(m){var im=impl(),n=0,hit=0;Object.keys(im).forEach(function(k){Object.keys(im[k]).forEach(function(v){n++;if(mlist(m,k).indexOf(v)>=0)hit++;});});return n?hit/n:0;}
+function pull(m){if(S.st!==4)return 0;var Q=QS[S.q];if(Q&&Q.cu==='r')return pullR(m);if(!Q||Q.cu||Q.sl||Q.k==='h')return 0;var ch=chosen(Q.k);if(!ch.length)return 0;var L=mlist(m,Q.k);return ch.filter(function(x){return L.indexOf(x)>=0;}).length/ch.length;}      /* ce que tu viens de cocher attire tout de suite les métiers concernés */
 function score(m){return S.st<2?0:(S.st<8?prox(m)*.35+sens(m)*.65+.3*pull(m):prox(m)*.55+sens(m)*.45);}      /* pendant les questions, ce que tu coches attire davantage les métiers */
 function pick3(){var L=M.filter(function(m){return !S.job||norm(m.n).indexOf(norm(S.job.n.split(' ')[0]))!==0;}).map(function(m){return {m:m,s:score(m),p:prox(m),e:sens(m)};});
   var hire=S.want!=='rare',rare=S.want!=='hire';
@@ -510,19 +562,35 @@ function panel(){var h='';
     (S.prevAsk&&S.prevs.length<3?'<div class="srch"><span class="caret"></span><input id="pq" autocomplete="off" placeholder="un autre métier…" aria-label="Autre métier"></div><div class="sugg" id="ps"></div>'
       :(S.prevs.length<3?'<div class="chips" style="margin-top:18px"><button id="pyes">'+(S.prevs.length?'+ Encore un autre métier':'Oui, j’en ajoute un')+'</button></div>':''))+
     nav(okp,S.prevs.length?'Continuer →':'Non, c’est tout →',S.prevs.some(function(p){return !Object.keys(p.sf).some(function(k){return p.sf[k];});})?'Coche au moins un savoir-faire pour chaque métier.':'Dis combien de temps pour chaque métier.');}
-  if(S.st===4){var Q=QS[S.q],sel=S.a[Q.k],inC=QS.filter(function(q){return q.ch===Q.ch;}),qi=inC.indexOf(Q)+1,last=S.q===QS.length-1,nxt=last?'Continuer →':(QS[S.q+1].ch!==Q.ch?'Chapitre suivant →':'Question suivante →');
-    var head=prog()+'<div class="kick">'+(Q.ch===2?'Qui tu es':'Ce que tu veux vivre')+' · '+qi+' / '+inC.length+'</div><div class="q">'+Q.q+'</div><p class="qh">'+Q.h+'</p>';
-    if(Q.sl)h=head+'<div class="sls">'+Q.sl.map(function(x){var u=sel[x[0]];return '<div class="sl" role="radiogroup" aria-label="'+x[1]+' ou '+x[2]+'"><div class="sll"><span>'+x[1]+'</span><span>peu importe</span><span>'+x[2]+'</span></div><div class="slt">'+[0,1,2,3,4].map(function(v){return '<button data-sl="'+x[0]+'" data-v="'+v+'" class="'+(u===v?'on':'')+'" aria-label="'+(v===2?'Peu importe':(v<2?x[1]:x[2]))+'" aria-pressed="'+(u===v)+'"></button>';}).join('')+'</div></div>';}).join('')+'</div>'+nav(true,nxt);
+  if(S.st===4){var Q=QS[S.q],sel=S.a[Q.k],inC=QS.filter(function(q){return q.ch===Q.ch&&!(q.k==='f'&&S.rskip);}),qi=inC.indexOf(Q)+1,last=S.q===QS.length-1,nxt=last?'Continuer →':(QS[qNext()].ch!==Q.ch?'Chapitre suivant →':'Question suivante →'),qt=Q.q,qh=Q.h;
+    if(Q.k==='m'&&S.a.r&&S.a.r.matieres){qt='Quelle matière, au juste ?';qh='Tu as parlé de travailler la matière : précise laquelle. Autant que tu veux.';}      /* pas de redite : on affine ce que la case « bois, métal, pierre, verre » a dit */
+    var head=prog()+'<div class="kick">'+(Q.ch===2?'Qui tu es':'Ce que tu veux vivre')+' · '+qi+' / '+inC.length+'</div><div class="q">'+qt+'</div><p class="qh">'+qh+'</p>';
+    if(Q.cu==='r'){var okr=Object.keys(S.a.r).some(function(k){return S.a.r[k]===true;})||(S.libre||'').trim().length>1;
+      h=head+'<div class="chips'+(okr?'':' todo')+'">'+R_OPT.map(function(o){var on=S.a.r[o[0]]===true;return '<button data-a="'+o[0]+'" aria-pressed="'+on+'" class="'+(on?'on':'')+'">'+o[1]+'</button>';}).join('')+'</div>'+
+        '<div class="srch" style="margin-top:14px"><span class="caret"></span><input id="rl" autocomplete="off" maxlength="240" placeholder="Autre chose : …" aria-label="Autre chose que tu as toujours aimé faire" value="'+esc(S.libre||'')+'"></div><p class="qh" id="rlect" style="margin-top:8px"></p>'+
+        nav(okr,nxt,'Coche au moins une réponse, ou écris la tienne.')+'<div style="margin-top:6px"><button class="back" id="rskip">Passer cette question</button></div>';}
+    else if(Q.cu==='f'){var onA=S.a.f.autre===true;
+      h=head+'<div class="chips">'+F_OPT.map(function(o){var on=S.a.f[o[0]]===true;return '<button data-a="'+o[0]+'" aria-pressed="'+on+'" class="'+(on?'on':'')+'">'+o[1]+'</button>';}).join('')+'</div>'+
+        (onA?'<div class="srch" style="margin-top:14px"><span class="caret"></span><input id="fl" autocomplete="off" maxlength="160" placeholder="Autre : …" aria-label="Ce qui t’a retenu·e" value="'+esc(S.libF||'')+'"></div>':'')+nav(true,nxt);}
+    else if(Q.sl)h=head+'<div class="sls">'+Q.sl.map(function(x){var u=sel[x[0]];return '<div class="sl" role="radiogroup" aria-label="'+x[1]+' ou '+x[2]+'"><div class="sll"><span>'+x[1]+'</span><span>peu importe</span><span>'+x[2]+'</span></div><div class="slt">'+[0,1,2,3,4].map(function(v){return '<button data-sl="'+x[0]+'" data-v="'+v+'" class="'+(u===v?'on':'')+'" aria-label="'+(v===2?'Peu importe':(v<2?x[1]:x[2]))+'" aria-pressed="'+(u===v)+'"></button>';}).join('')+'</div></div>';}).join('')+'</div>'+nav(true,nxt);
     else{var n2=chosen(Q.k).length;h=head+'<div class="chips'+(n2?'':' todo')+'">'+Q.o.map(function(o){var on=sel[o[0]]===true,dis=!on&&Q.max&&Q.max>1&&n2>=Q.max;return '<button data-a="'+o[0]+'" class="'+(on?'on':'')+'"'+(dis?' disabled style="opacity:.35"':'')+'>'+o[1]+'</button>';}).join('')+'</div>'+nav(n2>0,nxt,'Choisis au moins une réponse.');}}
   if(S.st===5)h=prog()+'<div class="kick">Ce que tu veux voir</div><div class="q">Vers quels métiers on regarde ?</div><p class="qh">Le baromètre de VraiSavoirFaire est mis à jour chaque mois.</p><div class="chips'+(S.want?'':' todo')+'">'+[['hire','↗ Ceux qui embauchent'],['rare','◆ Les métiers rares'],['both','Les deux']].map(function(o){return '<button data-w="'+o[0]+'" class="'+(S.want===o[0]?'on':'')+'">'+o[1]+'</button>';}).join('')+'</div><div class="sel"><select id="sit" aria-label="Ta situation">'+SIT.map(function(o){return '<option value="'+o[0]+'"'+(o[0]===S.sit?' selected':'')+'>'+o[1]+'</option>';}).join('')+'</select></div>'+nav(!!S.want,'Dessiner ma constellation →','Choisis ce que tu veux voir.');
   if(S.st===6)h='<div class="kick">Ta constellation se dessine…</div><div class="q" style="margin-top:12px">On rapproche tes savoir-faire, ce qui compte pour toi, et le baromètre du mois.</div>';
   if(S.st>=8&&S.calc)h='<div class="kick">L’Éclaireur</div><div class="q">Trois chemins s’ouvrent devant toi…</div><div class="cnt" id="cnt">0</div><p class="qh">métiers passés au crible : tes savoir-faire, ce qui compte pour toi, le baromètre du mois.</p>';
-  else if(S.st>=8){var ch=function(k){return chosen(k).map(function(x){return lab(k,x);});};
-    h='<div class="kick">Ta constellation</div><div class="me-card"><h3>Toi aujourd’hui</h3><div class="ln"><b>'+(S.job.start?'Je démarre':esc(S.job.n))+'</b>'+(S.job.start?'':' · '+DUR[+S.dur])+(S.prevs.length?' · avant : '+S.prevs.map(function(p){return esc(p.j.n);}).join(', '):'')+'</div><div class="tags">'+(S.job.start?START_TAGS.filter(function(t){return S.start[t[0]];}).map(function(t){return '<span>'+t[1]+'</span>';}).join(''):S.job.sf.filter(function(x,k){return S.sf[k];}).map(function(x){return '<span>'+x[0]+'</span>';}).join(''))+'</div><div class="ln" style="margin-top:12px"><b>On dit de toi :</b> '+(ch('t').join(', ')||'—')+'</div><div class="ln"><b>Ce qui compte :</b> '+(ch('v').join(', ')||'—')+'</div><div class="ln"><b>Univers :</b> '+(ch('u').join(', ')||'—')+' · <b>Matière :</b> '+(ch('m').join(', ')||'—')+'</div></div><p class="qh" style="margin-top:18px">Trois métiers sont venus à toi. Clique sur un métier pour voir sa fiche.</p><button class="back" id="redo">↻ Recommencer</button>';}
+  else if(S.st>=8){var ch=function(k){return Object.keys(S.a[k]||{}).filter(function(x){return S.a[k][x]===true;}).map(function(x){return lab(k,x);});};      /* le récapitulatif ne montre que ce qui a été coché dans chaque question : le reste est déjà dans « ce que tu as toujours aimé » */
+    h='<div class="kick">Ta constellation</div><div class="me-card"><h3>Toi aujourd’hui</h3><div class="ln"><b>'+(S.job.start?'Je démarre':esc(S.job.n))+'</b>'+(S.job.start?'':' · '+DUR[+S.dur])+(S.prevs.length?' · avant : '+S.prevs.map(function(p){return esc(p.j.n);}).join(', '):'')+'</div><div class="tags">'+(S.job.start?START_TAGS.filter(function(t){return S.start[t[0]];}).map(function(t){return '<span>'+t[1]+'</span>';}).join(''):S.job.sf.filter(function(x,k){return S.sf[k];}).map(function(x){return '<span>'+x[0]+'</span>';}).join(''))+'</div><div class="ln" style="margin-top:12px"><b>On dit de toi :</b> '+(ch('t').join(', ')||'—')+'</div>'+(function(){var rr=R_OPT.filter(function(o){return S.a.r[o[0]]===true;}).map(function(o){return o[1];});if((S.libre||'').trim())rr.push(esc(S.libre.trim()));var ff=F_OPT.filter(function(o){return S.a.f[o[0]]===true&&o[0]!=='autre';}).map(function(o){return o[1];});if(S.a.f.autre===true)ff.push((S.libF||'').trim()?esc(S.libF.trim()):'autre chose');return (rr.length?'<div class="ln"><b>Ce que tu as toujours aimé :</b> '+rr.join(' · ')+'</div>':'')+(ff.length?'<div class="ln"><b>Ce qui t’a retenu·e :</b> '+ff.join(' · ')+'</div>':'');})()+'<div class="ln"><b>Ce qui compte :</b> '+(ch('v').join(', ')||'—')+'</div><div class="ln"><b>Univers :</b> '+(ch('u').join(', ')||'—')+' · <b>Matière :</b> '+(ch('m').join(', ')||'—')+'</div></div><p class="qh" style="margin-top:18px">Trois métiers sont venus à toi. Clique sur un métier pour voir sa fiche.</p><button class="back" id="redo">↻ Recommencer</button>';}
   $('panel').innerHTML=h;
   var jq=$('jq');if(jq){if(!S.job)jq.focus();jq.oninput=function(){sug(jq.value,'js',function(j){S.mode='work';S.job=j;S.sf={};S.dur='';S.st=2;render();});};jq.onkeydown=enter('js');}
+  var rl=$('rl');if(rl){lectRefresh();rl.oninput=function(){S.libre=rl.value.slice(0,240);S.rskip=false;lectRefresh();
+    var ok=Object.keys(S.a.r).some(function(k){return S.a.r[k]===true;})||S.libre.trim().length>1,nx=$('nx'),w=document.querySelector('#panel .why');if(nx)nx.classList.toggle('ready',ok);if(w)w.textContent=ok?'':'Coche au moins une réponse, ou écris la tienne.';
+    clearTimeout(_lt);_lt=setTimeout(function(){layout();},250);};}
+  var fl=$('fl');if(fl){fl.focus();fl.oninput=function(){S.libF=fl.value.slice(0,160);};}
   var pq=$('pq');if(pq){pq.focus();pq.oninput=function(){sug(pq.value,'ps',function(j){S.prevs.push({j:j,sf:{},dur:''});S.prevAsk=false;render();});};pq.onkeydown=enter('ps');}
 }
+function qNext(){var i=S.q+1;if(QS[i]&&QS[i].k==='f'&&S.rskip)i++;return Math.min(i,QS.length-1);}      /* « qu'est-ce qui t'a retenu·e » n'a pas de sens si la personne a passé la question d'avant */
+function qPrev(){var i=S.q-1;if(QS[i]&&QS[i].k==='f'&&S.rskip)i--;return Math.max(i,0);}
+var _lt=0;
+function lectRefresh(){var el=$('rlect');if(!el)return;var L=ftHits(S.libre);el.innerHTML=L.length?'On a retenu de tes mots : <b>'+L.map(function(x){return x[2];}).join(', ')+'</b>.':((S.libre||'').trim().length>2?'On garde tes mots tels quels.':'Écris-le comme tu le dis.');}
 function enter(box){return function(e){if(e.key==='Enter'){var b=$(box).querySelector('[data-c]');if(b){e.preventDefault();b.click();}}};}
 /* ---------- recherche dans TOUS les métiers ROME (fonction rome-sync) ---------- */
 /* Les savoir-faire d'un métier viennent des fiches ROME (table rome_competences_cache) ; chacun reçoit des « repères » (client, matière, précision…)
@@ -592,7 +660,7 @@ function shiftW(m){var fw=$('field').getBoundingClientRect().width;var f=Math.po
 function cards(){var c=$('cards');if(S.st<8){c.classList.add('hide');return;}c.classList.remove('hide');c.classList.toggle('wait',!!S.calc);
   c.innerHTML=S.top.map(function(x,k){var m=x[0].m;return '<button class="cd'+(S.pick===k?' on':'')+'" data-cd="'+k+'"><div class="ck2">'+x[1]+'</div><div class="cn">'+(m.art?'◆ ':'')+m.n+'</div><div class="bd">'+(m.t>=2?'<span class="rc">↗ '+tTxt(m)+'</span>':'')+(m.up?'<span class="rr">◆ rare qui monte</span>':'')+'<span class="'+(m.ia==='forte'?'ia':'')+'">'+iaTxt(m)+'</span></div><div class="pp">'+(function(){var X=cx(m);return X.ok?(X.prudent?('estimation prudente · ≈ '+dureeM(m)+(S.job&&S.job.start?' de formation':'')):(X.nCom+' compétences sur '+X.nTot+' déjà en commun · ≈ '+dureeM(m)+(S.job&&S.job.start?' de formation':''))):(X.attente?'L’estimation se prépare…':'durée à préciser avec toi');})()+'</div><div class="vf">Voir la fiche ↓</div></button>';}).join('');if(innerWidth>=900&&!S.calc)[].forEach.call(c.querySelectorAll('.cd'),function(el,k){var tm=S.top[k]&&S.top[k][0].m;if(tm)el.style.marginRight=shiftW(tm)+'px';});}
 var TAGN={client:'La relation client',couleur:'Le sens de la couleur',compo:'La composition',matiere:'La connaissance des matières',peinture:'L’application de peinture',gestion:'L’organisation',pose:'La pose chez le client',hauteur:'Le travail en hauteur',chiffres:'Les chiffres',ecran:'Les outils numériques',precision:'La précision',reparer:'Le réflexe de réparer',support:'La préparation des supports',lettre:'Le dessin de lettre',soin:'Le soin',gens:'L’attention aux personnes',equipe:'Le travail en équipe',vivant:'Le travail du vivant',transmettre:'La transmission'};
-function lab(k,v){var q=QS.filter(function(q){return q.k===k&&q.o;})[0],o=q?q.o.filter(function(o){return o[0]===v;})[0]:null;return o?o[1]:(LABX[v]||v);}
+function lab(k,v){var q=ALLQ.filter(function(q){return q.k===k&&q.o;})[0],o=q?q.o.filter(function(o){return o[0]===v;})[0]:null;return o?o[1]:(LABX[v]||v);}
 function sitTxt(){return {sal:' <b>Salarié·e :</b> regarde Transitions Pro et ton CPF.',dem:' <b>En recherche d’emploi :</b> ton conseiller France Travail peut prescrire l’immersion.',ind:' <b>Indépendant·e :</b> regarde ton CPF.',etu:' <b>Étudiant·e :</b> l’immersion passe par ton établissement ou France Travail.'}[S.sit]||'';}
 function fiche(m,label,src){var done=S.st>=8&&S.job,X=done?cx(m):null,com=X&&X.ok?X.commun:[],nw=X&&X.ok?X.nouveau:[],p=X&&X.ok?1-npEff(m):0,lst=function(a,sy){return a.slice(0,6).map(function(g){return '<li>'+sy+' '+esc(g)+'</li>';}).join('')+(a.length>6?'<li style="color:#767676">+ '+(a.length-6)+' autres</li>':'');};
   var sj=done?matches(m):[];
@@ -642,12 +710,12 @@ function calc(){S.calc=true;render();var names=M.map(function(m){return m.n;}),n
 function stopCalc(){TKT.forEach(function(t){clearInterval(t);clearTimeout(t);});TKT=[];$('tks').innerHTML='';S.calc=false;}
 /* ---------- moteur ---------- */
 function render(){$('stage').classList.toggle('intro',S.st===0);panel();S.top=S.st>=8?pick3():[];if(S.st>=8&&!S.calc&&S.pick<0&&S.top.length)S.pick=0;$('sky').classList.toggle('fin',S.st>=8);cards();layout();sig();}
-$('panel').addEventListener('click',function(e){var t=e.target.closest('#go,#nx,#bk,[data-sf],[data-dur],[data-psf],[data-pdur],[data-pdel],[data-a],[data-sl],[data-w],[data-mode],[data-stg],#pyes,#redo');if(!t)return;
+$('panel').addEventListener('click',function(e){var t=e.target.closest('#go,#nx,#bk,#rskip,[data-sf],[data-dur],[data-psf],[data-pdur],[data-pdel],[data-a],[data-sl],[data-w],[data-mode],[data-stg],#pyes,#redo');if(!t)return;
   if(t.dataset.mode){if(S.mode!==t.dataset.mode){S.mode=t.dataset.mode;S.job=null;S.sf={};S.dur='';S.prevs=[];S.prevAsk=false;}render();return;}
   if(t.dataset.stg){S.start[t.dataset.stg]=!S.start[t.dataset.stg];render();return;}
   if(t.id==='go'){openIt();return;}
-  if(t.id==='redo'){stopCalc();S.st=0;S.mode='work';S.start={};S.job=null;S.sf={};S.dur='';S.prevs=[];S.prevAsk=false;S.a=freshA();S.sit='';S.want='';S.pick=-1;S.bpick=-1;S.q=0;setTimeout(whirl,50);scrollTo(0,0);render();return;}
-  if(t.id==='bk'){if(S.st===4&&S.q>0)S.q--;else if(S.st===4&&S.mode==='start')S.st=1;else S.st--;render();refocus();return;}
+  if(t.id==='redo'){stopCalc();S.st=0;S.mode='work';S.start={};S.job=null;S.sf={};S.dur='';S.prevs=[];S.prevAsk=false;S.a=freshA();S.libre='';S.libF='';S.rskip=false;S.sit='';S.want='';S.pick=-1;S.bpick=-1;S.q=0;setTimeout(whirl,50);scrollTo(0,0);render();return;}
+  if(t.id==='bk'){if(S.st===4&&S.q>0)S.q=qPrev();else if(S.st===4&&S.mode==='start')S.st=1;else S.st--;render();refocus();return;}
   if(t.id==='pyes'){S.prevAsk=true;render();return;}
   if(t.dataset.psf!==undefined){var q=t.dataset.psf.split(':'),pv=S.prevs[+q[0]];if(pv){pv.sf[q[1]]=!pv.sf[q[1]];render();}return;}
   if(t.dataset.pdur!==undefined){var q2=t.dataset.pdur.split(':'),pv2=S.prevs[+q2[0]];if(pv2){pv2.dur=q2[1];render();}return;}
@@ -655,11 +723,12 @@ $('panel').addEventListener('click',function(e){var t=e.target.closest('#go,#nx,
   if(t.dataset.sf!==undefined){S.sf[t.dataset.sf]=!S.sf[t.dataset.sf];render();return;}
   if(t.dataset.dur!==undefined){S.dur=t.dataset.dur;render();return;}
   if(t.dataset.sl){S.a[QS[S.q].k][t.dataset.sl]=+t.dataset.v;render();return;}
-  if(t.dataset.a){var Q=QS[S.q],v=t.dataset.a;if(Q.max===1){S.a[Q.k]={};S.a[Q.k][v]=true;}else S.a[Q.k][v]=!S.a[Q.k][v];render();return;}
+  if(t.id==='rskip'){S.rskip=true;S.a.r={};S.libre='';S.a.f={};S.libF='';S.q=qNext();render();refocus();return;}
+  if(t.dataset.a){var Q=QS[S.q],v=t.dataset.a;if(Q.k==='r')S.rskip=false;if(Q.max===1){S.a[Q.k]={};S.a[Q.k][v]=true;}else S.a[Q.k][v]=!S.a[Q.k][v];render();return;}
   if(t.dataset.w){S.want=t.dataset.w;render();return;}
   if(t.id==='nx'){if(!t.classList.contains('ready'))return;
     if(S.st===1&&S.mode==='start'){startJob();S.st=4;S.q=0;render();refocus();return;}      /* « Je démarre » : on va droit aux questions « qui tu es » */
-    if(S.st===4&&S.q<QS.length-1){S.q++;render();refocus();return;}
+    if(S.st===4&&S.q<QS.length-1){S.q=qNext();render();refocus();return;}
     if(S.st===5){S.st=6;render();setTimeout(function(){S.st=8;S.top=pick3();if(RED)render();else calc();if(innerWidth<900)setTimeout(function(){scrollTo({top:$('field').getBoundingClientRect().top+scrollY-topH()-8,behavior:RED?'auto':'smooth'});},200);},RED?50:1300);return;}
     S.st++;render();refocus();}});
 $('panel').addEventListener('change',function(e){if(e.target.id==='dur'){S.dur=e.target.value;render();}if(e.target.id==='sit'){S.sit=e.target.value;}});
@@ -677,7 +746,7 @@ document.addEventListener('click',async function(e){var b=e.target.closest('.kee
   if(!ck.checked){msg.textContent='Coche la case pour que nous gardions tes réponses.';return;}
   if(!(window.VSF&&VSF.sb)){msg.textContent='Impossible de garder tes réponses pour le moment.';return;}
   b.disabled=true;
-  var rep={metier:{code:S.job&&S.job.c,nom:S.job&&S.job.n,duree:DUR[+S.dur],savoir_faire:S.job?S.job.sf.filter(function(x,k){return S.sf[k];}).map(function(x){return x[0];}):[]},avant:S.prevs.map(function(p){return {code:p.j.c,nom:p.j.n,duree:DUR[+p.dur],savoir_faire:p.j.sf.filter(function(x,k){return p.sf[k];}).map(function(x){return x[0];})};}),reponses:S.a,regard:S.want,region:S.reg||null,cibles:S.top.map(function(x){return x[0].m.n;}),demo:true};
+  var rep={metier:{code:S.job&&S.job.c,nom:S.job&&S.job.n,duree:DUR[+S.dur],savoir_faire:S.job?S.job.sf.filter(function(x,k){return S.sf[k];}).map(function(x){return x[0];}):[]},avant:S.prevs.map(function(p){return {code:p.j.c,nom:p.j.n,duree:DUR[+p.dur],savoir_faire:p.j.sf.filter(function(x,k){return p.sf[k];}).map(function(x){return x[0];})};}),reponses:S.a,libre:(S.libre||'').trim().slice(0,240)||null,frein_autre:(S.a.f&&S.a.f.autre===true&&(S.libF||'').trim())?S.libF.trim().slice(0,160):null,regard:S.want,region:S.reg||null,cibles:S.top.map(function(x){return x[0].m.n;}),demo:true};
   var r=await VSF.sb.rpc('vsf_eclaireur_garder',{p_email:mail,p_reponses:rep,p_consentement:true});
   b.disabled=false;
   if(r.error){msg.textContent=(r.error.code==='VSF08'&&r.error.message)?r.error.message:'Impossible de garder tes réponses pour le moment.';return;}
