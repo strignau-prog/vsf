@@ -112,6 +112,29 @@
   .propositionInfos{display:flex;gap:10mm;justify-content:center;flex-wrap:wrap;font-size:9.5px;margin-top:8mm;opacity:.75}
   .propositionInfos b{opacity:1}
 
+  /* Proposition à partir d'un fichier déposé par le graphiste : l'image occupe la page, son titre dessous. */
+  .propositionZone.fichier{justify-content:space-between;padding:8mm 10mm}
+  .fichierCadre{flex:1;display:flex;align-items:center;justify-content:center;width:100%;min-height:0}
+  .fichierCadre img{max-width:100%;max-height:205mm;object-fit:contain;display:block;box-shadow:0 1px 8px rgba(0,0,0,.18)}
+  .fichierTitre{font-size:11px;letter-spacing:.05em;text-transform:uppercase;margin-top:5mm;opacity:.8}
+
+  /* Dépôt de fichiers (écran seulement : jamais imprimé) */
+  .depot{border:2px dashed #b9b2a6;border-radius:14px;background:var(--soft);padding:22px 16px;text-align:center;margin-bottom:14px;transition:background .15s,border-color .15s}
+  .depot.survol{background:#efe9dc;border-color:#111}
+  .depotTitre{font-size:18px;font-weight:700;margin-bottom:4px;font-family:Fraunces,Georgia,serif}
+  .depot .btn{margin:10px 0 2px}
+  .depotStatut{min-height:18px;margin-top:6px}
+  .depotStatut.alerte{color:#a8461f;font-weight:600}
+  .listeFichiers{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+  .ligneFichier{display:grid;grid-template-columns:28px 64px minmax(0,1fr) auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:#fff}
+  .ligneFichier img{width:64px;height:48px;object-fit:cover;border-radius:4px;border:1px solid var(--line);display:block}
+  .ligneFichier .num{font-weight:700;color:var(--muted);text-align:center}
+  .ligneFichier .btn{padding:5px 10px;font-size:13px}
+  .photoLieu{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+  .photoLieu img{width:64px;height:48px;object-fit:cover;border-radius:4px;border:1px solid var(--line)}
+  details.coord{margin:12px 0}
+  details.coord summary{cursor:pointer;font-size:13px;color:var(--muted)}
+
   /* Demande d'autorisation — texte réglementaire, mise en page kraft. */
   .autoTitre{font-size:34px;margin:4mm 0 6mm}
   .autoTexte{font-size:11.5px;line-height:1.75}
@@ -132,7 +155,7 @@
   @page{ size:A4 portrait; margin:0; }
   @media print{
     body{background:#fff}
-    .topbar,.outils,.quickForm{display:none !important}
+    .topbar,.outils,.quickForm,.depot{display:none !important}
     .page{box-shadow:none;margin:0;width:210mm;min-height:297mm;page-break-after:always}
     .page:last-child{page-break-after:auto}
     nav.topnav{display:none !important}
@@ -227,8 +250,144 @@ function construireDossierDepuisFormulaireManuel(){
     numero: PROJET_ID ? PROJET_ID.slice(0,8) : '—', dateStr: new Date().toLocaleDateString('fr-FR'),
     projetNom: f.projetNom, ville: f.ville, clientNom: f.clientNom, clientTelephone: f.clientTelephone,
     texteAPeindre: f.texteAPeindre,
-    lignes: f.lignes.filter(l=>l.support).map(l=>({ support:l.support, forme:f.forme, effet:f.effet, longueurCm:l.longueurCm, hauteurCm:l.hauteurCm })),
+    // Avec des fichiers déposés, chaque fichier est une page « Proposition » ; sans fichier, aperçu texte par support.
+    fichiers: fichiers.slice(),
+    photoUrl: photoLieu,
+    lignes: fichiers.length ? [] : f.lignes.filter(l=>l.support).map(l=>({ support:l.support, forme:f.forme, effet:f.effet, longueurCm:l.longueurCm, hauteurCm:l.hauteurCm })),
   };
+}
+
+/* =========================================================================
+   DÉPÔT DE FICHIERS (graphiste) — on glisse les propositions (images ou PDF) :
+   chacune devient une page du dossier, dans l'ordre des noms de fichiers.
+   Tout reste dans le navigateur : aucun fichier n'est envoyé nulle part.
+   ========================================================================= */
+let contactOuvert = false;
+let fichiers = [];      // { id, src, titre }
+let photoLieu = '';
+const MAX_PIXELS = 2000; // plus grand côté : assez net pour l'impression A4, assez léger pour le PDF
+const RE_IMAGE = /\.(jpe?g|png|webp|gif|svg|bmp|avif)$/i;
+const RE_PDF = /\.pdf$/i;
+
+function nomPropre(nom){ return nom.replace(/\.[^.]+$/,'').replace(/[_]+/g,' ').replace(/\s+/g,' ').trim(); }
+function lireFichier(f){ return new Promise((ok,ko)=>{ const r=new FileReader(); r.onload=()=>ok(r.result); r.onerror=()=>ko(new Error('lecture impossible')); r.readAsDataURL(f); }); }
+function chargerImage(src){ return new Promise((ok,ko)=>{ const i=new Image(); i.onload=()=>ok(i); i.onerror=()=>ko(new Error('image illisible')); i.src=src; }); }
+async function reduireImage(f){
+  const src = await lireFichier(f);
+  if(/svg/i.test(f.type) || /\.svg$/i.test(f.name)) return src;       // vectoriel : gardé tel quel
+  const img = await chargerImage(src);
+  const k = Math.min(1, MAX_PIXELS / Math.max(img.naturalWidth, img.naturalHeight));
+  const c = document.createElement('canvas'); c.width = Math.round(img.naturalWidth*k); c.height = Math.round(img.naturalHeight*k);
+  const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0,0,c.width,c.height); x.drawImage(img,0,0,c.width,c.height);
+  return c.toDataURL('image/jpeg', .9);
+}
+function avecDelai(promesse, ms, message){ return Promise.race([promesse, new Promise((_,ko)=>setTimeout(()=>ko(new Error(message)), ms))]); }
+let pdfjsPret = null;
+function chargerPdfJs(){
+  if(pdfjsPret) return pdfjsPret;
+  pdfjsPret = new Promise((ok,ko)=>{
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    s.onload = ()=>{ window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; ok(window.pdfjsLib); };
+    s.onerror = ()=>{ pdfjsPret = null; ko(new Error('lecteur de PDF indisponible (connexion ?)')); };
+    document.head.appendChild(s);
+  });
+  return pdfjsPret;
+}
+async function pagesDePdf(f){
+  const lib = await chargerPdfJs();
+  const doc = await avecDelai(lib.getDocument({ data: await f.arrayBuffer(), standardFontDataUrl:'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/standard_fonts/' }).promise, 30000, 'PDF trop long à ouvrir');
+  const sortie = [];
+  for(let i=1; i<=Math.min(doc.numPages, 30); i++){
+    const p = await doc.getPage(i), v0 = p.getViewport({ scale:1 });
+    const v = p.getViewport({ scale: Math.min(4, MAX_PIXELS / Math.max(v0.width, v0.height)) });
+    const c = document.createElement('canvas'); c.width = Math.round(v.width); c.height = Math.round(v.height);
+    const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0,0,c.width,c.height);
+    // intent « print » : le rendu ne dépend pas de l'affichage de l'onglet (il se fait même si la fenêtre est en arrière-plan)
+    await avecDelai(p.render({ canvasContext:x, viewport:v, intent:'print' }).promise, 60000, 'page '+i+' trop longue à dessiner');
+    sortie.push(c.toDataURL('image/jpeg', .9));
+  }
+  return sortie;
+}
+function statutDepot(texte, alerte){ const s = document.getElementById('statutDepot'); if(s){ s.textContent = texte||''; s.classList.toggle('alerte', !!alerte); } }
+
+async function ajouterFichiers(liste, cible){
+  const fs = Array.from(liste||[]).sort((a,b)=>a.name.localeCompare(b.name,'fr',{numeric:true,sensitivity:'base'}));
+  const refus = [];
+  for(const f of fs){
+    statutDepot('Lecture de « '+f.name+' »…');
+    try{
+      const estPdf = f.type==='application/pdf' || RE_PDF.test(f.name);
+      const estImage = /^image\/(jpeg|png|webp|gif|svg\+xml|bmp|avif)$/.test(f.type) || RE_IMAGE.test(f.name);
+      if(cible==='photo'){
+        if(!estImage) throw new Error('format non lu');
+        photoLieu = await reduireImage(f);
+      } else if(estPdf){
+        const pages = await pagesDePdf(f);
+        pages.forEach((src,i)=>fichiers.push({ id:uid(), src, titre: nomPropre(f.name) + (pages.length>1 ? ' — page '+(i+1) : '') }));
+      } else if(estImage){
+        fichiers.push({ id:uid(), src: await reduireImage(f), titre: nomPropre(f.name) });
+      } else {
+        throw new Error('format non lu');
+      }
+    }catch(e){ refus.push(f.name + ' (' + (e.message||'illisible') + ')'); }
+  }
+  render();
+  if(refus.length) statutDepot('Non lus : ' + refus.join(' ; ') + '. Formats acceptés : JPG, PNG, WebP, SVG et PDF. Un fichier Illustrator, Photoshop ou InDesign s\'exporte d\'abord en PDF ou PNG.', true);
+}
+function deposer(ev, cible){
+  ev.preventDefault(); ev.currentTarget.classList.remove('survol');
+  if(ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files.length) ajouterFichiers(ev.dataTransfer.files, cible);
+}
+function deplacerFichier(id, sens){
+  const i = fichiers.findIndex(f=>f.id===id), j = i + sens;
+  if(i<0 || j<0 || j>=fichiers.length) return;
+  [fichiers[i], fichiers[j]] = [fichiers[j], fichiers[i]]; render();
+}
+function retirerFichier(id){ fichiers = fichiers.filter(f=>f.id!==id); render(); }
+function titrerFichier(id, valeur){ const f = fichiers.find(x=>x.id===id); if(f){ f.titre = valeur; render(); } }
+function majContact(champ, valeur){
+  etablissement[champ] = valeur;
+  try{ localStorage.setItem('dossier_contact_v1', JSON.stringify(etablissement)); }catch(e){ /* stockage indisponible */ }
+  render();
+}
+// Les coordonnées de l'atelier sont reprises de la base quand on vient d'un projet ; sinon de la dernière saisie sur cet appareil.
+function reprendreContactLocal(){
+  try{
+    const m = JSON.parse(localStorage.getItem('dossier_contact_v1')||'null');
+    if(m) for(const k of ['name','telephone','adresse','email_contact']) if(!etablissement[k] && m[k]) etablissement[k] = m[k];
+  }catch(e){ /* rien */ }
+}
+// Empêche le navigateur d'ouvrir un fichier lâché à côté de la zone de dépôt.
+['dragover','drop'].forEach(n=>window.addEventListener(n, e=>{ if(!e.target.closest || !e.target.closest('.depot')) e.preventDefault(); }));
+
+function renderDepot(){
+  return `
+  <div class="depot" ondragover="event.preventDefault();this.classList.add('survol')" ondragleave="this.classList.remove('survol')" ondrop="deposer(event,'propositions')">
+    <input type="file" id="fichierInput" multiple accept="image/*,.pdf,application/pdf" hidden onchange="ajouterFichiers(this.files,'propositions');this.value=''">
+    <div class="depotTitre">Glissez ici vos propositions</div>
+    <div class="tiny">Une image ou une page de PDF = une page « Proposition » du dossier, rangées dans l'ordre des noms de fichiers (JPG, PNG, WebP, SVG, PDF).</div>
+    <button class="btn" onclick="document.getElementById('fichierInput').click()">Choisir des fichiers</button>
+    <div class="depotStatut tiny" id="statutDepot"></div>
+  </div>
+  ${fichiers.length ? `<div class="listeFichiers">${fichiers.map((f,i)=>`
+    <div class="ligneFichier">
+      <div class="num">${i+1}</div>
+      <img src="${f.src}" alt="">
+      <input class="input" value="${escapeHtml(f.titre)}" aria-label="Titre de la proposition ${i+1}" onchange="titrerFichier('${f.id}', this.value)">
+      <div style="display:flex;gap:4px">
+        <button class="btn" title="Monter" ${i===0?'disabled':''} onclick="deplacerFichier('${f.id}',-1)">↑</button>
+        <button class="btn" title="Descendre" ${i===fichiers.length-1?'disabled':''} onclick="deplacerFichier('${f.id}',1)">↓</button>
+        <button class="btn" title="Retirer" onclick="retirerFichier('${f.id}')">✕</button>
+      </div>
+    </div>`).join('')}</div>` : ''}
+  <div class="photoLieu">
+    <input type="file" id="photoInput" accept="image/*" hidden onchange="ajouterFichiers(this.files,'photo');this.value=''">
+    ${photoLieu ? `<img src="${photoLieu}" alt="">` : ''}
+    <button class="btn" onclick="document.getElementById('photoInput').click()">${photoLieu ? 'Changer la photo du lieu' : 'Ajouter la photo du lieu (facultatif)'}</button>
+    ${photoLieu ? `<button class="btn" onclick="photoLieu='';render()">Retirer</button>` : ''}
+    <span class="tiny">Elle apparaît sur la page d'introduction.</span>
+  </div>`;
 }
 
 /* =========================================================================
@@ -245,7 +404,8 @@ function renderFormulaireManuel(){
   const f = formulaireManuel;
   return `
   <div class="quickForm">
-    <h2>Dossier de présentation — saisie rapide</h2>
+    <h2>Dossier de présentation</h2>
+    ${renderDepot()}
     <div class="grid2">
       <div class="field"><label>Nom du projet / enseigne</label><input class="input" value="${escapeHtml(f.projetNom)}" onchange="majFormulaireManuel('projetNom', this.value)"></div>
       <div class="field"><label>Localisation</label><input class="input" value="${escapeHtml(f.ville)}" onchange="majFormulaireManuel('ville', this.value)"></div>
@@ -253,6 +413,7 @@ function renderFormulaireManuel(){
       <div class="field"><label>Téléphone client</label><input class="input" value="${escapeHtml(f.clientTelephone)}" onchange="majFormulaireManuel('clientTelephone', this.value)"></div>
     </div>
     <div class="field"><label>Texte à peindre</label><textarea class="textarea" rows="2" onchange="majFormulaireManuel('texteAPeindre', this.value)">${escapeHtml(f.texteAPeindre)}</textarea></div>
+    ${fichiers.length ? '' : `<p class="tiny" style="margin:4px 0 10px">Sans fichier déposé, le dossier montre un aperçu en texte pour chaque support ci-dessous.</p>
     <div class="grid2">
       <div class="field"><label>Style de lettrage</label>
         <select class="select" onchange="majFormulaireManuel('forme', this.value)"><option value="">—</option>${STYLES_FORME.map(k=>`<option value="${escapeHtml(k)}" ${k===f.forme?'selected':''}>${escapeHtml(k)}</option>`).join('')}</select>
@@ -273,7 +434,15 @@ function renderFormulaireManuel(){
           <button class="btn" onclick="retirerLigneManuelle('${l.id}')">✕</button>
         </div>
       </div>`).join('')}
-    <button class="btn" onclick="ajouterLigneManuelle()">+ Support</button>
+    <button class="btn" onclick="ajouterLigneManuelle()">+ Support</button>`}
+    <details class="coord" ${contactOuvert?'open':''} ontoggle="contactOuvert=this.open"><summary>Coordonnées de l'atelier (dernière page du dossier)</summary>
+      <div class="grid2" style="margin-top:8px">
+        <div class="field"><label>Nom de l'atelier</label><input class="input" value="${escapeHtml(etablissement.name||'')}" onchange="majContact('name', this.value)"></div>
+        <div class="field"><label>Téléphone</label><input class="input" value="${escapeHtml(etablissement.telephone||'')}" onchange="majContact('telephone', this.value)"></div>
+        <div class="field"><label>Adresse</label><input class="input" value="${escapeHtml(etablissement.adresse||'')}" onchange="majContact('adresse', this.value)"></div>
+        <div class="field"><label>E-mail</label><input class="input" value="${escapeHtml(etablissement.email_contact||'')}" onchange="majContact('email_contact', this.value)"></div>
+      </div>
+    </details>
   </div>`;
 }
 
@@ -371,6 +540,17 @@ function renderPageSupport(l, index){
     ${pageFooter()}
   </div>`;
 }
+function renderPageFichier(fi, index){
+  return `
+  <div class="page">
+    ${pageTopBar('Proposition '+String(index+1).padStart(2,'0'))}
+    <div class="propositionZone fichier">
+      <div class="fichierCadre"><img src="${fi.src}" alt="${escapeHtml(fi.titre||'')}"></div>
+      ${fi.titre ? `<div class="fichierTitre">${escapeHtml(fi.titre)}</div>` : ''}
+    </div>
+    ${pageFooter()}
+  </div>`;
+}
 function renderAutorisation(){
   return `
   <div class="page kraft">
@@ -421,23 +601,24 @@ function renderContact(){
 
 function render(){
   const app = document.getElementById('app');
-  if(!dossier){
-    if(PROJET_ID){
-      app.innerHTML = renderFormulaireManuel() + `
-        <div class="outils"><button class="btn btnPrimary" onclick="construireDossierDepuisFormulaireManuel();render()">Générer l'aperçu du dossier →</button></div>`;
-      return;
-    }
-    app.innerHTML = `<div class="quickForm"><p>Chargement, ou lien incomplet — ce dossier doit être ouvert avec <code>?devis=…</code> ou <code>?projet=…</code> dans l'adresse.</p></div>`;
+  // Lien client (?devis=…) : le dossier est tout fait. Sinon (graphiste, atelier) : saisie + dépôt de fichiers,
+  // et le dossier se construit en direct sous le formulaire.
+  if(DEVIS_ID && !dossier){
+    app.innerHTML = `<div class="quickForm"><p>Chargement, ou dossier introuvable — vérifiez le lien reçu.</p></div>`;
     return;
   }
-  const pages = [renderCouverture(), renderIntroduction(), ...dossier.lignes.map(renderPageSupport), renderAutorisation(), renderContact()];
-  app.innerHTML = `
+  const saisie = !DEVIS_ID;
+  if(saisie) construireDossierDepuisFormulaireManuel();
+  const pret = !saisie || !!(dossier.projetNom || dossier.fichiers.length);
+  const pages = !pret ? [] : [renderCouverture(), renderIntroduction(),
+    ...(dossier.fichiers && dossier.fichiers.length ? dossier.fichiers.map(renderPageFichier) : dossier.lignes.map(renderPageSupport)),
+    renderAutorisation(), renderContact()];
+  app.innerHTML = (saisie ? renderFormulaireManuel() : '') + (pret ? `
     <div class="outils">
-      <button class="btn btnPrimary" onclick="window.print()">🖨 Imprimer / Enregistrer en PDF</button>
-      ${PROJET_ID ? `<button class="btn" onclick="dossier=null;render()">← Modifier la saisie</button>` : ''}
+      <button class="btn btnPrimary" onclick="window.print()">🖨 Enregistrer en PDF / Imprimer</button>
+      <span class="tiny">${pages.length} pages A4 · dans la fenêtre d'impression, choisissez « Enregistrer au format PDF », marges « Aucune », cochez « Graphiques d'arrière-plan ».</span>
     </div>
-    ${pages.join('')}
-  `;
+    ${pages.join('')}` : `<div class="outils"><span class="tiny">Déposez vos fichiers ou saisissez le nom du projet : le dossier se construit ici, en dessous.</span></div>`);
 }
 
 async function initApp(){
@@ -455,6 +636,7 @@ async function initApp(){
   } else if(ESTABLISHMENT_ID_URL){
     await chargerEtablissement(ESTABLISHMENT_ID_URL);
   }
+  if(!DEVIS_ID) reprendreContactLocal();
   render();
 }
 initApp();
