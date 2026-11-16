@@ -197,7 +197,7 @@ h1{margin:10px 0 14px;font-size:clamp(34px,4.6vw,60px);font-weight:900;line-heig
 .panel{transition:opacity .6s .35s,padding .9s cubic-bezier(.6,0,.2,1)}
 .stage.intro .sky{background:#fff;min-height:calc(100svh - var(--hh,64px))}
 .sky{transition:background .9s}
-.intro .b{transition-duration:4.2s;transition-timing-function:ease-in-out}
+.intro .b{transition-duration:4.2s;transition-timing-function:linear}      /* vitesse constante dès le premier instant : les bulles volent déjà à l'ouverture, sans départ au ralenti */
 .intro .b span{background:transparent}
 .intro .b.z1 span{scale:.82;opacity:.45;filter:blur(1px)}
 .intro .b.z2 span{scale:.68;opacity:.22;filter:blur(2.2px)}
@@ -774,7 +774,7 @@ addEventListener('touchmove',function(e){if(S.st===0&&ty!==null&&ty-e.touches[0]
 document.documentElement.style.setProperty('--hh',topH()+'px');
 poserHero();
 try{fetch('eclaireur-textes.json?'+Date.now()).then(function(r){return r.ok?r.json():null;}).then(function(j){if(j){Object.keys(j).forEach(function(k){if(typeof j[k]==='string'&&j[k].trim())TEXTES[k]=j[k];});poserHero();}}).catch(function(){});}catch(e){}
-bubbles();baro();$('bubbles').classList.add('nt');render();setTimeout(function(){$('bubbles').classList.remove('nt');layout();},60);whirl();
+bubbles();baro();$('bubbles').classList.add('nt');render();setTimeout(function(){$('bubbles').classList.remove('nt');layout();},30);whirl();      /* dès la première image affichée, un second trajet part : les bulles sont déjà en vol à l'ouverture */
 addEventListener('resize',layout);
 
 /* accroche pour le test automatique des paires de métiers (eclaireur-test.html) */
