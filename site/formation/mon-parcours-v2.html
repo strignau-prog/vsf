@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mon parcours — copie de test — VRAI-SAVOIRFAIRE</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="../vsf-auth.js"></script>
+<style>
+:root{--fg:#111;--muted:#767676;--off:#c4c4c4;--now:#ffc400;--ok:#009e73;--alert:#d92d20;--todo:#fdecea;--soft:#f3f3f3;
+  --f-faire:#111111;--f-recevoir:#2F67B1;--f-mesurer:#7B4FB8;--f-dire:#13878A;--f-regard:#8B5A2B;
+  --font:'Inter','Helvetica Neue',Arial,sans-serif;color-scheme:light}
+*{box-sizing:border-box}
+body{margin:0;background:#fff;color:var(--fg);font-family:var(--font);font-size:16px;line-height:1.45;-webkit-font-smoothing:antialiased}
+[hidden]{display:none !important}
+.demo{display:block;background:#ff3b1f;color:#fff;font-weight:900;font-size:11px;letter-spacing:.1em;text-transform:uppercase;padding:6px 10px;text-align:center}
+.top{display:none;align-items:center;gap:28px;padding:16px clamp(16px,4vw,56px)}
+.top .mk{font-weight:900;font-size:18px;letter-spacing:-.01em}.top nav{display:flex;gap:22px;font-weight:700}
+.top nav button{font:inherit;font-weight:700;background:none;border:0;cursor:pointer;padding:6px 0;color:#767676}.top nav button.on{color:#111;border-bottom:3px solid var(--now)}
+.wrap{max-width:1120px;margin:0 auto;padding:6px 20px 120px}
+.mob{display:flex;align-items:center;gap:10px;padding:16px 0 4px}.mob .mk{font-weight:900;font-size:14px}.mob .r{margin-left:auto;font-size:13px;color:var(--muted);font-weight:700}
+.mob button.ret{font-size:26px;font-weight:700;background:none;border:0;cursor:pointer;padding:0 6px 0 0;line-height:1}
+.nav{position:fixed;bottom:0;left:0;right:0;background:#fff;display:grid;grid-template-columns:repeat(4,1fr);padding:6px 0 calc(8px + env(safe-area-inset-bottom));border-top:2px solid #111;z-index:20}
+.nav button{font:inherit;font-weight:800;font-size:12.5px;background:none;border:0;cursor:pointer;padding:10px 2px;color:#767676}.nav button.on{color:#111;box-shadow:inset 0 3px 0 var(--now)}
+@media(min-width:900px){.top{display:flex}.nav{display:none}.mob .mk,.mob .r{display:none}.wrap{padding-bottom:60px}}
+.kick{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:800;margin:14px 0 8px}
+h1{margin:0 0 10px;font-size:clamp(28px,6vw,44px);font-weight:900;letter-spacing:-.02em;line-height:1.04}
+h1 .dot{display:inline-block;width:.4em;height:.4em;border-radius:50%;background:var(--now);margin-left:.15em}
+h2{margin:0 0 6px;font-size:22px;font-weight:900}
+.lead{font-size:16.5px;margin:0 0 20px;color:#222;max-width:680px}
+.hint,.nom{font-size:13px;color:var(--muted)}
+section{margin-top:34px}
+.cartes{display:grid;gap:12px}@media(min-width:900px){.cartes{grid-template-columns:1.3fr 1fr 1fr}}
+.carte{display:block;text-align:left;font:inherit;border:0;padding:18px;cursor:pointer;width:100%;text-decoration:none;color:inherit;background:var(--soft)}
+.carte.noir{background:#111;color:#fff}.carte.mes{background:#efe9f8}.carte.regard{background:#f2ebe3}
+.carte .k{font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;opacity:.75;display:block}
+.carte b{display:block;font-size:20px;font-weight:900;margin:6px 0 4px;line-height:1.15}.carte .t{display:block;font-size:14.5px}
+.carte .go{display:inline-block;margin-top:12px;font-weight:900;font-size:15px}
+.etapes6{display:flex;gap:4px;margin:10px 0 2px}.etapes6 i{flex:1;height:6px;background:#d9d9d9}.etapes6 i.on{background:#111}.etapes6 i.now{background:var(--now)}
+.bandes{display:grid;gap:12px}
+.bande .bh{display:flex;justify-content:space-between;font-weight:800;font-size:14px;margin-bottom:4px}
+.bande .cl{display:flex;gap:3px}.bande .cl i{flex:1;min-width:0;height:26px;border:1px solid var(--off);box-sizing:border-box}
+.cl i.v{background:#111;border-color:#111}.cl i.c{border:1.5px dashed #111}.cl i.n{border:3px solid #111;box-shadow:inset 0 -4px 0 var(--now)}.cl i.l{background:#f0f0f0;border-color:#f0f0f0}
+.ici{font-size:13px;font-weight:800;margin:8px 0}
+.chiffres{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:20px;margin-top:20px}
+.chiffres b{display:block;font-size:30px;font-weight:900;line-height:1}.chiffres b small{font-size:16px;color:var(--muted);font-weight:700}
+.chiffres span{font-size:13px;color:#4a4a4a;display:block;margin-top:4px}.chiffres .br{height:6px;background:var(--soft);margin-top:8px}.chiffres .br i{display:block;height:100%}
+.deux{display:grid;gap:26px}@media(min-width:900px){.deux{grid-template-columns:1fr 1fr}}
+.lg{display:flex;justify-content:space-between;gap:12px;padding:9px 0;font-size:15px}.lg em{font-style:normal;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;background:var(--soft);padding:3px 7px;align-self:center;white-space:nowrap}
+.fil{display:flex;gap:12px;padding:10px 0;align-items:flex-start}.fil .p{width:14px;height:14px;border-radius:50%;border:2px solid var(--f-regard);flex:none;margin-top:4px}.fil .p.pl{background:var(--f-regard)}.fil .p.m{border:0;background:var(--f-regard);color:#fff;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;width:18px;height:18px}
+.fil b{font-weight:800}.fil small{display:block;color:var(--muted);font-size:12.5px}
+.btn{font:inherit;font-weight:900;font-size:15px;border:0;background:#111;color:#fff;padding:12px 18px;cursor:pointer;min-height:46px}.btn.l{background:none;color:#111;text-decoration:underline;padding:6px 0}
+.btn[disabled]{background:#d9d9d9;color:#8a8a8a;cursor:default}
+.sem{display:flex;gap:10px;align-items:flex-end;height:70px;margin:12px 0 4px}.sem div{flex:1;text-align:center;font-size:11px;color:var(--muted)}.sem i{display:block;width:100%;background:var(--f-mesurer);margin-bottom:4px}
+.prochaine{background:var(--soft);padding:16px 18px;display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center}
+.today{max-width:520px;margin:0 auto}
+.ligne{display:flex;gap:12px;align-items:center;background:var(--soft);padding:14px 16px;margin:10px 0;text-align:left;font:inherit;border:0;width:100%;cursor:pointer}
+.ligne .pt{width:12px;height:12px;border-radius:50%;flex:none;background:var(--f-mesurer)}.ligne.r .pt{background:var(--f-regard)}.ligne.a .pt{background:transparent;border:2px solid var(--f-regard)}
+.ligne small{display:block;color:#4a4a4a;font-size:13px}.ligne .ch{margin-left:auto;font-weight:900}
+.serie{display:block;width:100%;text-align:left;font:inherit;background:#111;color:#fff;border:0;padding:18px;margin:10px 0;cursor:pointer}
+.serie .k{font-size:11px;letter-spacing:.14em;text-transform:uppercase;opacity:.75}.serie b{display:block;font-size:24px;font-weight:900;margin:4px 0}.serie .go{display:inline-block;margin-top:10px;font-weight:900;color:var(--now)}
+.reg{background:var(--soft);padding:12px 14px;font-size:14px;margin-top:14px}
+.etbar{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin:6px 0 4px}.etbar i{height:6px;background:#d9d9d9}.etbar i.on{background:#111}.etbar i.now{background:var(--now)}.etbar i.g{background:#ececec;background-image:repeating-linear-gradient(135deg,#ddd 0 4px,#ececec 4px 8px)}
+.etnom{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;font-size:10.5px;font-weight:700;text-align:center;color:var(--muted)}.etnom .now{color:#111}.etnom .g{color:#b8b8b8}
+.point{border:3px solid #111;padding:14px 16px;margin:16px 0}.point .k{font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;color:var(--muted)}.point b{display:block;font-size:26px;font-weight:900}
+.rappel{background:var(--soft);border-left:5px solid var(--f-regard);padding:10px 12px;font-size:14.5px;margin:12px 0}
+.chrono{text-align:center;margin:18px 0}.chrono .t{font-size:56px;font-weight:900;letter-spacing:-.03em}
+.grand{display:block;width:100%;font:inherit;font-weight:900;font-size:17px;border:0;background:#111;color:#fff;padding:16px;cursor:pointer;min-height:56px;margin:8px 0}.grand.b{background:#fff;color:#111;border:2px solid #111}
+.mesure{background:var(--soft);padding:12px;font-size:14.5px;margin:10px 0}
+.qd{padding:11px 13px;margin:6px 0;font-size:14.5px;background:#f5f5f5;color:#4a4a4a}.qd.cur{background:#e6f3f3;color:#0b5557;font-weight:700}
+.rec{display:flex;flex-direction:column;align-items:center;gap:8px;margin:20px 0}.rec button{width:92px;height:92px;border-radius:50%;border:3px solid var(--f-dire);background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center}.rec button i{display:block;width:32px;height:32px;border-radius:50%;background:var(--f-dire)}.rec button.on{background:var(--f-dire)}.rec button.on i{background:#fff;border-radius:5px;width:26px;height:26px}
+.j3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0}.j3 div{background:var(--soft);padding:10px;font-size:13.5px;text-align:center}
+.opts{display:flex;flex-wrap:wrap;gap:8px}.opts button{font:inherit;font-weight:800;font-size:15px;border:2px solid #111;background:#fff;padding:11px 14px;min-height:46px;cursor:pointer;border-radius:999px}.opts button.on{background:#111;color:#fff}
+.qq p{margin:16px 0 8px;font-weight:800}
+.msg{font-weight:800;padding:12px 14px;background:var(--todo);margin:12px 0}.msg.ok{background:#e3f4ee}
+.pause{margin-top:14px}
+</style>
+</head>
+<body>
+<span class="demo" id="bandeau">Démonstration · rien n’est envoyé · apprenant et données fictives</span>
+<div class="top"><span class="mk">VRAI-SAVOIRFAIRE</span><nav id="menuH"></nav></div>
+<div class="wrap" id="app"></div>
+<nav class="nav" id="menuB" aria-label="Navigation"></nav>
+<script>(function(){
+function $(i){return document.getElementById(i);}
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+var Q=new URLSearchParams(location.search);
+var REEL=Q.get('reel')==='1',ESSAI_NON=Q.get('essai')==='non';
+var JOURS_FR=['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'],MOIS=['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+function dateFr(d){return JOURS_FR[d.getDay()].slice(0,3)+'. '+d.getDate()+' '+MOIS[d.getMonth()];}
+function plus(n){var d=new Date();d.setDate(d.getDate()+n);return d;}
+/* réglages (démo : les valeurs de départ de vsf_form_reglages) */
+var REG={tentatives:2,delaiTentatives:7,seanceMin:10,debriefQuestions:[['Comment tu t’es senti·e ?',false],['Sur quel point précis as-tu eu des difficultés ?',true],['Comment tu t’y es pris·e pour avancer ?',false]]};
+var NAV=[['aujourdhui','Aujourd’hui'],['parcours','Mon parcours'],['coffre','Coffre-fort'],['therese','Thérèse']];
+var TEST_DEMO=[['Un geste est acquis quand…',['il tient un mois','on l’a réussi une fois','on l’a vu faire']],['Le seul point à soigner, c’est…',['un seul à la fois','tous en même temps','aucun']],['Un rappel J+30 sert à…',['vérifier que le geste tient','noter la personne','sauter une étape']],['Avant de peindre, on…',['regarde l’état du support','commence','change d’outil']],['Un retour du valideur contient…',['un seul point à soigner','une note','un classement']]];
+var S=Object.assign({vue:Q.get('vue')||'aujourdhui',run:false,left:REG.seanceMin*60,photo:null,rec:false,sec:0,ancre:false,test:{phase:'quiz',tentative:1,rep:{},resultat:null,echecs:0,depot:false},mode:'guide',pause:false,ecoute:false,epreuve:false},{});
+var T=null;
+function go(v){S.vue=v;S.epreuve=false;render();scrollTo(0,0);}
+
+function menu(){var h=NAV.map(function(n){return '<button data-go="'+n[0]+'" class="'+(S.vue===n[0]?'on':'')+'">'+n[1]+'</button>';}).join('');$('menuH').innerHTML=h;$('menuB').innerHTML=h;}
+function mob(retour,label){return '<div class="mob">'+(retour?'<button class="ret" data-go="'+retour+'" aria-label="Retour">‹</button>':'')+'<span class="mk">VRAI-SAVOIRFAIRE</span><span class="r">'+esc(label||'')+'</span></div>';}
+function etapes(cur,g){return '<div class="etbar" aria-hidden="true">'+[0,1,2,3,4,5].map(function(i){return '<i class="'+(i===0&&g?'g':(i<cur?'on':(i===cur?'now':'')))+'"></i>';}).join('')+'</div><div class="etnom">'+['Essayer','Constater','Regarder','Faire','Comparer','Ancrer'].map(function(n,i){return '<span class="'+(i===0&&g?'g':(i===cur?'now':''))+'">'+n+(i===0&&g?'<br>non sécurisé':'')+'</span>';}).join('')+'</div>';}
+
+/* ---------- Aujourd'hui (téléphone) ---------- */
+function vAujourdhui(){
+  var d=new Date(),h=['lundi','mardi','mercredi','jeudi','vendredi','samedi','dimanche'];
+  return mob('','')+'<div class="today"><div class="kick">'+esc(JOURS_FR[d.getDay()])+', 7 h 30</div><h1>Aujourd’hui</h1><p class="lead">12 minutes en tout · module 9 · Peindre des bâtons</p>'+
+   '<button class="ligne" data-go="parcours"><i class="pt"></i><span><small>D’abord · 2 min</small><b>Rappel J+7 · module 6</b><small>Préparer la peinture, de mémoire</small></span><span class="ch">›</span></button>'+
+   '<button class="serie" data-go="faire"><span class="k">Ensuite · 10 min · étape 4 sur 6</span><b>Série 5</b><span>Un seul point : l’aplomb.</span><div class="etapes6" aria-hidden="true">'+[0,1,2,3,4,5].map(function(i){return '<i class="'+(i<3?'on':(i===3?'now':''))+'"></i>';}).join('')+'</div><span class="go">Commencer →</span></button>'+
+   '<button class="ligne r" data-go="parcours"><i class="pt"></i><span><b>Ton valideur t’a répondu</b><small>Série 4 · 30 s · le point à soigner aujourd’hui</small></span><span class="ch">▶</span></button>'+
+   '<div class="ligne a" style="cursor:default"><i class="pt"></i><span><b>En attente de retour</b><small>Ton dépôt de la série 5 · d’ici jeudi</small></span></div>'+
+   '<div class="reg"><b>Régularité</b> · 5 jours sur 7 cette semaine. Demain : rien de prévu, c’est ton jour off.</div>'+
+   '<p class="hint" style="margin-top:14px"><button class="btn l" data-go="essai-test">Voir un test de sous-niveau (démo)</button> · <button class="btn l" data-go="rythme">Changer de rythme</button></p></div>';
+}
+/* ---------- Mon parcours (ordinateur) ---------- */
+function vParcours(){
+  var ban=function(nom,n,c,fn){var cl='';for(var i=0;i<n;i++)cl+='<i class="'+fn(i)+'"></i>';return '<div class="bande"><div class="bh"><span>'+nom+'</span><span>'+c+'</span></div><div class="cl">'+cl+'</div></div>';};
+  var sem=[34,10,0,46,22,10,34],jr=['lun','mar','mer','jeu','ven','sam','dim'];
+  var h=mob('','Mon parcours')+'<div class="kick">◆ Peintre en lettres · 3 semaines après le départ</div><h1>Bonjour.</h1><p class="lead">Ta main a validé 8 modules. Aujourd’hui, une série de 10 minutes sur l’aplomb.</p>'+
+   '<div class="cartes"><button class="carte noir" data-go="faire"><span class="k">Aujourd’hui · 10 min</span><b>Série 5 · Peindre des bâtons</b><span class="t">« Soigne l’aplomb, pas la vitesse. » Dépose une photo de ta dernière ligne.</span><span class="go">Commencer →</span></button>'+
+   '<button class="carte mes" data-go="aujourdhui"><span class="k">Avant la série · 2 min</span><b>● Rappel J+7 · module 6</b><span class="t">Préparer la peinture, de mémoire. Le dernier J+30 sur ce module avait raté : il revient.</span></button>'+
+   '<div class="carte regard"><span class="k">Retour reçu</span><b>● Ton valideur · 30 s</b><span class="t">« Tes bâtons penchent à droite en fin de ligne. Un seul point : l’aplomb. »</span><button class="btn" data-a="ecoute" style="margin-top:12px">'+(S.ecoute?'✓ écouté':'▶ Écouter')+'</button></div></div>'+
+   '<section><h2>Mon parcours, du N1 au N4</h2><p class="hint">Niveau en cours en cases ; niveaux suivants verrouillés.</p><div class="bandes">'+
+   ban('N1 · Comprendre',24,'8 / 24',function(i){return i===5?'c':(i<8?'v':(i===8?'n':''));})+ban('N2 · Faire avec repères',30,'30',function(){return 'l';})+ban('N3 · Réaliser seul·e',20,'20',function(){return 'l';})+ban('N4 · Maîtriser et transmettre',3,'3',function(){return 'l';})+'</div><div class="ici">▲ tu es ici · module 9</div>'+
+   '<div class="chiffres"><div><b>8<small> / 24</small></b><span>modules validés</span><div class="br"><i style="width:33%;background:var(--f-faire)"></i></div></div><div><b>78<small> %</small></b><span>rappels réussis · J+1, J+7, J+30</span><div class="br"><i style="width:78%;background:var(--f-mesurer)"></i></div></div><div><b>11</b><span>preuves dans ton coffre-fort</span><div class="br"><i style="width:40%;background:var(--f-regard)"></i></div></div><div><b>1 h 40<small> / 3 h</small></b><span>avec Thérèse en N1</span><div class="br"><i style="width:55%;background:var(--f-dire)"></i></div></div></div></section>'+
+   '<section class="deux"><div><h2>Ce qui tient</h2><div class="lg"><span>La tenue du pinceau ne bouge plus</span><em>J+30 réussi</em></div><div class="lg"><span>Tu nommes tes erreurs avant le valideur</span><em>valideur</em></div><div class="lg"><span>La charge du pinceau est régulière</span><em>mesure IA</em></div></div>'+
+   '<div><h2>Ce qu’on retravaille</h2><div class="lg"><span>L’aplomb des bâtons en fin de série</span><em>J+7 raté</em></div><div class="lg"><span>La pression varie quand tu accélères</span><em>Thérèse</em></div><div class="lg"><span>Module 6 · Préparer la peinture, à consolider</span><em>J+30 raté</em></div></div></section>'+
+   '<section class="deux"><div><h2>Les retours qu’on t’a faits</h2><p class="hint">Un retour, un seul point à soigner. Et ce qui a changé ensuite.</p>'+
+   '<div class="fil"><i class="p pl"></i><span><b>Valideur · module 9, série 4</b><br>« L’aplomb en fin de ligne. »<small>non écouté · hier</small></span></div>'+
+   '<div class="fil"><i class="p"></i><span><b>En attente · dépôt de la série 5</b><small>retour promis d’ici jeudi</small></span></div>'+
+   '<div class="fil"><i class="p m">M</i><span><b>Le maître artisan · module 7</b><br>« Ton poignet suit, laisse l’épaule faire. »<small>Ensuite : J+7 réussi sur ce module.</small></span></div></div>'+
+   '<div><h2>Tes 7 prochains jours</h2><p class="hint">Les rappels prévus, de plus en plus espacés.</p><div class="sem">'+sem.map(function(v,i){return '<div><i style="height:'+Math.max(v,2)+'px;'+(v?'':'background:#e4e4e4')+'"></i>'+jr[i]+'</div>';}).join('')+'</div><p style="margin:8px 0 0"><b>Régularité</b> · 5 jours sur les 7 de ton rythme cette semaine.<br><span class="hint">Un jour sauté ne fait rien perdre.</span></p><p style="margin-top:12px"><button class="btn l" data-go="rythme">Changer de rythme</button></p></div></section>'+
+   '<section><div class="prochaine"><span><b>Prochaine étape · le test du sous-niveau 3, puis l’épreuve du N1</b> · quand les 24 modules seront validés, soit dans 6 à 8 semaines à ton rythme.</span><span><button class="btn l" data-a="epreuve">Voir ce qu’elle demande →</button> <button class="btn l" data-go="essai-test">Voir un test (démo)</button></span></div>'+(S.epreuve?'<div class="msg ok">L’épreuve du N1 : un quiz de base, trois gestes observés à distance par ton valideur (sur photo ou vidéo) et un portfolio minimal. Pas de jury à ce niveau. 2 tentatives incluses.</div>':'')+'</section>';
+  return h;
+}
+/* ---------- Faire ---------- */
+function vFaire(){
+  var m=Math.floor(S.left/60),s=S.left%60,t=m+':'+(s<10?'0':'')+s;
+  return mob('aujourdhui','Module 9 · étape 4 sur 6')+'<div class="today">'+etapes(3,ESSAI_NON)+'<h1 style="margin-top:14px">Série 5 · jour 5 sur 7</h1><p class="lead">Une ligne de 12 bâtons, trois fois. Ne cherche pas la vitesse.</p>'+
+   '<div class="point"><span class="k">Un seul point à soigner</span><b>L’aplomb</b></div>'+
+   '<div class="rappel">Ton valideur t’avait dit : « Tes bâtons penchent à droite en fin de ligne. »</div>'+
+   (ESSAI_NON?'<p class="hint">Ce module n’a pas d’essai sécurisé : on a commencé par Constater, l’essai n’est jamais proposé.</p>':'')+
+   '<div class="chrono"><div class="t">'+t+'</div><button class="grand b" data-a="chrono">'+(S.run?'Pause':(S.left<REG.seanceMin*60?'Reprendre':'Lancer les 10 minutes'))+'</button></div>'+
+   '<input type="file" id="fic" accept="image/*" capture="environment" hidden>'+
+   '<button class="grand" data-a="photo">'+(S.photo?'✓ Photo prise · '+esc(S.photo):'Photo de ta dernière ligne')+'</button>'+
+   (S.photo?'<div class="mesure"><b>Mesure · démonstration</b><br>Aplomb : 2 bâtons sur 3. <span class="nom">(valeur de démo)</span><br>Ton valideur la regarde d’ici jeudi.</div>':'<p class="hint">La mesure de l’aplomb s’affiche tout de suite. Ton valideur la regarde d’ici jeudi.</p>')+
+   '<p style="margin-top:14px"><button class="btn l" data-go="ancrer">Dernier jour de la série ? Passer à l’ancrage →</button></p></div>';
+}
+/* ---------- Ancrer ---------- */
+function vAncrer(){
+  var qs=REG.debriefQuestions,cur=S.rec?Math.min(qs.length-1,Math.floor(S.sec/25)):0;
+  var h=mob('faire','Module 9 · étape 6 sur 6')+'<div class="today">'+etapes(5,ESSAI_NON)+'<div class="kick" style="color:var(--f-dire)">Ancrer · 60 à 90 secondes</div><h1>Raconte un seul bâton de ta dernière ligne.</h1><p class="lead">Pas pourquoi : comment. Les questions défilent pendant que tu parles.</p>'+
+   qs.map(function(q,i){return '<div class="qd'+(i===cur&&!S.ancre?' cur':'')+'"><b>'+(i+1)+'</b> · '+esc(q[0])+'</div>';}).join('')+
+   '<div class="rec"><button class="'+(S.rec?'on':'')+'" data-a="rec" aria-label="Enregistrer"><i></i></button><span>'+(S.ancre?'✓ Vocal enregistré · '+S.sec+' s':(S.rec?'Enregistrement · 0:'+(S.sec<10?'0':'')+S.sec+' · toucher pour finir':'Toucher pour parler'))+'</span></div>';
+  if(S.ancre){h+='<div><div class="kick">Ensuite, ce geste revient</div><div class="j3"><div><b>J+1</b><br>'+dateFr(plus(1))+'</div><div><b>J+7</b><br>'+dateFr(plus(7))+'</div><div><b>J+30</b><br>'+dateFr(plus(30))+'</div></div><p class="note hint">Le J+30 devient l’essai à froid du module suivant. Le geste est acquis s’il tient ce jour-là.</p><button class="grand" data-go="aujourdhui">Terminer la séance</button></div>';}
+  return h+'<p class="hint">'+(S.rec&&S.sec<60?'Encore un peu : 60 à 90 secondes, c’est assez.':'')+' Les 3 questions varient d’un jour à l’autre ; celle sur la difficulté est toujours là.</p></div>';
+}
+/* ---------- Test de sous-niveau ---------- */
+function vTest(){
+  var t=S.test,n=t.tentative,ver=n===1?'A':'B';
+  var h=mob('aujourdhui','Test · sous-niveau 2 · N1')+'<div class="today"><div class="kick">Test du sous-niveau 2 · N1</div><h1>Tentative '+n+' sur '+REG.tentatives+'</h1>';
+  if(t.phase==='quiz'){
+    h+='<p class="lead">Un quiz (version '+ver+') et un dépôt pratique. Réussi ou pas encore : jamais de note.</p><span class="demo" style="margin:0 0 10px">Questions de démonstration : les vraies viendront de la banque d’items</span><div class="qq">';
+    TEST_DEMO.forEach(function(q,i){h+='<p>'+(i+1)+' · '+esc(q[0])+'</p><div class="opts">'+q[1].map(function(o,k){return '<button data-tq="'+i+'" data-k="'+k+'" class="'+(t.rep[i]===k?'on':'')+'">'+esc(o)+'</button>';}).join('')+'</div>';});
+    h+='</div><p class="kick">Dépôt pratique</p><input type="file" id="fic" accept="image/*" capture="environment" hidden><button class="grand b" data-a="photo">'+(t.depot?'✓ Dépôt pris':'Photo de ton travail')+'</button>';
+    h+='<button class="grand" data-a="envoyer"'+(Object.keys(t.rep).length<TEST_DEMO.length||!t.depot?' disabled':'')+'>Envoyer ma tentative</button>';
+  }else if(t.resultat==='reussi'){
+    h+='<div class="msg ok"><b>Réussi.</b> Le sous-niveau suivant s’ouvre.</div><button class="grand" data-go="parcours">Voir mon parcours</button>';
+  }else{
+    h+='<div class="msg"><b>Pas encore.</b> Ce n’est pas une note : c’est ce qui manque pour passer.</div><p><b>Ce qui a manqué</b> (démo) : un geste du module 6 ne tient pas encore.</p><p><b>Pour y revenir</b> : le module de remédiation « Préparer la peinture, de mémoire », puis une nouvelle tentative.</p>';
+    if(t.echecs<REG.tentatives)h+='<p>Ta 2ᵉ tentative est possible à partir du <b>'+dateFr(plus(REG.delaiTentatives))+'</b>. <span class="hint">(7 jours, un réglage)</span></p><button class="grand b" data-a="retenter">Revenir pour la 2ᵉ tentative (démo)</button>';
+    else h+='<p>Une 3ᵉ tentative est possible : <b>prix à fixer</b>.</p><button class="grand" disabled>Acheter une tentative (prix à fixer)</button>';
+    h+='<button class="grand b" data-go="aujourdhui">Revenir à aujourd’hui</button>';
+  }
+  return h+'</div>';
+}
+/* ---------- Changer de rythme ---------- */
+function vRythme(){
+  return mob('aujourdhui','Ton rythme')+'<div class="today"><h1>Changer de rythme</h1><p class="lead">Tu peux changer à tout moment. Les rappels J+1, J+7 et J+30 ne se compressent jamais.</p>'+
+   '<div class="opts"><button data-mode="guide" class="'+(S.mode==='guide'?'on':'')+'">Je me laisse guider</button><button data-mode="libre" class="'+(S.mode==='libre'?'on':'')+'">J’avance à mon rythme</button></div>'+
+   '<p class="hint" style="margin-top:12px">'+(S.mode==='guide'?'L’appli te propose la séance du jour.':'Tu ouvres le module suivant quand tu veux, dans la limite de 2 modules ouverts en même temps. Aucun rappel n’est sauté.')+'</p>'+
+   '<div class="pause"><button class="grand b" data-a="pause">'+(S.pause?'Reprendre le parcours':'Faire une pause')+'</button><p class="hint">'+(S.pause?'En pause : rien ne se perd, le parcours t’attend.':'Une pause est possible à tout moment, sans message culpabilisant.')+'</p></div><p><button class="btn l" data-go="aujourdhui">Retour</button></p></div>';
+}
+function vCoffre(){return mob('','Coffre-fort')+'<div class="kick">Mon coffre-fort</div><h1>Tes preuves<i class="dot"></i></h1><p class="lead">Garder et partager tes preuves : tes photos, tes retours, tes badges. Gratuit, à vie.</p><div class="fil"><i class="p pl"></i><span><b>Essai à froid · test de positionnement</b><small>photo gardée avec ton accord</small></span></div><div class="fil"><i class="p pl"></i><span><b>Série 4 · retour du valideur</b><small>« L’aplomb en fin de ligne. »</small></span></div><p class="hint">Démonstration : le vrai coffre-fort lira tes dépôts et leurs retours.</p>';}
+function vTherese(){return mob('','Thérèse')+'<div class="kick">Thérèse · en option</div><h1>Une question courte par semaine<i class="dot"></i></h1><p class="lead">Ce que tu lui dis reste entre vous : ni ton entreprise, ni ton maître artisan, ni l’administration ne le voient. Seul le temps passé est compté.</p><div class="chiffres"><div><b>1 h 40<small> / 3 h</small></b><span>avec Thérèse en N1 (démo)</span><div class="br"><i style="width:55%;background:var(--f-dire)"></i></div></div></div>';}
+
+function render(){
+  menu();var v={aujourdhui:vAujourdhui,parcours:vParcours,faire:vFaire,ancrer:vAncrer,'essai-test':vTest,rythme:vRythme,coffre:vCoffre,therese:vTherese}[S.vue]||vAujourdhui;
+  $('app').innerHTML=v();
+  var hideNav=['faire','ancrer','essai-test','rythme'].indexOf(S.vue)>=0;$('menuB').hidden=hideNav;
+}
+document.addEventListener('click',function(e){
+  var t=e.target.closest('[data-go],[data-a],[data-mode],[data-tq]');if(!t)return;var d=t.dataset;
+  if(d.go){go(d.go);return;}
+  if(d.mode){S.mode=d.mode;render();return;}
+  if(d.tq!==undefined){S.test.rep[d.tq]=+d.k;render();return;}
+  switch(d.a){
+    case 'ecoute':S.ecoute=true;render();return;
+    case 'epreuve':S.epreuve=!S.epreuve;render();return;
+    case 'photo':$('fic').click();return;
+    case 'pause':S.pause=!S.pause;render();return;
+    case 'chrono':if(S.run){clearInterval(T);S.run=false;}else{S.run=true;T=setInterval(function(){if(S.left<=0){clearInterval(T);S.run=false;render();return;}S.left--;var el=document.querySelector('.chrono .t');if(el){var m=Math.floor(S.left/60),s=S.left%60;el.textContent=m+':'+(s<10?'0':'')+s;}},1000);}render();return;
+    case 'rec':if(S.rec){clearInterval(T);S.rec=false;S.ancre=true;}else{S.sec=0;S.ancre=false;S.rec=true;T=setInterval(function(){S.sec++;if(S.sec>=90){clearInterval(T);S.rec=false;S.ancre=true;}render();},1000);}render();return;
+    case 'envoyer':var bons=Object.keys(S.test.rep).filter(function(i){return S.test.rep[i]===0;}).length;S.test.resultat=bons>=4?'reussi':'pas_encore';if(S.test.resultat!=='reussi')S.test.echecs=S.test.tentative;S.test.phase='resultat';render();scrollTo(0,0);return;
+    case 'retenter':S.test={phase:'quiz',tentative:2,rep:{},resultat:null,echecs:1,depot:false};render();scrollTo(0,0);return;
+  }
+});
+document.addEventListener('change',function(e){var t=e.target;if(t.id==='fic'&&t.files&&t.files[0]){if(S.vue==='essai-test')S.test.depot=true;else S.photo=t.files[0].name;render();}});
+if(REEL){$('bandeau').textContent='Copie de test · enregistrement réel non branché dans cet écran';$('bandeau').style.background='#111';}
+render();
+})();
+</script>
+</body>
+</html>

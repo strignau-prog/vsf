@@ -150,7 +150,7 @@ function vDepart(){
   return barre(0,0,'Ton point de départ')+'<div class="kick">Ton point de départ</div><h1>Tu commences au module '+(n+1)+' du N1.</h1>'+
    '<div class="bloc"><div class="kick">Ton N1 · 24 modules</div><div class="cells" aria-hidden="true">'+Array.apply(null,{length:24}).map(function(_,i){return '<i class="'+(i<n?'sus':(i===n?'now':''))+'"></i>';}).join('')+'</div><p class="note" style="margin:6px 0 0">'+(n?'Modules 1 à '+n+' en pointillé : déjà sus, à confirmer au rappel J+30. ':'')+'L’ordre s’adaptera à tes résultats.</p></div>'+
    '<div class="bloc"><p style="margin:0">Premier rendez-vous : <b>demain, '+esc(S.rythme.heure||'7 h 30')+'</b> · module '+(n+1)+' · '+esc(MODULES_DEMO[Math.min(n,MODULES_DEMO.length-1)])+'</p></div>'+
-   '<div class="cta"><button data-a="plustard">Commencer maintenant</button><button class="l" data-a="plustard">Voir mon tableau de bord</button><span class="note" style="display:block;text-align:center;margin:8px 0 0">Le tableau de bord et la séance du jour arrivent à l’étape suivante du chantier.</span></div>';
+   '<div class="cta"><a href="mon-parcours-v2.html?vue=faire">Commencer maintenant</a><a class="l" href="mon-parcours-v2.html?vue=parcours">Voir mon tableau de bord</a><span class="note" style="display:block;text-align:center;margin:8px 0 0">Copie de test : la suite est en démonstration.</span></div>';
 }
 function vFin(){return barre(0,0,'')+'<h1>À l’étape suivante.<i class="dot"></i></h1><p class="lead">La séance du jour (Faire, Ancrer) et « Mon parcours » ne sont pas encore construits dans cette copie de test.</p>'+cta('Revenir au début du test','reset');}
 
