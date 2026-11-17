@@ -128,6 +128,18 @@
   .ralCase{height:46px;border:1px solid rgba(0,0,0,.25);border-radius:6px;cursor:pointer;position:relative;padding:0}
   .ralCase span{position:absolute;left:0;right:0;bottom:0;font-size:10px;background:rgba(255,255,255,.82);color:#111;border-radius:0 0 5px 5px}
   .ralCase.on{outline:3px solid #111}
+  .teinteMini{padding:6px 10px}
+  .teinteMini .teinteTete{margin:0}
+  .teinteNom{flex:1;min-width:0;background:none;border:0;padding:0;text-align:left;cursor:pointer;font:inherit;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .recap .reglages{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0}
+  .recap .reglages label{display:flex;flex-direction:column;gap:2px;font-size:11px;color:var(--muted)}
+  .recap .saisieU .input{font-size:16px;font-weight:600;padding:5px 7px}
+  .tw2{overflow-x:auto}
+  .recapT{width:100%;border-collapse:collapse;font-size:12px}
+  .recapT th{text-align:left;font-weight:600;color:var(--muted);padding:4px 4px;border-bottom:1px solid var(--line)}
+  .recapT td{padding:5px 4px;border-bottom:1px solid var(--line);vertical-align:middle}
+  .recapT .mini{width:62px;font-size:13px;padding:4px 6px}
+  .recapT td.cmd{font-weight:700;color:#8a4a0a}
   .lu{font-size:12px;color:var(--muted);margin:4px 0}
   .lu.alerte{color:var(--accent);font-weight:600}
   .puces{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0}
@@ -699,13 +711,14 @@ let syncEnCours = false;
 function lancerSync(){ if(syncEnCours) return; syncEnCours = true; syncTeintes().catch(() => {}).finally(() => { syncEnCours = false; rafraichirStock().then(c => { if(c) dessiner(); }).catch(() => {}); }); }
 async function syncTeintes(){
   const vus = new Map();
-  propositions().forEach(c => { const ai = (fichierChoisi(c) || {}).ai; if(ai) ai.couleurs.forEach(k => vus.set(k.cmyk.join(','), k.cmyk)); });
+  const parts = {};
+  propositions().forEach(c => { const ai = (fichierChoisi(c) || {}).ai; if(ai) ai.couleurs.forEach(k => { const key = k.cmyk.join(','); vus.set(key, k.cmyk); parts[key] = Math.max(parts[key] || 0, k.part); }); });
   let change = false;
   const m = memoire();
   vus.forEach((cmyk, key) => {
     if(!E.teintes.some(t => t.cmyk === key)){
       const mem = m[key] || {};
-      E.teintes.push({ id:uid(), cmyk:key, hex:'', reference:mem.reference || '', nom:mem.nom || '', nuancier:mem.nuancier || '', camaieu:false, commander:null, ral:null });
+      E.teintes.push({ id:uid(), cmyk:key, hex:'', reference:mem.reference || '', nom:mem.nom || '', nuancier:mem.nuancier || '', camaieu:false, commander:null, ral:null, part: parts[key] || 0 });
       change = true;
     }
   });
@@ -790,32 +803,30 @@ function pageNuancier(){
     <div class="nuancierNote">Les teintes affichées à l'écran ou imprimées sont indicatives : seule la référence de peinture fait foi.</div></div>${pied()}`, true);
 }
 function blocTeintes(){
-  const entete = stockEtat === 'ok' ? 'Stock de l\'atelier lu (' + (stockPots ? stockPots.length + ' pots' : 'état vérifié par référence') + ').'
+  const entete = stockEtat === 'ok' ? (stockMode === 'rpc' ? 'Stock de l\'atelier vérifié.' : 'Stock de l\'atelier lu.')
     : stockEtat === 'refuse' ? 'Stock non disponible pour le moment.'
-    : 'Stock non lu : <a href="connexion-dossier.html?suite=dossier-presentation-v2.html' + '">connectez-vous avec un compte de l\'atelier</a> pour le vérifier.';
+    : 'Stock non lu : <a href="connexion-dossier.html?suite=dossier-presentation-v2.html">connectez-vous</a> pour le vérifier.';
   const lignes = E.teintes.map(t => {
-    const e = etatStockTeinte(t.reference), cmd = aCommander(t);
+    const e = etatStockTeinte(t.reference), ouvert = t.ouvert !== undefined ? t.ouvert : vide(t.reference), cmd = aCommander(t);
+    const tete = `<div class="teinteTete"><span class="pastS" style="background:${t.hex || '#ddd'}"></span><button type="button" class="teinteNom" data-act="tTog" aria-expanded="${ouvert}"><b>${esc(t.reference || t.nom || 'à nommer')}</b>${t.nom && t.reference ? ' <span class="tiny">' + esc(t.nom) + '</span>' : ''}</button>${ouvert ? '' : `<span class="pilStock ${e.code}">${esc(e.texte)}</span>`}<button class="btn petit" data-act="tTog" title="${ouvert ? 'Réduire' : 'Agrandir'}">${ouvert ? '▴' : '▾'}</button><button class="btn petit" data-act="tX" title="Retirer cette teinte">✕</button></div>`;
+    if(!ouvert) return `<div class="prop teinteMini" data-t="${t.id}">${tete}</div>`;
     const sug = (!t.reference && t.ral && t.ral.d <= 25)
       ? `<button class="btn petit" data-act="tRal" style="margin:2px 0 6px"><span class="puce" style="border:0;padding:0"><i style="background:${t.ral.hex}"></i></span> Suggestion : RAL ${esc(t.ral.code)} (écart ${t.ral.d}) — à confirmer</button>`
-      : (!t.reference && t.cmyk ? '<div class="tiny" style="margin:2px 0 6px">Aucune référence RAL proche : saisissez celle de la peinture.</div>' : '');
-    return `<div class="prop" data-t="${t.id}">
-      <div class="teinteTete"><span class="pastS" style="background:${t.hex || '#ddd'}"></span><span class="tiny">${t.cmyk ? libelleCmjn(t.cmyk) : 'ajoutée à la main'}</span><button class="btn petit" data-act="tX" title="Retirer" style="margin-left:auto">✕</button></div>
-      <div class="field" style="margin-top:6px"><label>Référence de peinture</label><input class="input${vide(t.reference) ? ' afaire' : ''}" value="${esc(t.reference)}" placeholder="RAL 3020, CR4099-5…" data-tk="reference"></div>
+      : (!t.reference && t.cmyk ? '<div class="tiny" style="margin:2px 0 6px">Aucune référence RAL proche : saisissez celle de la peinture, ou choisissez-la dans une palette ci-dessous.</div>' : '');
+    return `<div class="prop" data-t="${t.id}">${tete}
+      <div class="field" style="margin-top:8px"><label>Référence de peinture</label><input class="input${vide(t.reference) ? ' afaire' : ''}" value="${esc(t.reference)}" placeholder="RAL 3020, CRF005-1…" data-tk="reference"></div>
       ${sug}
-      <div class="grid2"><div class="field"><label>Nom (facultatif)</label><input class="input" value="${esc(t.nom)}" data-tk="nom"></div><div class="field"><label>Marque / nuancier</label><input class="input" value="${esc(t.nuancier)}" placeholder="Tollens · Cromology" data-tk="nuancier"></div></div>
+      <div class="grid2"><div class="field"><label>Nom (facultatif)</label><input class="input" value="${esc(t.nom)}" data-tk="nom"></div><div class="field"><label>Marque / nuancier</label><input class="input" value="${esc(t.nuancier)}" data-tk="nuancier"></div></div>
       <label class="choixTexte"><input type="checkbox" data-tk="camaieu" ${t.camaieu ? 'checked' : ''}><span>Camaïeu : 3 niveaux côte à côte (couleur, + 20 %, + 40 % de blanc)</span></label>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="pilStock ${e.code}">${esc(e.texte)}</span>${stockEtat === 'ok' && t.reference.trim() ? `<label class="tiny"><input type="checkbox" data-tk="commander" ${cmd ? 'checked' : ''}> à commander</label>` : ''}</div></div>`;
   }).join('');
-  const cmd = listeACommander();
   return `<label class="choixTexte"><input type="checkbox" id="chkNuancier" ${nuancierActif() ? 'checked' : ''}><span>Ajouter une page nuancier au dossier</span></label>
     <p class="tiny">${entete} L'état du stock n'apparaît jamais dans le dossier du client.</p>
     ${lignes || '<p class="tiny">Les couleurs des fichiers Illustrator apparaissent ici. Vous pouvez aussi ajouter une teinte à la main.</p>'}
     <button class="btn petit" id="bTeinteAdd">+ Teinte</button>
     ${blocPalette()}
-    ${cmd.length ? `<div class="prop" style="margin-top:10px"><b style="font-size:13px">À commander (interne)</b><div class="tiny" style="margin:4px 0">${cmd.map(esc).join(' · ')}</div><button class="btn petit" id="bCopierCommande">Copier la liste</button></div>` : ''}`;
+    ${blocRecapLitres()}`;
 }
-
-
 function listePages(){
   const e = ETAPES[E.etape], out = [['Couverture', pageCouverture()], ['Introduction', pageIntro()]];
   const props = propositions();
@@ -1055,8 +1066,9 @@ saisie.addEventListener('change', e => {
   }
   if(t.name === 'tx'){ E.texteId = t.value; E.texteLibre = null; dessiner(); return; }
   if(t.id === 'texteCorps'){ E.texteLibre = { id: texteActif().id, corps: t.value }; dessiner(); return; }
+  if(t.id === 'calcRend' || t.id === 'calcCouches' || t.id === 'calcMarge'){ E.calc = calcReglages(); const v = nombre(t.value); const cle = t.id === 'calcRend' ? 'rendement' : t.id === 'calcCouches' ? 'couches' : 'marge'; if(isFinite(v) && v >= 0 && (cle !== 'rendement' || v > 0)) E.calc[cle] = v; dessiner(); return; }
   if(t.id === 'chkNuancier'){ E.nuancier = t.checked; dessiner(); return; }
-  if(t.dataset.tk){ const dt = t.closest('[data-t]'), te = dt && E.teintes.find(x => x.id === dt.dataset.t); if(te){ te[t.dataset.tk] = (t.type === 'checkbox') ? t.checked : t.value; if(t.dataset.tk === 'reference'){ memoriser(te); const mr = /RAL\s*(\d{4})/i.exec(te.reference), rr = mr && ralCodes().find(r => r.code === mr[1]); if(rr && !te.cmyk) te.hex = rr.hex; } dessiner(); } return; }
+  if(t.dataset.tk){ const dt = t.closest('[data-t]'), te = dt && E.teintes.find(x => x.id === dt.dataset.t); if(te){ te.ouvert = (t.dataset.tk === 'surface') ? te.ouvert : true; te[t.dataset.tk] = (t.type === 'checkbox') ? t.checked : t.value; if(t.dataset.tk === 'reference'){ memoriser(te); const mr = /RAL\s*(\d{4})/i.exec(te.reference), rr = mr && ralCodes().find(r => r.code === mr[1]); if(rr && !te.cmyk) te.hex = rr.hex; } dessiner(); } return; }
   if(t.dataset.p){ const p = propDe(t); if(p){ p[t.dataset.p] = t.value; dessiner(); } return; }
   if(t.dataset.ck){ const p = propDe(t); if(p){ p.cotes = p.cotes.map(versCote); p.cotes[+t.dataset.i][t.dataset.ck] = (t.type === 'checkbox') ? t.checked : t.value; dessiner(); } }
 });
@@ -1087,7 +1099,8 @@ saisie.addEventListener('click', async e => {
   const dt = b.closest('[data-t]');
   if(dt && b.dataset.act){
     const te = E.teintes.find(x => x.id === dt.dataset.t);
-    if(te && b.dataset.act === 'tRal' && te.ral){ te.reference = 'RAL ' + te.ral.code; te.nuancier = te.nuancier || 'RAL'; memoriser(te); }
+    if(te && b.dataset.act === 'tTog'){ te.ouvert = !(te.ouvert !== undefined ? te.ouvert : vide(te.reference)); }
+    else if(te && b.dataset.act === 'tRal' && te.ral){ te.reference = 'RAL ' + te.ral.code; te.nuancier = te.nuancier || 'RAL'; memoriser(te); }
     else if(b.dataset.act === 'tX'){ E.teintes = E.teintes.filter(x => x.id !== dt.dataset.t); }
     dessiner(); return;
   }
@@ -1168,7 +1181,7 @@ function entetePage(label, sous, avecCase){
 const LEGAL = 'TOUTE DIFFUSION ET REPRODUCTION INTERDITE © ETS. GESRET REPRODUCTION OU IMITATION DU DESIGN INTERDITE';
 function piedPage(){
   return trait(31.2, 573.2, 810.7, 573.2, KRAFT_LIGNE, 1) + box(193.6, 566.9, 648.3, 578.6, 'background:' + CREME) +
-    L(197.5, 568.5, 579.1, 7, 'TOUTE DIFFUSION ET REPRODUCTION INTERDITE') + L(388.9, 567.9, 577.8, 9, '© ETS. GESRET', { st:'font-family:' + EPHEMERA + ';' }) + L(439.7, 568.5, 579.1, 7, 'REPRODUCTION OU IMITATION DU DESIGN INTERDITE');
+    C(421, 568.5, 579.1, 7, 'TOUTE DIFFUSION ET REPRODUCTION INTERDITE <span style="font-family:' + EPHEMERA + ';font-size:' + (9 / PT * 100) + 'cqw">© ETS. GESRET</span> REPRODUCTION OU IMITATION DU DESIGN INTERDITE');
 }
 const labelPage = () => ETAPES[E.etape].validation ? 'VALIDATION' : 'PROPOSITION';
 const sousPage = () => ETAPES[E.etape].validation ? dateAffichee() : ('V' + (E.version || 1) + ' • ' + dateAffichee());
@@ -1323,6 +1336,61 @@ function ajusterTextes(){
       el.style.transform = (a === 'c' ? 'translateX(-50%) ' : '') + 'scaleX(' + k + ')';
     });
   });
+}
+
+
+/* ------------------------------ Calcul des litres et récapitulatif stock / à commander ------------------------------ */
+const calcReglages = () => Object.assign({ rendement:10, couches:2, marge:10 }, E.calc || {});
+function surfacePanneauM2(){
+  for(const c of propositions()){
+    const m = /([\d.,]+)\s*cm\s*[×xX]\s*([\d.,]+)/.exec(E.props[c].panneau || '');
+    if(m) return nombre(m[1]) * nombre(m[2]) / 10000;
+  }
+  return 0;
+}
+function surfaceTeinte(t){
+  if(!vide(t.surface)) return nombre(t.surface) || 0;
+  const a = surfacePanneauM2();
+  return a && t.part ? Math.round(a * t.part * 100) / 100 : 0;   // estimation : surface du panneau × part de la couleur dans le dessin
+}
+function besoinL(t){
+  const c = calcReglages(), sf = surfaceTeinte(t);
+  if(!sf || !c.rendement) return 0;
+  return Math.ceil(sf * c.couches / c.rendement * (1 + c.marge / 100) * 10) / 10;
+}
+function stockL(t){
+  const r = normRef(t.reference);
+  if(r.length < 3 || stockEtat !== 'ok') return null;
+  if(stockMode === 'rpc'){ const m = stockMap[r]; return m ? m.litres : null; }
+  return potsPourReference(t.reference).filter(p => Number(p.quantite_disponible_l) > 0).reduce((s, p) => s + Number(p.quantite_disponible_l || 0), 0);
+}
+function commanderL(t){ const b = besoinL(t), st = stockL(t); if(st === null) return null; return b > 0 ? Math.max(0, Math.round((b - st) * 10) / 10) : 0; }
+function aCommander(t){
+  if(t.commander != null) return !!t.commander;
+  const st = stockL(t); if(st === null) return false;
+  const b = besoinL(t);
+  return b > 0 ? b > st : st <= 0;
+}
+function listeACommander(){
+  return E.teintes.filter(t => t.reference.trim() && aCommander(t)).map(t => {
+    const l = commanderL(t);
+    return t.reference.trim() + (t.nom ? ' (' + t.nom + ')' : '') + (l ? ' — ' + String(l).replace('.', ',') + ' L' : '');
+  });
+}
+function blocRecapLitres(){
+  const c = calcReglages(), ts = E.teintes.filter(t => !vide(t.reference));
+  if(!ts.length) return '';
+  const fmt = v => v.toLocaleString('fr-FR', { maximumFractionDigits:2 });
+  const lignes = ts.map(t => {
+    const b = besoinL(t), st = stockL(t), co = commanderL(t), sf = surfaceTeinte(t);
+    return `<tr data-t="${t.id}"><td><b>${esc(t.reference)}</b></td><td><input class="input mini" inputmode="decimal" data-tk="surface" value="${esc(t.surface !== undefined ? t.surface : (sf ? String(sf).replace('.', ',') : ''))}" placeholder="m²" aria-label="Surface en m²"></td><td>${b ? fmt(b) + ' L' : '—'}</td><td>${st === null ? '—' : fmt(st) + ' L'}</td><td class="${co ? 'cmd' : ''}">${co === null ? '—' : (co > 0 ? fmt(co) + ' L' : 'rien')}</td></tr>`;
+  }).join('');
+  const total = ts.reduce((a, t) => a + (commanderL(t) || 0), 0), liste = listeACommander();
+  return `<div class="prop recap"><b style="font-size:13px">Besoin en peinture, stock et à commander</b>
+    <div class="reglages"><label>Rendement<span class="saisieU"><input class="input" id="calcRend" inputmode="decimal" value="${c.rendement}"><em>m²/L</em></span></label><label>Couches<span class="saisieU"><input class="input" id="calcCouches" inputmode="numeric" value="${c.couches}"></span></label><label>Marge<span class="saisieU"><input class="input" id="calcMarge" inputmode="decimal" value="${c.marge}"><em>%</em></span></label></div>
+    <div class="tw2"><table class="recapT"><thead><tr><th>Teinte</th><th>Surface</th><th>Besoin</th><th>En stock</th><th>À commander</th></tr></thead><tbody>${lignes}</tbody></table></div>
+    <p class="tiny">Besoin = surface × couches ÷ rendement + marge, arrondi au dixième de litre. La surface est estimée d'après la part de la couleur dans le dessin ; corrigez-la si besoin. Le camaïeu n'est pas compté.</p>
+    ${liste.length ? `<p style="margin:8px 0 4px"><b>À commander${total ? ' : ' + fmt(Math.round(total * 10) / 10) + ' L au total' : ''}</b></p><div class="tiny" style="margin:0 0 6px">${liste.map(esc).join('<br>')}</div><button class="btn petit" id="bCopierCommande">Copier la liste</button>` : '<p class="tiny">Rien à commander pour le moment.</p>'}</div>`;
 }
 
 /* ------------------------------ Mémoire du navigateur (IndexedDB) ------------------------------ */
