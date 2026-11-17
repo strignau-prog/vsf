@@ -477,7 +477,7 @@ async function apercuAI(f){
   const doc = await avecDelai(lib.getDocument({ data: await f.arrayBuffer(), standardFontDataUrl:'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/standard_fonts/' }).promise, 30000, 'PDF trop long à ouvrir');
   const p = await doc.getPage(1), txt = (await p.getTextContent()).items.map(i => i.str).join(' ');
   if(/without PDF Content/i.test(txt)) return null;
-  return (await pagesPdf(f))[0];
+  return await pagesPdf(f);   // un plan de travail = une page
 }
 function resumeAI(a){
   if(!a) return '';
@@ -503,7 +503,8 @@ async function ajouterFichiers(liste, cible){
       if(ai){
         aiData = await lireAI(f);
         let net = null; try{ net = await apercuAI(f); }catch(e){ net = null; }
-        pages = [net || aiData.vignette]; faible = !net;
+        const ok = !!(net && net.length);
+        pages = ok ? net : [aiData.vignette]; faible = !ok;
         if(!pages[0]) throw new Error('aperçu illisible : enregistrez aussi le fichier en PDF');
         if(faible) avert.push('« ' + f.name + ' » : aperçu basse définition. Réenregistrez-le avec « Créer un fichier compatible PDF », ou déposez aussi son PDF.');
         aiData.alertes.forEach(a => avert.push('« ' + f.name + ' » : ' + a));
@@ -915,7 +916,8 @@ function blocCotes(){
       ${p.cotes.map((k, i) => `<div class="coteLigne" style="margin-top:6px"><input class="input${vide(k.l) ? ' afaire' : ''}" placeholder="Ligne (ex. ALRÉ)" value="${esc(k.l)}" data-ck="l" data-i="${i}"><input class="input${vide(k.v) ? ' afaire' : ''}" placeholder="13,4 cm" value="${esc(k.v)}" data-ck="v" data-i="${i}"><button class="btn petit" data-act="coteX" data-i="${i}">✕</button></div>`).join('')}
       <button class="btn petit${p.cotes.length ? '' : ' afaire'}" data-act="coteAdd" style="margin:6px 0">+ Cote</button>
       <div class="field" style="margin:0"><label>Description (sous le visuel)</label><textarea class="textarea${vide(p.description) ? ' afaire' : ''}" rows="3" data-p="description">${esc(p.description)}</textarea></div></div>`;
-  }).join('') + '<p class="tiny">Les cotes écrites en texte dans le fichier Illustrator se remplissent seules ; sinon saisissez-les.</p>';
+  }).join('') + '<p class="tiny">Les cotes écrites en texte dans le fichier Illustrator se remplissent seules ; sinon saisissez-les.</p>' +
+    (props.some(c => c.indexOf('#p') >= 0) ? '<p class="tiny alerteTxt">Ce fichier contient plusieurs plans de travail : chacun devient une page. Les cotes du fichier sont reprises sur chaque page : supprimez (✕) celles qui ne concernent pas le visuel.</p>' : '');
 }
 
 /* ------------------------------ Événements (délégués) ------------------------------ */
