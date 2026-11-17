@@ -976,6 +976,30 @@ function ajouterTeinteRef(ref, hex, nuancier, nom, extra){
   dessiner();
 }
 function memoriserRef(t){ /* les choix de palette ne sont pas liés à une couleur Illustrator */ }
+const NUANCIERS = { Unikalo:{ nom:'Unikalo', libelle:'Unikalo · nuancier façade K220' }, Cromology:{ nom:'Cromology', libelle:'Cromology · nuancier façade' }, Totem:{ nom:'Totem (Tollens)', libelle:'Tollens · Totem' } };
+const PALETTES = {};   // marque → liste { code, nom, hex } ; null = en cours de chargement ; false = indisponible
+let palRecherche = '';
+async function chargerPalette(m){
+  if(!sb || PALETTES[m] !== undefined) return;
+  PALETTES[m] = null; dessiner();
+  try{
+    let tout = [], de = 0;
+    for(;;){
+      const r = await sb.from('dossier_palettes').select('code,nom,hex').eq('marque', m).order('code').range(de, de + 999);
+      if(r.error || !r.data){ PALETTES[m] = tout.length ? tout : false; break; }
+      tout = tout.concat(r.data);
+      if(r.data.length < 1000){ PALETTES[m] = tout.length ? tout : false; break; }
+      de += 1000;
+    }
+  }catch(e){ PALETTES[m] = false; }
+  dessiner();
+}
+function grillePalette(m){
+  const L = PALETTES[m] || [], q = palRecherche.trim().toLowerCase();
+  const filtre = q ? L.filter(c => (c.code + ' ' + c.nom).toLowerCase().indexOf(q) >= 0) : L, vus = filtre.slice(0, 240);
+  const cases = vus.map(c => `<button type="button" class="ralCase" data-pal="pcase" data-m="${m}" data-code="${esc(c.code)}" data-nom="${esc(c.nom)}" data-hex="${esc(c.hex)}" title="${esc(c.code + (c.nom ? ' — ' + c.nom : ''))}" style="background:${esc(c.hex)}"><span>${esc(c.code.split(' ').pop())}</span></button>`).join('');
+  return cases + (filtre.length > vus.length ? `<p class="tiny" style="grid-column:1/-1">${filtre.length} teintes : affinez la recherche pour voir les ${filtre.length - vus.length} autres.</p>` : '') + (!filtre.length ? '<p class="tiny" style="grid-column:1/-1">Aucune teinte ne correspond.</p>' : '');
+}
 function blocPalette(){
   const pastilles = MARQUES_PAL.map(m => `<button type="button" class="choixPil${palMarque === m[0] ? ' on' : ''}" data-pal="marque" data-m="${m[0]}">${esc(m[1])}</button>`).join('');
   let corps = '';
@@ -989,11 +1013,18 @@ function blocPalette(){
   } else if(palMarque === 'Or'){
     corps = `<p class="tiny">Ajoute une bande « Feuille d'or » au nuancier (dorure).</p><button type="button" class="btn petit" data-pal="or">Ajouter la feuille d'or</button>`;
   } else {
-    const nom = ({ Unikalo:'Unikalo', Cromology:'Cromology', Totem:'Totem · Tollens' })[palMarque];
-    corps = `<div class="field"><label>Référence ${esc(nom)}</label><input class="input" id="palRef" placeholder="UNIK 028-6 A, CR4099-5…"></div>
-      <div class="grid2"><div class="field"><label>Nom (facultatif)</label><input class="input" id="palNom"></div><div class="field"><label>Couleur à l'écran</label><input type="color" id="palCoul" value="#999999" style="height:40px;width:100%"></div></div>
-      <button type="button" class="btn petit" data-pal="manuel">Ajouter cette teinte</button>
-      <p class="tiny">La palette en couleurs de ${esc(nom)} sera ajoutée dès que vous m'enverrez ses références (code, nom, couleur) : en attendant, saisissez la référence et choisissez la couleur à la main.</p>`;
+    const nu = NUANCIERS[palMarque], pl = PALETTES[palMarque];
+    if(Array.isArray(pl)){
+      corps = `<div class="field"><label>Rechercher dans ${esc(nu.nom)} (code ou nom)</label><input class="input" id="palQ" value="${esc(palRecherche)}" placeholder="F2012, brume, T2001…" autocomplete="off"></div>
+        <div class="ralGrille" id="palGrille">${grillePalette(palMarque)}</div><p class="tiny">${pl.length} teintes · un clic ajoute la teinte aux teintes du dossier.</p>`;
+    } else if(pl === null || pl === undefined){
+      corps = '<p class="tiny">Chargement de la palette…</p>';
+    } else {
+      corps = `<div class="field"><label>Référence ${esc(nu.nom)}</label><input class="input" id="palRef" placeholder="UNIK F2012, CRF005-1, T2001-1…"></div>
+        <div class="grid2"><div class="field"><label>Nom (facultatif)</label><input class="input" id="palNom"></div><div class="field"><label>Couleur à l'écran</label><input type="color" id="palCoul" value="#999999" style="height:40px;width:100%"></div></div>
+        <button type="button" class="btn petit" data-pal="manuel">Ajouter cette teinte</button>
+        <p class="tiny">La palette de ${esc(nu.nom)} n'est pas disponible pour le moment : saisissez la référence et choisissez la couleur à la main.</p>`;
+    }
   }
   return `<div class="prop palette"><b style="font-size:13px">Choisir une teinte</b><div class="groupe" style="margin:6px 0">${pastilles}</div>${corps}</div>`;
 }
@@ -1021,6 +1052,9 @@ saisie.addEventListener('change', e => {
   if(t.dataset.p){ const p = propDe(t); if(p){ p[t.dataset.p] = t.value; dessiner(); } return; }
   if(t.dataset.ck){ const p = propDe(t); if(p){ p.cotes = p.cotes.map(versCote); p.cotes[+t.dataset.i][t.dataset.ck] = (t.type === 'checkbox') ? t.checked : t.value; dessiner(); } }
 });
+saisie.addEventListener('input', e => {
+  if(e.target.id === 'palQ'){ palRecherche = e.target.value; const g = document.getElementById('palGrille'); if(g) g.innerHTML = grillePalette(palMarque); }
+});
 saisie.addEventListener('click', async e => {
   const tg = e.target.closest('[data-toggle]');
   if(tg){ const id = tg.dataset.toggle, etapes = etatEtapes(), cour = (etapes.find(s => s.requis && !s.ok) || etapes[etapes.length - 1]).id; const ouvert = ouverts[id] !== undefined ? ouverts[id] : id === cour; ouverts[id] = !ouvert; dessiner(); return; }
@@ -1035,11 +1069,12 @@ saisie.addEventListener('click', async e => {
   if(b.id === 'bCopierCommande'){ try{ navigator.clipboard.writeText(listeACommander().join('\n')); b.textContent = 'Copié ✓'; }catch(x){ /* presse-papiers indisponible */ } return; }
   if(b.dataset.pal){
     const m = b.dataset.pal;
-    if(m === 'marque'){ palMarque = b.dataset.m; dessiner(); return; }
+    if(m === 'marque'){ palMarque = b.dataset.m; palRecherche = ''; if(NUANCIERS[palMarque]) chargerPalette(palMarque); dessiner(); return; }
+    if(m === 'pcase'){ const nu = NUANCIERS[b.dataset.m]; ajouterTeinteRef(b.dataset.code, b.dataset.hex, nu ? nu.libelle : '', b.dataset.nom); return; }
     if(m === 'fam'){ palFamille = b.dataset.f; dessiner(); return; }
     if(m === 'ral'){ ajouterTeinteRef('RAL ' + b.dataset.code, b.dataset.hex, 'RAL'); return; }
     if(m === 'or'){ ajouterTeinteRef("Feuille d'or", '#d4af37', 'Dorure', "Feuille d'or", { or:true }); return; }
-    if(m === 'manuel'){ const ref = (document.getElementById('palRef').value || '').trim(); if(!ref) return; ajouterTeinteRef(ref, document.getElementById('palCoul').value, ({ Unikalo:'Unikalo', Cromology:'Cromology', Totem:'Totem · Tollens' })[palMarque], (document.getElementById('palNom').value || '').trim()); return; }
+    if(m === 'manuel'){ const ref = (document.getElementById('palRef').value || '').trim(); if(!ref) return; ajouterTeinteRef(ref, document.getElementById('palCoul').value, (NUANCIERS[palMarque] || { libelle:'' }).libelle, (document.getElementById('palNom').value || '').trim()); return; }
   }
   const dt = b.closest('[data-t]');
   if(dt && b.dataset.act){
