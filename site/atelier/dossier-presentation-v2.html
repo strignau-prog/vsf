@@ -1405,7 +1405,12 @@ async function chercherTrello(){
   trello = { n, etat:'cherche' }; dessiner();
   try{
     const r = await sb.functions.invoke('trello-carte', { body:{ numero:n } });
-    if(r.error){ console.warn('trello-carte', r.error); const code =r.error.context && r.error.context.status; trello = { n, etat: code === 401 ? 'connexion' : 'erreur' }; dessiner(); return; }
+    if(r.error){
+      console.warn('trello-carte', r.error);
+      const rep = r.error.context, code = rep && rep.status; let detail = '';
+      try{ const j = await rep.json(); detail = j.erreur || j.message || j.msg || ''; if(j.statut) detail += ' ' + j.statut; }catch(e){ /* pas de détail */ }
+      trello = { n, etat: code === 401 && detail === 'connexion' ? 'connexion' : 'erreur', detail: [code, detail].filter(Boolean).join(' · ') || r.error.name }; dessiner(); return;
+    }
     const d = r.data || {}, c = (d.cartes || [])[0];
     if(!c){ trello = { n, etat:'absent' }; dessiner(); return; }
     if(vide(E.client) && c.projet) E.client = c.projet;
@@ -1422,7 +1427,7 @@ function messageTrello(){
   if(t.n === (E.numero || '').trim() && t.etat === 'ok') return `<p class="aide" style="color:#1d5a2d"><b>✓ Carte Trello trouvée</b> : ${esc(t.nom)}${t.liste ? ' · colonne « ' + esc(t.liste) + ' »' : ''}${t.nb > 1 ? ' (' + t.nb + ' cartes avec ce numéro, la première est utilisée)' : ''}. Le client, le lieu et l'interlocuteur sont repris : vérifiez-les à l'étape « Client ».${t.url ? ' <a href="' + esc(t.url) + '" target="_blank" rel="noopener">Ouvrir la carte</a>' : ''}</p>`;
   if(t.n === (E.numero || '').trim() && t.etat === 'absent') return `<p class="aide">Aucune carte Trello avec le numéro ${n}. Saisissez les coordonnées à l'étape « Client ».</p>`;
   if(t.n === (E.numero || '').trim() && t.etat === 'connexion') return '<p class="aide">Connectez-vous pour que le numéro préremplisse le client depuis Trello.</p>';
-  if(t.n === (E.numero || '').trim() && t.etat === 'erreur') return '<p class="aide">Trello n\'est pas disponible pour le moment : saisissez les coordonnées à l\'étape « Client ».</p>';
+  if(t.n === (E.numero || '').trim() && t.etat === 'erreur') return '<p class="aide">Trello n\'est pas disponible pour le moment : saisissez les coordonnées à l\'étape « Client ».' + (t.detail ? ' <span class="tiny">(code : ' + esc(t.detail) + ')</span>' : '') + '</p>';
   return '<p class="aide">Ce numéro préremplit les coordonnées du client (nom, lieu, interlocuteur) depuis la carte Trello du projet.</p>';
 }
 
