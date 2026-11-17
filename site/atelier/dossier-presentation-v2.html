@@ -44,6 +44,11 @@
   .pil{border:1px solid #cfcdc7;border-radius:999px;padding:2px 10px;font-size:12px;background:#fff;cursor:pointer}
   .pil.on{background:#111;color:#fff;border-color:#111}
   .coteLigne{display:grid;grid-template-columns:minmax(0,1fr) 92px auto;gap:6px;margin-bottom:6px}
+  .lu{font-size:12px;color:var(--muted);margin:4px 0}
+  .lu.alerte{color:var(--accent);font-weight:600}
+  .puces{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0}
+  .puce{display:inline-flex;align-items:center;gap:5px;font-size:11px;border:1px solid var(--line);border-radius:999px;padding:2px 8px 2px 3px;background:#fff}
+  .puce i{width:14px;height:14px;border-radius:50%;border:1px solid rgba(0,0,0,.2);display:inline-block}
   .choixTexte{display:flex;gap:8px;align-items:flex-start;margin-bottom:8px;font-size:13px}
   .choixTexte input{margin-top:3px}
   .barre{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 14px}
@@ -239,9 +244,165 @@ async function pagesPdf(f){
 }
 function statut(t, alerte){ const s = document.getElementById('statutDepot'); if(s){ s.textContent = t || ''; s.classList.toggle('alerte', !!alerte); } }
 
+/* ------------------ Fichiers Illustrator (.ai) : lecture des données ------------------
+   Un .ai est un PDF qui enveloppe les données natives d'Illustrator (flux « AIPrivateData », compressés en Zstandard sur les versions récentes).
+   On y lit : les couleurs (CMJN), l'échelle et les cotes écrites en texte vivant, la largeur du dessin (pour vérifier l'échelle) et la vignette.
+   L'aperçu net vient du PDF intégré, présent seulement si le fichier a été enregistré avec « Créer un fichier compatible PDF ». */
+let fzstdPret = null;
+function chargerFzstd(){
+  if(window.fzstd) return Promise.resolve(window.fzstd);
+  if(fzstdPret) return fzstdPret;
+  fzstdPret = new Promise((ok, ko) => {
+    const s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/npm/fzstd@0.1.1/umd/index.js';
+    s.onload = () => ok(window.fzstd); s.onerror = () => { fzstdPret = null; ko(new Error('décompresseur indisponible (connexion ?)')); };
+    document.head.appendChild(s);
+  });
+  return fzstdPret;
+}
+function fluxObjetPdf(u8, s, n){
+  const i = s.search(new RegExp('[\\r\\n]' + n + ' 0 obj'));
+  if(i < 0) return null;
+  const j = s.indexOf('stream', i), m = /\/Length (\d+)/.exec(s.slice(i, j));
+  if(j < 0 || !m) return null;
+  let k = j + 6; if(u8[k] === 13) k++; if(u8[k] === 10) k++;
+  return u8.subarray(k, k + parseInt(m[1], 10));
+}
+async function donneesNatives(u8, s){
+  const refs = [], re = /\/AIPrivateData(\d+)\s+(\d+)\s+0\s+R/g; let m;
+  while((m = re.exec(s))) refs.push([+m[1], +m[2]]);
+  if(!refs.length) throw new Error('données Illustrator absentes');
+  refs.sort((a, b) => a[0] - b[0]);
+  const parts = refs.map(r => fluxObjetPdf(u8, s, r[1])).filter(Boolean);
+  const all = new Uint8Array(parts.reduce((a, p) => a + p.length, 0)); let o = 0; parts.forEach(p => { all.set(p, o); o += p.length; });
+  const tete = new TextDecoder('latin1').decode(all.subarray(0, 24));
+  let sortie;
+  if(/ZStandard/i.test(tete)){
+    const lib = await chargerFzstd(); let k = 0;
+    while(k < 64 && !(all[k] === 0x28 && all[k+1] === 0xB5 && all[k+2] === 0x2F && all[k+3] === 0xFD)) k++;
+    sortie = lib.decompress(all.subarray(k));
+  } else if(/^%!PS|^%AI/.test(tete)){ sortie = all; }
+  else { const ds = new Response(new Blob([all]).stream().pipeThrough(new DecompressionStream('deflate'))); sortie = new Uint8Array(await ds.arrayBuffer()); }
+  return sortie;
+}
+function ascii85(str){
+  const fin = str.indexOf('~>'); if(fin >= 0) str = str.slice(0, fin);
+  const out = []; let g = [];
+  for(const ch of str){
+    if(ch === 'z' && !g.length){ out.push(0, 0, 0, 0); continue; }
+    const c = ch.charCodeAt(0) - 33; if(c < 0 || c > 84) continue;
+    g.push(c);
+    if(g.length === 5){ let v = 0; for(const d of g) v = v * 85 + d; out.push((v >>> 24) & 255, (v >>> 16) & 255, (v >>> 8) & 255, v & 255); g = []; }
+  }
+  if(g.length > 1){ const n = g.length; while(g.length < 5) g.push(84); let v = 0; for(const d of g) v = v * 85 + d; out.push(...[(v >>> 24) & 255, (v >>> 16) & 255, (v >>> 8) & 255, v & 255].slice(0, n - 1)); }
+  return Uint8Array.from(out);
+}
+function chainesUtf16(u8){
+  const res = []; let i = 0;
+  while(i < u8.length - 3){
+    if(u8[i] === 0x28 && u8[i+1] === 0xFE && u8[i+2] === 0xFF){
+      let k = i + 3; const b = [];
+      while(k < u8.length && u8[k] !== 0x29){ if(u8[k] === 0x5C){ b.push(u8[k+1]); k += 2; } else { b.push(u8[k]); k++; } }
+      let t = ''; for(let j = 0; j + 1 < b.length; j += 2) t += String.fromCharCode((b[j] << 8) | b[j+1]);
+      res.push(t); i = k + 1;
+    } else i++;
+  }
+  return res;
+}
+const BRUIT_TEXTE = /^(Version |Adobe|Times|Myriad|kPredefined|\[Style|Hunspell|Illustrator|Gyomatsu|Yakumono|Tsume|Beta|Hard$|Soft)/;
+function lignesDeTexte(ps){
+  const lignes = ps.split(/\r\n?|\n/), i = lignes.findIndex(l => l.includes('AI11TextDocument') && l.includes('ASCII85'));
+  if(i < 0) return [];
+  const buf = []; for(let k = i + 1; k < lignes.length && lignes[k][0] === '%' && !lignes[k].startsWith('%AI'); k++) buf.push(lignes[k].slice(1));
+  const sortie = [];
+  chainesUtf16(ascii85(buf.join(''))).forEach(c => c.split(new RegExp('[' + String.fromCharCode(13, 10, 0x2028, 0x2029) + ']+')).forEach(l => {
+    l = l.trim();
+    const ok = l.length >= 6 && /[A-Za-zÀ-ÿ]{3}/.test(l) && !BRUIT_TEXTE.test(l) && ((l.match(/[A-Za-zÀ-ÿ0-9 ,.:;()\/'’%×=\-]/g) || []).length / l.length) > 0.9;
+    if(ok) sortie.push(l);
+  }));
+  return sortie;
+}
+const nombre = s => parseFloat(String(s).replace(',', '.'));
+function analyserTextes(lignes){
+  const r = { echelle:0, panneau:null, cotes:[], autres:[] };
+  for(const l of lignes){
+    let m;
+    if((m = /[ée]chelle\s*(?:de\s*)?1\s*[\/:]\s*(\d+)/i.exec(l))){ r.echelle = +m[1]; continue; }
+    if(/panneau/i.test(l) && (m = /(\d+(?:[.,]\d+)?)\s*cm\s*[xX×]\s*(\d+(?:[.,]\d+)?)\s*cm/.exec(l))){ r.panneau = [m[1].replace('.', ','), m[2].replace('.', ',')]; continue; }
+    if((m = /^(.*?)\s*:\s*(\d+(?:[.,]\d+)?)\s*cm\s*$/i.exec(l))){
+      const par = /\(([^)]*)\)/.exec(m[1]), prefixe = m[1].replace(/\(.*?\)/g, '').replace(/\s+/g, ' ').trim();
+      r.cotes.push({ l: par ? par[1].toUpperCase() : '', v: (prefixe ? prefixe.charAt(0).toUpperCase() + prefixe.slice(1) + ' : ' : '') + m[2].replace('.', ',') + ' cm' });
+      continue;
+    }
+    r.autres.push(l);
+  }
+  return r;
+}
+function couleursAI(ps){
+  const i = ps.indexOf('%AI5_BeginLayer'); if(i < 0) return [];
+  const j = ps.indexOf('%AI5_EndLayer', i), lignes = ps.slice(i, j < 0 ? undefined : j).split(/\r\n?|\n/);
+  let fill = null, bb = null; const usage = new Map();
+  const pt = (x, y) => { if(!bb) bb = [x, y, x, y]; else { if(x < bb[0]) bb[0] = x; if(x > bb[2]) bb[2] = x; if(y < bb[1]) bb[1] = y; if(y > bb[3]) bb[3] = y; } };
+  for(const l of lignes){
+    if(!l || l[0] === '%' || l[0] === '(') continue;
+    const tk = l.trim().split(' '), op = tk[tk.length - 1];
+    if(op === 'k' && tk.length === 5){ fill = tk.slice(0, 4).map(Number); continue; }
+    if(op === 'm' || op === 'M' || op === 'l' || op === 'L') pt(+tk[0], +tk[1]);
+    else if(op === 'c' || op === 'C'){ pt(+tk[0], +tk[1]); pt(+tk[2], +tk[3]); pt(+tk[4], +tk[5]); }
+    else if(op === 'v' || op === 'V' || op === 'y' || op === 'Y'){ pt(+tk[0], +tk[1]); pt(+tk[2], +tk[3]); }
+    else if(op === 'f' || op === 'F' || op === 'b' || op === 'B'){
+      if(bb && fill){ const cle = fill.map(v => Math.round(v * 100)).join(','); usage.set(cle, (usage.get(cle) || 0) + (bb[2] - bb[0]) * (bb[3] - bb[1])); }
+      bb = null;
+    } else if(op === 's' || op === 'S' || op === 'n' || op === 'N') bb = null;
+  }
+  const total = [...usage.values()].reduce((a, b) => a + b, 0) || 1;
+  return [...usage.entries()].map(([k, a]) => ({ cmyk: k.split(',').map(Number), part: a / total })).filter(c => c.part >= 0.015).sort((a, b) => b.part - a.part);
+}
+function cmykEnHex(c){
+  const [C, M, Y, K] = c.map(v => v / 100), f = x => Math.round(255 * (1 - Math.min(1, x * (1 - K) + K)));
+  return '#' + [f(C), f(M), f(Y)].map(v => v.toString(16).padStart(2, '0')).join('');
+}
+async function lireAI(f){
+  const u8 = new Uint8Array(await f.arrayBuffer()), s = new TextDecoder('latin1').decode(u8);
+  const r = { vignette:'', echelle:0, panneau:null, cotes:[], couleurs:[], largeurCm:0, verif:'', alertes:[] };
+  const mv = /<xmpGImg:image>([\s\S]*?)<\/xmpGImg:image>/.exec(s);
+  if(mv) r.vignette = 'data:image/jpeg;base64,' + mv[1].replace(/&#xA;|\s/g, '');
+  try{
+    const ps = new TextDecoder('latin1').decode(await donneesNatives(u8, s));
+    const t = analyserTextes(lignesDeTexte(ps));
+    Object.assign(r, { echelle:t.echelle, panneau:t.panneau, cotes:t.cotes, couleurs:couleursAI(ps) });
+    const bb = /^%%HiResBoundingBox:\s*(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/m.exec(ps);
+    if(bb){
+      const largPt = parseFloat(bb[3]) - parseFloat(bb[1]), mm = largPt * 25.4 / 72;   // unités du document : millimètres à l'échelle du dessin
+      r.largeurCm = Math.round(mm * (r.echelle || 1) / 10 * 10) / 10;
+      if(r.echelle && r.panneau){
+        const voulu = nombre(r.panneau[0]), ecart = Math.abs(r.largeurCm - voulu) / voulu;
+        r.verif = ecart <= 0.02 ? 'ok' : 'ecart';
+      }
+    }
+    if(!r.cotes.length && !r.panneau) r.alertes.push('Aucune cote lisible : elles sont peut-être vectorisées (contours). Saisissez-les à la main.');
+  }catch(e){ r.alertes.push('Données Illustrator illisibles (' + (e.message || 'erreur') + ') : saisissez les cotes à la main.'); }
+  return r;
+}
+// Aperçu net : le PDF intégré du .ai, s'il existe (le texte d'avertissement d'Illustrator signale son absence).
+async function apercuAI(f){
+  const lib = await chargerPdfJs();
+  const doc = await avecDelai(lib.getDocument({ data: await f.arrayBuffer(), standardFontDataUrl:'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/standard_fonts/' }).promise, 30000, 'PDF trop long à ouvrir');
+  const p = await doc.getPage(1), txt = (await p.getTextContent()).items.map(i => i.str).join(' ');
+  if(/without PDF Content/i.test(txt)) return null;
+  return (await pagesPdf(f))[0];
+}
+function resumeAI(a){
+  if(!a) return '';
+  const l = [];
+  if(a.echelle) l.push('échelle 1/' + a.echelle);
+  if(a.panneau) l.push('panneau ' + a.panneau[0] + ' × ' + a.panneau[1] + ' cm');
+  if(a.largeurCm) l.push('largeur mesurée ' + String(a.largeurCm).replace('.', ',') + ' cm' + (a.verif === 'ok' ? ' ✓' : a.verif === 'ecart' ? ' — ne correspond pas : vérifiez l\'échelle' : (a.echelle ? '' : ' (à l\'échelle 1:1)')));
+  return l.join(' · ');
+}
+
 async function ajouterFichiers(liste, cible){
   const fs = Array.from(liste || []).sort((a, b) => a.name.localeCompare(b.name, 'fr', { numeric:true, sensitivity:'base' }));
-  const refus = [];
+  const refus = [], avert = [];
   for(const f of fs){
     statut('Lecture de « ' + f.name + ' »…');
     try{
@@ -249,9 +410,16 @@ async function ajouterFichiers(liste, cible){
       const img = /^image\/(jpeg|png|webp|gif|svg\+xml|bmp|avif)$/.test(f.type) || /\.(jpe?g|png|webp|gif|svg|bmp|avif)$/i.test(f.name);
       const ai = /\.ai$/i.test(f.name);
       if(cible === 'photo'){ if(!img) throw new Error('format non lu'); E.photo = await imageReduite(f); continue; }
-      if(ai) throw new Error('fichier Illustrator : exportez-le en PDF ou PNG (lecture directe prévue au lot suivant)');
-      if(!pdf && !img) throw new Error('format non lu');
-      const pages = pdf ? await pagesPdf(f) : [await imageReduite(f)];
+      if(!pdf && !img && !ai) throw new Error('format non lu');
+      let pages, aiData = null, faible = false;
+      if(ai){
+        aiData = await lireAI(f);
+        let net = null; try{ net = await apercuAI(f); }catch(e){ net = null; }
+        pages = [net || aiData.vignette]; faible = !net;
+        if(!pages[0]) throw new Error('aperçu illisible : enregistrez aussi le fichier en PDF');
+        if(faible) avert.push('« ' + f.name + ' » : aperçu basse définition. Réenregistrez-le avec « Créer un fichier compatible PDF », ou déposez aussi son PDF.');
+        aiData.alertes.forEach(a => avert.push('« ' + f.name + ' » : ' + a));
+      } else pages = pdf ? await pagesPdf(f) : [await imageReduite(f)];
       const meta = lireNom(f.name);
       if(!E.fichiers.length && meta.client){ /* premier fichier au bon format : il renseigne le dossier */
         Object.assign(E, { date: meta.date || E.date, numero: meta.numero || E.numero, client: meta.client || E.client });
@@ -261,17 +429,27 @@ async function ajouterFichiers(liste, cible){
       pages.forEach((src, i) => {
         const cv = cleEtVersion(f.name), suffixe = pages.length > 1 ? ' — page ' + (i + 1) : '';
         const cle = cv.cle + (pages.length > 1 ? '#p' + (i + 1) : '');
-        E.fichiers.push({ id:uid(), nom:f.name + suffixe, cle, v:cv.v, src });
+        // Un .ai et son PDF/PNG (même nom, même version) forment un seul visuel : l'image nette remplace la vignette, les données du .ai restent.
+        const exist = E.fichiers.find(x => x.cle === cle && x.v === cv.v);
+        if(exist){
+          if(aiData) exist.ai = aiData;
+          if(!faible && (exist.faible || !aiData)){ exist.src = src; exist.faible = false; }
+        } else E.fichiers.push({ id:uid(), nom:f.name + suffixe, cle, v:cv.v, src, ai:aiData, faible });
         if(!E.props[cle]){
           const croquis = /croquis/i.test(f.name);
-          E.props[cle] = { choix:'', titre: (meta.numero ? '' : cv.titre) + suffixe, type: croquis ? 'Croquis' : (ETAPES[E.etape] || ETAPES.CREA).typeDefaut, cotes:[], description:'' };
+          E.props[cle] = { choix:'', titre: (meta.numero ? '' : cv.titre) + suffixe, type: croquis ? 'Croquis' : (ETAPES[E.etape] || ETAPES.CREA).typeDefaut, cotes:[], description:'', panneau:'' };
           E.ordre.push(cle);
+        }
+        const pr = E.props[cle];
+        if(aiData){   // cotes et dimensions du panneau lues dans le fichier, seulement si rien n'est saisi
+          if(!pr.cotes.length && aiData.cotes.length) pr.cotes = aiData.cotes.map(c => ({ ...c }));
+          if(!pr.panneau && aiData.panneau) pr.panneau = aiData.panneau[0] + ' cm × ' + aiData.panneau[1] + ' cm';
         }
       });
     }catch(e){ refus.push(f.name + ' (' + (e.message || 'illisible') + ')'); }
   }
   dessiner();
-  if(refus.length) statut('Non lus : ' + refus.join(' ; '), true);
+  if(refus.length || avert.length) statut([refus.length ? 'Non lus : ' + refus.join(' ; ') : '', ...avert].filter(Boolean).join(' — '), true);
 }
 function versionsDe(cle){ return E.fichiers.filter(f => f.cle === cle).sort((a, b) => a.v - b.v); }
 function fichierChoisi(cle){
@@ -333,7 +511,7 @@ function pageProposition(cle, rang){
   const cotes = p.cotes.filter(c => c.l || c.v).map(c => `<div class="c"><b>${esc(c.l)}${c.l ? ' :' : ''}</b>${esc(c.v)}</div>`).join('');
   return habiller(`${entete(etiquette, sous, e.validation)}
     <div class="corps-page"><div class="visu"><div class="visuCadre"><img src="${f.src}" alt=""></div>
-      ${p.description ? `<div class="legende">${esc(p.description).replace(/\n/g, '<br>')}</div>` : ''}</div>
+      ${(p.panneau || p.description) ? `<div class="legende">${[p.panneau ? '<b>PANNEAU ' + esc(p.panneau.toUpperCase()) + ' :</b>' : '', p.description ? esc(p.description).replace(/\n/g, '<br>') : ''].filter(Boolean).join('<br>')}</div>` : ''}</div>
       ${cotes ? `<div class="cotes">${cotes}</div>` : ''}</div>${pied()}`, false);
 }
 function pageAutorisation(){
@@ -409,7 +587,7 @@ function blocFichiers(){
       return `<div class="prop" data-c="${esc(c)}"><div class="propTete"><img src="${ch.src}" alt=""><input class="input" value="${esc(p.titre)}" data-p="titre" aria-label="Titre">
         <div style="display:flex;gap:4px"><button class="btn petit" data-act="haut" ${i === 0 ? 'disabled' : ''}>↑</button><button class="btn petit" data-act="bas" ${i === props.length - 1 ? 'disabled' : ''}>↓</button><button class="btn petit" data-act="retirer">✕</button></div></div>
         <div class="grid2" style="margin-top:8px"><div class="field" style="margin:0"><label>Page</label><select class="select" data-p="type">${TYPES.map(t => `<option ${t === p.type ? 'selected' : ''}>${t}</option>`).join('')}</select></div></div>
-        ${vs.length > 1 ? `<div class="versions">${vs.map(v => `<button class="pil ${v.id === ch.id ? 'on' : ''}" data-act="version" data-id="${v.id}">V${v.v}</button>`).join('')}</div><div class="tiny">Version utilisée dans le dossier : V${ch.v}</div>` : ''}</div>`;
+        ${ch.faible ? '<div class="tiny" style="color:var(--accent);margin-top:6px">Aperçu basse définition (vignette) : réenregistrez le .ai avec « Créer un fichier compatible PDF » ou déposez son PDF.</div>' : ''}${vs.length > 1 ? `<div class="versions">${vs.map(v => `<button class="pil ${v.id === ch.id ? 'on' : ''}" data-act="version" data-id="${v.id}">V${v.v}</button>`).join('')}</div><div class="tiny">Version utilisée dans le dossier : V${ch.v}</div>` : ''}</div>`;
     }).join('')}
     <div class="photoL"><input type="file" id="photoInput" accept="image/*" hidden>
       <button class="btn petit" id="bPhoto">${E.photo ? 'Changer la photo du lieu' : 'Ajouter la photo du lieu (facultatif)'}</button>${E.photo ? ' <button class="btn petit" id="bPhotoOff">Retirer</button>' : ''}</div>`;
@@ -424,8 +602,11 @@ function blocCotes(){
   const props = propositions();
   if(!props.length) return '<p class="tiny">Déposez d\'abord un visuel.</p>';
   return props.map(c => {
-    const p = E.props[c];
-    return `<div class="prop" data-c="${esc(c)}"><b style="font-size:13px">${esc(p.titre)}</b>
+    const p = E.props[c], ai = (fichierChoisi(c) || {}).ai;
+    const puces = ai && ai.couleurs.length ? `<div class="puces">${ai.couleurs.map(k => `<span class="puce" title="C${k.cmyk[0]} M${k.cmyk[1]} J${k.cmyk[2]} N${k.cmyk[3]} — ${Math.round(k.part * 100)} % (teinte indicative à l'écran)"><i style="background:${cmykEnHex(k.cmyk)}"></i>C${k.cmyk[0]} M${k.cmyk[1]} J${k.cmyk[2]} N${k.cmyk[3]}</span>`).join('')}</div>` : '';
+    const lu = ai ? `<div class="lu ${ai.verif === 'ecart' ? 'alerte' : ''}">Lu dans le fichier : ${esc(resumeAI(ai)) || 'aucune dimension'}</div>${puces}<button class="btn petit" data-act="coteAI" style="margin:4px 0">Reprendre les cotes du fichier</button>` : '';
+    return `<div class="prop" data-c="${esc(c)}"><b style="font-size:13px">${esc(p.titre || 'Visuel')}</b>${lu}
+      <div class="field" style="margin:6px 0 0"><label>Dimensions du panneau</label><input class="input" value="${esc(p.panneau || '')}" placeholder="612 cm × 149 cm" data-p="panneau"></div>
       ${p.cotes.map((k, i) => `<div class="coteLigne" style="margin-top:6px"><input class="input" placeholder="Ligne (ex. ALRÉ)" value="${esc(k.l)}" data-ck="l" data-i="${i}"><input class="input" placeholder="13,4 cm" value="${esc(k.v)}" data-ck="v" data-i="${i}"><button class="btn petit" data-act="coteX" data-i="${i}">✕</button></div>`).join('')}
       <button class="btn petit" data-act="coteAdd" style="margin:6px 0">+ Cote</button>
       <div class="field" style="margin:0"><label>Description (sous le visuel)</label><textarea class="textarea" rows="3" data-p="description">${esc(p.description)}</textarea></div></div>`;
@@ -459,6 +640,7 @@ saisie.addEventListener('click', e => {
   if(a === 'haut' || a === 'bas'){ const i = E.ordre.indexOf(c), j = i + (a === 'haut' ? -1 : 1); if(j >= 0 && j < E.ordre.length){ [E.ordre[i], E.ordre[j]] = [E.ordre[j], E.ordre[i]]; } }
   else if(a === 'retirer'){ E.fichiers = E.fichiers.filter(f => f.cle !== c); E.ordre = E.ordre.filter(x => x !== c); delete E.props[c]; }
   else if(a === 'version'){ p.choix = b.dataset.id; }
+  else if(a === 'coteAI'){ const ai = (fichierChoisi(c) || {}).ai; if(ai){ p.cotes = ai.cotes.map(k => ({ ...k })); if(ai.panneau) p.panneau = ai.panneau[0] + ' cm × ' + ai.panneau[1] + ' cm'; } }
   else if(a === 'coteAdd'){ p.cotes.push({ l:'', v:'' }); }
   else if(a === 'coteX'){ p.cotes.splice(+b.dataset.i, 1); }
   dessiner();
