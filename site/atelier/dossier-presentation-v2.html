@@ -680,7 +680,7 @@ function memoriser(t){
 }
 function nuancierActif(){ return E.nuancier != null ? E.nuancier : !!ETAPES[E.etape].nuancier; }
 let syncEnCours = false;
-function lancerSync(){ if(syncEnCours) return; syncEnCours = true; syncTeintes().catch(() => {}).finally(() => { syncEnCours = false; }); }
+function lancerSync(){ if(syncEnCours) return; syncEnCours = true; syncTeintes().catch(() => {}).finally(() => { syncEnCours = false; rafraichirStock().then(c => { if(c) dessiner(); }).catch(() => {}); }); }
 async function syncTeintes(){
   const vus = new Map();
   propositions().forEach(c => { const ai = (fichierChoisi(c) || {}).ai; if(ai) ai.couleurs.forEach(k => vus.set(k.cmyk.join(','), k.cmyk)); });
@@ -708,19 +708,35 @@ async function syncTeintes(){
 const SUPABASE_URL = 'https://uuuigousvpijskbdhcal.supabase.co', SUPABASE_KEY = 'sb_publishable__YuNj5XCo5YF8lwhwTu5OQ_RDM1Eesp';
 const sb = (window.supabase && window.supabase.createClient) ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:false } }) : null;
 let stockPots = null, stockEtat = 'absent';   // 'ok' | 'absent' (pas connecté) | 'refuse' (pas de droit sur le stock)
+let stockMode = '', stockMap = {};   // 'rpc' : litres par référence, pour tout compte connecté ; sinon lecture directe (membres de l'atelier)
 async function chargerStock(){
   if(!sb){ stockEtat = 'absent'; return; }
   try{
     const r = await sb.auth.getSession(), session = r && r.data && r.data.session;
     compte = session ? { email: session.user.email } : null;
     if(!session){ stockEtat = 'absent'; return; }
+    // 1. fonction ouverte à tous les comptes connectés (migration 71) : seulement des litres par référence demandée
+    const sonde = await sb.rpc('dossier_stock_etat', { p_refs: ['SONDE'] });
+    if(!sonde.error){ stockMode = 'rpc'; stockEtat = 'ok'; await rafraichirStock(); return; }
+    // 2. repli : lecture directe de la table, réservée aux membres de l'atelier
     const ms = await sb.from('members').select('establishment_id').eq('user_id', session.user.id);
     if(ms.error || !ms.data || !ms.data.length){ stockEtat = 'refuse'; return; }
     const ids = [...new Set(ms.data.map(x => x.establishment_id))];
     const st = await sb.from('stock_pots').select('marque,designation_article,type,finition,ral_reference,theme_couleur,quantite_disponible_l').in('establishment_id', ids).limit(5000);
     if(st.error || !st.data){ stockEtat = 'refuse'; return; }
-    stockPots = st.data; stockEtat = 'ok';
+    stockPots = st.data; stockEtat = 'ok'; stockMode = 'direct';
   }catch(e){ stockEtat = 'refuse'; }
+}
+// Vrai si l'état d'une référence a changé (pour redessiner une seule fois).
+async function rafraichirStock(){
+  if(stockMode !== 'rpc' || !sb) return false;
+  const refs = [...new Set(E.teintes.map(t => t.reference.trim()).filter(x => normRef(x).length >= 3))];
+  if(!refs.length) return false;
+  const r = await sb.rpc('dossier_stock_etat', { p_refs: refs });
+  if(r.error || !r.data) return false;
+  const avant = JSON.stringify(stockMap);
+  r.data.forEach(x => { stockMap[normRef(x.ref)] = { litres: Number(x.litres), pots: Number(x.pots) }; });
+  return JSON.stringify(stockMap) !== avant;
 }
 const normRef = s => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 function potsPourReference(ref){
@@ -730,7 +746,8 @@ function potsPourReference(ref){
 }
 function etatStockTeinte(ref){
   if(normRef(ref).length < 3) return { code:'inconnu', texte:'Référence à saisir' };
-  if(stockEtat !== 'ok') return { code:'inconnu', texte: stockEtat === 'absent' ? 'Stock non lu (non connecté)' : 'Stock non lisible avec ce compte' };
+  if(stockMode === 'rpc'){ const m = stockMap[normRef(ref)]; if(!m) return { code:'inconnu', texte:'Vérification du stock…' }; if(m.litres <= 0) return { code:'absent', texte:'Aucun pot en stock' }; return { code:'ok', texte:'En stock : ' + m.litres.toLocaleString('fr-FR', { maximumFractionDigits:2 }) + ' L (' + m.pots + ' pot' + (m.pots > 1 ? 's' : '') + ')' }; }
+  if(stockEtat !== 'ok') return { code:'inconnu', texte: stockEtat === 'absent' ? 'Stock non lu (non connecté)' : 'Stock non disponible' };
   const pots = potsPourReference(ref).filter(p => Number(p.quantite_disponible_l) > 0);
   if(!pots.length) return { code:'absent', texte:'Aucun pot en stock' };
   const l = pots.reduce((s, p) => s + Number(p.quantite_disponible_l || 0), 0);
@@ -757,8 +774,8 @@ function pageNuancier(){
     <div class="nuancierNote">Les teintes affichées à l'écran ou imprimées sont indicatives : seule la référence de peinture fait foi.</div></div>${pied()}`, true);
 }
 function blocTeintes(){
-  const entete = stockEtat === 'ok' ? 'Stock de l\'atelier lu (' + stockPots.length + ' pots).'
-    : stockEtat === 'refuse' ? 'Stock non lisible avec ce compte (droit propre à la graphiste : prochain lot).'
+  const entete = stockEtat === 'ok' ? 'Stock de l\'atelier lu (' + (stockPots ? stockPots.length + ' pots' : 'état vérifié par référence') + ').'
+    : stockEtat === 'refuse' ? 'Stock non disponible pour le moment.'
     : 'Stock non lu : <a href="connexion-dossier.html?suite=dossier-presentation-v2.html' + '">connectez-vous avec un compte de l\'atelier</a> pour le vérifier.';
   const lignes = E.teintes.map(t => {
     const e = etatStockTeinte(t.reference), cmd = aCommander(t);
@@ -832,7 +849,7 @@ function groupeRadios(nom, options, valeur, aFaire){
 }
 function corpsEtape(id){
   if(id === 'dossier') return `<div class="field"><label>Numéro de dossier</label><input class="input${vide(E.numero) ? ' afaire' : ''}" inputmode="numeric" placeholder="1048" value="${esc(E.numero)}" data-k="numero"></div>
-    <p class="aide">C'est la seule référence à saisir : le client, l'adresse et le téléphone viendront ensuite de Trello (connexion à venir). D'ici là, vous les complétez à l'étape « Client ».</p>`;
+    <p class="aide"><b>Bientôt :</b> ce numéro préremplira automatiquement les coordonnées du client (nom, adresse, interlocuteur, téléphone) depuis Trello. D'ici là, saisissez-les à l'étape « Client ».</p>`;
   if(id === 'type') return `<div class="field"><label>Étape du dossier</label>${groupeRadios('etape', ETAPES_CONNUES.map(k => [k, ({ CREA:'Propositions (CREA)', BAT:'Validation (BAT)', MOODBOARD:'Moodboard & croquis' })[k]]), E.etapeChoisie ? E.etape : '', !E.etapeChoisie)}</div>
     <div class="field"><label>Statut du devis</label>${groupeRadios('devis', [['non_signe', 'Non signé'], ['signe', 'Signé']], E.devis || 'non_signe', false)}</div>
     <div class="field" style="max-width:140px"><label>Version du dossier (V1, V2…)</label><input class="input" type="number" min="1" value="${E.version}" data-k="version"></div>`;
@@ -846,8 +863,7 @@ function corpsEtape(id){
   if(id === 'cotes') return blocCotes();
   if(id === 'teintes') return blocTeintes();
   if(id === 'texte') return blocTexte();
-  if(id === 'envoi') return `<div class="field"><label>Votre prénom (signature du message à Tristan)</label><input class="input${vide(E.signature) ? ' afaire' : ''}" value="${esc(E.signature)}" data-k="signature"></div>
-    <p class="aide">Le fichier PDF est nommé automatiquement : <b>${esc(nomFichierPdf())}.pdf</b>.<br>Boutons « Enregistrer en PDF » et « Écrire à Tristan » : en haut de l'aperçu. Joignez ensuite le PDF au message.</p>`;
+  if(id === 'envoi') return `<p class="aide">Le fichier PDF est nommé automatiquement : <b>${esc(nomFichierPdf())}.pdf</b>.<br>Boutons « Enregistrer en PDF » et « Écrire à Tristan » : en haut de l'aperçu. Joignez ensuite le PDF au message.</p>`;
   return '';
 }
 function dessiner(){
@@ -990,7 +1006,7 @@ document.getElementById('bMail').addEventListener('click', () => {
   const corps = 'Tristan,\n\nVoici le dossier de présentation pour « ' + (E.client || 'client') + ' »' + (E.numero ? ' (dossier n° ' + E.numero + ', ' : ' (') + e.nom.toLowerCase() + ver + ').\n\n' +
     'Il comprend ' + listePages().length + ' pages : ' + noms + '.\n' + (listeACommander().length ? 'Peintures à commander : ' + listeACommander().join(', ') + '.\n' : '') +
     'Le PDF est en pièce jointe. Les cotes et les teintes sont à valider de ton côté avant l\'envoi au client.\n\n' +
-    'Dis-moi si tu veux des modifications.\n\nBonne journée,\n' + (E.signature || '');
+    'Dis-moi si tu veux des modifications.\n\nBonne journée,\n';
   location.href = 'mailto:' + DEST_MAIL + '?subject=' + encodeURIComponent(sujet) + '&body=' + encodeURIComponent(corps);
 });
 
