@@ -169,25 +169,42 @@ const ATELIER_DEFAUT = { nom:'Ets. Gesret', tel:'06 79 39 04 14', adresse:'16 ru
 const DEST_MAIL = 'peinture@etsgesret.fr';
 
 /* Textes d'introduction — repris des trois dossiers réels (le dernier pour le singulier vient du prompt). Seront déplacés en base au lot 4. */
-const TEXTES = {
-  CREA: [
-    { id:'crea-pl', nom:'Premières propositions (pluriel)', ouverture:'de lettrages peints', corps:'Vous trouverez ci-après nos premières propositions.\n\nCes propositions ne sont pas définitives et pourront évoluer selon vos retours, si vous décidez de travailler avec nous.' },
-    { id:'crea-sg', nom:'Première proposition (singulier)', ouverture:'de lettrages peints', corps:'Vous trouverez ci-après notre première proposition.\n\nCette proposition n\'est pas définitive et pourra évoluer selon vos retours, si vous décidez de travailler avec nous.' }
-  ],
-  MOODBOARD: [
-    { id:'mood', nom:'Planches d\'ambiance et croquis', ouverture:'de lettrages peints', corps:'Vous trouverez ci-après nos planches d\'ambiance ainsi qu\'un premier croquis.\n\nCes éléments constituent des pistes créatives préliminaires et pourront évoluer selon vos retours et les orientations retenues pour votre projet.' }
-  ],
-  BAT: [
-    { id:'bat', nom:'Maquette à valider', ouverture:'d\'un panneau peint', corps:'Vous trouverez ci-après la maquette à valider avant intervention.\n\nAfin de valider la prestation et de commencer la préparation du chantier, merci de bien vouloir :',
-      liste:['Signer le devis', 'Signer le bon de commande ci-dessous', 'Valider chaque visuel souhaité en cochant les pages en haut à droite', 'Effectuer le versement de l\'acompte'] }
-  ]
-};
+const TEXTES_INTEGRES = [
+  { id:'i-crea-n', etape:'CREA', nb:'n', devis:'non_signe', nom:'Premières propositions (dossier Goutzy)', ouverture:'de lettrages peints', priorite:10, liste:null,
+    corps:"Vous trouverez ci-après nos premières propositions.\n\nCes propositions ne sont pas définitives et pourront évoluer selon vos retours, si vous décidez de travailler avec nous." },
+  { id:'i-crea-1', etape:'CREA', nb:'1', devis:'non_signe', nom:'Première proposition (singulier)', ouverture:'de lettrages peints', priorite:10, liste:null,
+    corps:"Vous trouverez ci-après notre première proposition.\n\nCette proposition n'est pas définitive et pourra évoluer selon vos retours, si vous décidez de travailler avec nous." },
+  { id:'i-mood', etape:'MOODBOARD', nb:null, devis:null, nom:"Planches d'ambiance et croquis (dossier Glacerie Morice)", ouverture:'de lettrages peints', priorite:10, liste:null,
+    corps:"Vous trouverez ci-après nos planches d'ambiance ainsi qu'un premier croquis.\n\nCes éléments constituent des pistes créatives préliminaires et pourront évoluer selon vos retours et les orientations retenues pour votre projet." },
+  { id:'i-bat', etape:'BAT', nb:null, devis:'non_signe', nom:'Maquette à valider (dossier Alré Peinture)', ouverture:"d'un panneau peint", priorite:10,
+    corps:"Vous trouverez ci-après la maquette à valider avant intervention.\n\nAfin de valider la prestation et de commencer la préparation du chantier, merci de bien vouloir :",
+    liste:["Signer le devis", "Signer le bon de commande ci-dessous", "Valider chaque visuel souhaité en cochant les pages en haut à droite", "Effectuer le versement de l'acompte"] },
+  { id:'i-croq-1', etape:'CREA', nb:'1', devis:'non_signe', nom:"Croquis d'intention (singulier)", ouverture:'de lettrages peints', priorite:20, liste:null,
+    corps:"Vous trouverez ci-après notre premier croquis d'intention.\n\nCette proposition n'est pas définitive et évoluera selon vos retours, si vous décidez de travailler avec nous." },
+  { id:'i-croq-n', etape:'CREA', nb:'n', devis:'non_signe', nom:"Croquis d'intention (pluriel)", ouverture:'de lettrages peints', priorite:20, liste:null,
+    corps:"Vous trouverez ci-après nos premiers croquis d'intention.\n\nCes propositions ne sont pas définitives et évolueront selon vos retours, si vous décidez de travailler avec nous." },
+  { id:'i-bat-s1', etape:'BAT', nb:'1', devis:'signe', nom:'Maquette, devis signé (singulier)', ouverture:"d'un panneau peint", priorite:20, liste:null,
+    corps:"Vous trouverez ci-après notre proposition.\n\nCette proposition n'est pas définitive et pourra évoluer au fil de nos échanges." },
+  { id:'i-bat-sn', etape:'BAT', nb:'n', devis:'signe', nom:'Maquette, devis signé (pluriel)', ouverture:"d'un panneau peint", priorite:20, liste:null,
+    corps:"Vous trouverez ci-après nos propositions.\n\nCes propositions ne sont pas définitives et pourront évoluer au fil de nos échanges." },
+  { id:'i-mood-1', etape:'MOODBOARD', nb:'1', devis:null, nom:'Moodboard (singulier)', ouverture:'de lettrages peints', priorite:20, liste:null, corps:"Vous trouverez ci-après notre moodboard." },
+  { id:'i-mood-n', etape:'MOODBOARD', nb:'n', devis:null, nom:'Moodboard (pluriel)', ouverture:'de lettrages peints', priorite:20, liste:null, corps:"Vous trouverez ci-après nos moodboards." }
+];
+const TEXTE_NEUTRE = { id:'neutre', etape:null, nb:null, devis:null, nom:'Texte neutre', ouverture:'de lettrages peints', priorite:999, liste:null, corps:"Vous trouverez ci-après nos visuels." };
+let textesBase = null;   // lignes de la table dossier_textes ; null = table absente ou illisible → textes intégrés ci-dessus
+async function chargerTextes(){
+  if(!sb) return;
+  try{
+    const r = await sb.from('dossier_textes').select('id,etape,nb,devis,nom,ouverture,corps,liste,priorite').eq('actif', true).order('priorite');
+    textesBase = (!r.error && r.data && r.data.length) ? r.data : null;
+  }catch(e){ textesBase = null; }
+}
 
 /* ------------------------------ État ------------------------------ */
 function etatVierge(){
   const d = new Date(), p = n => String(n).padStart(2,'0');
   return { etape:'CREA', date: String(d.getFullYear()).slice(2) + p(d.getMonth()+1) + p(d.getDate()),
-    numero:'', client:'', ville:'', interlocuteur:'', tel:'', version:1,
+    numero:'', client:'', ville:'', interlocuteur:'', tel:'', version:1, devis:'non_signe',
     fichiers:[],      // { id, nom, cle, v, src }
     props:{},         // cle → { choix, titre, type, cotes:[{l,v}], description }
     ordre:[],         // clés dans l'ordre d'affichage
@@ -474,12 +491,30 @@ function fichierChoisi(cle){
 function propositions(){ return E.ordre.filter(c => E.props[c] && versionsDe(c).length); }
 
 /* ------------------------------ Textes ------------------------------ */
-function variantes(){ return TEXTES[E.etape] || TEXTES.CREA; }
-function texteActif(){
-  const v = variantes();
-  const n = propositions().length;
-  const auto = (E.etape === 'CREA' && n === 1) ? 'crea-sg' : v[0].id;
-  return v.find(t => t.id === E.texteId) || v.find(t => t.id === auto) || v[0];
+function candidatsTextes(){
+  const nb = propositions().length === 1 ? '1' : 'n', devis = E.devis || 'non_signe';
+  const spec = t => (t.etape ? 1 : 0) + (t.nb ? 1 : 0) + (t.devis ? 1 : 0);
+  return (textesBase || TEXTES_INTEGRES)
+    .filter(t => (!t.etape || t.etape === E.etape) && (!t.nb || t.nb === nb) && (!t.devis || t.devis === devis))
+    .sort((a, b) => (a.priorite || 100) - (b.priorite || 100) || spec(b) - spec(a));
+}
+function variantes(){ const c = candidatsTextes(); return c.length ? c : [TEXTE_NEUTRE]; }
+function texteActif(){ const v = variantes(); return v.find(t => t.id === E.texteId) || v[0]; }
+async function enregistrerTexte(maj){
+  const t = texteActif(), corps = corpsTexte();
+  try{
+    let r;
+    if(maj){
+      if(!textesBase || !textesBase.some(x => x.id === t.id)){ alert("Ce texte est intégré à la page : enregistrez-le d'abord comme nouvelle variante."); return; }
+      r = await sb.from('dossier_textes').update({ corps:corps, maj_le:new Date().toISOString() }).eq('id', t.id);
+    } else {
+      const nom = prompt('Nom de cette variante :', t.nom + ' (copie)'); if(!nom) return;
+      r = await sb.from('dossier_textes').insert({ etape:E.etape, nb:(propositions().length === 1 ? '1' : 'n'), devis:(E.devis || 'non_signe'), nom:nom, ouverture:t.ouverture, corps:corps, liste:t.liste || null, priorite:50 });
+    }
+    if(r.error) throw new Error(r.error.message);
+    E.texteLibre = null; await chargerTextes(); dessiner();
+    statut(maj ? 'Texte mis à jour dans la bibliothèque.' : 'Variante ajoutée à la bibliothèque.');
+  }catch(e){ alert('Enregistrement impossible : ' + (e.message || e)); }
 }
 function corpsTexte(){ const t = texteActif(); return E.texteLibre != null && E.texteLibre.id === t.id ? E.texteLibre.corps : t.corps; }
 
@@ -717,6 +752,7 @@ function dessiner(){
     ${ph('fichiers', 'Fichiers', blocFichiers())}
     ${ph('dossier', 'Dossier', `
       <div class="field"><label>Étape</label><select class="select" data-k="etape">${ETAPES_CONNUES.map(k => `<option value="${k}" ${k === E.etape ? 'selected' : ''}>${k} — ${ETAPES[k].nom}</option>`).join('')}</select></div>
+      <div class="field"><label>Statut du devis</label><select class="select" data-k="devis"><option value="non_signe" ${E.devis !== 'signe' ? 'selected' : ''}>Non signé</option><option value="signe" ${E.devis === 'signe' ? 'selected' : ''}>Signé</option></select></div>
       <div class="grid2">${champ('numero', 'N° de dossier')}${champ('date', 'Date (AAMMJJ)')}</div>
       <div class="grid2">${champ('client', 'Client / projet')}<div class="field"><label>Version</label><input class="input" type="number" min="0" value="${E.version}" data-k="version"></div></div>
       <div class="field"><label>Localisation</label><textarea class="textarea" rows="2" data-k="ville">${esc(E.ville)}</textarea></div>
@@ -758,7 +794,8 @@ function blocTexte(){
   const act = texteActif();
   return variantes().map(t => `<label class="choixTexte"><input type="radio" name="tx" value="${t.id}" ${t.id === act.id ? 'checked' : ''}><span><b>${esc(t.nom)}</b></span></label>`).join('') +
     `<div class="field"><label>Texte (modifiable)</label><textarea class="textarea" rows="7" id="texteCorps">${esc(corpsTexte())}</textarea></div>
-     <p class="tiny">Le choix est préparé selon l'étape et le nombre de visuels ; vous pouvez le changer.</p>`;
+     <p class="tiny">Le choix est préparé selon l'étape, le nombre de visuels et le statut du devis ; vous pouvez le changer. Bibliothèque : ${textesBase ? 'en base' : 'textes intégrés à la page'}.</p>
+     ${stockEtat === 'ok' && sb ? '<div class="barre" style="margin:0"><button class="btn petit" id="bTexteAjout">Enregistrer comme nouvelle variante</button>' + (textesBase ? '<button class="btn petit" id="bTexteMaj">Mettre à jour ce texte</button>' : '') + '</div>' : ''}`;
 }
 function blocCotes(){
   const props = propositions();
@@ -782,7 +819,7 @@ saisie.addEventListener('change', e => {
   const t = e.target;
   if(t.id === 'fichierInput'){ ajouterFichiers(t.files, 'propositions'); t.value = ''; return; }
   if(t.id === 'photoInput'){ ajouterFichiers(t.files, 'photo'); t.value = ''; return; }
-  if(t.dataset.k){ const k = t.dataset.k; E[k] = (k === 'version') ? (parseInt(t.value, 10) || 0) : t.value; if(k === 'etape'){ E.texteId = ''; E.texteLibre = null; } dessiner(); return; }
+  if(t.dataset.k){ const k = t.dataset.k; E[k] = (k === 'version') ? (parseInt(t.value, 10) || 0) : t.value; if(k === 'etape' || k === 'devis'){ E.texteId = ''; E.texteLibre = null; } dessiner(); return; }
   if(t.dataset.a){ E.atelier[t.dataset.a] = t.value; dessiner(); return; }
   if(t.name === 'tx'){ E.texteId = t.value; E.texteLibre = null; dessiner(); return; }
   if(t.id === 'texteCorps'){ E.texteLibre = { id: texteActif().id, corps: t.value }; dessiner(); return; }
@@ -798,6 +835,7 @@ saisie.addEventListener('click', e => {
   if(b.id === 'bPhoto'){ document.getElementById('photoInput').click(); return; }
   if(b.id === 'bPhotoOff'){ E.photo = ''; dessiner(); return; }
   if(b.id === 'bNouveau'){ if(confirm('Effacer ce dossier et en commencer un nouveau ?')){ E = etatVierge(); dessiner(); } return; }
+  if(b.id === 'bTexteAjout' || b.id === 'bTexteMaj'){ enregistrerTexte(b.id === 'bTexteMaj'); return; }
   if(b.id === 'bTeinteAdd'){ E.teintes.push({ id:uid(), cmyk:'', hex:'#cccccc', reference:'', nom:'', nuancier:'', camaieu:false, commander:null, ral:null }); dessiner(); return; }
   if(b.id === 'bCopierCommande'){ try{ navigator.clipboard.writeText(listeACommander().join('\n')); b.textContent = 'Copié ✓'; }catch(e){ /* presse-papiers indisponible */ } return; }
   const dt = b.closest('[data-t]');
@@ -863,7 +901,7 @@ async function reprendre(){
     if(v){ const e = JSON.parse(v); E = Object.assign(etatVierge(), e); E.atelier = Object.assign({}, ATELIER_DEFAUT, e.atelier || {}); }
   }catch(e){ /* rien */ }
 }
-reprendre().then(() => { dessiner(); chargerStock().then(dessiner); });
+reprendre().then(() => { dessiner(); Promise.all([chargerStock(), chargerTextes()]).then(dessiner); });
 </script>
 </body>
 </html>
