@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex">
 <title>Dossier de présentation</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:ital,wght@0,400;0,700;1,400&display=swap">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Anton&family=Space+Mono:wght@400;700&display=swap">
 <style>
   :root{ --ink:#111; --muted:#6b6b6b; --line:#e2e0db; --soft:#f6f5f2; --accent:#a8461f;
@@ -89,6 +90,28 @@
   .choixPil input{accent-color:#111;margin:0}
   .choixPil.on{background:#111;color:#fff;border-color:#111}
   .choixPil.on input{accent-color:#fff}
+  .page.tp{display:block;position:relative;container-type:size;background-size:100% 100%;background-repeat:no-repeat;background-color:#f7f4f1;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-family:'Source Code Pro','Space Mono',monospace}
+  .tp *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .tp .tx{position:absolute;white-space:nowrap;margin:0;transform-origin:left center}
+  .tp .tx.fit{text-transform:uppercase}
+  .tp .tbox{position:absolute}
+  .tp .etiq{position:absolute;background:#f7f4f1;color:#000;white-space:nowrap;box-sizing:border-box;font-family:'Source Code Pro','Space Mono',monospace}
+  .tp .caseVal{position:absolute;width:0.9cqw;height:0.9cqw;border:1.3px solid #000;box-sizing:border-box;background:#f7f4f1}
+  .tp .tpTexte{position:absolute;text-align:center;font-family:'Source Code Pro','Space Mono',monospace}
+  .tp .tpTexte.gauche{text-align:left}
+  .tp .tpTexte p{margin:0 0 1.2em}
+  .tp .tpTexte .gras{font-weight:700}
+  .tp .tpListe{margin:0;padding:0;list-style:none;text-align:left}
+  .tp .tpListe li::before,.tp .tpRouge li::before{content:"- "}
+  .tp .tpRouge{position:absolute;color:#f5f4f2;font-style:italic;font-family:'Source Code Pro','Space Mono',monospace}
+  .tp .tpRouge p{margin:0 0 .45em}
+  .tp .tpRouge ul{list-style:none;margin:0;padding:0}
+  .tp .tpRouge li{margin-bottom:.4em}
+  .tp .tpVisu{position:absolute}
+  .tp .tpVisu img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center}
+  .tp .tpLegende{position:absolute;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;line-height:1.3;font-family:'Source Code Pro','Space Mono',monospace}
+  .tp .tpLegende b{text-transform:uppercase}
+  .tp .tpLegende i{font-size:.82em}
   .lu{font-size:12px;color:var(--muted);margin:4px 0}
   .lu.alerte{color:var(--accent);font-weight:600}
   .puces{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0}
@@ -844,7 +867,7 @@ function dessiner(){
     }).join('')}`;
   document.getElementById('zone').innerHTML = pages.map(p => p[1]).join('');
   document.getElementById('infoPages').textContent = pages.length + ' pages A4 paysage · fichier : ' + nomFichierPdf() + '.pdf';
-  ajuster();
+  ajuster(); ajusterTextes(); if(document.fonts && document.fonts.ready) document.fonts.ready.then(ajusterTextes);
   if(courant !== dernierCourant){
     dernierCourant = courant;
     setTimeout(() => {
@@ -869,8 +892,7 @@ function blocFichiers(){
         <div style="margin-top:8px">${groupeRadios('type-' + i, TYPES.map(t => [t, t]), p.type, false)}</div>
         ${ch.faible ? '<div class="tiny alerteTxt" style="margin-top:6px">Aperçu basse définition : dans Illustrator, enregistrez de nouveau avec « Créer un fichier compatible PDF ».</div>' : ''}</div>`;
     }).join('')}
-    <div class="photoL"><input type="file" id="photoInput" accept="image/*" hidden>
-      <button class="btn petit" id="bPhoto">${E.photo ? 'Changer la photo du lieu' : 'Ajouter la photo du lieu (facultatif)'}</button>${E.photo ? ' <button class="btn petit" id="bPhotoOff">Retirer</button>' : ''}</div>`;
+`;
 }
 function blocTexte(){
   const act = texteActif();
@@ -979,6 +1001,142 @@ function ajuster(){
   Z.style.marginBottom = (-(Z.offsetHeight * (1 - k))) + 'px';
 }
 window.addEventListener('resize', ajuster);
+
+const AUTO_LIGNES = [[104.9, 58.8, 443.8, 114.0, 50.0, "030405", 0, 1, "DEMANDE D'AUTORISATION"], [104.9, 108.1, 695.3, 126.3, 12.0, "000000", 1, 0, "Avant de modifier votre façade et votre enseigne, vous devez"], [104.9, 120.1, 731.3, 138.3, 12.0, "000000", 1, 0, "une demande d'autorisation préalable auprès du service urban"], [104.9, 132.1, 148.1, 150.3, 12.0, "000000", 1, 0, "ville."], [104.9, 168.1, 565.7, 186.3, 12.0, "000000", 1, 0, "> Pour cela, vous devez remplir le formulaire CERFA ci-desso"], [104.9, 192.1, 256.1, 210.3, 12.0, "b02121", 0, 0, "FORMULAIRE 14798*01 :"], [104.9, 205.2, 705.5, 221.8, 11.0, "000000", 0, 0, "Demande d'autorisation préalable pour l'installation d'un di"], [104.9, 217.2, 428.3, 233.8, 11.0, "000000", 0, 0, "de la publicité, une enseigne ou une pré-enseigne"], [104.9, 252.1, 551.3, 270.3, 12.0, "000000", 1, 0, "> Si votre bâtiment se trouve dans l'un des secteurs suivant"], [557.3, 253.2, 709.1, 269.8, 11.0, "000000", 0, 0, "il est probable que le"], [104.9, 265.2, 751.7, 281.8, 11.0, "000000", 0, 0, "service urbanisme de votre ville vous demande une autre décl"], [104.9, 277.2, 368.9, 293.8, 11.0, "000000", 0, 0, "des Architectes des Bâtiments de France."], [104.9, 288.1, 407.3, 306.3, 12.0, "000000", 1, 0, "Renseignez-vous bien auprès de ce service."], [104.9, 313.2, 415.1, 329.8, 11.0, "000000", 0, 0, "- Périmètre d'un site patrimonial remarquable:"], [118.9, 325.2, 686.5, 341.8, 11.0, "000000", 0, 0, "Villes, villages ou quartiers dont la conservation, la resta"], [118.9, 337.2, 712.9, 353.8, 11.0, "000000", 0, 0, "ou la mise en valeur présente, au point de vue historique, a"], [118.9, 349.2, 389.5, 365.8, 11.0, "000000", 0, 0, "artistique ou paysager, un intérêt public"], [104.9, 366.2, 329.3, 382.8, 11.0, "000000", 0, 0, "- Abords des monuments historiques"], [104.9, 383.2, 692.3, 399.8, 11.0, "000000", 0, 0, "- Site inscrit: Monument naturel ou zone dont la préservatio"], [118.9, 395.2, 666.7, 411.8, 11.0, "000000", 0, 0, "artistique, historique, scientifique, légendaire ou pittores"], [104.9, 412.2, 698.9, 428.8, 11.0, "000000", 0, 0, "- Site classé ou en instance de classement: Site et monument"], [118.9, 424.2, 699.7, 440.8, 11.0, "000000", 0, 0, "ou la préservation présente un intérêt général au point de v"], [118.9, 436.2, 376.3, 452.8, 11.0, "000000", 0, 0, "scientifique, légendaire ou pittoresque"], [104.9, 453.2, 243.5, 469.8, 11.0, "000000", 0, 0, "- Réserves naturelles"], [104.9, 470.2, 454.7, 486.8, 11.0, "000000", 0, 0, "- À l'intérieur du cœur des parcs nationaux délimités"], [104.9, 487.2, 223.7, 503.8, 11.0, "000000", 0, 0, "- Immeuble protégé"], [104.9, 504.2, 718.7, 520.8, 11.0, "000000", 0, 0, "- Commune ou périmètre de commune où le conseil municipal a "], [118.9, 516.2, 290.5, 532.8, 11.0, "000000", 0, 0, "à autorisation d'urbanisme"]];
+
+/* ------------------------------ Gabarit fidèle (mesures relevées sur les PDF d'exemple) ------------------------------
+   Page A4 paysage de 841,89 × 595,28 pt. Tout est positionné en pourcentages de la page et les tailles de texte en « cqw » :
+   le dossier garde exactement ses proportions à l'écran, à l'impression et en PDF.
+   Fonds (texture, pochette kraft, photo d'introduction, page de contact) : images extraites du gabarit, dans dossier-assets/tpl/. */
+const PT = 841.89, PH = 595.28, GAB = 'dossier-assets/tpl/';
+const MONO = "'Source Code Pro','Space Mono',monospace", TITRE = "'Anton',Impact,'Arial Narrow',sans-serif";
+const CREME = '#f7f4f1', KRAFT_LIGNE = '#c4af93', ENCRE = '#030405';
+function tx(a, x, y0, y1, s, html, o){
+  o = o || {};
+  const pos = a === 'c' ? 'left:' + (x / PT * 100) + '%;transform:translateX(-50%);' : a === 'r' ? 'right:' + ((PT - x) / PT * 100) + '%;' : 'left:' + (x / PT * 100) + '%;';
+  return `<span class="tx${o.fit ? ' fit' : ''}" data-a="${a}"${o.fit ? ' data-fit="' + o.fit + '"' : ''} style="${pos}top:${y0 / PH * 100}%;font-size:${s / PT * 100}cqw;line-height:${(y1 - y0) / PT * 100}cqw;font-family:${o.titre ? TITRE : MONO};color:${o.c || '#000'};font-weight:${o.b ? 700 : 400};font-style:${o.i ? 'italic' : 'normal'};${o.st || ''}">${html}</span>`;
+}
+const L = (x, y0, y1, s, h, o) => tx('l', x, y0, y1, s, h, o), C = (x, y0, y1, s, h, o) => tx('c', x, y0, y1, s, h, o), R = (x, y0, y1, s, h, o) => tx('r', x, y0, y1, s, h, o);
+const box = (x0, y0, x1, y1, st) => `<div class="tbox" style="left:${x0 / PT * 100}%;top:${y0 / PH * 100}%;width:${(x1 - x0) / PT * 100}%;height:${(y1 - y0) / PH * 100}%;${st || ''}"></div>`;
+const trait = (x0, y0, x1, y1, couleur, ep) => (y1 - y0 < 0.5) ? box(x0, y0 - ep / 2, x1, y0 + ep / 2, 'background:' + couleur) : box(x0 - ep / 2, y0, x0 + ep / 2, y1, 'background:' + couleur);
+function tpl(bg, inner){ return `<div class="feuille"><div class="page tp" style="background-image:url('${GAB}${bg}')">${inner}</div></div>`; }
+function tag(a, x, y0, y1, s, html, st){   // étiquette claire qui épouse son texte (marge de 5,5 pt)
+  const pos = a === 'r' ? 'right:' + ((PT - x) / PT * 100) + '%;' : a === 'c' ? 'left:' + (x / PT * 100) + '%;transform:translateX(-50%);' : 'left:' + (x / PT * 100) + '%;';
+  const h = (y1 - y0) / PT * 100;
+  return `<span class="etiq" style="${pos}top:${y0 / PH * 100}%;height:${h}cqw;line-height:${h}cqw;font-size:${s / PT * 100}cqw;padding:0 ${5.5 / PT * 100}cqw;${st || ''}">${html}</span>`;
+}
+function entetePage(label, sous, avecCase){
+  const lieu = (E.ville || '').split('\n').slice(-1)[0].trim();
+  return trait(31.2, 23, 810.7, 23, KRAFT_LIGNE, 1) +
+    tag('l', 31.2, 16.7, 28.3, 10, esc(E.client || 'Sans nom')) + (lieu ? tag('l', 31.2, 28.3, 40, 7, esc(lieu)) : '') +
+    tag('r', 810.7, 16.7, 28.3, 10, esc(label), avecCase ? 'min-width:' + (81.8 / PT * 100) + 'cqw;text-align:right' : '') + (sous ? tag('r', 810.7, 28.3, 40, 7, esc(sous)) : '') +
+    (avecCase ? `<span class="caseVal" style="left:${733.6 / PT * 100}%;top:${18.9 / PH * 100}%"></span>` : '');
+}
+const LEGAL = 'TOUTE DIFFUSION ET REPRODUCTION INTERDITE © ETS. GESRET REPRODUCTION OU IMITATION DU DESIGN INTERDITE';
+function piedPage(){
+  return trait(31.2, 573.2, 810.7, 573.2, KRAFT_LIGNE, 1) + box(193.6, 566.9, 648.3, 578.6, 'background:' + CREME) + C(421, 568.5, 579.1, 7, LEGAL);
+}
+const labelPage = () => ETAPES[E.etape].validation ? 'VALIDATION' : 'PROPOSITION';
+const sousPage = () => ETAPES[E.etape].validation ? dateAffichee() : ('V' + (E.version || 1) + ' • ' + dateAffichee());
+
+function pageCouverture(){
+  const e = ETAPES[E.etape], sub = e.validation ? e.couv : (e.couv + (E.etape === 'MOODBOARD' ? '.V' : ' V') + (E.version || 1));
+  const loc = (E.ville || '').split('\n').map(x => x.trim()).filter(Boolean);
+  return tpl('couverture.jpg',
+    L(113.7, 61.0, 73.1, 8, 'DOSSIER / ' + esc(E.numero || '—')) + L(118.2, 78, 93.1, 10, esc(sub)) +
+    L(113.7, 315, 327.1, 8, 'PROJET /') + C(421, 231.8, 342.3, 100, esc(E.client || 'Sans nom'), { titre:1, fit:370 }) +
+    L(113.7, 362.9, 375, 8, 'LOCALISATION /') + (loc[0] ? C(421, 353.6, 382.3, 19, esc(loc[0])) : '') + (loc[1] ? C(421, 380.2, 409, 19, esc(loc.slice(1).join(', '))) : '') +
+    L(113.7, 437.5, 449.6, 8, 'INTERLOCUTEUR /') + L(201.3, 436, 451.2, 10, esc(E.interlocuteur || ''), { b:1 }) +
+    L(470.3, 437.5, 449.6, 8, 'TÉLÉPHONE /') + L(538, 436, 451.2, 10, esc(E.tel || ''), { b:1 }) +
+    L(113.7, 536.1, 548.2, 8, 'DATE /') + L(118.2, 552.2, 567.4, 10, esc(dateAffichee()), { b:1 }) +
+    L(268.5, 555.4, 566, 7, LEGAL));
+}
+function pageIntro(){
+  const t = texteActif(), e = ETAPES[E.etape], bat = !!e.bon;
+  const lieu = (E.ville || '').split('\n').map(x => x.trim()).filter(Boolean).join(', ');
+  const ouv = `Vous nous avez sollicités dans le cadre de la réalisation ${t.ouverture} pour votre établissement, ${esc(E.client || 'votre projet')}${lieu ? ', situé à ' + esc(lieu) + '.' : '.'}`;
+  const paras = corpsTexte().split(/\n\s*\n/).map(x => x.trim()).filter(Boolean);
+  const premier = paras[0] ? `<p class="gras">${esc(paras[0]).replace(/\n/g, '<br>')}</p>` : '';
+  const suite = (bat ? [] : paras.slice(1)).map(x => `<p>${esc(x).replace(/\n/g, '<br>')}</p>`).join('');
+  const liste = (!bat && t.liste) ? `<ul class="tpListe">${t.liste.map(x => '<li>' + esc(x) + '</li>').join('')}</ul>` : '';
+  const yTexte = bat ? 155.5 : 254.9;
+  const corps = `<div class="tpTexte" style="left:${61 / PT * 100}%;top:${yTexte / PH * 100}%;width:${258 / PT * 100}%;font-size:${10 / PT * 100}cqw;line-height:${12 / PT * 100}cqw;color:${ENCRE}"><p>${ouv}</p>${premier}${suite}${liste}</div>`;
+  let deco, bas;
+  if(bat){
+    const rouge = paras.slice(1).join(' ');
+    deco = trait(349.2, 53.1, 349.2, 543.7, ENCRE, 1) + trait(34.2, 139.8, 348.7, 139.8, ENCRE, 1) + trait(34.2, 473.1, 348.7, 473.1, ENCRE, 1) +
+      box(60.8, 247.9, 323, 367.9, 'background:#a51a16;border-radius:' + (13 / PT * 100) + 'cqw') + box(60.8, 331.5, 323, 451.5, 'background:' + CREME + ';border-radius:' + (13 / PT * 100) + 'cqw') +
+      `<div class="tpRouge" style="left:${73.1 / PT * 100}%;top:${254.4 / PH * 100}%;width:${240 / PT * 100}%;font-size:${8 / PT * 100}cqw;line-height:${8 / PT * 100}cqw"><p>${esc(rouge)}</p><ul>${(t.liste || []).map(x => '<li>' + esc(x) + '</li>').join('')}</ul></div>` +
+      C(191.5, 340.7, 354.3, 9, 'BON DE COMMANDE POUR INTERVENTION', { b:1, c:ENCRE }) + C(191.5, 352.9, 363.5, 7, 'Signature précédée de la mention', { i:1, c:ENCRE }) + C(191.5, 360.9, 371.5, 7, '« Lu &amp; approuvé. Bon pour commande. »', { i:1, c:ENCRE }) +
+      L(73.2, 426.4, 438.5, 8, 'DATE :  /  /') + L(207.5, 426.4, 438.5, 8, 'À') + trait(75.8, 439, 154.4, 439, '#a51a16', 0.8) + trait(210.2, 439, 309.6, 439, '#a51a16', 0.8);
+    bas = [482.9, 521.5, 518.8, 533.9];
+  } else {
+    deco = trait(349.2, 83.5, 349.2, 512.5, ENCRE, 1) + trait(34.2, 213.6, 348.7, 213.6, ENCRE, 1) + trait(34.2, 429.9, 348.7, 429.9, ENCRE, 1);
+    bas = [446.8, 485.4, 482.7, 497.8];
+  }
+  const yTitre = bat ? [69.1, 124.3] : [124.6, 179.8];
+  return tpl(bat ? 'intro-bat.jpg' : 'intro-std.jpg', entetePage(labelPage(), sousPage(), e.validation) + deco +
+    C(190, yTitre[0], yTitre[1], 50, 'INTRODUCTION', { titre:1, c:ENCRE, fit:182 }) + corps +
+    C(190, bas[0], bas[1], 35, esc(E.client || ''), { titre:1, c:ENCRE, fit:130 }) + C(190, bas[2], bas[3], 10, esc((E.ville || '').split('\n').slice(-1)[0] || ''), { c:ENCRE }) + piedPage());
+}
+function pageProposition(cle){
+  const p = E.props[cle], f = fichierChoisi(cle), e = ETAPES[E.etape];
+  const memeType = propositions().filter(c => E.props[c].type === p.type), num = memeType.indexOf(cle) + 1;
+  const etiquette = e.validation ? 'VALIDATION' : (p.type.toUpperCase() + (p.type === 'Croquis' ? '' : ' ' + String(num).padStart(2, '0')));
+  const sous = e.validation ? dateAffichee() : ('V' + (p.vv || E.version || 1) + ' • ' + dateAffichee());
+  const cotes = p.cotes.filter(c => c.l || c.v), b = cotes.length ? [24.4, 61.1, 600.2, 486.8] : [24.4, 55, 817.5, 486.8];
+  const visuel = `<div class="tpVisu" style="left:${b[0] / PT * 100}%;top:${b[1] / PH * 100}%;width:${(b[2] - b[0]) / PT * 100}%;height:${(b[3] - b[1]) / PH * 100}%"><img src="${f.src}" alt=""></div>`;
+  const ctx = cotes.map((c, i) => { const y = 193.4 + 33 * i; return L(613.2, y, y + 13.6, 9, esc(c.l) + (c.l ? ' :' : ''), { b:1 }) + L(613.2, y + 11, y + 24.6, 9, esc(c.v), { i:1 }); }).join('');
+  let y = 494.4, legende = '';
+  if(p.panneau){ legende += L(52.4, y, y + 15.2, 10, 'PANNEAU ' + esc(p.panneau.toUpperCase()) + ' :', { b:1 }); y += 12.1; }
+  if(p.description) legende += `<div class="tpTexte gauche" style="left:${52.4 / PT * 100}%;top:${y / PH * 100}%;width:${545 / PT * 100}%;font-size:${9 / PT * 100}cqw;line-height:${11 / PT * 100}cqw">${esc(p.description).replace(/\n/g, '<br>')}</div>`;
+  return tpl('fond.jpg', entetePage(etiquette, sous, e.validation) + visuel + ctx + legende + piedPage());
+}
+function pageAutorisation(){
+  const lignes = AUTO_LIGNES.map(l => {
+    const o = l[7] ? { titre:1, c:'#' + l[5], fit:l[2] - l[0] } : { c:'#' + l[5], b:l[6] };
+    return L(l[0], l[1], l[3], l[4], esc(l[8]), o);
+  }).join('');
+  return tpl('fond.jpg', entetePage("DEMANDE D'AUTORISATION", '', false) + lignes + piedPage());
+}
+function pageNuancier(){
+  const e = ETAPES[E.etape], ts = teintesNuancier(), n = Math.max(1, ts.length);
+  const w = Math.min(144.6, (779.5 - (n - 1) * 14.2) / n), gap = n > 1 ? Math.min(14.2, (779.5 - n * w) / (n - 1)) : 0, x0 = 31.2 + (779.5 - (n * w + (n - 1) * gap)) / 2;
+  const top = 50.5, bas = 491.8, haut = bas - top;
+  const bandes = ts.map((t, i) => {
+    const x = x0 + i * (w + gap), fond = t.hex || '#dddddd';
+    const niv = t.camaieu ? NIVEAUX_CAMAIEU : [], h = 66, hmain = haut - h * niv.length;
+    let h2 = box(x, top, x + w, top + hmain, 'background:' + fond);
+    niv.forEach((nv, k) => { h2 += box(x, top + hmain + k * h, x + w, top + hmain + (k + 1) * h, 'background:' + melangerBlanc(fond, nv)) + R(x + w - 4, top + hmain + k * h + 3, top + hmain + k * h + 14, 7, '+ ' + Math.round(nv * 100) + ' % de blanc', { c:'#00000099' }); });
+    const nom = esc(t.reference || t.nom), sous = [t.nom && t.reference ? t.nom : '', t.nuancier].filter(Boolean).map(esc);
+    h2 += `<div class="tpLegende" style="left:${x / PT * 100}%;width:${w / PT * 100}%;top:${497 / PH * 100}%;height:${58 / PH * 100}%;font-size:${11 / PT * 100}cqw"><b>${nom}</b>${sous.map(s => '<i>' + s + '</i>').join('')}</div>`;
+    return h2;
+  }).join('');
+  return tpl('fond.jpg', entetePage(e.validation ? 'VALIDATION' : 'NUANCIER', dateAffichee(), e.validation) + bandes + piedPage());
+}
+function pageContact(){
+  const a = E.atelier, adr = (a.adresse || '').split('\n');
+  const lieu = (E.ville || '').split('\n').slice(-1)[0].trim();
+  return tpl('contact.jpg',
+    (E.client ? tag('c', 255.9, 129.8, 141.4, 10, esc(E.client)) : '') + (lieu ? tag('c', 255.9, 141.4, 153.1, 7, esc(lieu)) : '') +
+    tag('c', 255.9, 488.3, 499.9, 10, esc(ETAPES[E.etape].couv)) +
+    C(593.9, 306, 350.2, 40, esc(a.nom || ''), { titre:1, fit:121 }) + C(593.9, 362.2, 378.8, 11, esc(a.tel || '')) +
+    (adr[0] ? C(593.9, 377.2, 392.4, 10, esc(adr[0].toUpperCase())) : '') + (adr[1] ? C(593.9, 391.2, 406.4, 10, esc(adr[1].toUpperCase())) : '') +
+    (a.mail ? C(593.9, 419.2, 434.4, 10, esc(a.mail.toUpperCase())) : '') + (a.web ? C(593.9, 433.2, 448.4, 10, esc(a.web.toUpperCase())) : ''));
+}
+// Les textes en police condensée (titres) sont ajustés à la largeur voulue après l'affichage.
+function ajusterTextes(){
+  document.querySelectorAll('.page.tp').forEach(pg => {
+    const W = pg.offsetWidth;
+    pg.querySelectorAll('.tx.fit').forEach(el => {
+      const cible = parseFloat(el.dataset.fit) / PT * W, a = el.dataset.a;
+      el.style.transform = a === 'c' ? 'translateX(-50%)' : ''; el.style.transformOrigin = a === 'c' ? 'center' : 'left';
+      const reel = el.offsetWidth; if(!reel) return;
+      const k = Math.max(0.45, Math.min(1.12, cible / reel));
+      el.style.transform = (a === 'c' ? 'translateX(-50%) ' : '') + 'scaleX(' + k + ')';
+    });
+  });
+}
 
 /* ------------------------------ Mémoire du navigateur (IndexedDB) ------------------------------ */
 const ouvrirBase = () => new Promise((ok, ko) => { const r = indexedDB.open('dossier_v2', 1); r.onupgradeneeded = () => r.result.createObjectStore('etat'); r.onsuccess = () => ok(r.result); r.onerror = () => ko(r.error); });
