@@ -169,14 +169,17 @@ var AXES={B0:'B0 · Socle transverse du métier',B1:'B1 · Tracé & lettrage',B2
 var ETAT={ecr:['À écrire','ecr'],tou:['À tourner','cours'],mon:['Au montage','cours'],rel:['À relire','cours'],pret:['Prêt à vendre','pret'],rep:['À revoir','rev']};
 var FAM={fiche:['Recevoir','--f-recevoir'],video_mere:['Recevoir','--f-recevoir'],audio:['Recevoir','--f-recevoir'],capsule:['Recevoir','--f-recevoir'],planche:['Recevoir','--f-recevoir'],auto_test:['Mesurer','--f-mesurer'],quiz:['Mesurer','--f-mesurer'],exercice:['Faire','--f-faire'],exercice_chronometre:['Faire','--f-faire'],exercice_depot:['Le regard des autres','--f-regard'],masterclass:['Recevoir','--f-recevoir']};
 var TYPEN={fiche:'Fiches',video_mere:'Vidéos-mères',audio:'Audios',auto_test:'Auto-tests',exercice:'Exercices',exercice_depot:'Exercices avec dépôt'};
-var D={mods:[],lien:[],rang:[],etap:[],cont:[],prereq:[],parc:null,fiches:[],sit:[],plan:{},offre:null,comm:[],err:[]};
+var D={mods:[],lien:[],rang:[],etap:[],cont:[],prereq:[],roles:[],parcs:[],parc:null,fiches:[],sit:[],plan:{},offre:null,comm:[],err:[]};
 var S={tab:'K',view:'frise',sit:'',prio:false,sel:'',open:{B0:1},cell:'',cran:3,niv:1,nouveau:false};
 var USER=null;
 var TEST=false;
 
-function mods(){return D.mods.filter(function(m){return m.genre==='module';});}
-function exts(){return D.mods.filter(function(m){return m.genre==='ressource_externe';});}
-function eps(){return D.mods.filter(function(m){return m.genre==='epreuve_niveau';}).sort(function(a,b){return a.ordre-b.ordre;});}
+/* le métier affiché : seuls ses modules comptent (un module du Socle reste visible en « sert aussi » dans le croisement) */
+function inPL(m){return !D.parc||!m.parcours_id||m.parcours_id===D.parc.id;}
+function socleMods(){var s=D.parcs.filter(function(p){return p.type==='socle_modele';})[0];return s?D.mods.filter(function(m){return m.parcours_id===s.id&&m.genre==='module';}):[];}
+function mods(){return D.mods.filter(function(m){return m.genre==='module'&&inPL(m);});}
+function exts(){return D.mods.filter(function(m){return m.genre==='ressource_externe'&&inPL(m);});}
+function eps(){return D.mods.filter(function(m){return m.genre==='epreuve_niveau'&&inPL(m);}).sort(function(a,b){return a.ordre-b.ordre;});}
 function byCode(c){return D.mods.filter(function(m){return m.code===c;})[0];}
 function liensDe(c){return D.lien.filter(function(l){return l.module_code===c;});}
 function isP(l){return l.role==='principal';}
@@ -200,7 +203,7 @@ function todoBloc(){
 }
 function chiffres(){
   var M=mods(),E=eps(),tot=M.length+E.length,pr=cnt(M,function(m){return m.etat==='pret';})+cnt(E,function(m){return m.etat==='pret';});
-  var rel=D.mods.filter(function(m){return m.etat==='rel'&&(m.genre==='module'||m.genre==='epreuve_niveau');});
+  var rel=D.mods.filter(function(m){return m.etat==='rel'&&inPL(m)&&(m.genre==='module'||m.genre==='epreuve_niveau');});
   var plus=rel.length?Math.max.apply(null,rel.map(function(m){return Math.floor((Date.now()-new Date(m.maj_le).getTime())/86400000);})):0;
   var V=D.cont.filter(function(c){return c.type==='video_mere';}),A=D.cont.filter(function(c){return c.type==='audio';});
   var q=function(L){return L.reduce(function(a,c){return a+c.quantite;},0);},fait=function(L){return L.filter(function(c){return c.etat==='mon'||c.etat==='rel'||c.etat==='pret';}).reduce(function(a,c){return a+c.quantite;},0);};
@@ -229,7 +232,7 @@ function bloque(){
   trous().forEach(function(x){o.push(['j','Trou à combler : « '+sitNom(x.sit)+' », N'+x.niv,x.mods.map(function(m){return m.code;}).join(', ')+' est signalé, pas encore écrit.','Ouvrir la case →','F:cx']);});
   var mp=mauvaisPrereq();if(mp.length)o.push(['j',mp.length+' prérequis mal rangé(s)','Un module est placé avant l’un de ses prérequis : l’alerte est affichée, rien n’est bloqué.','Ouvrir dans la frise →','F:frise']);
   var rev=cnt(mods(),function(m){return m.etat==='rep';});if(rev)o.push(['j',rev+' module(s) à revoir','Reprise demandée, ou ordre changé.','Ouvrir dans la frise →','F:frise']);
-  var rel=cnt(D.mods,function(m){return m.etat==='rel';});if(rel)o.push(['j',rel+' relecture(s) en attente chez le maître artisan','Délai annoncé : '+CADRE.delaiRelectureJoursOuvres+' jours ouvrés.','Voir les relectures →','R']);
+  var rel=cnt(D.mods,function(m){return m.etat==='rel'&&inPL(m);});if(rel)o.push(['j',rel+' relecture(s) en attente chez le maître artisan','Délai annoncé : '+CADRE.delaiRelectureJoursOuvres+' jours ouvrés.','Voir les relectures →','R']);
   if(!Object.keys(D.plan.dates||{}).some(function(k){return D.plan.dates[k];}))o.push(['o','Aucune journée de tournage planifiée','Les vidéos-mères et les audios restent à tourner.','Planifier →','T']);
   return '<section class="bloc"><h2><i class="dot"></i>Ce qui bloque</h2><p class="hint">Classé du plus urgent au moins urgent. Chaque ligne mène à l’endroit où on le règle.</p>'+
    (o.length?o.map(function(x){return '<a class="bl" data-go="'+x[4]+'"><i class="'+x[0]+'"></i><span><b>'+esc(x[1])+'</b><small>'+esc(x[2])+'</small></span><em>'+x[3]+'</em></a>';}).join(''):'<p class="msg">Rien ne bloque.</p>')+'</section>';
@@ -241,14 +244,18 @@ function metiers(){
   var pl=D.fiches.filter(function(f){return f.code==='PL';})[0];
   if(pl)h+='<tr><td><b>◆ '+esc(pl.nom)+'</b><small>filière test</small></td><td><span class="pill '+(mt?'ok':'no')+'">'+(mt?'désigné':'à désigner')+'</span></td><td>'+M.length+' modules + '+E.length+' épreuves de niveau<small>'+sitsPL().length+' situations × 4 niveaux</small></td><td>'+barre(pr+co,n)+'<small>'+pr+' prêts · '+co+' en cours · '+ec+' à écrire</small></td><td>'+(cnt(M,function(m){return m.etat==='ecr'&&m.priorite==='P1';})?'Écrire les modules prioritaires':'Relire et ranger')+'</td><td><a class="btn" data-go="F">Ouvrir →</a></td></tr>';
   D.fiches.filter(function(f){return f.code!=='PL'&&f.type==='metier';}).forEach(function(f){h+='<tr class="vide"><td><b>'+esc(f.nom)+'</b></td><td><span class="pill no">à désigner</span></td><td>fiche VSF · '+D.sit.filter(function(s){return s.fiche_code===f.code;}).length+' situations<small>pas encore de parcours de formation</small></td><td>pas commencé</td><td>Structurer le référentiel</td><td></td></tr>';});
-  h+='<tr><td><b>◇ Situations Skolantreuz</b><small>branche A · tous métiers · option</small></td><td>Skolantreuz</td><td>corpus de tutos<small>situations à définir</small></td><td>à relier aux situations</td><td>Écrire les situations de la branche A</td><td></td></tr>';
+  var SM=socleMods();h+='<tr><td><b>◇ Situations Skolantreuz</b><small>branche A · tous métiers · option</small></td><td>Skolantreuz</td><td>'+SM.length+' module(s) : '+(SM.length?esc(SM.map(function(m){return m.titre;}).join(' · ')):'aucun')+'<small>situations du Socle à définir · corpus de tutos à relier</small></td><td>'+(SM.length?cnt(SM,function(m){return m.etat==='pret';})+' prêts · '+cnt(SM,function(m){return m.etat==='ecr';})+' à écrire':'pas commencé')+'</td><td>Écrire les situations de la branche A</td><td></td></tr>';
   h+='<tr><td><b>Les 281 métiers d’art</b></td><td>à recruter</td><td>fiches du moteur · aucun module</td><td>pas de production</td><td>—</td><td></td></tr></tbody></table></section>';
   return h;
+}
+function valideurs(){
+  var V=D.roles.filter(function(r){return (r.role==='valideur_habilite'||r.role==='valideur_confirme')&&r.actif;}),att=D.roles.filter(function(r){return (r.role==='valideur_habilite'||r.role==='valideur_confirme')&&!r.actif;});
+  return V.length||att.length?'<p><b>'+V.length+'</b> valideur(s) habilité(s)'+(att.length?' · <b>'+att.length+'</b> en attente du double accord':'')+'</p>':'<p>Aucun valideur habilité pour l’instant.</p>';
 }
 function chezMaitre(){
   var rel=cnt(D.mods,function(m){return m.etat==='rel';}),mc=cnt(mods(),function(m){return m.atelier&&m.atelier.masterclass;});
   return '<section><h2><i class="dot"></i>Chez le maître artisan · Peintre en lettres</h2><p class="hint">Ce qu’il a devant lui, tel qu’il le voit sur son propre tableau de bord.</p><div class="big4"><div><b>'+rel+'</b><span>Relectures en attente</span></div><div><b>—</b><span>Tournages cette semaine</span></div><div><b>'+mc+'<i> / '+CADRE.masterclass+'</i></b><span>Masterclass désignées</span></div><div><b>—</b><span>Dernière activité</span></div></div>'+
-   '<h2 style="margin-top:30px"><i class="dot"></i>Valideurs</h2><p class="hint">Un valideur est habilité par double accord : Skolantreuz et le maître artisan du métier.</p><p>Aucun valideur habilité pour l’instant. <span class="hint">(la gestion des rôles arrive avec la migration 68)</span></p></section>';
+   '<h2 style="margin-top:30px"><i class="dot"></i>Valideurs</h2><p class="hint">Un valideur est habilité par double accord : Skolantreuz et le maître artisan du métier. Les rôles sont accordés à la main ; aucun versement n’est calculé.</p>'+valideurs()+'</section>';
 }
 function ventes(){return '<section><details class="rep"><summary><i class="dot"></i>Ventes et argent <span class="hint" style="margin:0">Replié · les ventes ne sont pas encore ouvertes</span></summary><div class="big4" style="margin-top:18px"><div><b>—</b><span>modules vendus ce mois</span></div><div><b>—</b><span>encaissés ce mois</span></div><div><b>—</b><span>apprenants actifs</span></div><div><b>—</b><span>diagnostics entreprise + travailleur</span></div></div><p class="hint" style="margin-top:14px">Skolantreuz encaisse tout ; 70 % reviennent au maître artisan, dont il paie ses valideurs. Les modules de la branche A restent à Skolantreuz. Affichage seulement : aucun virement n’est lancé d’ici. Les chiffres s’afficheront à l’ouverture des ventes.</p></details></section>';}
 function vueK(){
@@ -290,7 +297,7 @@ function ligne(m){
   return '<div class="row'+(S.sel===m.code?' sel':'')+(ext?' ext':'')+'" data-sel="'+esc(m.code)+'"><span class="poignee" title="Réordonner : à venir">⋮⋮</span><i class="cell '+shape(m)+'"></i><span><b>'+esc(m.code)+'</b> '+esc(m.titre)+(m.priorite==='P1'?' <small style="display:inline;color:#111;font-weight:800">· prioritaire</small>':'')+(m.trou_signale?' <small style="display:inline;color:#b42318;font-weight:800">· trou à combler</small>':'')+(ext?'<small>ressource externe · '+(m.ext?{lien:'lien conseillé',part:'partenariat à négocier',out:'retirée'}[m.ext]:'à décider')+'</small>':'')+'</span><span class="ni">'+esc(m.niveaux)+'</span>'+(ext?'<span></span>':sitDots(m))+'<span class="pa">'+pasteTypes(m)+'</span><span class="et">'+ETAT[m.etat][0]+'</span></div>';
 }
 function arbre(){
-  var L=D.mods.filter(function(m){return m.genre==='module'||m.genre==='ressource_externe'||m.genre==='epreuve_niveau'||m.genre==='quiz_niveau';});
+  var L=D.mods.filter(function(m){return inPL(m)&&(m.genre==='module'||m.genre==='ressource_externe'||m.genre==='epreuve_niveau'||m.genre==='quiz_niveau');});
   if(S.sit)L=L.filter(function(m){return liensDe(m.code).some(function(l){return l.situation_code===S.sit;});});
   if(S.prio)L=L.filter(function(m){return m.priorite==='P1';});
   L.sort(function(a,b){return (a.sous_chapitre||'')<(b.sous_chapitre||'')?-1:((a.sous_chapitre||'')>(b.sous_chapitre||'')?1:a.ordre-b.ordre);});
@@ -505,15 +512,15 @@ async function charger(){
   if(a.data!==true){$('app').innerHTML='<div class="kick">Offre Ambassadeurs</div><h1><i class="dot"></i>Accès réservé</h1><p class="lead">'+(rl.data===true?'Votre vue de maître artisan arrive à l’étape suivante. En attendant, utilisez la page de relecture.':'Cette page est réservée à Skolantreuz.')+'</p><p><a class="btn" href="'+(rl.data===true?'production.html#R':'./')+'">'+(rl.data===true?'Ouvrir la relecture →':'Retour')+'</a></p>';return;}
   var q=function(t,c){return sb.from(t).select(c||'*');};
   var r=await Promise.all([lire('modules',q('vsf_prod_modules').order('ordre')),lire('liens',q('vsf_form_module_situations')),lire('rangs',q('vsf_form_rangs_calcules')),lire('étapes',q('vsf_form_module_etapes')),lire('contenus',q('vsf_form_contenus')),
-    lire('parcours',q('vsf_form_parcours')),lire('fiches',q('vsf_fiches_metiers')),lire('situations',q('vsf_fiche_situations')),lire('planning',q('vsf_prod_planning','cle,valeur')),lire('offre',sb.from('vsf_offres').select('intitule,statut,vendeur:vsf_vendeurs(statut,contrat_accepte_le)').ilike('intitule','%lettres%').limit(1)),lire('échanges',q('vsf_form_commentaires').order('cree_le',{ascending:false}).limit(500)),lire('prérequis',q('vsf_form_prerequis'))]);
+    lire('parcours',q('vsf_form_parcours')),lire('fiches',q('vsf_fiches_metiers')),lire('situations',q('vsf_fiche_situations')),lire('planning',q('vsf_prod_planning','cle,valeur')),lire('offre',sb.from('vsf_offres').select('intitule,statut,vendeur:vsf_vendeurs(statut,contrat_accepte_le)').ilike('intitule','%lettres%').limit(1)),lire('échanges',q('vsf_form_commentaires').order('cree_le',{ascending:false}).limit(500)),lire('prérequis',q('vsf_form_prerequis')),lire('rôles',q('vsf_form_roles'))]);
   USER=s.data.session.user.id;
-  D.mods=r[0];D.lien=r[1];D.rang=r[2];D.etap=r[3];D.cont=r[4];D.parc=r[5][0]||null;D.fiches=r[6];D.sit=r[7];(r[8]||[]).forEach(function(x){D.plan[x.cle]=x.valeur;});D.offre=r[9][0]||null;D.comm=r[10];D.prereq=r[11];
+  D.mods=r[0];D.lien=r[1];D.rang=r[2];D.etap=r[3];D.cont=r[4];D.parcs=r[5];D.parc=r[5].filter(function(p){return p.code==='peintre-en-lettres';})[0]||r[5][0]||null;D.fiches=r[6];D.sit=r[7];(r[8]||[]).forEach(function(x){D.plan[x.cle]=x.valeur;});D.offre=r[9][0]||null;D.comm=r[10];D.prereq=r[11];D.roles=r[12];
   if(!D.mods.length){$('app').innerHTML='<div class="kick">Offre Ambassadeurs</div><h1><i class="dot"></i>Rien à afficher</h1><p class="lead">Aucun module : les migrations 36 à 65 ne sont pas toutes installées.</p>';return;}
   var h=(location.hash||'').slice(1);if('KFTR'.indexOf(h)>-1&&h.length===1)S.tab=h;
   render();
 }
 /* branche de test : seulement en local, avec un jeu de données fictif ou copié, jamais en ligne */
-window.PV2={init:function(data){TEST=true;D=Object.assign(D,data);D.plan=D.plan||{};D.prereq=D.prereq||[];D.err=[];D.cont.forEach(function(c,i){if(c.id==null)c.id='t'+i;});render();},etat:function(){return {S:S,D:D};}};
+window.PV2={init:function(data){TEST=true;D=Object.assign(D,data);D.plan=D.plan||{};D.prereq=D.prereq||[];D.roles=D.roles||[];D.parcs=D.parcs||(D.parc?[D.parc]:[]);D.err=[];D.cont.forEach(function(c,i){if(c.id==null)c.id='t'+i;});render();},etat:function(){return {S:S,D:D};}};
 if(location.hostname==='localhost'||location.hostname==='127.0.0.1'){fetch('pv2-test-data.json').then(function(r){return r.ok?r.json():null;}).then(function(j){if(j)window.PV2.init(j);else charger();}).catch(charger);}else charger();
 })();
 </script>
