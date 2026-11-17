@@ -840,12 +840,11 @@ function etatEtapes(){
   const teintesOk = E.teintes.every(t => !vide(t.reference) || !vide(t.nom));
   return [
     { id:'dossier',  titre:'Numéro de dossier',      ok:!vide(E.numero),                 requis:true },
-    { id:'type',     titre:'Type de dossier',        ok:!!E.etapeChoisie,                requis:true },
+    { id:'type',     titre:'Type de dossier et texte',        ok:!!E.etapeChoisie,                requis:true },
     { id:'fichiers', titre:'Fichiers Illustrator',   ok:props.length > 0,                requis:true },
     { id:'client',   titre:'Client',                 ok:!vide(E.client) && !vide(E.ville), requis:true },
     { id:'cotes',    titre:'Cotes et description',   ok:cotesOk,                         requis:bat },
     { id:'teintes',  titre:'Teintes et nuancier',    ok:teintesOk,                       requis:nuancierActif() && E.teintes.length > 0 },
-    { id:'texte',    titre:"Texte d'introduction",   ok:true,                            requis:false },
     { id:'envoi',    titre:'PDF et e-mail',          ok:false,                           requis:false, final:true }
   ];
 }
@@ -871,7 +870,8 @@ function corpsEtape(id){
     <p class="aide"><b>Bientôt :</b> ce numéro préremplira automatiquement les coordonnées du client (nom, adresse, interlocuteur, téléphone) depuis Trello. D'ici là, saisissez-les à l'étape « Client ».</p>`;
   if(id === 'type') return `<div class="field"><label>Étape du dossier</label>${groupeRadios('etape', ETAPES_CONNUES.map(k => [k, ({ CREA:'Propositions (CREA)', BAT:'Validation (BAT)', MOODBOARD:'Moodboard & croquis' })[k]]), E.etapeChoisie ? E.etape : '', !E.etapeChoisie)}</div>
     <div class="field"><label>Statut du devis</label>${groupeRadios('devis', [['non_signe', 'Non signé'], ['signe', 'Signé']], E.devis || 'non_signe', false)}</div>
-    <div class="field" style="max-width:140px"><label>Version du dossier (V1, V2…)</label><input class="input" type="number" min="1" value="${E.version}" data-k="version"></div>`;
+    <div class="field" style="max-width:140px"><label>Version du dossier (V1, V2…)</label><input class="input" type="number" min="1" value="${E.version}" data-k="version"></div>
+    <div class="field" style="margin:16px 0 4px"><label>Texte d'introduction du dossier</label></div>${blocTexte()}`;
   if(id === 'fichiers') return blocFichiers();
   if(id === 'client') return `<div class="field"><label>Date du dossier</label><input class="input" type="date" value="${esc(E.date)}" data-k="date"></div>
     <div class="field"><label>Client / projet</label><input class="input${vide(E.client) ? ' afaire' : ''}" value="${esc(E.client)}" data-k="client"></div>
