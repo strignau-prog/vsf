@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Connexion au dossier de présentation</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<style>
+  :root{--fg:#111;--bg:#fff;--mut:#6b6b6b;--ligne:#111;--alerte:#b3341f;--ok:#1d5a2d}
+  @media (prefers-color-scheme:dark){:root{--fg:#f2f2f2;--bg:#111;--mut:#a0a0a0;--ligne:#f2f2f2;--alerte:#ff8a73;--ok:#7fd69a}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 Inter,system-ui,sans-serif}
+  main{max-width:460px;margin:0 auto;padding:12vh 20px 40px}
+  .marque{font-weight:800;letter-spacing:-.02em;margin-bottom:34px}
+  h1{font-size:clamp(28px,6vw,38px);font-weight:800;letter-spacing:-.03em;margin:0 0 6px}
+  p{margin:0 0 18px;color:var(--mut)}
+  label{display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);margin:18px 0 2px}
+  input{width:100%;border:0;border-bottom:2px solid var(--ligne);background:transparent;color:var(--fg);font:inherit;font-size:18px;padding:8px 0;outline:none;border-radius:0}
+  input:focus{border-bottom-width:3px}
+  button{margin-top:26px;background:none;border:0;border-bottom:2px solid var(--ligne);color:var(--fg);font:inherit;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:4px 0;cursor:pointer}
+  button.discret{border-bottom-color:transparent;color:var(--mut);font-weight:600;text-transform:none;letter-spacing:0;margin-top:14px}
+  .msg{min-height:22px;margin:14px 0 0;font-size:14px;color:var(--alerte)}
+  .msg.ok{color:var(--ok)}
+  .cache{display:none}
+</style>
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+</head>
+<body>
+<main>
+  <div class="marque">VRAI-SAVOIRFAIRE</div>
+
+  <section id="vueConnexion">
+    <h1>Connexion</h1>
+    <p>Dossier de présentation — accès réservé à l'atelier et à la graphiste.</p>
+    <form id="formConnexion" autocomplete="on">
+      <label for="mail">Adresse e-mail</label>
+      <input id="mail" type="email" autocomplete="username" inputmode="email" required placeholder="prenom@etsgesret.fr">
+      <label for="mdp">Mot de passe</label>
+      <input id="mdp" type="password" autocomplete="current-password" required>
+      <button type="submit" id="bEntrer">Me connecter</button>
+    </form>
+    <div class="msg" id="msgConnexion" role="alert"></div>
+  </section>
+
+  <section id="vueConnecte" class="cache">
+    <h1>Vous êtes connecté·e.</h1>
+    <p id="quiEstCe"></p>
+    <button type="button" id="bContinuer">Ouvrir le dossier de présentation</button><br>
+    <button type="button" class="discret" id="bChanger">Changer mon mot de passe</button><br>
+    <button type="button" class="discret" id="bSortir">Me déconnecter</button>
+  </section>
+
+  <section id="vueMdp" class="cache">
+    <h1>Nouveau mot de passe</h1>
+    <p>Choisissez un mot de passe d'au moins 8 caractères, que vous seul·e connaissez.</p>
+    <form id="formMdp">
+      <label for="mdp1">Nouveau mot de passe</label>
+      <input id="mdp1" type="password" autocomplete="new-password" minlength="8" required>
+      <label for="mdp2">Encore une fois</label>
+      <input id="mdp2" type="password" autocomplete="new-password" minlength="8" required>
+      <button type="submit">Enregistrer</button>
+    </form>
+    <button type="button" class="discret" id="bRetour">Retour</button>
+    <div class="msg" id="msgMdp" role="alert"></div>
+  </section>
+</main>
+<script>
+const SUPABASE_URL = 'https://uuuigousvpijskbdhcal.supabase.co', SUPABASE_KEY = 'sb_publishable__YuNj5XCo5YF8lwhwTu5OQ_RDM1Eesp';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:false } });
+const $ = id => document.getElementById(id);
+// Destination après connexion : seulement une page de ce dossier (jamais une adresse extérieure).
+const demande = new URLSearchParams(location.search).get('suite') || '';
+const SUITE = /^[A-Za-z0-9_\-]+\.html(\?[^#]*)?$/.test(demande) ? demande : 'dossier-presentation-v2.html';
+function vue(nom){ ['vueConnexion', 'vueConnecte', 'vueMdp'].forEach(v => $(v).classList.toggle('cache', v !== nom)); }
+function message(el, texte, ok){ el.textContent = texte || ''; el.classList.toggle('ok', !!ok); }
+function erreurFrancais(e){
+  const m = String((e && e.message) || '');
+  if(/invalid login|invalid credentials/i.test(m)) return 'Adresse ou mot de passe incorrect.';
+  if(/email not confirmed/i.test(m)) return 'Cette adresse n\'est pas encore confirmée : écrivez à contact@vraisavoirfaire.fr.';
+  if(/rate|too many/i.test(m)) return 'Trop d\'essais. Patientez une minute puis recommencez.';
+  if(/network|fetch/i.test(m)) return 'Connexion impossible : vérifiez votre accès à internet.';
+  return 'Connexion impossible (' + m.slice(0, 80) + ').';
+}
+async function afficher(){
+  const r = await sb.auth.getSession(), s = r && r.data && r.data.session;
+  if(s){ $('quiEstCe').textContent = s.user.email; vue('vueConnecte'); } else vue('vueConnexion');
+}
+$('formConnexion').addEventListener('submit', async e => {
+  e.preventDefault(); message($('msgConnexion'), ''); $('bEntrer').disabled = true;
+  try{
+    const r = await sb.auth.signInWithPassword({ email: $('mail').value.trim(), password: $('mdp').value });
+    if(r.error) throw r.error;
+    location.replace(SUITE);
+  }catch(x){ message($('msgConnexion'), erreurFrancais(x)); $('mdp').value = ''; $('mdp').focus(); }
+  $('bEntrer').disabled = false;
+});
+$('bContinuer').addEventListener('click', () => location.replace(SUITE));
+$('bSortir').addEventListener('click', async () => { try{ await sb.auth.signOut(); }catch(x){ /* rien */ } location.reload(); });
+$('bChanger').addEventListener('click', () => { message($('msgMdp'), ''); vue('vueMdp'); });
+$('bRetour').addEventListener('click', afficher);
+$('formMdp').addEventListener('submit', async e => {
+  e.preventDefault();
+  if($('mdp1').value !== $('mdp2').value){ message($('msgMdp'), 'Les deux mots de passe ne sont pas identiques.'); return; }
+  if($('mdp1').value.length < 8){ message($('msgMdp'), 'Au moins 8 caractères.'); return; }
+  try{
+    const r = await sb.auth.updateUser({ password: $('mdp1').value });
+    if(r.error) throw r.error;
+    message($('msgMdp'), 'Mot de passe enregistré.', true); $('mdp1').value = ''; $('mdp2').value = '';
+  }catch(x){ message($('msgMdp'), 'Enregistrement impossible : ' + String((x && x.message) || '').slice(0, 100)); }
+});
+afficher();
+</script>
+</body>
+</html>

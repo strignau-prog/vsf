@@ -758,7 +758,7 @@ function pageNuancier(){
 function blocTeintes(){
   const entete = stockEtat === 'ok' ? 'Stock de l\'atelier lu (' + stockPots.length + ' pots).'
     : stockEtat === 'refuse' ? 'Stock non lisible avec ce compte (droit propre à la graphiste : prochain lot).'
-    : 'Stock non lu : <a href="../connexion.html?mode=connexion&suite=' + encodeURIComponent(location.href) + '">connectez-vous avec un compte de l\'atelier</a> pour le vérifier.';
+    : 'Stock non lu : <a href="connexion-dossier.html?suite=dossier-presentation-v2.html' + '">connectez-vous avec un compte de l\'atelier</a> pour le vérifier.';
   const lignes = E.teintes.map(t => {
     const e = etatStockTeinte(t.reference), cmd = aCommander(t);
     const sug = (!t.reference && t.ral && t.ral.d <= 25)
@@ -824,7 +824,7 @@ function resumeEtape(id){
 }
 function compteHtml(){
   if(compte) return esc(compte.email) + ' · <button type="button" class="lien" id="bDeco">Déconnexion</button>';
-  return '<a class="lien" href="../connexion.html?mode=connexion&suite=' + encodeURIComponent(location.href) + '">Connexion</a>';
+  return '<a class="lien" href="connexion-dossier.html?suite=dossier-presentation-v2.html' + '">Connexion</a>';
 }
 function groupeRadios(nom, options, valeur, aFaire){
   return `<div class="groupe${aFaire ? ' afaire' : ''}">${options.map(o => `<label class="choixPil${valeur === o[0] ? ' on' : ''}"><input type="radio" name="${nom}" value="${esc(o[0])}" ${valeur === o[0] ? 'checked' : ''}>${esc(o[1])}</label>`).join('')}</div>`;
