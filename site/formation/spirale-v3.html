@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>La spirale du geste v3</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&display=swap">
+<style>
+:root{--fg:#111;--mut:#767676;--line:#e4e4e4;--faire:#111111;--recevoir:#2F67B1;--mesurer:#7B4FB8;--dire:#13878A;--regard:#8B5A2B}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,'Helvetica Neue',Arial,sans-serif;color:var(--fg);background:#fff;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1500px;margin:0 auto;padding:28px clamp(16px,3vw,40px) 60px}
+.top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:10px}
+h1{margin:0;font-size:clamp(36px,4.5vw,58px);font-weight:900;letter-spacing:-.03em;line-height:.95}
+.lead{margin:10px 0 0;font-size:16.5px;max-width:720px;color:#333;line-height:1.45}
+.seg{display:inline-flex;border:2px solid #111}
+.seg button{font:inherit;font-weight:800;font-size:14px;border:0;background:#fff;color:#111;padding:10px 16px;cursor:pointer;min-height:44px}
+.seg button.on{background:#111;color:#fff}
+.lv{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 0}
+.lv button{font:inherit;font-weight:800;font-size:13px;border:1.5px solid #c4c4c4;background:#fff;padding:7px 12px;cursor:pointer;min-height:38px}
+.lv button.on{border-color:#111;background:#111;color:#fff}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 430px;gap:28px;align-items:start;margin-top:8px}
+@media(max-width:1050px){.grid{grid-template-columns:1fr}}
+.stage{position:relative}
+svg{width:100%;height:auto;display:block}
+.layer{transition:opacity .25s}
+body.focus .layer{opacity:.1}
+body.focus .layer.lit{opacity:1}
+body.lvfocus .turn{opacity:.12}
+body.lvfocus .turn.lit{opacity:1}
+.hit{cursor:pointer}
+.tip{position:absolute;pointer-events:none;background:#111;color:#fff;padding:10px 12px;font-size:13.5px;line-height:1.4;max-width:300px;opacity:0;transition:opacity .12s;z-index:5}
+.tip b{font-weight:800}
+.tip small{display:block;color:#c4c4c4;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:3px;font-weight:800}
+.panel{position:sticky;top:16px;display:flex;flex-direction:column;gap:22px}
+.k{font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--mut);font-weight:800;margin:0 0 10px}
+.leg{display:flex;flex-direction:column;gap:4px}
+.leg button{font:inherit;text-align:left;display:grid;grid-template-columns:62px minmax(0,1fr);gap:12px;align-items:center;background:#fff;border:1.5px solid transparent;padding:8px 10px;cursor:pointer;font-size:14px;line-height:1.35;color:#111}
+.leg button:hover{border-color:#e4e4e4}
+.leg button.on{border-color:#111;background:#fafafa}
+.leg b{font-weight:800}
+.fam{display:grid;grid-template-columns:16px minmax(0,1fr);gap:7px 10px;font-size:14px;align-items:center}
+.fam i{width:13px;height:13px;border-radius:50%;display:inline-block}
+.info{background:#f5f5f5;padding:16px 18px;min-height:120px;font-size:14.5px;line-height:1.5}
+.info h3{margin:0 0 6px;font-size:17px;font-weight:900}
+.note{margin:0;padding-left:12px;border-left:3px solid #111;font-size:12.5px;color:#4a4a4a;line-height:1.45}
+.simple .full-only{display:none}
+.mx{margin-top:56px;border-top:3px solid #111;padding-top:22px}
+.mx h2{margin:0 0 6px;font-size:30px;font-weight:900;letter-spacing:-.02em}
+.mx .sub{margin:0 0 22px;color:#4a4a4a;font-size:15.5px;max-width:820px;line-height:1.45}
+.mxg{display:grid;grid-template-columns:minmax(200px,1.3fr) repeat(4,minmax(0,1fr));align-items:center}
+.mxg .h{text-align:center;padding:10px 4px;font-weight:900;font-size:18px;cursor:pointer;border-bottom:2px solid transparent}
+.mxg .h small{display:block;font-weight:500;font-size:13px;color:#767676}
+.mxg .h.on{border-bottom-color:#111}
+.mxg .grp{grid-column:1/-1;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#767676;font-weight:800;padding:18px 0 6px;border-bottom:1px solid #e4e4e4}
+.mxg .rl{font-size:16px;font-weight:700;padding:14px 0;cursor:pointer}
+.mxg .rl:hover{text-decoration:underline}
+.mxg .cell{display:flex;align-items:center;justify-content:center;height:66px;cursor:pointer;transition:opacity .2s,background .2s}
+.mxg .cell span{border-radius:50%;display:block;transition:transform .2s}
+.mxg .cell:hover span{transform:scale(1.12)}
+.mxg .cell.dim{opacity:.18}
+.mxg .cell.col{background:#fafafa}
+.mxg .cell .tool{background:#ecebe6;border:1.5px solid #888780}
+.mxg .cell .hum{background:#f3e3cf;border:1.5px solid #8B5A2B}
+.mxg .cell .prop{border-style:dashed}
+.mxg .cell .none{width:10px;height:10px;border:1.5px solid #888780;background:#fff}
+.mxinfo{background:#f5f5f5;padding:14px 18px;margin:18px 0 0;font-size:14.5px;min-height:52px;line-height:1.45}
+.bas{margin-top:34px}
+.bas h3{margin:0 0 4px;font-size:20px;font-weight:900}
+.bas p{margin:0 0 14px;color:#4a4a4a;font-size:14.5px}
+.basg{display:grid;grid-template-columns:minmax(200px,1.3fr) repeat(4,minmax(0,1fr));gap:0 10px;align-items:end}
+.bar{height:180px;display:flex;flex-direction:column;justify-content:flex-end;cursor:pointer}
+.bar .hb{background:#8B5A2B;transition:height .4s}
+.bar .tb{background:#d3d1c7;transition:height .4s}
+.bar .pc{font-size:13px;font-weight:800;text-align:center;margin-bottom:4px}
+.basl{font-size:14px;line-height:1.6}
+.basl i{display:inline-block;width:12px;height:12px;margin-right:6px;vertical-align:-1px}
+.car{margin-top:56px;border-top:3px solid #111;padding-top:22px}
+.car h2{margin:0 0 6px;font-size:30px;font-weight:900;letter-spacing:-.02em}
+.car .sub{margin:0 0 26px;color:#4a4a4a;font-size:15.5px;max-width:820px;line-height:1.45}
+.lad{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;align-items:end}
+@media(max-width:900px){.lad{grid-template-columns:1fr}}
+.step{border:2px solid #111;background:#fff;padding:14px 14px 16px;cursor:pointer;transition:background .2s,transform .2s;font:inherit;text-align:left;color:#111}
+.step:hover,.step.on{background:#111;color:#fff;transform:translateY(-3px)}
+.step .n{font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;opacity:.7}
+.step .t{display:block;font-size:19px;font-weight:900;margin:4px 0 8px;line-height:1.15}
+.step .pay{display:inline-block;font-size:11.5px;font-weight:800;padding:3px 8px;margin-top:6px}
+.pay.ma{background:#f3e3cf;color:#6b4421}
+.pay.sk{background:#111;color:#fff}
+.step:hover .pay.sk,.step.on .pay.sk{background:#fff;color:#111}
+.pay.no{background:#ecebe6;color:#444}
+.cdet{background:#f5f5f5;padding:16px 18px;margin:16px 0 0;font-size:14.5px;line-height:1.5;min-height:70px}
+.perks{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:22px}
+@media(max-width:900px){.perks{grid-template-columns:1fr 1fr}}
+.perk{background:#f5f5f5;padding:14px 16px;font-size:14px;line-height:1.4}
+.perk b{display:block;font-weight:800;margin-bottom:4px}
+.rule{margin:18px 0 0;padding-left:12px;border-left:3px solid #d92d20;font-size:13.5px;color:#4a4a4a;line-height:1.45}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="top">
+<div>
+<h1 id="ttl">La spirale du geste</h1>
+<p class="lead" id="lead">Le même rituel en 6 étapes, à chaque module, du N1 au N4. Un tour, c'est un niveau : le rituel s'y répète à chaque module. Passe la souris sur la spirale, ou clique un élément de la légende.</p>
+</div>
+<div class="seg" role="group" aria-label="Version"><button id="vFull" class="on" type="button">Complète</button><button id="vSimple" type="button">Simple · apprenant</button></div>
+</div>
+<div class="lv" id="lvBtns" role="group" aria-label="Niveau à mettre en avant"></div>
+
+<div class="grid">
+<div class="stage" id="stage"><svg id="sp" viewBox="0 0 1240 1300" role="img" aria-label="La spirale du geste"></svg><div class="tip" id="tip"></div></div>
+
+<div class="panel">
+<div class="info" id="info"><h3>Survole la spirale</h3>Chaque point, chaque porte, chaque bande raconte ce qui se passe à cet endroit du parcours.</div>
+<div>
+<p class="k">Lire la spirale · clique pour éclairer</p>
+<div class="leg" id="leg"></div>
+</div>
+<div class="full-only">
+<p class="k">5 familles de modalités</p>
+<div class="fam">
+<i style="background:var(--faire)"></i><span><b>Faire</b> · séries, exercices, dépôts, pièces</span>
+<i style="background:var(--recevoir)"></i><span><b>Recevoir</b> · capsule, planche, masterclass, audio</span>
+<i style="background:var(--mesurer)"></i><span><b>Mesurer</b> · quiz, chrono, mesure IA, rappels</span>
+<i style="background:var(--dire)"></i><span><b>Se dire</b> · vocal de debrief, Thérèse</span>
+<i style="background:var(--regard)"></i><span><b>Le regard des autres</b> · valideur, maître, pairs, jury</span>
+</div>
+</div>
+<p class="note full-only">Une information par canal : la couleur dit la modalité, la forme dit l'état. Couleurs provisoires, en attendant le choix du logo.</p>
+</div>
+</div>
+
+<section class="mx full-only">
+<h2>Qui est autour de l'apprenant, tour après tour</h2>
+<p class="sub">Plus la bulle est grande, plus la modalité compte à ce niveau. En gris, ce que l'apprenant fait seul avec l'outil, qui recule. En brun, les humains, qui prennent le relais. Survole une bulle pour le détail, clique un niveau pour l'éclairer ici et sur la spirale.</p>
+<div class="mxg" id="mxg"></div>
+<div class="mxinfo" id="mxinfo">Survole une bulle.</div>
+<div class="bas">
+<h3>La bascule</h3>
+<p>Le poids de l'outil et celui des humains, niveau par niveau. Ils se croisent entre le N2 et le N3, au moment du stage.</p>
+<div class="basg" id="basg"></div>
+</div>
+</section>
+
+<section class="car" id="carriere">
+<h2>Après le N4 : transmettre, et en vivre</h2>
+<p class="sub">La spirale débouche sur celle du junior. C'est aussi le début d'un chemin : chaque échelon s'obtient sur preuves, comme le reste du parcours. Clique un échelon.</p>
+<div class="lad" id="lad"></div>
+<div class="cdet" id="cdet">Choisis un échelon pour voir ce qu'il fait, comment il y accède et qui le rémunère.</div>
+<div class="perks">
+<div class="perk"><b>Une preuve qui te suit</b>Le badge « valideur habilité » dans ton coffre-fort, à montrer à tes clients et employeurs.</div>
+<div class="perk"><b>De la visibilité</b>Ta fiche dans l'annuaire des ateliers qui forment, et une pièce pour un dossier de label.</div>
+<div class="perk"><b>Continuer à apprendre</b>Le Socle Skolantreuz offert, Thérèse sans limite, une remise sur un métier voisin.</div>
+<div class="perk"><b>Faire partie du cercle</b>Invité aux masterclass et aux stages, une voix dans le collectif.</div>
+</div>
+<p class="rule">Pas de commission sur le recrutement de nouveaux apprenants. Un valideur ne valide ni ses salariés ni ses apprentis. Le maître artisan revoit un échantillon des retours.</p>
+</section>
+</div>
+
+<script>
+(function(){
+var NS='http://www.w3.org/2000/svg', svg=document.getElementById('sp'), tip=document.getElementById('tip'), info=document.getElementById('info'), stage=document.getElementById('stage');
+var cx=620, cy=650, T=Math.PI*2, mode='full';
+function R(t){return 60+t/T*90}
+function P(t,dr){var r=R(t)+(dr||0);return[cx+r*Math.sin(t),cy-r*Math.cos(t)]}
+function arc(t0,t1,dr){var s='',n=Math.max(8,Math.round((t1-t0)/0.04));for(var i=0;i<=n;i++){var p=P(t0+(t1-t0)*i/n,dr);s+=(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)}return s}
+function el(tag,at,parent){var e=document.createElementNS(NS,tag);for(var k in at)e.setAttribute(k,at[k]);(parent||svg).appendChild(e);return e}
+function g(layer,extra){return el('g',{'class':'layer '+(extra||''),'data-layer':layer})}
+
+var LV=['N1 · Comprendre','N2 · Faire avec repères','N3 · Réaliser seul·e','N4 · Maîtriser et transmettre'];
+var STEP=['Essayer','Constater','Regarder','Faire','Comparer','Ancrer'];
+var FAM=['Faire','Mesurer','Recevoir','Faire','Le regard des autres','Se dire'];
+var FC=['#111111','#7B4FB8','#2F67B1','#111111','#8B5A2B','#13878A'];
+var SUB=['tu tentes, à froid','tu vois ton erreur','on te montre','tu répètes, un seul point','avant, après','tu racontes, ça revient'];
+var STEPDEF=['Un pari, puis un essai à froid, qui reprend aussi le geste précédent. On commence par faire, pour se tromper utilement. Seulement si l’essai est sécurisé : sinon, on commence par Constater (souvent en N3 et N4, sur un vrai chantier).','L’apprenant voit l’écart et choisit son erreur.','Un apport ciblé sur cette erreur, et seulement elle.','Des séries, avec un seul point à soigner.','Avant et après, la mesure, et le regard d’un autre.','Un vocal de debrief de 60 à 90 secondes, puis les rappels J+1, J+7, J+30.'];
+var CELL=[
+['3 bâtons à froid','superposition, erreur choisie','fiche, capsule, planche, ralenti','séries guidées, 10 min par jour','soi et la mesure IA','vocal guidé et rappels'],
+['une lettre à froid','il nomme l’erreur','masterclass du maître artisan','exercices, chrono rejouable','retour du valideur','vocal seul'],
+['une composition à froid','il s’évalue avant le valideur','audios du maître, cas pratiques','projets complets, stage','son regard face au valideur','vocal sur un projet'],
+['il choisit son défi','il repère l’erreur d’un junior','ses propres références','une pièce réelle','le jury, la grille de l’ouvrage','il questionne un junior']];
+var HALO=['Aide maximale : contenus pas à pas, mesure IA, séries guidées. L’outil tient la main.','L’aide recule : masterclass et chrono, mais c’est l’apprenant qui nomme l’erreur.','Peu d’aide : des audios et des cas, l’apprenant s’évalue avant d’être évalué.','Presque plus d’aide : l’apprenant choisit son défi et ses références.'];
+var BAND=['À distance seulement : le valideur répond à chaque dépôt (un vocal de 30 s, une ligne, un seul point à soigner).','Le valideur à chaque étape Comparer. Une visio collective par trimestre. Une galerie anonyme des dépôts entre pairs.','Le stage de 3 jours en présentiel, avec le maître artisan et d’autres stagiaires. Ses retours deviennent plus fréquents.','Le jury et son entretien de 20 minutes. L’apprenant devient le pair d’un junior, puis peut-être correcteur.'];
+var THER=['Thérèse, en option : environ 3 h sur le N1. Une question courte par semaine, ce qui est dit reste entre vous.','Thérèse, en option : un peu plus de place à mesure que les situations se compliquent.','Thérèse, en option : elle accompagne les projets complets.','Thérèse, en option : jusqu’à 10 h en N4, autour de la pièce réelle et de la transmission.'];
+var GATE=['Épreuve du N1. Avant elle, 3 tests de sous-niveau. 2 tentatives à chaque test, la 3ᵉ est payante.','Épreuve du N2. Même règle : 3 tests de sous-niveau, 2 tentatives à chaque test.','Épreuve du N3. 3 tests de sous-niveau, puis l’épreuve. 2 tentatives à chaque test.','Épreuve finale, avec le jury. Préparation : 3 échantillons chronométrés et une explication orale. Finale : une vraie pièce, son dossier, un entretien de 20 minutes.'];
+
+function show(e,title,kicker,body){
+  var r=stage.getBoundingClientRect(), x=e.clientX-r.left+16, y=e.clientY-r.top+16;
+  if(x>r.width-310)x=e.clientX-r.left-316;
+  tip.innerHTML='<small>'+kicker+'</small><b>'+title+'</b><br>'+body; tip.style.left=x+'px'; tip.style.top=y+'px'; tip.style.opacity=1;
+  info.innerHTML='<div class="k" style="margin-bottom:4px">'+kicker+'</div><h3>'+title+'</h3>'+body;
+}
+function hide(){tip.style.opacity=0}
+function hover(node,title,kicker,body){node.classList.add('hit');node.addEventListener('mousemove',function(e){show(e,title,kicker,body)});node.addEventListener('mouseleave',hide);node.addEventListener('click',function(e){show(e,title,kicker,body)})}
+
+function draw(){
+  svg.innerHTML='';
+  var full=mode==='full';
+  var defs=el('defs',{});var mk=el('marker',{id:'av',viewBox:'0 0 10 10',refX:8,refY:5,markerWidth:7,markerHeight:7,orient:'auto'},defs);el('path',{d:'M1 1L9 5L1 9',fill:'none',stroke:'#7B4FB8','stroke-width':1.6},mk);
+  var gr=g('rays');
+  for(var k=0;k<6;k++){var a=k*Math.PI/3,s=Math.sin(a),c=Math.cos(a);el('line',{x1:cx+44*s,y1:cy-44*c,x2:cx+452*s,y2:cy-452*c,stroke:'#ececec','stroke-width':1},gr)}
+  function turnLayer(name,dr,ws,style,texts,kick){var lay=g(name);ws.forEach(function(w,n){var tg=el('g',{'class':'turn','data-n':n},lay);var p=el('path',Object.assign({d:arc(n*T,(n+1)*T,dr),fill:'none','stroke-width':w,'stroke-linecap':'round'},style),tg);if(texts){var hp=el('path',{d:arc(n*T,(n+1)*T,dr),fill:'none',stroke:'transparent','stroke-width':Math.max(w,16)},tg);hover(hp,LV[n],kick,texts[n])}});return lay}
+  if(full){
+    turnLayer('halo',0,[28,18,10,4],{stroke:'#bdbdbd','stroke-opacity':.35},HALO,'Aide de l’outil');
+    turnLayer('band',20,[2,4,8,13],{stroke:'#8B5A2B','stroke-opacity':.6},BAND,'Les humains');
+    turnLayer('therese',-16,[1.5,2,2.5,3],{stroke:'#13878A','stroke-dasharray':'2 6'},THER,'Thérèse');
+  }
+  var rap=g('rappels');
+  [[5*Math.PI/3,T,'#d6d0e6'],[2*T+5*Math.PI/3,3*T,'#d6d0e6']].forEach(function(q){el('path',{d:arc(q[0],q[1],50),fill:'none',stroke:q[2],'stroke-width':1.5},rap)});
+  var t1=T+5*Math.PI/3,t2=2*T;
+  var ra=el('path',{d:arc(t1,t2,50),fill:'none',stroke:'#7B4FB8','stroke-width':2.2},rap);
+  var ae=P(t2,50),as=P(t2,12);el('line',{x1:ae[0],y1:ae[1],x2:as[0],y2:as[1],stroke:'#7B4FB8','stroke-width':2,'marker-end':'url(#av)'},rap);
+  var RTXT={'J+1':'Le lendemain : refaire le geste de mémoire, 2 minutes.','J+7':'Une semaine après : il revient avant la série du jour.','J+30':'Un mois après : il devient l’essai à froid du module suivant. Un geste n’est acquis qu’après un J+30 réussi.'};
+  [[0.12,'J+1'],[0.42,'J+7'],[0.9,'J+30']].forEach(function(q){var p=P(t1+(t2-t1)*q[0],50);var c=el('circle',{cx:p[0],cy:p[1],r:7,fill:'#fff',stroke:'#7B4FB8','stroke-width':2.5},rap);var t=el('text',{x:p[0]-12,y:p[1]-10,'text-anchor':'end','font-size':14,'font-weight':800,fill:'#7B4FB8'},rap);t.textContent=q[1];hover(c,q[1],'Les rappels',RTXT[q[1]])});
+  var ws=[2,3.5,5,7.5],main=g('main');
+  ws.forEach(function(w,n){var tg=el('g',{'class':'turn','data-n':n},main);el('path',{d:arc(n*T,(n+1)*T,0),fill:'none',stroke:'#111','stroke-width':w,'stroke-linecap':'round'},tg)});
+  var e=P(4*T),jx=1052,jy=e[1]-62,jun=g('junior');
+  el('path',{d:'M'+e[0].toFixed(1)+' '+e[1].toFixed(1)+' C '+(e[0]+160)+' '+(e[1]-30)+', '+(e[0]+300)+' '+(e[1]-70)+', 1018 '+jy,fill:'none',stroke:'#111','stroke-width':7.5,'stroke-linecap':'round'},jun);
+  var js='';for(var i=0;i<=80;i++){var tt=Math.PI+i/80*4*Math.PI,rr=26-i/80*22;js+=(i?'L':'M')+(jx+rr*Math.cos(tt)).toFixed(1)+' '+(jy+rr*Math.sin(tt)).toFixed(1)}
+  var jsp=el('path',{d:js,fill:'none',stroke:'#111','stroke-width':2.5},jun);
+  var t=el('text',{x:1094,y:jy-4,'font-size':18,'font-weight':800,fill:'#111'},jun);t.textContent=full?'le junior':'tu transmets';
+  t=el('text',{x:1094,y:jy+18,'font-size':14,fill:'#4a4a4a'},jun);t.textContent=full?'une nouvelle spirale':'à ton tour';
+  var jh=el('circle',{cx:jx,cy:jy,r:34,fill:'transparent'},jun);hover(jh,full?'Le junior':'Tu transmets','La sortie','En N4, l’apprenant fait faire le rituel à un junior : une nouvelle spirale commence. Ensuite : valideur, co-auteur, Ambassadeur. Clique pour voir le chemin.');
+  jh.addEventListener('click',function(){document.getElementById('carriere').scrollIntoView({behavior:'smooth'})});
+  var nx=el('text',{x:1236,y:jy+50,'text-anchor':'end','font-size':13,'font-weight':800,fill:'#8B5A2B','class':'hit'},jun);nx.textContent='→ valideur · co-auteur · Ambassadeur';nx.addEventListener('click',function(){document.getElementById('carriere').scrollIntoView({behavior:'smooth'})});
+  var gt=g('gates');
+  for(var n=1;n<=4;n++){var tg2=n*T-0.12,p1=P(tg2,-20),p2=P(tg2,22),pl=P(tg2-0.05,-40);var gg=el('g',{'class':'turn','data-n':n-1},gt);el('line',{x1:p1[0],y1:p1[1],x2:p2[0],y2:p2[1],stroke:'#111','stroke-width':5},gg);var tx=el('text',{x:pl[0]-6,y:pl[1]+5,'text-anchor':'end','font-size':13,'font-weight':800,fill:'#111'},gg);tx.textContent=n<4?'épreuve N'+n:'épreuve finale';var hit=el('circle',{cx:(p1[0]+p2[0])/2,cy:(p1[1]+p2[1])/2,r:22,fill:'transparent'},gg);hover(hit,n<4?'Épreuve N'+n:'Épreuve finale','Une porte',GATE[n-1])}
+  if(full){var mk2=g('band');var st=P(2*T+Math.PI,20),ju=P(3*T+4*Math.PI/3,20);
+    var sq=el('rect',{x:st[0]-9,y:st[1]-9,width:18,height:18,fill:'#8B5A2B'},mk2);hover(sq,'Le stage de 3 jours','Les humains · N3','En présentiel, avec le maître artisan et d’autres stagiaires. Le premier contact direct du parcours.');
+    var dm=el('rect',{x:ju[0]-9,y:ju[1]-9,width:18,height:18,fill:'#8B5A2B',transform:'rotate(45 '+ju[0].toFixed(1)+' '+ju[1].toFixed(1)+')'},mk2);hover(dm,'Le jury','Les humains · N4','Il n’intervient qu’en N4. Sa grille reprend les indicateurs « tout de suite, sur l’ouvrage » de la fiche métier.');
+    var sl=P(2*T+Math.PI,46);var ts=el('text',{x:sl[0]+30,y:sl[1]+5,'text-anchor':'middle','font-size':13,'font-weight':800,fill:'#8B5A2B'},mk2);ts.textContent='stage';
+    var jl=P(3*T+4*Math.PI/3,-44);var tj=el('text',{x:jl[0],y:jl[1]+5,'text-anchor':'middle','font-size':13,'font-weight':800,fill:'#8B5A2B'},mk2);tj.textContent='jury';}
+  var pts=g('points');
+  for(var k2=0;k2<6;k2++){var a2=k2*Math.PI/3;for(var n2=0;n2<4;n2++){var p=P(n2*T+a2);var gg2=el('g',{'class':'turn','data-n':n2},pts);var c2=el('circle',{cx:p[0],cy:p[1],r:5+n2*1.4,fill:full?FC[k2]:'#111',stroke:'#fff','stroke-width':2},gg2);var h2=el('circle',{cx:p[0],cy:p[1],r:16,fill:'transparent'},gg2);hover(h2,(k2+1)+' · '+STEP[k2]+' · '+CELL[n2][k2],LV[n2]+(full?' · '+FAM[k2]:''),STEPDEF[k2])}}
+  var lab=g('labels');
+  for(var k3=0;k3<6;k3++){var a3=k3*Math.PI/3,s3=Math.sin(a3),c3=Math.cos(a3),lx=cx+488*s3,ly=cy-488*c3+8,anc=Math.abs(s3)<0.2?'middle':(s3>0?'start':'end');if(k3===0)ly=118;if(k3===3)ly=1168;
+    var tl=el('text',{x:lx,y:ly,'text-anchor':anc,'font-size':25,'font-weight':900,fill:'#111'},lab);tl.textContent=(k3+1)+' · '+STEP[k3];
+    var sub=el('text',{x:lx,y:ly+22,'text-anchor':anc,'font-size':14.5,fill:full?FC[k3]:'#4a4a4a','font-weight':full?700:400},lab);sub.textContent=full?FAM[k3]:SUB[k3];
+    hover(tl,(k3+1)+' · '+STEP[k3],'Étape du rituel',STEPDEF[k3]+'<br><br>N1 : '+CELL[0][k3]+'<br>N2 : '+CELL[1][k3]+'<br>N3 : '+CELL[2][k3]+'<br>N4 : '+CELL[3][k3])}
+  for(var n3=0;n3<4;n3++){var r3=R(n3*T);var tv=el('text',{x:cx+12,y:cy-r3-12,'font-size':15,'font-weight':900,fill:'#111'},lab);tv.textContent='N'+(n3+1)}
+  var ctr=g('labels');el('circle',{cx:cx,cy:cy,r:38,fill:'#fff',stroke:'#111','stroke-width':2},ctr);el('rect',{x:cx-5,y:cy-22,width:10,height:28,rx:3,fill:'#111'},ctr);var tc=el('text',{x:cx,y:cy+22,'text-anchor':'middle','font-size':10,'font-weight':800,'letter-spacing':1.5,fill:'#111'},ctr);tc.textContent=full?'LE GESTE':'TA MAIN';
+  applyFocus();applyLevel();
+}
+
+var LEG_FULL=[
+ ['main','<svg width="58" height="16" viewBox="0 0 58 16"><path d="M2 8H26" stroke="#111" stroke-width="2"/><path d="M26 8H56" stroke="#111" stroke-width="7" stroke-linecap="round"/></svg>','<b>Le trait s’épaissit</b> : l’apprenant fait de plus en plus seul.'],
+ ['halo','<svg width="58" height="24" viewBox="0 0 58 24"><path d="M4 12H54" stroke="#bdbdbd" stroke-opacity=".5" stroke-width="20" stroke-linecap="round"/><path d="M4 12H54" stroke="#111" stroke-width="2"/></svg>','<b>Halo gris</b> : l’aide de l’outil, qui s’efface.'],
+ ['band','<svg width="58" height="20" viewBox="0 0 58 20"><path d="M4 10H54" stroke="#8B5A2B" stroke-opacity=".6" stroke-width="10" stroke-linecap="round"/><rect x="42" y="3" width="13" height="13" fill="#8B5A2B"/></svg>','<b>Bande brune</b> : les humains, qui comptent de plus en plus. Carré : le stage. Losange : le jury.'],
+ ['therese','<svg width="58" height="12" viewBox="0 0 58 12"><path d="M4 6H54" stroke="#13878A" stroke-width="2.5" stroke-dasharray="2 6" stroke-linecap="round"/></svg>','<b>Pointillé</b> : Thérèse, en option, de 3 h à 10 h.'],
+ ['points','<svg width="58" height="16" viewBox="0 0 58 16"><circle cx="10" cy="8" r="5" fill="#111"/><circle cx="24" cy="8" r="5" fill="#7B4FB8"/><circle cx="38" cy="8" r="5" fill="#2F67B1"/><circle cx="52" cy="8" r="5" fill="#8B5A2B"/></svg>','<b>Les points</b> : une étape à un niveau, dans la couleur de sa modalité.'],
+ ['gates','<svg width="58" height="30" viewBox="0 0 58 30"><path d="M4 15H54" stroke="#111" stroke-width="3"/><path d="M29 3V27" stroke="#111" stroke-width="5"/></svg>','<b>Les portes</b> : l’épreuve de fin de niveau. 2 tentatives à chaque test.'],
+ ['rappels','<svg width="58" height="26" viewBox="0 0 58 26"><path d="M4 22C18 4 40 2 54 10" fill="none" stroke="#7B4FB8" stroke-width="2"/><circle cx="14" cy="13" r="4" fill="#fff" stroke="#7B4FB8" stroke-width="2"/><circle cx="32" cy="6" r="4" fill="#fff" stroke="#7B4FB8" stroke-width="2"/><circle cx="50" cy="8" r="4" fill="#fff" stroke="#7B4FB8" stroke-width="2"/></svg>','<b>Arc violet</b> : les rappels J+1, J+7, J+30. Le J+30 devient l’essai à froid suivant.'],
+ ['junior','<svg width="58" height="28" viewBox="0 0 58 28"><path d="M2 20C18 18 30 10 40 12" fill="none" stroke="#111" stroke-width="4" stroke-linecap="round"/><circle cx="48" cy="13" r="8" fill="none" stroke="#111" stroke-width="2"/><circle cx="48" cy="13" r="3" fill="none" stroke="#111" stroke-width="2"/></svg>','<b>La sortie</b> : en N4, il fait faire le rituel à un junior.']];
+var LEG_SIMPLE=[LEG_FULL[0],[ 'rappels',LEG_FULL[6][1],'Un geste revient <b>1, 7 et 30 jours</b> après. S’il tient au 30ᵉ, il est acquis.'],['gates',LEG_FULL[5][1],'Pour passer au tour suivant, une <b>épreuve</b>. Tu as 2 essais.'],['junior',LEG_FULL[7][1],'Au bout, tu <b>transmets</b> à ton tour.']];
+
+var focus=null, level=null, leg=document.getElementById('leg');
+function buildLegend(){leg.innerHTML='';(mode==='full'?LEG_FULL:LEG_SIMPLE).forEach(function(it){var b=document.createElement('button');b.type='button';b.dataset.layer=it[0];b.innerHTML=it[1]+'<span>'+it[2]+'</span>';b.addEventListener('mouseenter',function(){if(!focus){document.body.classList.add('focus');lit(it[0])}});b.addEventListener('mouseleave',function(){if(!focus){document.body.classList.remove('focus');lit(null)}});b.addEventListener('click',function(){focus=focus===it[0]?null:it[0];applyFocus()});leg.appendChild(b)})}
+function lit(name){document.querySelectorAll('.layer').forEach(function(l){l.classList.toggle('lit',l.dataset.layer===name||(name&&l.dataset.layer==='labels'))})}
+function applyFocus(){document.body.classList.toggle('focus',!!focus);lit(focus);leg.querySelectorAll('button').forEach(function(b){b.classList.toggle('on',b.dataset.layer===focus)})}
+var lvb=document.getElementById('lvBtns');
+['Tous les niveaux','N1','N2','N3','N4'].forEach(function(l,i){var b=document.createElement('button');b.type='button';b.textContent=l;if(!i)b.classList.add('on');b.addEventListener('click',function(){level=i?i-1:null;lvb.querySelectorAll('button').forEach(function(x,j){x.classList.toggle('on',j===i)});applyLevel();if(level!==null){info.innerHTML='<div class="k" style="margin-bottom:4px">Ce tour</div><h3>'+LV[level]+'</h3>'+(mode==='full'?'<b>L’aide.</b> '+HALO[level]+'<br><br><b>Les humains.</b> '+BAND[level]+'<br><br><b>La porte.</b> '+GATE[level]:'<b>Essayer :</b> '+CELL[level][0]+'<br><b>Faire :</b> '+CELL[level][3]+'<br><b>Comparer :</b> '+CELL[level][4])}});lvb.appendChild(b)});
+function applyLevel(){document.body.classList.toggle('lvfocus',level!==null);document.querySelectorAll('.turn').forEach(function(t){t.classList.toggle('lit',+t.dataset.n===level)});document.querySelectorAll('.mxg .cell').forEach(function(c){c.classList.toggle('col',level!==null&&+c.dataset.n===level);c.classList.toggle('dim',level!==null&&+c.dataset.n!==level)});document.querySelectorAll('.mxg .h').forEach(function(h){h.classList.toggle('on',+h.dataset.n===level)});document.querySelectorAll('.bar').forEach(function(b){b.style.opacity=(level===null||+b.dataset.n===level)?1:.25})}
+var MX=[
+ ['grp','Seul·e, avec l’outil'],
+ ['row','Contenus enregistrés','tool','halo',[4,3.3,2.2,1.3],['Fiche, capsule, planche, ralenti : l’essentiel du N1.','Les 14 masterclass du maître artisan.','Les audios du maître, les cas pratiques, 4 masterclass.','Ses propres références : il choisit lui-même.']],
+ ['row','Mesure automatique','tool','halo',[4,2.9,1.8,0.9],['Quiz, mesure IA de chaque dépôt, rappels.','Chrono rejouable, quiz.','Il s’évalue lui-même avant le valideur.','Presque plus de mesure automatique.']],
+ ['row','Thérèse, en option','tool','therese',[1.5,2.2,2.7,3.5],['Environ 3 h : une question courte par semaine.','Un peu plus de place.','Autour des projets complets.','Jusqu’à 10 h, autour de la pièce et de la transmission.']],
+ ['grp','Avec des humains'],
+ ['row','Valideur, à distance','hum','band',[2.7,3.8,2.7,1.3],['Un retour à chaque dépôt : vocal de 30 s, une ligne, un seul point à soigner.','Un retour à chaque étape Comparer : c’est son niveau le plus présent.','Il compare son regard à celui de l’apprenant.','Rare : le jury prend le relais.']],
+ ['row','Maître artisan, retours','hum','band',[0,1.5,2.7,3.3],['Absent en direct : il est là en vidéo seulement.','Quelques retours, marqués de son sceau.','Plus présent, sur les projets et au stage.','Décisif : il siège au jury.']],
+ ['row','En direct','hum','band',[0,-1,3.8,3.3],['Aucun contact en direct.','Proposition : une visio collective par trimestre.','Le stage de 3 jours en présentiel : le premier vrai face-à-face.','Le jury et l’entretien de 20 minutes.']],
+ ['row','Les pairs','hum','band',[0,-1,2.4,4],['Aucun.','Proposition : une galerie anonyme des dépôts.','Les autres stagiaires.','Il devient le pair d’un junior, puis peut-être correcteur.']]];
+var mxg=document.getElementById('mxg'),mxi=document.getElementById('mxinfo');
+mxg.innerHTML='<div></div>'+LV.map(function(l,i){var p=l.split(' · ');return '<div class="h" data-n="'+i+'">'+p[0]+'<small>'+p[1]+'</small></div>'}).join('');
+MX.forEach(function(r){if(r[0]==='grp'){var d=document.createElement('div');d.className='grp';d.textContent=r[1];mxg.appendChild(d);return}
+ var rl=document.createElement('div');rl.className='rl';rl.textContent=r[1];rl.addEventListener('mouseenter',function(){document.body.classList.add('focus');lit(r[3])});rl.addEventListener('mouseleave',function(){document.body.classList.remove('focus');lit(focus)});mxg.appendChild(rl);
+ r[4].forEach(function(v,n){var c=document.createElement('div');c.className='cell';c.dataset.n=n;var s=document.createElement('span');if(v===0){s.className='none'}else{var sz=v<0?22:Math.round(14+v*16);s.className=r[2]+(v<0?' prop':'');s.style.width=sz+'px';s.style.height=sz+'px'}c.appendChild(s);c.addEventListener('mouseenter',function(){mxi.innerHTML='<b style="font-weight:800">'+r[1]+' · '+LV[n]+'</b><br>'+r[5][n]});c.addEventListener('click',function(){lvb.querySelectorAll('button')[n+1].click()});mxg.appendChild(c)})});
+mxg.querySelectorAll('.h').forEach(function(h){h.addEventListener('click',function(){var n=+h.dataset.n;lvb.querySelectorAll('button')[level===n?0:n+1].click()})});
+var basg=document.getElementById('basg'),TOOL=[9.5,8.4,6.7,5.7],HUM=[2.7,6.3,11.6,11.9];
+basg.innerHTML='<div class="basl"><i style="background:#8B5A2B"></i>avec des humains<br><i style="background:#d3d1c7"></i>seul·e, avec l’outil</div>'+TOOL.map(function(t,n){var tot=t+HUM[n],ph=Math.round(HUM[n]/tot*100);return '<div class="bar" data-n="'+n+'"><div class="pc">'+ph+' % humain</div><div class="hb" style="height:'+Math.round(ph*1.5)+'px"></div><div class="tb" style="height:'+Math.round((100-ph)*1.5)+'px"></div><div class="pc" style="margin:6px 0 0">N'+(n+1)+'</div></div>'}).join('');
+var CAR=[
+ ['1','Pair','no','aucune rémunération','Il questionne un junior et lui fait faire le rituel. C’est une preuve de son propre N4.','Dès le N4, sans habilitation.','Pas rémunéré : c’est une étape de son parcours.'],
+ ['2','Valideur habilité','ma','barème du maître artisan','Il fait les retours sur les dépôts : un vocal court, une ligne, un seul point à soigner.','Double accord, Skolantreuz et le maître artisan, après une période calée sur le maître.','Payé à l’acte selon le barème fixé par le maître artisan, sur ses 70 %.'],
+ ['3','Valideur confirmé','ma','barème du maître artisan','Il corrige les tests de sous-niveau, siège au jury du N4 et encadre des journées de stage.','Sur ses retours de valideur, revus par le maître artisan.','Payé à l’acte selon le barème du maître artisan, sur ses 70 % : retours, jurys, encadrement de stage.'],
+ ['4','Co-auteur','sk','Skolantreuz · statut Skol','Il améliore le parcours : il écrit ou tourne un module avec le maître artisan.','Sur proposition, avec le statut Skol.','Pris en charge par Skolantreuz, pas sur les 70 % du maître artisan. Modalités à fixer.'],
+ ['5','Ambassadeur','ma','son propre parcours','Il porte une spécialité ou un métier voisin, avec son parcours et ses apprenants.','Sur preuves et accord de Skolantreuz.','Comme tout maître artisan : 70 % des ventes de son parcours, correcteurs compris.']];
+var lad=document.getElementById('lad'),cdet=document.getElementById('cdet');
+CAR.forEach(function(c,i){var b=document.createElement('button');b.type='button';b.className='step';b.style.minHeight=(130+i*22)+'px';b.innerHTML='<span class="n">Échelon '+c[0]+'</span><span class="t">'+c[1]+'</span><span class="pay '+c[2]+'">'+c[3]+'</span>';b.addEventListener('click',function(){lad.querySelectorAll('.step').forEach(function(x){x.classList.toggle('on',x===b)});cdet.innerHTML='<b style="font-weight:800">'+c[1]+'</b> · '+c[4]+'<br><b style="font-weight:800">Accès :</b> '+c[5]+'<br><b style="font-weight:800">Rémunération :</b> '+c[6]});lad.appendChild(b)});
+basg.querySelectorAll('.bar').forEach(function(b){b.addEventListener('click',function(){var n=+b.dataset.n;lvb.querySelectorAll('button')[level===n?0:n+1].click()})});
+function setMode(m){mode=m;focus=null;document.body.classList.toggle('simple',m==='simple');document.getElementById('vFull').classList.toggle('on',m==='full');document.getElementById('vSimple').classList.toggle('on',m==='simple');document.getElementById('ttl').textContent=m==='full'?'La spirale du geste':'Ton chemin, en 4 tours';document.getElementById('lead').textContent=m==='full'?'Le même rituel en 6 étapes, à chaque module, du N1 au N4. Un tour, c’est un niveau : le rituel s’y répète à chaque module. Passe la souris sur la spirale, ou clique un élément de la légende.':'Un tour, c’est un niveau. Chaque module suit les mêmes 6 étapes. À chaque tour, tu fais davantage seul·e.';buildLegend();draw()}
+document.getElementById('vFull').addEventListener('click',function(){setMode('full')});
+document.getElementById('vSimple').addEventListener('click',function(){setMode('simple')});
+setMode('full');
+})();
+</script>
+</body>
+</html>
