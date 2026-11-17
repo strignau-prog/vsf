@@ -278,7 +278,7 @@ function etatVierge(){
     fichiers:[],      // { id, nom, cle, v, src }
     props:{},         // cle → { choix, titre, type, cotes:[{l,v}], description }
     ordre:[],         // clés dans l'ordre d'affichage
-    photo:'', texteId:'', texteLibre:null, signature:'', atelier:{...ATELIER_DEFAUT}, teintes:[], nuancier:null };
+    photo:'', texteId:'', texteLibre:null, signature:'', atelier:{...ATELIER_DEFAUT}, teintes:[], nuancier:null, regrouper:false, parPage:2 };
 }
 let E = etatVierge();
 
@@ -524,6 +524,7 @@ async function ajouterFichiers(liste, cible){
         if(faible) avert.push('« ' + f.name + ' » : aperçu basse définition. Réenregistrez-le avec « Créer un fichier compatible PDF », ou déposez aussi son PDF.');
         aiData.alertes.forEach(a => avert.push('« ' + f.name + ' » : ' + a));
       } else pages = pdf ? await pagesPdf(f) : [await imageReduite(f)];
+      const dims = await Promise.all(pages.map(src => charger(src).then(im => [im.naturalWidth, im.naturalHeight]).catch(() => [0, 0])));
       pages.forEach((src, i) => {
         const cv = cleEtVersion(f.name), suffixe = pages.length > 1 ? ' — page ' + (i + 1) : '';
         const cle = cv.cle + (pages.length > 1 ? '#p' + (i + 1) : '');
@@ -531,8 +532,8 @@ async function ajouterFichiers(liste, cible){
         const exist = E.fichiers.find(x => x.cle === cle && x.v === cv.v);
         if(exist){
           if(aiData) exist.ai = aiData;
-          if(!faible && (exist.faible || !aiData)){ exist.src = src; exist.faible = false; }
-        } else E.fichiers.push({ id:uid(), nom:f.name + suffixe, cle, v:cv.v, src, ai:aiData, faible });
+          if(!faible && (exist.faible || !aiData)){ exist.src = src; exist.faible = false; exist.w = dims[i][0]; exist.h = dims[i][1]; }
+        } else E.fichiers.push({ id:uid(), nom:f.name + suffixe, cle, v:cv.v, src, ai:aiData, faible, w:dims[i][0], h:dims[i][1] });
         if(!E.props[cle]){
           const croquis = /croquis/i.test(f.name);
           E.props[cle] = { choix:'', titre: cv.titre + suffixe, vv: cv.vv, type: croquis ? 'Croquis' : (ETAPES[E.etape] || ETAPES.CREA).typeDefaut, cotes:[], description:'', panneau:'' };
@@ -802,7 +803,7 @@ function blocTeintes(){
       <div class="field" style="margin-top:6px"><label>Référence de peinture</label><input class="input${vide(t.reference) ? ' afaire' : ''}" value="${esc(t.reference)}" placeholder="RAL 3020, CR4099-5…" data-tk="reference"></div>
       ${sug}
       <div class="grid2"><div class="field"><label>Nom (facultatif)</label><input class="input" value="${esc(t.nom)}" data-tk="nom"></div><div class="field"><label>Marque / nuancier</label><input class="input" value="${esc(t.nuancier)}" placeholder="Tollens · Cromology" data-tk="nuancier"></div></div>
-      <label class="choixTexte"><input type="checkbox" data-tk="camaieu" ${t.camaieu ? 'checked' : ''}><span>Camaïeu : 3 niveaux (couleur, + 20 % puis + 40 % de blanc)</span></label>
+      <label class="choixTexte"><input type="checkbox" data-tk="camaieu" ${t.camaieu ? 'checked' : ''}><span>Camaïeu : 3 niveaux côte à côte (couleur, + 20 %, + 40 % de blanc)</span></label>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="pilStock ${e.code}">${esc(e.texte)}</span>${stockEtat === 'ok' && t.reference.trim() ? `<label class="tiny"><input type="checkbox" data-tk="commander" ${cmd ? 'checked' : ''}> à commander</label>` : ''}</div></div>`;
   }).join('');
   const cmd = listeACommander();
@@ -810,13 +811,16 @@ function blocTeintes(){
     <p class="tiny">${entete} L'état du stock n'apparaît jamais dans le dossier du client.</p>
     ${lignes || '<p class="tiny">Les couleurs des fichiers Illustrator apparaissent ici. Vous pouvez aussi ajouter une teinte à la main.</p>'}
     <button class="btn petit" id="bTeinteAdd">+ Teinte</button>
+    ${blocPalette()}
     ${cmd.length ? `<div class="prop" style="margin-top:10px"><b style="font-size:13px">À commander (interne)</b><div class="tiny" style="margin:4px 0">${cmd.map(esc).join(' · ')}</div><button class="btn petit" id="bCopierCommande">Copier la liste</button></div>` : ''}`;
 }
 
 
 function listePages(){
   const e = ETAPES[E.etape], out = [['Couverture', pageCouverture()], ['Introduction', pageIntro()]];
-  propositions().forEach((c, i) => out.push([E.props[c].titre || 'Proposition', pageProposition(c, i)]));
+  const props = propositions();
+  if(E.regrouper && props.length > 1){ const k = Math.max(2, Math.min(4, E.parPage || 2)); for(let i = 0; i < props.length; i += k) out.push(['Visuels', pageGroupe(props.slice(i, i + k))]); }
+  else props.forEach((c, i) => out.push([E.props[c].titre || 'Proposition', pageProposition(c, i)]));
   if(nuancierActif() && teintesNuancier().length) out.push(['Nuancier', pageNuancier()]);
   if(e.autorisation) out.push(["Demande d'autorisation", pageAutorisation()]);
   out.push(['Contact', pageContact()]);
@@ -946,22 +950,23 @@ const coteVide = () => ({ l:'', h:'', lg:'', em:'', min:false });
 function blocCotes(){
   const props = propositions();
   if(!props.length) return '<p class="tiny">Déposez d\'abord un fichier.</p>';
-  return props.map(c => {
+  const regroupe = props.length > 1 ? `<div class="prop"><label class="choixTexte" style="margin:0"><input type="checkbox" id="chkRegrouper" ${E.regrouper ? 'checked' : ''}><span><b>Optimiser</b> : plusieurs visuels sur une même page</span></label>
+    ${E.regrouper ? `<div class="field" style="margin:8px 0 0;max-width:200px"><label>Visuels par page</label><select class="select" id="selParPage">${[2, 3, 4].map(n => `<option value="${n}" ${(E.parPage || 2) === n ? 'selected' : ''}>${n}</option>`).join('')}</select></div><p class="tiny">Chaque visuel garde ses cotes sous lui. La disposition (côte à côte ou l'un sous l'autre) suit la forme des visuels.</p>` : ''}</div>` : '';
+  return regroupe + props.map(c => {
     const p = E.props[c], ai = (fichierChoisi(c) || {}).ai;
     p.cotes = p.cotes.map(versCote);
-    const puces = ai && ai.couleurs.length ? `<div class="puces">${ai.couleurs.map(k => `<span class="puce" title="C${k.cmyk[0]} M${k.cmyk[1]} J${k.cmyk[2]} N${k.cmyk[3]} — ${Math.round(k.part * 100)} % (teinte indicative à l'écran)"><i style="background:${cmykEnHex(k.cmyk)}"></i>C${k.cmyk[0]} M${k.cmyk[1]} J${k.cmyk[2]} N${k.cmyk[3]}</span>`).join('')}</div>` : '';
-    const lu = ai ? `<div class="lu ${ai.verif === 'ecart' ? 'alerte' : ''}">Lu dans le fichier : ${esc(resumeAI(ai)) || 'aucune dimension'}</div>${puces}<button class="btn petit" data-act="coteAI" style="margin:4px 0">Reprendre les cotes du fichier</button>` : '';
+    const lu = ai ? `<div class="lu ${ai.verif === 'ecart' ? 'alerte' : ''}">Lu dans le fichier : ${esc(resumeAI(ai)) || 'aucune dimension'}</div><button class="btn petit" data-act="coteAI" style="margin:4px 0">Reprendre les cotes du fichier</button>` : '';
     const mes = (i, k, cle, lib, unite, ph) => `<label class="mes"><span>${lib}</span><span class="saisieU"><input class="input${vide(k[cle]) ? ' afaire' : ''}" inputmode="decimal" placeholder="${ph}" value="${esc(k[cle])}" data-ck="${cle}" data-i="${i}"><em>${unite}</em></span></label>`;
+    const pos = p.posCotes || 'auto', idx = props.indexOf(c);
+    const posUi = !E.regrouper ? `<div style="margin-top:8px"><div class="tiny" style="margin-bottom:3px">Position des cotes</div>${groupeRadios('pos-' + idx, [['auto', 'Automatique'], ['dessous', 'Dessous'], ['gauche', 'À gauche'], ['droite', 'À droite']], pos, false)}</div>` : '';
     return `<div class="prop" data-c="${esc(c)}"><b style="font-size:13px">${esc(p.titre || 'Visuel')}</b>${lu}
       <div class="field" style="margin:6px 0 0"><label>Dimensions du panneau</label><input class="input${vide(p.panneau) ? ' afaire' : ''}" value="${esc(p.panneau || '')}" placeholder="612 cm × 149 cm" data-p="panneau"></div>
       ${p.cotes.map((k, i) => `<div class="coteBloc"><div class="coteTete"><input class="input${vide(k.l) ? ' afaire' : ''}" placeholder="Texte concerné (ex. ALRÉ)" value="${esc(k.l)}" data-ck="l" data-i="${i}"><button class="btn petit" data-act="coteX" data-i="${i}" title="Retirer cette cote">✕</button></div>
-        <div class="mesures">${mes(i, k, 'h', 'Hauteur', 'cm', '13,4')}${mes(i, k, 'lg', 'Longueur', 'cm', '64,5')}${mes(i, k, 'em', 'Emprise', 'm²', '0,09')}</div>
-        <label class="min"><input type="checkbox" data-ck="min" data-i="${i}" ${k.min ? 'checked' : ''}> lettres minuscules</label></div>`).join('')}
+        <div class="mesures">${mes(i, k, 'h', 'Hauteur', 'cm', '13,4')}${mes(i, k, 'lg', 'Longueur', 'cm', '64,5')}${mes(i, k, 'em', 'Emprise', 'm²', '0,09')}</div></div>`).join('')}
       <button class="btn petit${p.cotes.length ? '' : ' afaire'}" data-act="coteAdd" style="margin:6px 0">+ Cote</button>
-      <div class="field" style="margin:0"><label>Description (sous le visuel)</label><textarea class="textarea${vide(p.description) ? ' afaire' : ''}" rows="3" data-p="description">${esc(p.description)}</textarea></div></div>`;
+      <div class="field" style="margin:0"><label>Description (sous le visuel)</label><textarea class="textarea${vide(p.description) ? ' afaire' : ''}" rows="3" data-p="description">${esc(p.description)}</textarea></div>${posUi}</div>`;
   }).join('') + '<p class="tiny">Hauteur, longueur et emprise : remplissez seulement celles qui servent ; les cases vides ne sont pas imprimées. Les cotes écrites en texte dans le fichier Illustrator se remplissent seules.</p>' +
-    (props.some(c => c.indexOf('#p') >= 0) ? '<p class="tiny alerteTxt">Ce fichier contient plusieurs plans de travail : chacun devient une page. Les cotes du fichier sont reprises sur chaque page : supprimez (✕) celles qui ne concernent pas le visuel.</p>' : '') +
-    blocPalette();
+    (props.some(c => c.indexOf('#p') >= 0) ? '<p class="tiny alerteTxt">Ce fichier contient plusieurs plans de travail : chacun devient une page. Les cotes du fichier sont reprises sur chaque page : supprimez (✕) celles qui ne concernent pas le visuel.</p>' : '');
 }
 
 /* ------------------------------ Choisir une teinte : nuanciers ------------------------------ */
@@ -1036,6 +1041,9 @@ saisie.addEventListener('change', e => {
   const t = e.target;
   if(t.id === 'fichierInput'){ ajouterFichiers(t.files, 'propositions'); t.value = ''; return; }
   if(t.id === 'photoInput'){ ajouterFichiers(t.files, 'photo'); t.value = ''; return; }
+  if(t.id === 'chkRegrouper'){ E.regrouper = t.checked; dessiner(); return; }
+  if(t.id === 'selParPage'){ E.parPage = parseInt(t.value, 10) || 2; dessiner(); return; }
+  if(t.name && t.name.startsWith('pos-')){ const p = propDe(t); if(p){ p.posCotes = t.value; dessiner(); } return; }
   if(t.name === 'etape'){ E.etape = t.value; E.etapeChoisie = true; E.texteId = ''; E.texteLibre = null; E.nuancier = null; dessiner(); return; }
   if(t.name === 'devis'){ E.devis = t.value; E.texteId = ''; E.texteLibre = null; dessiner(); return; }
   if(t.name && t.name.startsWith('type-')){ const p = propDe(t); if(p){ p.type = t.value; dessiner(); } return; }
@@ -1205,30 +1213,65 @@ function pageIntro(){
     C(190, yTitre[0], yTitre[1], 50, 'INTRODUCTION', { titre:1, c:ENCRE, fit:182 }) + corps +
     C(190, bas[0], bas[1], 35, esc(E.client || ''), { titre:1, c:ENCRE, fit:130 }) + C(190, bas[2], bas[3], 10, esc((E.ville || '').split('\n').slice(-1)[0] || ''), { c:ENCRE }) + piedPage());
 }
+function posCotes(p, f){
+  const c = p.posCotes || 'auto';
+  if(c === 'dessous' || c === 'gauche' || c === 'droite') return c;
+  return (f.w && f.h && f.w / f.h > 1.15) ? 'dessous' : 'droite';   // visuel horizontal : cotes dessous ; vertical : sur le côté
+}
+function coteLignes(c){
+  const l = [];
+  if(c.h) l.push('Hauteur des lettres' + (c.min ? ' minuscules' : '') + ' : ' + c.h + 'cm');
+  if(c.lg) l.push('Longueur du lettrage : ' + c.lg + 'cm');
+  if(c.em) l.push('Emprise du lettrage : ' + c.em + 'm²');
+  return l;
+}
 function pageProposition(cle){
   const p = E.props[cle], f = fichierChoisi(cle), e = ETAPES[E.etape];
   const memeType = propositions().filter(c => E.props[c].type === p.type), num = memeType.indexOf(cle) + 1;
   const etiquette = e.validation ? 'VALIDATION' : (p.type.toUpperCase() + (p.type === 'Croquis' ? '' : ' ' + String(num).padStart(2, '0')));
   const sous = e.validation ? dateAffichee() : ('V' + (p.vv || E.version || 1) + ' • ' + dateAffichee());
   p.cotes = p.cotes.map(versCote);
-  const cotes = p.cotes.filter(c => c.l || c.h || c.lg || c.em), b = cotes.length ? [24.4, 61.1, 600.2, 486.8] : [24.4, 55, 817.5, 486.8];
+  const cotes = p.cotes.filter(c => c.l || c.h || c.lg || c.em), pos = cotes.length ? posCotes(p, f) : 'aucune';
+  const b = pos === 'dessous' ? [24.4, 55, 817.5, 392] : pos === 'gauche' ? [262, 61.1, 817.5, 486.8] : pos === 'droite' ? [24.4, 61.1, 600.2, 486.8] : [24.4, 55, 817.5, 486.8];
   const visuel = `<div class="tpVisu" style="left:${b[0] / PT * 100}%;top:${b[1] / PH * 100}%;width:${(b[2] - b[0]) / PT * 100}%;height:${(b[3] - b[1]) / PH * 100}%"><img src="${f.src}" alt=""></div>`;
-  let yc = 193.4;
-  const ctx = cotes.map(c => {
-    const lignes = [];
-    if(c.h) lignes.push('Hauteur des lettres' + (c.min ? ' minuscules' : '') + ' : ' + c.h + 'cm');
-    if(c.lg) lignes.push('Longueur du lettrage : ' + c.lg + 'cm');
-    if(c.em) lignes.push('Emprise du lettrage : ' + c.em + 'm²');
-    let h = c.l ? L(613.2, yc, yc + 13.6, 9, esc(c.l.toUpperCase()) + ' :', { b:1 }) : '';
-    if(c.l) yc += 11;
-    lignes.forEach(t => { h += L(613.2, yc, yc + 13.6, 9, esc(t), { i:1 }); yc += 11; });
-    yc += 11;
-    return h;
-  }).join('');
+  const bloc = (c, x, y) => {
+    const lg = coteLignes(c); let h = '', yy = y;
+    if(c.l){ h += L(x, yy, yy + 13.6, 9, esc(c.l.toUpperCase()) + ' :', { b:1 }); yy += 11; }
+    lg.forEach(t => { h += L(x, yy, yy + 13.6, 9, esc(t), { i:1 }); yy += 11; });
+    return [h, yy - y + 11];
+  };
+  let ctx = '';
+  if(pos === 'dessous'){
+    cotes.forEach((c, i) => { ctx += bloc(c, 52.4 + (i % 4) * 196, 404 + Math.floor(i / 4) * 50)[0]; });
+  } else if(pos === 'droite' || pos === 'gauche'){
+    let yc = 193.4; const x = pos === 'droite' ? 613.2 : 52.4;
+    cotes.forEach(c => { const r = bloc(c, x, yc); ctx += r[0]; yc += r[1]; });
+  }
   let y = 494.4, legende = '';
   if(p.panneau){ legende += L(52.4, y, y + 15.2, 10, 'PANNEAU ' + esc(p.panneau.toUpperCase()) + ' :', { b:1 }); y += 12.1; }
-  if(p.description) legende += `<div class="tpTexte gauche" style="left:${52.4 / PT * 100}%;top:${y / PH * 100}%;width:${545 / PT * 100}%;font-size:${9 / PT * 100}cqw;line-height:${11 / PT * 100}cqw">${esc(p.description).replace(/\n/g, '<br>')}</div>`;
+  if(p.description) legende += `<div class="tpTexte gauche" style="left:${52.4 / PT * 100}%;top:${y / PH * 100}%;width:${745 / PT * 100}%;font-size:${9 / PT * 100}cqw;line-height:${11 / PT * 100}cqw">${esc(p.description).replace(/\n/g, '<br>')}</div>`;
   return tpl('fond.jpg', entetePage(etiquette, sous, e.validation) + visuel + ctx + legende + piedPage());
+}
+// Plusieurs visuels sur une même page (option « Optimiser »)
+function pageGroupe(chunk){
+  const e = ETAPES[E.etape], premier = E.props[chunk[0]], pad = n => String(n).padStart(2, '0');
+  const idx = propositions().filter(c => E.props[c].type === premier.type), n1 = idx.indexOf(chunk[0]) + 1, n2 = idx.indexOf(chunk[chunk.length - 1]) + 1;
+  const etiquette = e.validation ? 'VALIDATION' : (premier.type.toUpperCase() + (premier.type === 'Croquis' ? '' : 'S ' + pad(n1) + (n2 > n1 ? '-' + pad(n2) : '')));
+  const sous = e.validation ? dateAffichee() : ('V' + (premier.vv || E.version || 1) + ' • ' + dateAffichee());
+  const fs = chunk.map(c => fichierChoisi(c)), horiz = fs.map(f => !!(f.w && f.h && f.w / f.h > 1.15)), n = chunk.length;
+  let cols, rows;
+  if(n === 1){ cols = 1; rows = 1; } else if(n === 2){ if(horiz.every(Boolean)){ cols = 1; rows = 2; } else { cols = 2; rows = 1; } }
+  else if(n === 3){ if(horiz.every(Boolean)){ cols = 1; rows = 3; } else { cols = 3; rows = 1; } } else { cols = 2; rows = 2; }
+  const x0 = 24.4, y0 = 52, x1 = 817.5, y1 = 560, gap = 10, cw = (x1 - x0 - (cols - 1) * gap) / cols, ch = (y1 - y0 - (rows - 1) * gap) / rows, th = 44;
+  const cellules = chunk.map((c, i) => {
+    const p = E.props[c], f = fs[i], cx = x0 + (i % cols) * (cw + gap), cy = y0 + Math.floor(i / cols) * (ch + gap);
+    p.cotes = p.cotes.map(versCote);
+    const lignes = p.cotes.filter(k => k.l || k.h || k.lg || k.em).map(k => (k.l ? '<b>' + esc(k.l.toUpperCase()) + '</b> ' : '') + coteLignes(k).map(esc).join(' · ')).join('<br>');
+    const texte = (p.panneau ? '<b>PANNEAU ' + esc(p.panneau.toUpperCase()) + '</b> ' : '') + (p.description ? esc(p.description).replace(/\n/g, ' ') : '');
+    return `<div class="tpVisu" style="left:${cx / PT * 100}%;top:${cy / PH * 100}%;width:${cw / PT * 100}%;height:${(ch - th) / PH * 100}%"><img src="${f.src}" alt=""></div>` +
+      `<div class="tpTexte gauche" style="left:${cx / PT * 100}%;top:${(cy + ch - th + 3) / PH * 100}%;width:${cw / PT * 100}%;font-size:${8 / PT * 100}cqw;line-height:${9.5 / PT * 100}cqw;font-style:italic">${lignes}${lignes && texte ? '<br>' : ''}${texte}</div>`;
+  }).join('');
+  return tpl('fond.jpg', entetePage(etiquette, sous, e.validation) + cellules + piedPage());
 }
 function pageAutorisation(){
   const lignes = AUTO_LIGNES.map(l => {
@@ -1238,17 +1281,23 @@ function pageAutorisation(){
   return tpl('fond.jpg', entetePage("DEMANDE D'AUTORISATION", '', false) + lignes + piedPage());
 }
 function pageNuancier(){
+  // Camaïeu : trois bandes côte à côte (couleur, + 20 %, + 40 % de blanc), la première étant la couleur principale.
   const e = ETAPES[E.etape], ts = teintesNuancier(), n = Math.max(1, ts.length);
-  const w = Math.min(144.6, (779.5 - (n - 1) * 14.2) / n), gap = n > 1 ? Math.min(14.2, (779.5 - n * w) / (n - 1)) : 0, x0 = 31.2 + (779.5 - (n * w + (n - 1) * gap)) / 2;
-  const top = 50.5, bas = 491.8, haut = bas - top;
-  const bandes = ts.map((t, i) => {
-    const x = x0 + i * (w + gap), fond = t.hex || '#dddddd';
-    const niv = t.camaieu ? NIVEAUX_CAMAIEU : [], h = 66, hmain = haut - h * niv.length;
-    let h2 = box(x, top, x + w, top + hmain, 'background:' + (t.or ? 'linear-gradient(135deg,#b88a2c,#f6e08e 45%,#c9972f)' : fond));
-    niv.forEach((nv, k) => { h2 += box(x, top + hmain + k * h, x + w, top + hmain + (k + 1) * h, 'background:' + melangerBlanc(fond, nv)) + R(x + w - 4, top + hmain + k * h + 3, top + hmain + k * h + 14, 7, '+ ' + Math.round(nv * 100) + ' % de blanc', { c:'#00000099' }); });
+  const total = ts.reduce((a, t) => a + (t.camaieu ? 3 : 1), 0) || 1, gap0 = n > 1 ? 14.2 : 0;
+  const u = Math.min(144.6, (779.5 - (n - 1) * gap0) / total), gap = n > 1 ? Math.min(14.2, (779.5 - total * u) / (n - 1)) : 0;
+  const x0 = 31.2 + (779.5 - (total * u + (n - 1) * gap)) / 2, top = 50.5, haut = 441.3, OR = 'linear-gradient(135deg,#b88a2c,#f6e08e 45%,#c9972f)';
+  let x = x0;
+  const bandes = ts.map(t => {
+    const fond = t.hex || '#dddddd', gx = x, w = u * (t.camaieu ? 3 : 1); x += w + gap;
+    let h2 = '';
+    if(t.camaieu){
+      [0].concat(NIVEAUX_CAMAIEU).forEach((nv, k) => {
+        h2 += box(gx + k * u, top, gx + (k + 1) * u, top + haut, 'background:' + (k === 0 ? (t.or ? OR : fond) : melangerBlanc(fond, nv)));
+        if(k > 0) h2 += R(gx + (k + 1) * u - 4, top + haut - 16, top + haut - 5, 7, '+ ' + Math.round(nv * 100) + ' % de blanc', { c:'#000000aa' });
+      });
+    } else h2 += box(gx, top, gx + w, top + haut, 'background:' + (t.or ? OR : fond));
     const nom = esc(t.reference || t.nom), sous = [t.nom && t.reference ? t.nom : '', t.nuancier].filter(Boolean).map(esc);
-    h2 += `<div class="tpLegende" style="left:${x / PT * 100}%;width:${w / PT * 100}%;top:${497 / PH * 100}%;height:${58 / PH * 100}%;font-size:${11 / PT * 100}cqw"><b>${nom}</b>${sous.map(s => '<i>' + s + '</i>').join('')}</div>`;
-    return h2;
+    return h2 + `<div class="tpLegende" style="left:${gx / PT * 100}%;width:${w / PT * 100}%;top:${497 / PH * 100}%;height:${58 / PH * 100}%;font-size:${11 / PT * 100}cqw"><b>${nom}</b>${sous.map(v => '<i>' + v + '</i>').join('')}</div>`;
   }).join('');
   return tpl('fond.jpg', entetePage(e.validation ? 'VALIDATION' : 'NUANCIER', dateAffichee(), e.validation) + bandes + piedPage());
 }
