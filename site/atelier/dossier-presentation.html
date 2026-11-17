@@ -135,6 +135,25 @@
   details.coord{margin:12px 0}
   details.coord summary{cursor:pointer;font-size:13px;color:var(--muted)}
 
+  /* Teintes du projet (saisie, écran seulement) */
+  .ligneTeinte{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1.3fr) minmax(0,1fr) 46px auto auto;gap:8px;align-items:end;border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px;background:#fff}
+  .ligneTeinte .field{margin:0}
+  .ligneTeinte input[type=color]{width:46px;height:34px;padding:2px;border:1px solid var(--line);border-radius:8px;background:#fff}
+  .pilStock{display:inline-block;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap}
+  .pilStock.ok{background:#e3f1e6;color:#1d5a2d}
+  .pilStock.absent{background:#fbe7e2;color:#8a2c14}
+  .pilStock.inconnu{background:#eee;color:#555}
+  @media (max-width:860px){ .ligneTeinte{grid-template-columns:1fr 1fr} }
+
+  /* Page nuancier : pastilles de couleur, référence, marque et nuancier d'origine (le stock n'y figure jamais). */
+  .nuancierGrille{display:grid;grid-template-columns:repeat(3,1fr);gap:9mm 7mm;margin-top:6mm}
+  .pastille{display:flex;flex-direction:column;gap:2mm}
+  .pastilleCouleur{height:44mm;border:1px solid var(--kraftLine);background:#e9e5de}
+  .pastilleCouleur.camaieu{height:20mm}
+  .pastilleRef{font-size:12px;font-weight:700;letter-spacing:.03em;text-transform:uppercase}
+  .pastilleSous{font-size:10px;line-height:1.5;opacity:.8}
+  .nuancierNote{font-size:10px;margin-top:8mm;opacity:.7}
+
   /* Demande d'autorisation — texte réglementaire, mise en page kraft. */
   .autoTitre{font-size:34px;margin:4mm 0 6mm}
   .autoTexte{font-size:11.5px;line-height:1.75}
@@ -252,6 +271,7 @@ function construireDossierDepuisFormulaireManuel(){
     texteAPeindre: f.texteAPeindre,
     // Avec des fichiers déposés, chaque fichier est une page « Proposition » ; sans fichier, aperçu texte par support.
     fichiers: fichiers.slice(),
+    teintes: teintes.filter(t=>t.reference.trim() || t.nom.trim()),
     photoUrl: photoLieu,
     lignes: fichiers.length ? [] : f.lignes.filter(l=>l.support).map(l=>({ support:l.support, forme:f.forme, effet:f.effet, longueurCm:l.longueurCm, hauteurCm:l.hauteurCm })),
   };
@@ -378,6 +398,80 @@ function reprendreContactLocal(){
 // Empêche le navigateur d'ouvrir un fichier lâché à côté de la zone de dépôt.
 ['dragover','drop'].forEach(n=>window.addEventListener(n, e=>{ if(!e.target.closest || !e.target.closest('.depot')) e.preventDefault(); }));
 
+/* =========================================================================
+   TEINTES ET STOCK — chaque teinte du projet est comparée au stock de l'atelier (table stock_pots).
+   Le stock se lit seulement quand la page est ouverte depuis la fiche projet de Maurice (compte connecté,
+   ?est=…). L'état du stock reste sur l'écran de saisie : il n'apparaît jamais dans le dossier du client.
+   Le pot de blanc du camaïeu n'est pas encore choisi : la mention « + 10 % de blanc » est posée sans référence.
+   ========================================================================= */
+let estId = '';            // atelier dont on lit le stock
+let stockPots = null;      // null = pas lu ; tableau = lu
+let stockEtat = 'absent';  // 'ok' | 'absent' (page ouverte sans atelier) | 'refuse' (droits ou connexion)
+let teintes = [];          // { id, reference, nom, nuancier, couleur (#rrggbb ou ''), camaieu }
+const CAMAIEU_BLANC = 0.10;
+
+async function chargerStock(atelierId){
+  estId = atelierId || '';
+  if(!estId){ stockEtat = 'absent'; stockPots = null; return; }
+  try{
+    const { data, error } = await sb.from('stock_pots')
+      .select('marque,designation_article,type,finition,ral_reference,theme_couleur,quantite_disponible_l,statut_pot')
+      .eq('establishment_id', estId).limit(5000);
+    if(error || !data){ stockEtat = 'refuse'; stockPots = null; return; }
+    stockPots = data; stockEtat = 'ok';
+  }catch(e){ stockEtat = 'refuse'; stockPots = null; }
+}
+const normRef = s => String(s||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+// Une teinte correspond à un pot si sa référence se retrouve dans la référence couleur, la désignation ou le thème du pot.
+function potsPourReference(ref){
+  const r = normRef(ref);
+  if(!stockPots || r.length < 3) return [];
+  return stockPots.filter(p => [p.ral_reference, p.designation_article, p.theme_couleur].some(v=>{
+    const n = normRef(v);
+    return n.length >= 4 && (n === r || n.includes(r) || r.includes(n));
+  }));
+}
+function etatStockTeinte(ref){
+  if(stockEtat === 'absent') return { code:'inconnu', texte:'Stock non lu — ouvrez depuis la fiche projet' };
+  if(stockEtat === 'refuse') return { code:'inconnu', texte:'Stock non lisible avec ce compte' };
+  if(normRef(ref).length < 3) return { code:'inconnu', texte:'Saisissez la référence' };
+  const pots = potsPourReference(ref).filter(p => Number(p.quantite_disponible_l) > 0);
+  if(!pots.length) return { code:'absent', texte:'Aucun pot en stock — à commander' };
+  const litres = pots.reduce((s,p)=>s+Number(p.quantite_disponible_l||0), 0);
+  return { code:'ok', texte:'En stock : ' + litres.toLocaleString('fr-FR',{maximumFractionDigits:2}) + ' L (' + pots.length + ' pot' + (pots.length>1?'s':'') + ')' };
+}
+function ajouterTeinte(){ teintes.push({ id:uid(), reference:'', nom:'', nuancier:'', couleur:'', camaieu:false }); render(); }
+function retirerTeinte(id){ teintes = teintes.filter(t=>t.id!==id); render(); }
+function majTeinte(id, champ, valeur){ const t = teintes.find(x=>x.id===id); if(t){ t[champ] = valeur; render(); } }
+// Mélange avec du blanc (RVB, en proportion) : donne la teinte du camaïeu « couleur clé + 10 % de blanc ».
+function melangerBlanc(hex, part){
+  const m = /^#([0-9a-f]{6})$/i.exec(hex||''); if(!m) return '';
+  const n = parseInt(m[1],16), c = [(n>>16)&255, (n>>8)&255, n&255].map(v=>Math.round(v*(1-part)+255*part));
+  return '#' + c.map(v=>v.toString(16).padStart(2,'0')).join('');
+}
+function renderTeintes(){
+  const entete = stockEtat === 'ok'
+    ? `Stock de l'atelier lu (${stockPots.length} pots).`
+    : stockEtat === 'refuse'
+      ? `Le stock n'a pas pu être lu avec ce compte : connectez-vous à Maurice, puis rouvrez depuis la fiche projet.`
+      : `Pour vérifier le stock : ouvrez cette page depuis la fiche projet de Maurice, connecté.`;
+  return `
+  <div class="field" style="margin-top:14px">
+    <label style="text-transform:uppercase;letter-spacing:.05em">Teintes du projet (nuancier)</label>
+    <p class="tiny" style="margin:2px 0 8px">${entete} L'état du stock n'est jamais imprimé dans le dossier.</p>
+    ${teintes.map(t=>{ const e = etatStockTeinte(t.reference); return `
+    <div class="ligneTeinte">
+      <div class="field"><label>Référence</label><input class="input" value="${escapeHtml(t.reference)}" placeholder="RAL 3020, CR4099-5…" onchange="majTeinte('${t.id}','reference', this.value)"></div>
+      <div class="field"><label>Nom (facultatif)</label><input class="input" value="${escapeHtml(t.nom)}" placeholder="Bleu d'Égypte" onchange="majTeinte('${t.id}','nom', this.value)"></div>
+      <div class="field"><label>Marque / nuancier</label><input class="input" value="${escapeHtml(t.nuancier)}" placeholder="Tollens · Cromology" onchange="majTeinte('${t.id}','nuancier', this.value)"></div>
+      <div class="field"><label>Teinte</label><input type="color" value="${t.couleur||'#cccccc'}" title="Teinte à l'écran (indicative)" onchange="majTeinte('${t.id}','couleur', this.value)"></div>
+      <label class="tiny" style="display:flex;gap:6px;align-items:center;white-space:nowrap"><input type="checkbox" ${t.camaieu?'checked':''} onchange="majTeinte('${t.id}','camaieu', this.checked)"> camaïeu + 10 % de blanc</label>
+      <div style="display:flex;gap:8px;align-items:center"><span class="pilStock ${e.code}">${escapeHtml(e.texte)}</span><button class="btn" title="Retirer" onclick="retirerTeinte('${t.id}')">✕</button></div>
+    </div>`; }).join('')}
+    <button class="btn" onclick="ajouterTeinte()">+ Teinte</button>
+  </div>`;
+}
+
 function renderDepot(){
   return `
   <div class="depot" ondragover="event.preventDefault();this.classList.add('survol')" ondragleave="this.classList.remove('survol')" ondrop="deposer(event,'propositions')">
@@ -452,6 +546,7 @@ function renderFormulaireManuel(){
         </div>
       </div>`).join('')}
     <button class="btn" onclick="ajouterLigneManuelle()">+ Support</button>`}
+    ${renderTeintes()}
     <details class="coord" ${contactOuvert?'open':''} ontoggle="contactOuvert=this.open"><summary>Coordonnées de l'atelier (dernière page du dossier)</summary>
       <div class="grid2" style="margin-top:8px">
         <div class="field"><label>Nom de l'atelier</label><input class="input" value="${escapeHtml(etablissement.name||'')}" onchange="majContact('name', this.value)"></div>
@@ -568,6 +663,30 @@ function renderPageFichier(fi, index){
     ${pageFooter()}
   </div>`;
 }
+// Nuancier : une pastille par teinte (référence, nom, marque et nuancier d'origine) ; le camaïeu ajoute une pastille « + 10 % de blanc ».
+function renderNuancier(){
+  const pastilles = dossier.teintes.map(t=>{
+    const fond = t.couleur ? `background:${t.couleur}` : '';
+    const sous = [t.nom, t.nuancier].filter(Boolean).map(escapeHtml).join('<br>');
+    let h = `<div class="pastille"><div class="pastilleCouleur" style="${fond}"></div><div class="pastilleRef">${escapeHtml(t.reference||t.nom)}</div>${sous?`<div class="pastilleSous">${sous}</div>`:''}</div>`;
+    if(t.camaieu){
+      const clair = melangerBlanc(t.couleur, CAMAIEU_BLANC);
+      h += `<div class="pastille"><div class="pastilleCouleur camaieu" style="${clair?'background:'+clair:''}"></div><div class="pastilleRef">${escapeHtml(t.reference||t.nom)} + 10 % blanc</div><div class="pastilleSous">Camaïeu pour les ombres et la profondeur</div></div>`;
+    }
+    return h;
+  }).join('');
+  return `
+  <div class="page kraft">
+    <div class="pageGrain"></div>
+    ${pageTopBar('Nuancier')}
+    <div class="pageInner" style="padding-top:8mm">
+      <div class="displayFont autoTitre">Nuancier</div>
+      <div class="nuancierGrille">${pastilles}</div>
+      <div class="nuancierNote">Les teintes affichées à l'écran ou imprimées sont indicatives : seule la référence de peinture fait foi.</div>
+    </div>
+    ${pageFooter()}
+  </div>`;
+}
 function renderAutorisation(){
   return `
   <div class="page kraft">
@@ -629,6 +748,7 @@ function render(){
   const pret = !saisie || !!(dossier.projetNom || dossier.fichiers.length);
   const pages = !pret ? [] : [renderCouverture(), renderIntroduction(),
     ...(dossier.fichiers && dossier.fichiers.length ? dossier.fichiers.map(renderPageFichier) : dossier.lignes.map(renderPageSupport)),
+    ...(dossier.teintes && dossier.teintes.length ? [renderNuancier()] : []),
     renderAutorisation(), renderContact()];
   app.innerHTML = (saisie ? renderFormulaireManuel() : '') + (pret ? `
     <div class="outils">
@@ -645,6 +765,7 @@ async function initApp(){
     const { data: p } = await sb.from('projets').select('establishment_id,nom_projet,ville,client_nom,client_telephone').eq('id', PROJET_ID).maybeSingle();
     if(p){
       await chargerEtablissement(p.establishment_id);
+      estId = p.establishment_id;
       Object.assign(formulaireManuel, { projetNom: p.nom_projet||'', ville: p.ville||'', clientNom: p.client_nom||'', clientTelephone: p.client_telephone||'' });
       document.getElementById('nav').innerHTML = navAtelierHtml(p.establishment_id, {});
     }
@@ -654,6 +775,8 @@ async function initApp(){
     await chargerEtablissement(ESTABLISHMENT_ID_URL);
   }
   if(!DEVIS_ID) reprendreContactLocal();
+  // Stock de l'atelier (lecture seule) : seulement quand on connaît l'atelier (fiche projet de Maurice).
+  if(!DEVIS_ID) await chargerStock(estId || ESTABLISHMENT_ID_URL);
   render();
 }
 initApp();
