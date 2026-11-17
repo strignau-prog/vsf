@@ -15,6 +15,10 @@ alter table dossier_palettes enable row level security;
 drop policy if exists dossier_palettes_lecture on dossier_palettes;
 create policy dossier_palettes_lecture on dossier_palettes for select to authenticated using (true);
 -- aucune règle d'écriture : seules les migrations (ce fichier) modifient ces données.
+-- droits de table : retirés au public non connecté, lecture seule pour les comptes connectés
+revoke all on dossier_palettes from anon, public;
+revoke all on dossier_palettes from authenticated;
+grant select on dossier_palettes to authenticated;
 
 insert into dossier_palettes (marque, code, nom, hex) values
 ('Cromology', 'CRF001', 'Brume matinale', '#f1f4f2'),
