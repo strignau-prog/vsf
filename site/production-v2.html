@@ -116,6 +116,40 @@ details.rep summary{cursor:pointer;list-style:none;font-weight:900;font-size:18p
 details.rep summary::-webkit-details-marker{display:none}
 .note{font-size:12px;color:var(--muted);margin-top:30px}
 .demo{display:inline-block;background:#ff3b1f;color:#fff;font-weight:900;font-size:11px;letter-spacing:.1em;text-transform:uppercase;padding:4px 8px;margin:0 0 14px}
+
+.cran{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px;align-items:center}
+.cran .sel{margin:0}
+.c2{display:flex;flex-direction:column;gap:2px;margin-top:6px}
+.c2i{display:grid;grid-template-columns:34px 22px minmax(0,1fr) 150px 110px;gap:10px;align-items:center;padding:8px;cursor:grab;background:#fff}
+.c2i:hover{background:var(--soft)}
+.c2i .n{font-weight:900;color:var(--muted);text-align:right}
+.c2i .cell{width:18px;height:18px;border-width:2px}.c2i .cell.cours{border-width:4px}
+.c2i.sel{box-shadow:0 0 0 3px var(--now)}
+.c2i.over,.cell.over{box-shadow:0 0 0 3px var(--now);background:var(--jaune)}
+.c2i .pa{display:flex;gap:4px;flex-wrap:wrap}.pa i{font-style:normal;font-size:10.5px;font-weight:800;color:#fff;padding:2px 5px;border-radius:3px}
+.c2i small{display:block;color:var(--muted);font-size:12px}
+.cell[draggable=true]{cursor:grab}
+.cell.alerte::after{content:"!";position:absolute;right:-7px;top:-9px;background:var(--alert);color:#fff;font-size:10px;font-weight:900;border-radius:50%;width:14px;height:14px;display:flex;align-items:center;justify-content:center}
+.c1 .tete{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:start;margin-bottom:18px}
+.c1 .regl{display:flex;flex-wrap:wrap;gap:16px}
+.c1 .regl label{font-size:12px;font-weight:700;color:var(--muted);display:block;min-width:170px}
+.c1 .cols{display:grid;grid-template-columns:repeat(6,minmax(190px,1fr));gap:10px;overflow-x:auto;padding-bottom:8px}
+.c1 .col{background:var(--soft);padding:12px;border-top:5px solid var(--fam,#111);min-width:190px}
+.c1 .col.gris{opacity:.5;border-top-color:#c4c4c4}
+.c1 .col h4{margin:0 0 2px;font-size:15px;font-weight:900}.c1 .col .fm{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--fam,#767676);margin-bottom:10px}
+.c1 select,.c1 input[type=text],.c1 input[type=number]{font:inherit;font-size:13px;font-weight:700;width:100%;border:0;border-bottom:2px solid #111;background:transparent;padding:6px 2px;margin:2px 0 8px}
+.c1 textarea{font:inherit;font-size:13px;width:100%;border:2px solid #111;background:#fff;padding:6px;min-height:54px;margin:2px 0 6px}
+.c1 .ct{background:#fff;padding:8px;margin-bottom:6px;font-size:13px}.c1 .ct b{display:block;font-size:12px}
+.c1 .cm{background:#fff;border-left:4px solid var(--f-regard);padding:6px 8px;margin-bottom:6px;font-size:12.5px}
+.c1 .pied{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;margin-top:18px}
+.c1 .pied b{display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:6px}
+.chip{display:inline-flex;gap:6px;align-items:center;background:var(--soft);padding:4px 8px;font-size:12.5px;font-weight:700;margin:0 6px 6px 0}
+.chip button{border:0;background:none;cursor:pointer;font-weight:900;padding:0}
+.nouv{background:var(--soft);padding:16px;margin:0 0 16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;align-items:end}
+.nouv label{font-size:12px;font-weight:700;color:var(--muted);display:block}
+.nouv select,.nouv input[type=text]{font:inherit;font-weight:700;width:100%;border:0;border-bottom:2px solid #111;background:transparent;padding:6px 2px}
+.toast{position:fixed;top:12px;right:16px;background:#111;color:#fff;padding:8px 14px;font-weight:800;font-size:13px;z-index:60;max-width:70vw}
+.toast.err{background:var(--alert)}
 @media(max-width:900px){.row{grid-template-columns:22px 26px minmax(0,1fr)}.row .ni,.row .sp,.row .pa,.row .et{display:none}}
 </style>
 <link rel="icon" href="/favicon.ico" sizes="48x48">
@@ -135,8 +169,9 @@ var AXES={B0:'B0 · Socle transverse du métier',B1:'B1 · Tracé & lettrage',B2
 var ETAT={ecr:['À écrire','ecr'],tou:['À tourner','cours'],mon:['Au montage','cours'],rel:['À relire','cours'],pret:['Prêt à vendre','pret'],rep:['À revoir','rev']};
 var FAM={fiche:['Recevoir','--f-recevoir'],video_mere:['Recevoir','--f-recevoir'],audio:['Recevoir','--f-recevoir'],capsule:['Recevoir','--f-recevoir'],planche:['Recevoir','--f-recevoir'],auto_test:['Mesurer','--f-mesurer'],quiz:['Mesurer','--f-mesurer'],exercice:['Faire','--f-faire'],exercice_chronometre:['Faire','--f-faire'],exercice_depot:['Le regard des autres','--f-regard'],masterclass:['Recevoir','--f-recevoir']};
 var TYPEN={fiche:'Fiches',video_mere:'Vidéos-mères',audio:'Audios',auto_test:'Auto-tests',exercice:'Exercices',exercice_depot:'Exercices avec dépôt'};
-var D={mods:[],lien:[],rang:[],etap:[],cont:[],parc:null,fiches:[],sit:[],plan:{},offre:null,comm:[],err:[]};
-var S={tab:'K',view:'frise',sit:'',prio:false,sel:'',open:{B0:1},cell:''};
+var D={mods:[],lien:[],rang:[],etap:[],cont:[],prereq:[],parc:null,fiches:[],sit:[],plan:{},offre:null,comm:[],err:[]};
+var S={tab:'K',view:'frise',sit:'',prio:false,sel:'',open:{B0:1},cell:'',cran:3,niv:1,nouveau:false};
+var USER=null;
 var TEST=false;
 
 function mods(){return D.mods.filter(function(m){return m.genre==='module';});}
@@ -187,11 +222,12 @@ function frise(L){
   h+='<div class="leg"><span><i class="cell pret"></i>prêt à vendre</span><span><i class="cell cours"></i>en cours · tournage, montage, relecture</span><span><i class="cell rev"></i>à revoir · ordre changé ou reprise demandée</span><span><i class="cell"></i>à écrire</span></div>';
   return h;
 }
-function cellHtml(m,L){var ghost=L&&!L(m);return '<button class="cell '+shape(m)+(S.sel===m.code?' sel':'')+(ghost?' ghost':'')+'" data-sel="'+esc(m.code)+'" title="'+esc(m.code+' · '+m.titre+' · '+ETAT[m.etat][0])+'"></button>';}
+function cellHtml(m,L){var ghost=L&&!L(m),mal=mauvaisPrereq().some(function(x){return x.m===m.code;});return '<button draggable="true" data-drag="'+esc(m.code)+'" data-n="'+m.niveau_entree+'" class="cell '+shape(m)+(S.sel===m.code?' sel':'')+(ghost?' ghost':'')+(mal?' alerte':'')+'" data-sel="'+esc(m.code)+'" title="'+esc(m.code+' · '+m.titre+' · '+ETAT[m.etat][0]+(mal?' · prérequis mal rangé':''))+'"></button>';}
 function bloque(){
   var o=[];
   holes().forEach(function(x){o.push(['r','Aucun module principal sur « '+sitNom(x.sit)+' », N'+x.niv,x.aussi?x.aussi+' module(s) transverse(s) la touchent, aucun ne la fait progresser en premier.':'Aucun module ne la touche.','Ouvrir la case →','F:cx']);});
   trous().forEach(function(x){o.push(['j','Trou à combler : « '+sitNom(x.sit)+' », N'+x.niv,x.mods.map(function(m){return m.code;}).join(', ')+' est signalé, pas encore écrit.','Ouvrir la case →','F:cx']);});
+  var mp=mauvaisPrereq();if(mp.length)o.push(['j',mp.length+' prérequis mal rangé(s)','Un module est placé avant l’un de ses prérequis : l’alerte est affichée, rien n’est bloqué.','Ouvrir dans la frise →','F:frise']);
   var rev=cnt(mods(),function(m){return m.etat==='rep';});if(rev)o.push(['j',rev+' module(s) à revoir','Reprise demandée, ou ordre changé.','Ouvrir dans la frise →','F:frise']);
   var rel=cnt(D.mods,function(m){return m.etat==='rel';});if(rel)o.push(['j',rel+' relecture(s) en attente chez le maître artisan','Délai annoncé : '+CADRE.delaiRelectureJoursOuvres+' jours ouvrés.','Voir les relectures →','R']);
   if(!Object.keys(D.plan.dates||{}).some(function(k){return D.plan.dates[k];}))o.push(['o','Aucune journée de tournage planifiée','Les vidéos-mères et les audios restent à tourner.','Planifier →','T']);
@@ -257,7 +293,7 @@ function arbre(){
   var L=D.mods.filter(function(m){return m.genre==='module'||m.genre==='ressource_externe'||m.genre==='epreuve_niveau'||m.genre==='quiz_niveau';});
   if(S.sit)L=L.filter(function(m){return liensDe(m.code).some(function(l){return l.situation_code===S.sit;});});
   if(S.prio)L=L.filter(function(m){return m.priorite==='P1';});
-  L.sort(function(a,b){return a.ordre-b.ordre;});
+  L.sort(function(a,b){return (a.sous_chapitre||'')<(b.sous_chapitre||'')?-1:((a.sous_chapitre||'')>(b.sous_chapitre||'')?1:a.ordre-b.ordre);});
   var h='',ax=Object.keys(AXES);
   ax.forEach(function(a){var R=L.filter(function(m){return m.axe===a;});if(!R.length)return;
     var op=S.open[a]||S.sit||S.prio||(S.sel&&byCode(S.sel)&&byCode(S.sel).axe===a);
@@ -280,18 +316,18 @@ function panneau(){
    (place?'<dt>Place dans le parcours</dt><dd>'+place+'</dd>':'')+
    '<dt>Essai sécurisé</dt><dd>'+(m.essai_securise===true?'oui · le rituel commence par Essayer':(m.essai_securise===false?'non · le rituel commence par Constater':'à fixer par l’auteur · le module ne peut pas passer « prêt à vendre »'))+'</dd>'+
    '<dt>Les 6 étapes du rituel</dt><dd><div class="etapes">'+etr+'</div></dd>'+
-   '<dt>État</dt><dd>'+ETAT[m.etat][0]+'</dd></dl><p style="margin:14px 0 0"><button class="btn l" data-vue="frise">Le voir dans la frise</button></p></div>';
+   '<dt>État</dt><dd>'+ETAT[m.etat][0]+'</dd></dl><p style="margin:14px 0 0"><button class="btn l" data-vue="frise">Le voir dans la frise</button> <button class="btn l" data-cran="1" data-vue="frise">Ouvrir le module</button></p></div>';
 }
 function vueF(){
   var sit=sitsPL();
-  var fl='<div class="filtre"><span class="sel" style="margin:0"><button data-fs="" class="'+(S.sit?'':'on')+'">Toutes les situations</button>'+sit.map(function(s){return '<button data-fs="'+s.situation_code+'" class="'+(S.sit===s.situation_code?'on':'')+'">'+esc(sitNom(s))+'</button>';}).join('')+'<button disabled title="Arrive avec l’espace du Socle">◇ + Situations Skolantreuz</button></span><label><input type="checkbox" id="prio"'+(S.prio?' checked':'')+'> Prioritaires seulement</label><button class="btn" disabled style="opacity:.4" title="À venir">+ Module</button></div>';
+  var fl='<div class="filtre"><span class="sel" style="margin:0"><button data-fs="" class="'+(S.sit?'':'on')+'">Toutes les situations</button>'+sit.map(function(s){return '<button data-fs="'+s.situation_code+'" class="'+(S.sit===s.situation_code?'on':'')+'">'+esc(sitNom(s))+'</button>';}).join('')+'<button disabled title="Arrive avec l’espace du Socle">◇ + Situations Skolantreuz</button></span><label><input type="checkbox" id="prio"'+(S.prio?' checked':'')+'> Prioritaires seulement</label><button class="btn" data-act="nouveau">+ Module</button></div>';
   var lf=S.sit?function(m){return liensDe(m.code).some(function(l){return l.situation_code===S.sit;});}:null;
   return '<div class="kick">Skolantreuz · production · ◆ Peintre en lettres</div><h1><i class="dot"></i>Le parcours</h1><p class="lead">La fiche du parcours, la chaîne de production, le croisement des situations et des niveaux, puis le référentiel en arbre et en frise.</p>'+
    ficheParcours()+'<section id="s-chaine" style="margin-top:0"><h2><i class="dot"></i>La chaîne de production</h2><p class="hint">Ce qui est à faire à chaque étape, et par qui.</p>'+chaine()+'</section>'+
    '<section id="s-cx"><h2><i class="dot"></i>Le croisement situations × niveaux</h2><p class="hint">Vue de contrôle : un clic sur une case liste ses modules.</p>'+croisement()+'</section>'+
    '<section><h2><i class="dot"></i>Ce qu’il reste à produire</h2><p class="hint">Fait (prêt) sur prévu, par type de contenu.</p>'+tuiles()+'</section>'+
    '<section id="s-ref"><h2><i class="dot"></i>Le référentiel</h2><div class="sel"><button data-vue="frise" class="'+(S.view==='frise'?'on':'')+'">Frise · le parcours</button><button data-vue="arbre" class="'+(S.view==='arbre'?'on':'')+'">Arbre · la construction</button></div>'+fl+
-   '<div class="ref'+(S.view==='arbre'?' arb':'')+'"><div>'+(S.view==='arbre'?arbre():frise(lf))+'</div>'+(S.view==='arbre'?panneau():'')+'</div>'+(S.view==='frise'&&S.sel?'<div style="margin-top:20px">'+panneau()+'</div>':'')+'</section>'+
+   (S.view==='frise'?cranBarre():'')+(S.nouveau?formNouveau():'')+'<div class="ref'+(S.view==='arbre'?' arb':'')+'"><div>'+(S.view==='arbre'?arbre():(S.cran===1?cran1():(S.cran===2?cran2(lf):frise(lf))))+'</div>'+(S.view==='arbre'?panneau():'')+'</div>'+(S.view==='frise'&&S.sel&&S.cran!==1?'<div style="margin-top:20px">'+panneau()+'</div>':'')+'</section>'+
    '<section><h2><i class="dot"></i>Les derniers échanges</h2><p class="hint">Les commentaires du maître artisan sur les modules, avec le moment de la vidéo et l’issue.</p>'+(D.comm.length?D.comm.slice(0,8).map(function(c){return '<p><b>'+esc(c.module_code)+'</b> · '+esc(c.texte)+'</p>';}).join(''):'<p class="msg" style="padding:0">Aucun échange pour l’instant.</p>')+'</section>';
 }
 function vueAutre(t){
@@ -299,6 +335,132 @@ function vueAutre(t){
   return '<div class="kick">Skolantreuz · production</div><h1><i class="dot"></i>'+nom+'</h1><p class="lead">Cet écran fonctionne bien : il reste, pour l’instant, celui de l’ancienne page de production. Il sera relié ici sans changer.</p><p><a class="btn" href="production.html#'+(t==='T'?'S':'R')+'">Ouvrir '+nom.toLowerCase()+' (ancienne page) →</a></p>';
 }
 function menu(){return '<nav class="menu" id="menu"><button data-t="K" class="'+(S.tab==='K'?'on':'')+'">Tableau de bord</button><button data-t="F" class="'+(S.tab==='F'?'on':'')+'">Référentiel · arbre et frise</button><button data-t="T" class="'+(S.tab==='T'?'on':'')+'">Tournages</button><button data-t="R" class="'+(S.tab==='R'?'on':'')+'">Relectures</button></nav>';}
+
+/* ====================== cran 2, cran 1, déplacement, enregistrement ====================== */
+function toast(t,err){var e=$('toast');if(!e){e=document.createElement('div');e.id='toast';e.setAttribute('role','status');document.body.appendChild(e);}e.className='toast'+(err?' err':'');e.textContent=t;e.hidden=false;clearTimeout(toast.t);if(!err)toast.t=setTimeout(function(){e.hidden=true;},1800);}
+async function ecrire(label,f){
+  if(TEST){toast('Test local, rien n’est envoyé : '+label);return true;}
+  try{var r=await f();if(r&&r.error)throw r.error;toast('Enregistré');return true;}
+  catch(x){toast('Erreur — '+label+' : '+((x&&x.message)||x),true);return false;}
+}
+function sb(){return window.VSF&&VSF.sb;}
+function mauvaisPrereq(){
+  var o=[];D.prereq.forEach(function(x){var m=byCode(x.module_code),p=byCode(x.prerequis_code);if(!m||!p||m.genre!=='module'||p.genre!=='module')return;
+    var n=m.niveau_entree,rm=D.rang.filter(function(r){return r.module_code===m.code&&r.niveau===n;})[0],rp=D.rang.filter(function(r){return r.module_code===p.code&&r.niveau===n;})[0];
+    if(rm&&rp&&rp.rang>rm.rang)o.push({m:m.code,p:p.code});else if(rm&&!rp&&p.niveau_entree>n)o.push({m:m.code,p:p.code});});
+  return o;
+}
+function cranBarre(){
+  var h='<div class="cran"><span class="sel"><button data-cran="3" class="'+(S.cran===3?'on':'')+'">Cran 3 · tout le parcours</button><button data-cran="2" class="'+(S.cran===2?'on':'')+'">Cran 2 · un niveau</button><button data-cran="1" class="'+(S.cran===1?'on':'')+'">Cran 1 · un module</button></span>';
+  if(S.cran===2)h+='<span class="sel">'+[1,2,3,4].map(function(n){return '<button data-niv="'+n+'" class="'+(S.niv===n?'on':'')+'">N'+n+'</button>';}).join('')+'</span>';
+  return h+'<span class="hint" style="margin:0">'+(S.cran===1?'':'Glissez une case pour la ranger dans son niveau. Un module dont le précédent change passe « à revoir » s’il était commencé.')+'</span></div>';
+}
+function cran2(lf){
+  var n=S.niv,R=rangsNiveau(n).map(function(r){return byCode(r.module_code);}).filter(function(m){return m&&m.genre==='module';});
+  var E=eps().filter(function(m){return m.niveaux&&m.niveaux.indexOf('N'+n)===0&&m.code!=='EN-N4F'||(n===4&&m.code==='EN-N4F');});
+  var h='<div class="kick">'+esc(NIV[n])+' · '+R.length+' modules dans l’ordre du parcours</div><div class="c2">';
+  R.forEach(function(m,i){var r=D.rang.filter(function(x){return x.module_code===m.code&&x.niveau===n;})[0],ghost=lf&&!lf(m);
+    h+='<div class="c2i'+(S.sel===m.code?' sel':'')+'" draggable="true" data-drag="'+esc(m.code)+'" data-n="'+n+'" data-sel="'+esc(m.code)+'" style="'+(ghost?'opacity:.3':'')+'"><span class="n">'+(i+1)+'</span><i class="cell '+shape(m)+'"></i><span><b>'+esc(m.code)+'</b> '+esc(m.titre)+'<small>entre au '+('N'+m.niveau_entree)+' · sous-niveau '+(r?r.sous_niveau:'—')+(r&&r.sous_niveau_fixe?' (fixé)':' (par tiers)')+'</small></span><span class="pa">'+pasteTypes(m)+'</span><span class="et">'+ETAT[m.etat][0]+'</span></div>';});
+  h+='</div>';
+  h+='<div class="band" style="margin-top:18px"><div class="bh"><div>Épreuve du niveau</div></div><div class="cells">'+E.map(function(m){return '<button class="cell ep '+shape(m)+(S.sel===m.code?' sel':'')+'" data-sel="'+esc(m.code)+'" title="'+esc(m.code+' · '+m.titre)+'"></button>';}).join('')+'</div></div>';
+  return h;
+}
+var ETP=[['essayer','Essayer','Faire','--f-faire'],['constater','Constater','Mesurer','--f-mesurer'],['regarder','Regarder','Recevoir','--f-recevoir'],['faire','Faire','Faire','--f-faire'],['comparer','Comparer','Le regard des autres','--f-regard'],['ancrer','Ancrer','Se dire','--f-dire']];
+function optEtat(v){return Object.keys(ETAT).map(function(k){return '<option value="'+k+'"'+(v===k?' selected':'')+'>'+ETAT[k][0]+'</option>';}).join('');}
+function cran1(){
+  var m=byCode(S.sel);
+  if(!m||m.genre!=='module')return '<p class="msg">Choisissez un module : une case de la frise, une ligne de l’arbre ou une ligne du cran 2.</p>';
+  var L=liensDe(m.code),sit=sitsPL();
+  var ess=m.essai_securise;
+  var h='<div class="c1"><div class="tete"><div><div class="kick">'+esc(m.code)+' · module</div><h3 style="margin:4px 0 4px;font-size:22px;font-weight:900">'+esc(m.titre)+'</h3><div class="hint" style="margin:0">'+esc(m.niveaux)+' · '+esc(m.modalite||'')+'</div></div>'+
+   '<div class="regl"><label>État du module<select data-act="etatmod">'+optEtat(m.etat)+'</select></label><label>Essai sécurisé<select data-act="essai"><option value=""'+(ess==null?' selected':'')+'>à fixer</option><option value="oui"'+(ess===true?' selected':'')+'>oui · on commence par Essayer</option><option value="non"'+(ess===false?' selected':'')+'>non · on commence par Constater</option></select></label><label><input type="checkbox" data-act="prio"'+(m.priorite==='P1'?' checked':'')+'> Prioritaire</label></div></div>';
+  h+='<div class="cols">';
+  ETP.forEach(function(e){
+    var gris=e[0]==='essayer'&&ess===false,et=D.etap.filter(function(x){return x.module_code===m.code&&x.etape===e[0];})[0],cs=D.cont.filter(function(c){return c.module_code===m.code&&c.etape===e[0];}),cm=D.comm.filter(function(c){return c.module_code===m.code&&c.etape===e[0];});
+    h+='<div class="col'+(gris?' gris':'')+'" style="--fam:var('+e[3]+')"><h4>'+e[1]+'</h4><div class="fm">'+e[2]+(gris?' · non sécurisé':'')+'</div>';
+    if(gris){h+='<p class="hint">Cet essai n’est jamais proposé à l’apprenant : le rituel commence par Constater.</p></div>';return;}
+    h+='<label class="hint" style="margin:0">État de l’étape</label><select data-act="etatetape" data-e="'+e[0]+'">'+optEtat(et?et.etat:'ecr')+'</select>';
+    h+=cs.length?cs.map(function(c){return '<div class="ct"><b>'+esc(TYPEN[c.type]||c.type)+(c.quantite>1?' × '+c.quantite:'')+'</b><select data-act="etatcont" data-id="'+esc(c.id)+'">'+optEtat(c.etat)+'</select></div>';}).join(''):'<p class="hint">Rien de prévu à produire ici.</p>';
+    h+=cm.map(function(c){return '<div class="cm">'+(c.seconde!=null?'<b>'+Math.floor(c.seconde/60)+':'+('0'+(c.seconde%60)).slice(-2)+'</b> · ':'')+esc(c.texte)+'<small style="display:block;color:#767676">'+(c.role_auteur==='maitre'?'maître artisan':'Skolantreuz')+(c.issue?' · '+(c.issue==='valide'?'validé':'reprise demandée'):'')+'</small></div>';}).join('');
+    h+='<textarea data-cm="'+e[0]+'" placeholder="Un commentaire sur cette étape…"></textarea>'+(e[0]==='regarder'?'<input type="number" min="0" data-cs="'+e[0]+'" placeholder="Moment de la vidéo (secondes)">':'')+'<button class="btn" data-act="addcm" data-e="'+e[0]+'" style="padding:6px 10px;font-size:12px">Ajouter</button></div>';
+  });
+  h+='</div>';
+  var pre=D.prereq.filter(function(x){return x.module_code===m.code;}),mal=mauvaisPrereq().filter(function(x){return x.m===m.code;}).map(function(x){return x.p;});
+  var cand=mods().filter(function(x){return x.code!==m.code&&!pre.some(function(p){return p.prerequis_code===x.code;});}).sort(function(a,b){return a.ordre-b.ordre;});
+  h+='<div class="pied"><div><b>Situations travaillées</b>'+(L.length?sit.map(function(s){var l=L.filter(function(x){return x.situation_code===s.situation_code;});return l.length?esc(sitNom(s))+' · '+(l.some(isP)?'principal':'sert aussi')+' N'+l.map(function(x){return x.niveau;}).sort().join(',N')+'<br>':'';}).join(''):'Aucune')+'</div>'+
+   '<div><b>Prérequis</b>'+(pre.length?pre.map(function(x){var bad=mal.indexOf(x.prerequis_code)>=0;return '<span class="chip" style="'+(bad?'background:var(--todo);':'')+'">'+(bad?'⚠ ':'')+esc(x.prerequis_code)+'<button data-act="delpre" data-p="'+esc(x.prerequis_code)+'" aria-label="Retirer">×</button></span>';}).join(''):'<span class="hint">Aucun prérequis posé.</span>')+
+   '<select data-act="addpre"><option value="">+ Ajouter un prérequis…</option>'+cand.map(function(x){return '<option value="'+esc(x.code)+'">'+esc(x.code+' '+x.titre.slice(0,50))+'</option>';}).join('')+'</select>'+(mal.length?'<span class="hint" style="color:#b42318">Alerte : ce module est rangé avant un de ses prérequis. Rien n’est bloqué.</span>':'')+'</div>'+
+   '<div><b>Prix du module</b>à fixer<br><span class="hint">Les prix sont donnés par écrit par Stéphane : aucun n’est créé ici.</span></div></div></div>';
+  return h;
+}
+function formNouveau(){
+  var ax=Object.keys(AXES);
+  var scs={};D.mods.forEach(function(m){if(m.sous_chapitre)scs[m.axe+'|'+m.sous_chapitre]=1;});
+  return '<div class="nouv">'+
+   '<label>Sous-chapitre (l’axe suit)<select id="nsc">'+Object.keys(scs).sort().map(function(k){var p=k.split('|');return '<option value="'+esc(p[0]+'|'+p[1])+'">'+esc(p[1])+'</option>';}).join('')+'</select></label>'+
+   '<label>Titre du module<input type="text" id="nt" placeholder="Ce que l’apprenant sait faire à la fin"></label>'+
+   '<label>Niveaux<select id="nn">'+['N1','N1-N2','N2','N2-N3','N3','N3-N4','N4'].map(function(n){return '<option>'+n+'</option>';}).join('')+'</select></label>'+
+   '<label><input type="checkbox" id="np"> Prioritaire</label><div><button class="btn" data-act="creer">Créer le module</button> <button class="btn l" data-act="nouveau">Annuler</button></div></div>';
+}
+/* ---- enregistrements (chaque geste est écrit tout de suite ; une erreur est affichée en rouge et rien n'est perdu à l'écran) ---- */
+async function majModule(code,patch,label){var m=byCode(code);if(!m)return;var avant={};Object.keys(patch).forEach(function(k){avant[k]=m[k];});Object.assign(m,patch);render();
+  var ok=await ecrire(label,function(){return sb().from('vsf_prod_modules').update(patch).eq('code',code);});if(!ok){Object.assign(m,avant);render();}}
+async function etatModule(code,etat){var m=byCode(code);if(etat==='pret'&&m.genre==='module'&&m.essai_securise==null){toast('« Prêt à vendre » demande que l’essai sécurisé soit fixé (oui ou non).',true);render();return;}
+  await majModule(code,{etat:etat,maj_le:new Date().toISOString()},'état du module');}
+async function etatEtape(code,etape,etat){var e=D.etap.filter(function(x){return x.module_code===code&&x.etape===etape;})[0];if(!e){e={module_code:code,etape:etape,etat:etat};D.etap.push(e);}var av=e.etat;e.etat=etat;render();
+  var ok=await ecrire('état de l’étape',function(){return sb().from('vsf_form_module_etapes').upsert({module_code:code,etape:etape,etat:etat,maj_le:new Date().toISOString()},{onConflict:'module_code,etape'});});if(!ok){e.etat=av;render();}}
+async function etatCont(id,etat){var c=D.cont.filter(function(x){return String(x.id)===String(id);})[0];if(!c)return;var av=c.etat;c.etat=etat;render();
+  var ok=await ecrire('état du contenu',function(){return sb().from('vsf_form_contenus').update({etat:etat,maj_le:new Date().toISOString()}).eq('id',id);});if(!ok){c.etat=av;render();}}
+async function ajouterCommentaire(code,etape,texte,seconde){texte=(texte||'').trim();if(!texte)return;
+  var row={module_code:code,etape:etape,seconde:seconde===''||seconde==null?null:+seconde,texte:texte,role_auteur:'skolantreuz',auteur_id:USER,issue:null};
+  var ok=await ecrire('commentaire',function(){return sb().from('vsf_form_commentaires').insert(row);});
+  if(ok){D.comm.unshift(Object.assign({id:'n'+Date.now(),cree_le:new Date().toISOString()},row));render();}}
+async function prerequis(code,p,ajout){
+  if(ajout){D.prereq.push({module_code:code,prerequis_code:p});render();var ok=await ecrire('prérequis',function(){return sb().from('vsf_form_prerequis').insert({module_code:code,prerequis_code:p});});if(!ok){D.prereq=D.prereq.filter(function(x){return !(x.module_code===code&&x.prerequis_code===p);});render();}}
+  else{var av=D.prereq.slice();D.prereq=D.prereq.filter(function(x){return !(x.module_code===code&&x.prerequis_code===p);});render();var ok2=await ecrire('prérequis',function(){return sb().from('vsf_form_prerequis').delete().match({module_code:code,prerequis_code:p});});if(!ok2){D.prereq=av;render();}}
+}
+function recalcSousNiveaux(n){var R=rangsNiveau(n),t=R.length;R.forEach(function(r,k){if(!r.sous_niveau_fixe)r.sous_niveau=Math.min(3,1+Math.floor(3*k/t));});}
+async function deplacer(code,cible,n){
+  if(!code||!cible||code===cible)return;
+  var M=byCode(code);if(!M)return;
+  if(M.niveau_entree!==n){toast('Changer un module de niveau arrive à l’étape suivante : ses liens par niveau doivent suivre.',true);return;}
+  var full=rangsNiveau(n).map(function(r){return r.module_code;}),oi=full.indexOf(code),ti=full.indexOf(cible);if(oi<0||ti<0)return;
+  var avant={};full.forEach(function(c,i){avant[c]=full[i-1]||'';});
+  var sauve=D.rang.map(function(r){return {r:r,rang:r.rang,sn:r.sous_niveau};});
+  full.splice(oi,1);full.splice(ti,0,code);
+  var apres={};full.forEach(function(c,i){apres[c]=full[i-1]||'';});
+  full.forEach(function(c,k){var r=D.rang.filter(function(x){return x.module_code===c&&x.niveau===n;})[0];if(r)r.rang=k+1;});
+  recalcSousNiveaux(n);
+  var revoir=full.filter(function(c){var m=byCode(c);return avant[c]!==apres[c]&&m&&m.genre==='module'&&m.etat!=='ecr'&&m.etat!=='rep';});
+  var etatsAvant=revoir.map(function(c){return [c,byCode(c).etat];});revoir.forEach(function(c){byCode(c).etat='rep';});
+  render();
+  var pid=D.parc&&D.parc.id;
+  var ok=await ecrire('ordre du parcours',function(){return sb().from('vsf_form_rangs').upsert(full.map(function(c,k){var r=D.rang.filter(function(x){return x.module_code===c&&x.niveau===n;})[0];return {parcours_id:pid,niveau:n,module_code:c,rang:k+1,sous_niveau:r&&r.sous_niveau_fixe?r.sous_niveau:null};}),{onConflict:'parcours_id,niveau,module_code'});});
+  if(!ok){sauve.forEach(function(x){x.r.rang=x.rang;x.r.sous_niveau=x.sn;});etatsAvant.forEach(function(x){byCode(x[0]).etat=x[1];});render();return;}
+  for(var i=0;i<revoir.length;i++){await ecrire('module à revoir',function(){return sb().from('vsf_prod_modules').update({etat:'rep',maj_le:new Date().toISOString()}).eq('code',revoir[i]);});}
+  if(revoir.length)toast(revoir.length+' module(s) passé(s) « à revoir » : leur précédent a changé.');
+}
+async function creerModule(){
+  var ax=($('nsc').value||'').split('|')[0],sc=($('nsc').value||'').split('|')[1]||'',titre=($('nt').value||'').trim(),niv=$('nn').value,pr=$('np').checked;
+  if(!titre){toast('Donnez un titre au module.',true);return;}
+  var nums=D.mods.filter(function(m){return m.axe===ax&&/^M-B\d+\.\d+$/.test(m.code);}).map(function(m){return +m.code.split('.')[1];}),code='M-'+ax+'.'+((nums.length?Math.max.apply(null,nums):0)+1);
+  var ordre=Math.max.apply(null,D.mods.map(function(m){return m.ordre;}))+1,lo=+niv.match(/[0-9]/)[0],hi=+niv.match(/([0-9])[^0-9]*$/)[1];
+  var ref=D.mods.filter(function(m){return m.axe===ax&&m.sous_chapitre===sc;})[0]||{};
+  var row={code:code,titre:titre,ordre:ordre,axe:ax,chapitre:ref.chapitre||AXES[ax],sous_chapitre:sc,sous_sous_chapitre:null,epreuve:false,niveaux:niv,modalite:'À définir avec le maître artisan',statut_ref:'new',duree_min:0,pratique_min:0,formats:{fi:1},priorite:pr?'P1':'P2',etat:'ecr',liens:[],parcours_id:D.parc&&D.parc.id,niveau_entree:lo,genre:'module',trou_signale:false,epreuve_validation:'Non',preuve_eco:'Non',notes:'Ajouté dans la nouvelle page de production.'};
+  var ok=await ecrire('nouveau module',async function(){
+    var r1=await sb().from('vsf_prod_modules').insert(row);if(r1.error)return r1;
+    var rg=[];for(var n=lo;n<=hi;n++){rg.push({parcours_id:D.parc.id,niveau:n,module_code:code,rang:rangsNiveau(n).length+1});}
+    var r2=await sb().from('vsf_form_rangs').insert(rg);if(r2.error)return r2;
+    return await sb().from('vsf_form_module_etapes').insert(ETP.map(function(e){return {module_code:code,etape:e[0],etat:'ecr'};}));});
+  if(ok){row.maj_le=new Date().toISOString();D.mods.push(row);for(var n=lo;n<=hi;n++)D.rang.push({parcours_id:D.parc&&D.parc.id,niveau:n,module_code:code,rang:rangsNiveau(n).length+1,sous_niveau:3,sous_niveau_fixe:false});ETP.forEach(function(e){D.etap.push({module_code:code,etape:e[0],etat:'ecr'});});S.nouveau=false;S.sel=code;S.cran=1;render();toast('Module '+code+' créé. Reliez-le à une situation dans la prochaine étape.');}
+}
+/* ---- glisser-déposer ---- */
+var DRAG='';
+document.addEventListener('dragstart',function(e){var t=e.target.closest('[data-drag]');if(!t)return;DRAG=t.dataset.drag;try{e.dataTransfer.setData('text/plain',DRAG);e.dataTransfer.effectAllowed='move';}catch(x){}});
+document.addEventListener('dragover',function(e){var t=e.target.closest('[data-drag]');if(!t||!DRAG)return;e.preventDefault();document.querySelectorAll('.over').forEach(function(x){x.classList.remove('over');});t.classList.add('over');});
+document.addEventListener('dragend',function(){DRAG='';document.querySelectorAll('.over').forEach(function(x){x.classList.remove('over');});});
+document.addEventListener('drop',function(e){var t=e.target.closest('[data-drag]');if(!t||!DRAG)return;e.preventDefault();var d=DRAG;DRAG='';deplacer(d,t.dataset.drag,+t.dataset.n);});
+
 function render(){
   $('app').innerHTML=(TEST?'<span class="demo">Données de test locales</span>':'')+menu()+(S.tab==='K'?vueK():(S.tab==='F'?vueF():vueAutre(S.tab)))+'<p class="note">Copie de test de la nouvelle page de production, sans lien depuis le site. L’ancienne page reste en place. Réordonner par glisser-déposer, le cran 2 et le cran 1 (fiche module) arrivent à l’étape suivante.</p>'+(D.err.length?'<p class="note">Données non lues : '+esc(D.err.join(', '))+'</p>':'');
 }
@@ -313,7 +475,24 @@ document.addEventListener('click',function(e){
   if(d.vue){S.view=d.vue;if(S.tab==='K'){S.tab='F';}render();var r=$('s-ref');if(r)r.scrollIntoView({behavior:'smooth',block:'start'});return;}
   if(d.sel){S.sel=S.sel===d.sel&&S.view==='arbre'?'':d.sel;if(S.tab==='K'){S.tab='F';S.view='frise';}var m=byCode(S.sel);if(m&&S.view==='arbre')S.open[m.axe]=true;render();var r2=$('s-ref');if(r2&&S.tab==='F'&&e.target.closest('.cell'))r2.scrollIntoView({behavior:'smooth',block:'start'});return;}
 });
-document.addEventListener('change',function(e){if(e.target.id==='prio'){S.prio=e.target.checked;render();}});
+document.addEventListener('change',function(e){var t=e.target,a=t.dataset&&t.dataset.act;
+  if(t.id==='prio'){S.prio=t.checked;render();return;}
+  if(!a)return;var m=byCode(S.sel);
+  if(a==='etatmod'&&m)etatModule(m.code,t.value);
+  else if(a==='essai'&&m)majModule(m.code,{essai_securise:t.value==='oui'?true:(t.value==='non'?false:null)},'essai sécurisé');
+  else if(a==='prio'&&m)majModule(m.code,{priorite:t.checked?'P1':'P2'},'priorité');
+  else if(a==='etatetape'&&m)etatEtape(m.code,t.dataset.e,t.value);
+  else if(a==='etatcont')etatCont(t.dataset.id,t.value);
+  else if(a==='addpre'&&m&&t.value)prerequis(m.code,t.value,true);
+});
+document.addEventListener('click',function(e){var b=e.target.closest('[data-act],[data-cran],[data-niv]');if(!b)return;var d=b.dataset,m=byCode(S.sel);
+  if(d.cran){S.cran=+d.cran;render();return;}
+  if(d.niv){S.niv=+d.niv;render();return;}
+  if(d.act==='nouveau'){S.nouveau=!S.nouveau;render();return;}
+  if(d.act==='creer'){creerModule();return;}
+  if(d.act==='delpre'&&m){prerequis(m.code,d.p,false);return;}
+  if(d.act==='addcm'&&m){var ta=document.querySelector('textarea[data-cm="'+d.e+'"]'),sc=document.querySelector('input[data-cs="'+d.e+'"]');ajouterCommentaire(m.code,d.e,ta&&ta.value,sc&&sc.value);}
+});
 
 /* ---------- chargement ---------- */
 async function lire(nom,q){try{var r=await q;if(r.error){D.err.push(nom);return [];}return r.data||[];}catch(x){D.err.push(nom);return [];}}
@@ -326,14 +505,15 @@ async function charger(){
   if(a.data!==true){$('app').innerHTML='<div class="kick">Offre Ambassadeurs</div><h1><i class="dot"></i>Accès réservé</h1><p class="lead">'+(rl.data===true?'Votre vue de maître artisan arrive à l’étape suivante. En attendant, utilisez la page de relecture.':'Cette page est réservée à Skolantreuz.')+'</p><p><a class="btn" href="'+(rl.data===true?'production.html#R':'./')+'">'+(rl.data===true?'Ouvrir la relecture →':'Retour')+'</a></p>';return;}
   var q=function(t,c){return sb.from(t).select(c||'*');};
   var r=await Promise.all([lire('modules',q('vsf_prod_modules').order('ordre')),lire('liens',q('vsf_form_module_situations')),lire('rangs',q('vsf_form_rangs_calcules')),lire('étapes',q('vsf_form_module_etapes')),lire('contenus',q('vsf_form_contenus')),
-    lire('parcours',q('vsf_form_parcours')),lire('fiches',q('vsf_fiches_metiers')),lire('situations',q('vsf_fiche_situations')),lire('planning',q('vsf_prod_planning','cle,valeur')),lire('offre',sb.from('vsf_offres').select('intitule,statut,vendeur:vsf_vendeurs(statut,contrat_accepte_le)').ilike('intitule','%lettres%').limit(1)),lire('échanges',q('vsf_form_commentaires').order('cree_le',{ascending:false}).limit(8))]);
-  D.mods=r[0];D.lien=r[1];D.rang=r[2];D.etap=r[3];D.cont=r[4];D.parc=r[5][0]||null;D.fiches=r[6];D.sit=r[7];(r[8]||[]).forEach(function(x){D.plan[x.cle]=x.valeur;});D.offre=r[9][0]||null;D.comm=r[10];
+    lire('parcours',q('vsf_form_parcours')),lire('fiches',q('vsf_fiches_metiers')),lire('situations',q('vsf_fiche_situations')),lire('planning',q('vsf_prod_planning','cle,valeur')),lire('offre',sb.from('vsf_offres').select('intitule,statut,vendeur:vsf_vendeurs(statut,contrat_accepte_le)').ilike('intitule','%lettres%').limit(1)),lire('échanges',q('vsf_form_commentaires').order('cree_le',{ascending:false}).limit(500)),lire('prérequis',q('vsf_form_prerequis'))]);
+  USER=s.data.session.user.id;
+  D.mods=r[0];D.lien=r[1];D.rang=r[2];D.etap=r[3];D.cont=r[4];D.parc=r[5][0]||null;D.fiches=r[6];D.sit=r[7];(r[8]||[]).forEach(function(x){D.plan[x.cle]=x.valeur;});D.offre=r[9][0]||null;D.comm=r[10];D.prereq=r[11];
   if(!D.mods.length){$('app').innerHTML='<div class="kick">Offre Ambassadeurs</div><h1><i class="dot"></i>Rien à afficher</h1><p class="lead">Aucun module : les migrations 36 à 65 ne sont pas toutes installées.</p>';return;}
   var h=(location.hash||'').slice(1);if('KFTR'.indexOf(h)>-1&&h.length===1)S.tab=h;
   render();
 }
 /* branche de test : seulement en local, avec un jeu de données fictif ou copié, jamais en ligne */
-window.PV2={init:function(data){TEST=true;D=Object.assign(D,data);D.plan=D.plan||{};D.err=[];render();},etat:function(){return {S:S,D:D};}};
+window.PV2={init:function(data){TEST=true;D=Object.assign(D,data);D.plan=D.plan||{};D.prereq=D.prereq||[];D.err=[];D.cont.forEach(function(c,i){if(c.id==null)c.id='t'+i;});render();},etat:function(){return {S:S,D:D};}};
 if(location.hostname==='localhost'||location.hostname==='127.0.0.1'){fetch('pv2-test-data.json').then(function(r){return r.ok?r.json():null;}).then(function(j){if(j)window.PV2.init(j);else charger();}).catch(charger);}else charger();
 })();
 </script>
