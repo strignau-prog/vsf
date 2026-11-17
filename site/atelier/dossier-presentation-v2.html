@@ -44,6 +44,20 @@
   .pil{border:1px solid #cfcdc7;border-radius:999px;padding:2px 10px;font-size:12px;background:#fff;cursor:pointer}
   .pil.on{background:#111;color:#fff;border-color:#111}
   .coteLigne{display:grid;grid-template-columns:minmax(0,1fr) 92px auto;gap:6px;margin-bottom:6px}
+  .pilStock{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600}
+  .pilStock.ok{background:#e3f1e6;color:#1d5a2d}
+  .pilStock.absent{background:#fdeede;color:#8a4a0a}
+  .pilStock.inconnu{background:#eee;color:#555}
+  .teinteTete{display:flex;align-items:center;gap:8px}
+  .pastS{width:22px;height:22px;border-radius:50%;border:1px solid rgba(0,0,0,.25);display:inline-block;flex:none}
+  .nuancierCorps{position:relative;z-index:1;flex:1;padding:8mm 12mm 4mm}
+  .nuancierGrille{display:grid;grid-template-columns:repeat(5,1fr);gap:8mm 6mm;align-items:start}
+  .pastille{display:flex;flex-direction:column;gap:2mm}
+  .pastilleCouleur{height:58mm;border:1px solid var(--kraftLine)}
+  .pastilleCouleur.camaieu{height:18mm}
+  .pastilleRef{font-size:12px;font-weight:700;letter-spacing:.03em;text-transform:uppercase}
+  .pastilleSous{font-size:10px;line-height:1.5;opacity:.8}
+  .nuancierNote{font-size:9.5px;margin-top:6mm;opacity:.7}
   .lu{font-size:12px;color:var(--muted);margin:4px 0}
   .lu.alerte{color:var(--accent);font-weight:600}
   .puces{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0}
@@ -115,6 +129,7 @@
     .saisie{position:static;max-height:none;border-right:0}
   }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <link rel="icon" href="/favicon.ico" sizes="48x48">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -146,7 +161,7 @@ const uid = () => 'i' + Math.random().toString(16).slice(2, 9);
 const ETAPES_CONNUES = ['CREA', 'BAT', 'MOODBOARD'];
 const ETAPES = {
   CREA:      { nom:'Propositions',          couv:'PROPOSITIONS', typeDefaut:'Proposition', autorisation:true,  bon:false, validation:false },
-  BAT:       { nom:'Validation (BAT)',      couv:'VALIDATION',   typeDefaut:'Maquette',    autorisation:false, bon:true,  validation:true  },
+  BAT:       { nom:'Validation (BAT)',      couv:'VALIDATION',   typeDefaut:'Maquette',    autorisation:false, bon:true,  validation:true  , nuancier:true },
   MOODBOARD: { nom:'Moodboard & croquis',   couv:'Moodboard & CROQUIS', typeDefaut:'Moodboard', autorisation:true, bon:false, validation:false }
 };
 const TYPES = ['Proposition', 'Moodboard', 'Croquis', 'Maquette'];
@@ -176,7 +191,7 @@ function etatVierge(){
     fichiers:[],      // { id, nom, cle, v, src }
     props:{},         // cle → { choix, titre, type, cotes:[{l,v}], description }
     ordre:[],         // clés dans l'ordre d'affichage
-    photo:'', texteId:'', texteLibre:null, signature:'', atelier:{...ATELIER_DEFAUT} };
+    photo:'', texteId:'', texteLibre:null, signature:'', atelier:{...ATELIER_DEFAUT}, teintes:[], nuancier:null };
 }
 let E = etatVierge();
 
@@ -535,18 +550,164 @@ function pageContact(){
     ${a.tel ? `<div class="l">${esc(a.tel)}</div>` : ''}${a.adresse ? `<div class="l">${nl(a.adresse)}</div>` : ''}
     ${a.mail ? `<div class="l">${esc(a.mail)}</div>` : ''}${a.web ? `<div class="l" style="border-bottom:none">${esc(a.web)}</div>` : ''}</div></div>`, true);
 }
+
+/* ------------------------------ Teintes, stock, nuancier ------------------------------
+   Les couleurs lues dans les .ai deviennent des teintes à nommer (référence de peinture). Le stock de l'atelier est comparé quand un compte
+   de l'atelier est connecté ; il ne figure JAMAIS dans le dossier imprimé. Les références RAL proches sont des suggestions à confirmer. */
+const RAL_TABLE = '1000:CDBA88,1001:D0B084,1002:D2AA6D,1003:F9A800,1004:E49E00,1005:CB8E00,1006:E29000,1007:E88C00,1011:AF804F,1012:DDAF27,1013:E3D9C6,1014:DDC49A,1015:E6D2B5,1016:F1DD38,1017:F6A950,1018:FACA30,1019:A48F7A,1020:A08F65,1021:F6B600,1023:F7B500,1024:BA8F4C,1026:FFFF00,1027:A77F0E,1028:FF9B00,1032:E2A300,1033:F99A1C,1034:EB9C52,1035:908370,1036:80643F,1037:F09200,2000:DD7907,2001:BE4E20,2002:C63927,2003:FA842B,2004:E75B12,2005:FF2300,2007:FFA421,2008:F3752C,2009:E15501,2010:D4652F,2011:EC7C25,2012:DB6A50,2013:954527,2017:FA4402,3000:AB2524,3001:A02128,3002:A1232B,3003:8D1D2C,3004:701F29,3005:5E2028,3007:402225,3009:703731,3011:7E292C,3012:CB8D73,3013:9C322E,3014:D47479,3015:E1A6AD,3016:AC4034,3017:D3545F,3018:D14152,3020:C1121C,3022:D56D56,3024:F70000,3026:FF0000,3027:B42041,3028:E72512,3031:AC323B,3032:711521,3033:B24C43,4001:8A5A83,4002:933D50,4003:D15B8F,4004:691639,4005:83639D,4006:992572,4007:4A203B,4008:904684,4009:A38995,4010:C63678,4011:8773A1,4012:6B6880,5000:384C70,5001:1F4764,5002:2B2C7C,5003:2A3756,5004:1D1F2A,5005:154889,5007:41678D,5008:313C48,5009:2E5978,5010:13447C,5011:232C3F,5012:3481B8,5013:232D53,5014:6C7C98,5015:2874B2,5017:0E518D,5018:21888F,5019:1A5784,5020:0B4151,5021:07737A,5022:2F2A5A,5023:4D668E,5024:6A93B0,5025:296478,5026:102C54,6000:327662,6001:28713E,6002:276235,6003:4B573E,6004:0E4243,6005:0F4336,6006:40433B,6007:283424,6008:35382E,6009:26392F,6010:3E753B,6011:68825B,6012:31403D,6013:797C5A,6014:444337,6015:3D403A,6016:026A52,6017:468641,6018:48A43F,6019:B7D9B1,6020:354733,6021:86A47C,6022:3E3C32,6024:008754,6025:53753C,6026:005D52,6027:81C0BB,6028:2D5546,6029:007243,6032:0F8558,6033:478A84,6034:7FB0B2,6035:1B542C,6036:005D4C,6037:25E712,6038:00F700,7000:7E8B92,7001:8F999F,7002:817F68,7003:7A7B6D,7004:9EA0A1,7005:6B716F,7006:756F61,7008:746643,7009:5B6259,7010:575D57,7011:555D61,7012:596163,7013:555548,7015:51565C,7016:373F43,7021:2E3234,7022:4B4D46,7023:818479,7024:474A50,7026:374447,7030:939388,7031:5D6970,7032:B9B9A8,7033:818979,7034:939176,7035:CBD0CC,7036:9A9697,7037:7C7F7E,7038:B4B8B0,7039:6B695F,7040:9DA3A6,7042:8F9695,7043:4E5451,7044:BDBDB2,7045:91969A,7046:82898E,7047:CFD0CF,7048:888175,8000:887142,8001:9C6B30,8002:7B5141,8003:80542F,8004:8F4E35,8007:6F4A2F,8008:6F4F28,8011:5A3A29,8012:673831,8014:49392D,8015:633A34,8016:4C2F26,8017:44322D,8019:3F3A3A,8022:211F20,8023:A65E2F,8024:79553C,8025:755C49,8028:4E3B2B,8029:773C27,9001:EFEBDC,9002:DDDED4,9003:F4F8F4,9004:2E3032,9005:0A0A0D,9006:A5A8A6,9007:8F8F8C,9010:F7F9EF,9011:1C1C1C,9012:FFFDE6,9016:F7FBF5,9017:2A2D2F,9018:CFD3CD,9022:9C9C9C,9023:7E8182';
+let ralListe = null;
+function hexRgb(h){ h = h.replace('#', ''); return [parseInt(h.slice(0,2), 16), parseInt(h.slice(2,4), 16), parseInt(h.slice(4,6), 16)]; }
+function rgbLab(c){
+  const f = v => { v /= 255; return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+  const R = f(c[0]), G = f(c[1]), B = f(c[2]), g = t => t > 0.008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116;
+  const X = g((R * 0.4124 + G * 0.3576 + B * 0.1805) / 0.95047), Y = g(R * 0.2126 + G * 0.7152 + B * 0.0722), Z = g((R * 0.0193 + G * 0.1192 + B * 0.9505) / 1.08883);
+  return [116 * Y - 16, 500 * (X - Y), 200 * (Y - Z)];
+}
+function ralProche(hex){
+  if(!ralListe) ralListe = RAL_TABLE.split(',').map(s => { const p = s.split(':'); return { code:p[0], hex:'#' + p[1], lab:rgbLab(hexRgb(p[1])) }; });
+  const l = rgbLab(hexRgb(hex)); let best = null;
+  for(const r of ralListe){ const d = Math.hypot(l[0] - r.lab[0], l[1] - r.lab[1], l[2] - r.lab[2]); if(!best || d < best.d) best = { code:r.code, hex:r.hex, d }; }
+  return best;
+}
+// CMJN → RVB : on fait dessiner les couleurs par pdf.js (conversion proche d'Acrobat), plus fidèle qu'une formule simple.
+async function cmykVersHex(liste){
+  try{
+    const lib = await chargerPdfJs(), W = liste.length * 10;
+    const flux = liste.map((c, i) => c.map(v => (v / 100).toFixed(4)).join(' ') + ' k ' + (i * 10) + ' 0 10 10 re f').join('\n');
+    const objs = ['<</Type/Catalog/Pages 2 0 R>>', '<</Type/Pages/Kids[3 0 R]/Count 1>>', '<</Type/Page/Parent 2 0 R/MediaBox[0 0 ' + W + ' 10]/Contents 4 0 R/Resources<<>>>>', '<</Length ' + flux.length + '>>\nstream\n' + flux + '\nendstream'];
+    let out = '%PDF-1.4\n'; const off = [];
+    objs.forEach((o, i) => { off.push(out.length); out += (i + 1) + ' 0 obj\n' + o + '\nendobj\n'; });
+    const x = out.length;
+    out += 'xref\n0 ' + (objs.length + 1) + '\n0000000000 65535 f \n' + off.map(o => String(o).padStart(10, '0') + ' 00000 n \n').join('') + 'trailer\n<</Size ' + (objs.length + 1) + '/Root 1 0 R>>\nstartxref\n' + x + '\n%%EOF';
+    const doc = await avecDelai(lib.getDocument({ data: new TextEncoder().encode(out) }).promise, 20000, 'conversion trop longue');
+    const p = await doc.getPage(1), v = p.getViewport({ scale:1 }), c = document.createElement('canvas'); c.width = Math.round(v.width); c.height = Math.round(v.height);
+    const cx = c.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, c.width, c.height);
+    await avecDelai(p.render({ canvasContext:cx, viewport:v, intent:'print' }).promise, 20000, 'conversion trop longue');
+    return liste.map((_, i) => { const d = cx.getImageData(i * 10 + 5, 5, 1, 1).data; return '#' + [d[0], d[1], d[2]].map(n => n.toString(16).padStart(2, '0')).join(''); });
+  }catch(e){ return liste.map(cmykEnHex); }
+}
+const CLE_MEMOIRE = 'dossier_teintes_v1';
+function memoire(){ try{ return JSON.parse(localStorage.getItem(CLE_MEMOIRE) || '{}'); }catch(e){ return {}; } }
+function memoriser(t){
+  if(!t.cmyk || !t.reference.trim()) return;
+  try{ const m = memoire(); m[t.cmyk] = { reference:t.reference, nom:t.nom, nuancier:t.nuancier }; localStorage.setItem(CLE_MEMOIRE, JSON.stringify(m)); }catch(e){ /* pas de mémoire */ }
+}
+function nuancierActif(){ return E.nuancier != null ? E.nuancier : !!ETAPES[E.etape].nuancier; }
+let syncEnCours = false;
+function lancerSync(){ if(syncEnCours) return; syncEnCours = true; syncTeintes().catch(() => {}).finally(() => { syncEnCours = false; }); }
+async function syncTeintes(){
+  const vus = new Map();
+  propositions().forEach(c => { const ai = (fichierChoisi(c) || {}).ai; if(ai) ai.couleurs.forEach(k => vus.set(k.cmyk.join(','), k.cmyk)); });
+  let change = false;
+  const m = memoire();
+  vus.forEach((cmyk, key) => {
+    if(!E.teintes.some(t => t.cmyk === key)){
+      const mem = m[key] || {};
+      E.teintes.push({ id:uid(), cmyk:key, hex:'', reference:mem.reference || '', nom:mem.nom || '', nuancier:mem.nuancier || '', camaieu:false, commander:null, ral:null });
+      change = true;
+    }
+  });
+  const avant = E.teintes.length;
+  E.teintes = E.teintes.filter(t => !t.cmyk || vus.has(t.cmyk) || t.reference || t.nom);
+  if(E.teintes.length !== avant) change = true;
+  const sans = E.teintes.filter(t => t.cmyk && !t.hex);
+  if(sans.length){
+    const hexes = await cmykVersHex(sans.map(t => t.cmyk.split(',').map(Number)));
+    sans.forEach((t, i) => { t.hex = hexes[i]; const p = ralProche(t.hex); t.ral = p ? { code:p.code, hex:p.hex, d:Math.round(p.d) } : null; });
+    change = true;
+  }
+  if(change) dessiner();
+}
+/* Stock : lu seulement avec un compte de l'atelier connecté (droit propre à la graphiste : lot suivant). */
+const SUPABASE_URL = 'https://uuuigousvpijskbdhcal.supabase.co', SUPABASE_KEY = 'sb_publishable__YuNj5XCo5YF8lwhwTu5OQ_RDM1Eesp';
+const sb = (window.supabase && window.supabase.createClient) ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:false } }) : null;
+let stockPots = null, stockEtat = 'absent';   // 'ok' | 'absent' (pas connecté) | 'refuse' (pas de droit sur le stock)
+async function chargerStock(){
+  if(!sb){ stockEtat = 'absent'; return; }
+  try{
+    const r = await sb.auth.getSession(), session = r && r.data && r.data.session;
+    if(!session){ stockEtat = 'absent'; return; }
+    const ms = await sb.from('members').select('establishment_id').eq('user_id', session.user.id);
+    if(ms.error || !ms.data || !ms.data.length){ stockEtat = 'refuse'; return; }
+    const ids = [...new Set(ms.data.map(x => x.establishment_id))];
+    const st = await sb.from('stock_pots').select('marque,designation_article,type,finition,ral_reference,theme_couleur,quantite_disponible_l').in('establishment_id', ids).limit(5000);
+    if(st.error || !st.data){ stockEtat = 'refuse'; return; }
+    stockPots = st.data; stockEtat = 'ok';
+  }catch(e){ stockEtat = 'refuse'; }
+}
+const normRef = s => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+function potsPourReference(ref){
+  const r = normRef(ref);
+  if(!stockPots || r.length < 3) return [];
+  return stockPots.filter(p => [p.ral_reference, p.designation_article, p.theme_couleur].some(v => { const n = normRef(v); return n.length >= 4 && (n === r || n.includes(r) || r.includes(n)); }));
+}
+function etatStockTeinte(ref){
+  if(normRef(ref).length < 3) return { code:'inconnu', texte:'Référence à saisir' };
+  if(stockEtat !== 'ok') return { code:'inconnu', texte: stockEtat === 'absent' ? 'Stock non lu (non connecté)' : 'Stock non lisible avec ce compte' };
+  const pots = potsPourReference(ref).filter(p => Number(p.quantite_disponible_l) > 0);
+  if(!pots.length) return { code:'absent', texte:'Aucun pot en stock' };
+  const l = pots.reduce((s, p) => s + Number(p.quantite_disponible_l || 0), 0);
+  return { code:'ok', texte:'En stock : ' + l.toLocaleString('fr-FR', { maximumFractionDigits:2 }) + ' L (' + pots.length + ' pot' + (pots.length > 1 ? 's' : '') + ')' };
+}
+function aCommander(t){ return t.commander != null ? !!t.commander : (stockEtat === 'ok' && etatStockTeinte(t.reference).code === 'absent'); }
+function listeACommander(){ return E.teintes.filter(t => t.reference.trim() && aCommander(t)).map(t => t.reference.trim() + (t.nom ? ' (' + t.nom + ')' : '')); }
+function melangerBlanc(hex, part){ const c = hexRgb(hex).map(v => Math.round(v * (1 - part) + 255 * part)); return '#' + c.map(v => v.toString(16).padStart(2, '0')).join(''); }
+const CAMAIEU = 0.10;
+function teintesNuancier(){ return E.teintes.filter(t => t.reference.trim() || t.nom.trim()); }
+function libelleCmjn(cle){ const p = cle.split(','); return 'C' + p[0] + ' M' + p[1] + ' J' + p[2] + ' N' + p[3]; }
+
+function pageNuancier(){
+  const e = ETAPES[E.etape];
+  const cases = teintesNuancier().map(t => {
+    const fond = t.hex || '#dddddd';
+    const sous = [t.nom, t.nuancier].filter(Boolean).map(esc).join('<br>');
+    return `<div class="pastille"><div class="pastilleCouleur" style="background:${fond}"></div>
+      ${t.camaieu ? `<div class="pastilleCouleur camaieu" style="background:${melangerBlanc(fond, CAMAIEU)}"></div><div class="pastilleSous">+ 10 % de blanc</div>` : ''}
+      <div class="pastilleRef">${esc(t.reference || t.nom)}</div>${sous ? `<div class="pastilleSous">${sous}</div>` : ''}</div>`;
+  }).join('');
+  return habiller(`${entete(e.validation ? 'VALIDATION' : 'NUANCIER', e.validation ? dateAffichee() : sousVersion(), e.validation)}
+    <div class="nuancierCorps"><div class="display" style="font-size:30px;margin:0 0 6mm">Nuancier</div><div class="nuancierGrille">${cases}</div>
+    <div class="nuancierNote">Les teintes affichées à l'écran ou imprimées sont indicatives : seule la référence de peinture fait foi.</div></div>${pied()}`, true);
+}
+function blocTeintes(){
+  const entete = stockEtat === 'ok' ? 'Stock de l\'atelier lu (' + stockPots.length + ' pots).'
+    : stockEtat === 'refuse' ? 'Stock non lisible avec ce compte (droit propre à la graphiste : prochain lot).'
+    : 'Stock non lu : <a href="../connexion.html?mode=connexion&suite=' + encodeURIComponent(location.href) + '">connectez-vous avec un compte de l\'atelier</a> pour le vérifier.';
+  const lignes = E.teintes.map(t => {
+    const e = etatStockTeinte(t.reference), cmd = aCommander(t);
+    const sug = (!t.reference && t.ral && t.ral.d <= 25)
+      ? `<button class="btn petit" data-act="tRal" style="margin:2px 0 6px"><span class="puce" style="border:0;padding:0"><i style="background:${t.ral.hex}"></i></span> Suggestion : RAL ${esc(t.ral.code)} (écart ${t.ral.d}) — à confirmer</button>`
+      : (!t.reference && t.cmyk ? '<div class="tiny" style="margin:2px 0 6px">Aucune référence RAL proche : saisissez celle de la peinture.</div>' : '');
+    return `<div class="prop" data-t="${t.id}">
+      <div class="teinteTete"><span class="pastS" style="background:${t.hex || '#ddd'}"></span><span class="tiny">${t.cmyk ? libelleCmjn(t.cmyk) : 'ajoutée à la main'}</span><button class="btn petit" data-act="tX" title="Retirer" style="margin-left:auto">✕</button></div>
+      <div class="field" style="margin-top:6px"><label>Référence de peinture</label><input class="input" value="${esc(t.reference)}" placeholder="RAL 3020, CR4099-5…" data-tk="reference"></div>
+      ${sug}
+      <div class="grid2"><div class="field"><label>Nom (facultatif)</label><input class="input" value="${esc(t.nom)}" data-tk="nom"></div><div class="field"><label>Marque / nuancier</label><input class="input" value="${esc(t.nuancier)}" placeholder="Tollens · Cromology" data-tk="nuancier"></div></div>
+      <label class="choixTexte"><input type="checkbox" data-tk="camaieu" ${t.camaieu ? 'checked' : ''}><span>Camaïeu : ajouter « + 10 % de blanc »</span></label>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="pilStock ${e.code}">${esc(e.texte)}</span>${stockEtat === 'ok' && t.reference.trim() ? `<label class="tiny"><input type="checkbox" data-tk="commander" ${cmd ? 'checked' : ''}> à commander</label>` : ''}</div></div>`;
+  }).join('');
+  const cmd = listeACommander();
+  return `<label class="choixTexte"><input type="checkbox" id="chkNuancier" ${nuancierActif() ? 'checked' : ''}><span>Ajouter une page nuancier au dossier</span></label>
+    <p class="tiny">${entete} L'état du stock n'apparaît jamais dans le dossier du client.</p>
+    ${lignes || '<p class="tiny">Les couleurs des fichiers Illustrator apparaissent ici. Vous pouvez aussi ajouter une teinte à la main.</p>'}
+    <button class="btn petit" id="bTeinteAdd">+ Teinte</button>
+    ${cmd.length ? `<div class="prop" style="margin-top:10px"><b style="font-size:13px">À commander (interne)</b><div class="tiny" style="margin:4px 0">${cmd.map(esc).join(' · ')}</div><button class="btn petit" id="bCopierCommande">Copier la liste</button></div>` : ''}`;
+}
+
+
 function listePages(){
   const e = ETAPES[E.etape], out = [['Couverture', pageCouverture()], ['Introduction', pageIntro()]];
   propositions().forEach((c, i) => out.push([E.props[c].titre || 'Proposition', pageProposition(c, i)]));
+  if(nuancierActif() && teintesNuancier().length) out.push(['Nuancier', pageNuancier()]);
   if(e.autorisation) out.push(["Demande d'autorisation", pageAutorisation()]);
   out.push(['Contact', pageContact()]);
   return out;
 }
 
 /* ------------------------------ Saisie (colonne de gauche) ------------------------------ */
-let ouverts = { fichiers:true, dossier:true, texte:false, cotes:false, atelier:false };
+let ouverts = { fichiers:true, dossier:true, texte:false, cotes:false, teintes:false, atelier:false };
 function dessiner(){
-  sauver();
+  sauver(); lancerSync();
   const S = document.getElementById('saisie'), pages = listePages();
   const ph = (id, titre, corps) => `<details class="bloc" data-b="${id}" ${ouverts[id] ? 'open' : ''}><summary>${titre}</summary><div class="corps">${corps}</div></details>`;
   const champ = (cle, lib, type) => `<div class="field"><label>${lib}</label><input class="input" ${type ? 'type="' + type + '"' : ''} value="${esc(E[cle])}" data-k="${cle}"></div>`;
@@ -563,6 +724,7 @@ function dessiner(){
       <p class="tiny">Ces champs se remplissent seuls depuis le nom des fichiers ; ils viendront de Trello plus tard.</p>`)}
     ${ph('texte', "Texte d'introduction", blocTexte())}
     ${ph('cotes', 'Cotes et description', blocCotes())}
+    ${ph('teintes', 'Teintes et stock', blocTeintes())}
     ${ph('atelier', "Coordonnées de l'atelier", `
       <div class="field"><label>Nom</label><input class="input" value="${esc(E.atelier.nom)}" data-a="nom"></div>
       <div class="grid2"><div class="field"><label>Téléphone</label><input class="input" value="${esc(E.atelier.tel)}" data-a="tel"></div><div class="field"><label>E-mail</label><input class="input" value="${esc(E.atelier.mail)}" data-a="mail"></div></div>
@@ -624,6 +786,8 @@ saisie.addEventListener('change', e => {
   if(t.dataset.a){ E.atelier[t.dataset.a] = t.value; dessiner(); return; }
   if(t.name === 'tx'){ E.texteId = t.value; E.texteLibre = null; dessiner(); return; }
   if(t.id === 'texteCorps'){ E.texteLibre = { id: texteActif().id, corps: t.value }; dessiner(); return; }
+  if(t.id === 'chkNuancier'){ E.nuancier = t.checked; dessiner(); return; }
+  if(t.dataset.tk){ const dt = t.closest('[data-t]'), te = dt && E.teintes.find(x => x.id === dt.dataset.t); if(te){ te[t.dataset.tk] = (t.type === 'checkbox') ? t.checked : t.value; if(t.dataset.tk === 'reference') memoriser(te); dessiner(); } return; }
   if(t.dataset.p){ const p = propDe(t); if(p){ p[t.dataset.p] = t.value; dessiner(); } return; }
   if(t.dataset.ck){ const p = propDe(t); if(p){ p.cotes[+t.dataset.i][t.dataset.ck] = t.value; dessiner(); } }
 });
@@ -634,6 +798,15 @@ saisie.addEventListener('click', e => {
   if(b.id === 'bPhoto'){ document.getElementById('photoInput').click(); return; }
   if(b.id === 'bPhotoOff'){ E.photo = ''; dessiner(); return; }
   if(b.id === 'bNouveau'){ if(confirm('Effacer ce dossier et en commencer un nouveau ?')){ E = etatVierge(); dessiner(); } return; }
+  if(b.id === 'bTeinteAdd'){ E.teintes.push({ id:uid(), cmyk:'', hex:'#cccccc', reference:'', nom:'', nuancier:'', camaieu:false, commander:null, ral:null }); dessiner(); return; }
+  if(b.id === 'bCopierCommande'){ try{ navigator.clipboard.writeText(listeACommander().join('\n')); b.textContent = 'Copié ✓'; }catch(e){ /* presse-papiers indisponible */ } return; }
+  const dt = b.closest('[data-t]');
+  if(dt && b.dataset.act){
+    const te = E.teintes.find(x => x.id === dt.dataset.t);
+    if(te && b.dataset.act === 'tRal' && te.ral){ te.reference = 'RAL ' + te.ral.code; te.nuancier = te.nuancier || 'RAL'; memoriser(te); }
+    else if(b.dataset.act === 'tX'){ E.teintes = E.teintes.filter(x => x.id !== dt.dataset.t); }
+    dessiner(); return;
+  }
   const d = b.closest('[data-c]'), c = d && d.dataset.c, a = b.dataset.act;
   if(!a || !c) return;
   const p = E.props[c];
@@ -661,7 +834,7 @@ document.getElementById('bMail').addEventListener('click', () => {
   const sujet = 'Dossier de présentation – ' + (E.client || 'client') + ' – ' + E.etape + ver + (E.numero ? ' (dossier ' + E.numero + ')' : '');
   const noms = listePages().map(p => p[0]).join(', ');
   const corps = 'Tristan,\n\nVoici le dossier de présentation pour « ' + (E.client || 'client') + ' »' + (E.numero ? ' (dossier n° ' + E.numero + ', ' : ' (') + e.nom.toLowerCase() + ver + ').\n\n' +
-    'Il comprend ' + listePages().length + ' pages : ' + noms + '.\n' +
+    'Il comprend ' + listePages().length + ' pages : ' + noms + '.\n' + (listeACommander().length ? 'Peintures à commander : ' + listeACommander().join(', ') + '.\n' : '') +
     'Le PDF est en pièce jointe. Les cotes et les teintes sont à valider de ton côté avant l\'envoi au client.\n\n' +
     'Dis-moi si tu veux des modifications.\n\nBonne journée,\n' + (E.signature || '');
   location.href = 'mailto:' + DEST_MAIL + '?subject=' + encodeURIComponent(sujet) + '&body=' + encodeURIComponent(corps);
@@ -690,7 +863,7 @@ async function reprendre(){
     if(v){ const e = JSON.parse(v); E = Object.assign(etatVierge(), e); E.atelier = Object.assign({}, ATELIER_DEFAUT, e.atelier || {}); }
   }catch(e){ /* rien */ }
 }
-reprendre().then(dessiner);
+reprendre().then(() => { dessiner(); chargerStock().then(dessiner); });
 </script>
 </body>
 </html>
