@@ -58,6 +58,35 @@
   .pastilleRef{font-size:12px;font-weight:700;letter-spacing:.03em;text-transform:uppercase}
   .pastilleSous{font-size:10px;line-height:1.5;opacity:.8}
   .nuancierNote{font-size:9.5px;margin-top:6mm;opacity:.7}
+  .afaire{background:#fdecea!important;border-color:#f0b9b3!important}
+  .btn.afaire:hover{border-color:#c2493b!important}
+  .depot.afaire{border-color:#e7a198}
+  .alerteTxt{color:var(--accent)}
+  .enteteSaisie{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .compte{font-size:12px;color:var(--muted)}
+  .lien{background:none;border:0;padding:0;color:#111;text-decoration:underline;cursor:pointer;font:inherit}
+  a.lien{color:#111}
+  .progres{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:8px 0 12px}
+  .jauge{flex:1 1 90px;height:6px;border-radius:3px;background:#e9e7e2;overflow:hidden}
+  .jauge i{display:block;height:100%;background:#111}
+  .bloc{border-top:1px solid var(--line)}
+  .blocTete{display:flex;align-items:center;gap:10px;width:100%;background:none;border:0;padding:11px 2px;cursor:pointer;text-align:left}
+  .blocTete .num{flex:none;width:22px;height:22px;border-radius:50%;border:1px solid #bbb;display:inline-flex;align-items:center;justify-content:center;font-size:12px}
+  .bloc.courant .blocTete .num{background:#111;color:#fff;border-color:#111}
+  .bloc.fait .blocTete .num{background:#e3f1e6;border-color:#9cc8a7;color:#1d5a2d}
+  .blocTete .tt{font-weight:600}
+  .blocTete .rec{flex:1;min-width:0;color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right}
+  .blocTete .coche{margin-left:auto;color:#1d5a2d;font-weight:700}
+  .blocTete .rec + .coche{margin-left:6px}
+  .blocTete .aFaire{margin-left:auto;font-size:11px;background:#fdecea;color:#a3321f;border-radius:999px;padding:2px 8px}
+  .blocTete .opt{margin-left:auto;font-size:11px;color:var(--muted)}
+  .bloc .corps{padding:2px 2px 14px}
+  .aide{font-size:12px;color:var(--muted);margin:8px 0 0;line-height:1.5}
+  .groupe{display:flex;flex-wrap:wrap;gap:6px;padding:4px;border-radius:10px;border:1px solid transparent}
+  .choixPil{display:inline-flex;align-items:center;gap:6px;border:1px solid #cfcdc7;border-radius:999px;padding:5px 12px;font-size:13px;cursor:pointer;background:#fff}
+  .choixPil input{accent-color:#111;margin:0}
+  .choixPil.on{background:#111;color:#fff;border-color:#111}
+  .choixPil.on input{accent-color:#fff}
   .lu{font-size:12px;color:var(--muted);margin:4px 0}
   .lu.alerte{color:var(--accent);font-weight:600}
   .puces{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0}
@@ -170,13 +199,13 @@ const DEST_MAIL = 'peinture@etsgesret.fr';
 
 /* Textes d'introduction — repris des trois dossiers réels (le dernier pour le singulier vient du prompt). Seront déplacés en base au lot 4. */
 const TEXTES_INTEGRES = [
-  { id:'i-crea-n', etape:'CREA', nb:'n', devis:'non_signe', nom:'Premières propositions (dossier Goutzy)', ouverture:'de lettrages peints', priorite:10, liste:null,
+  { id:'i-crea-n', etape:'CREA', nb:'n', devis:'non_signe', nom:'Premières propositions', ouverture:'de lettrages peints', priorite:10, liste:null,
     corps:"Vous trouverez ci-après nos premières propositions.\n\nCes propositions ne sont pas définitives et pourront évoluer selon vos retours, si vous décidez de travailler avec nous." },
   { id:'i-crea-1', etape:'CREA', nb:'1', devis:'non_signe', nom:'Première proposition (singulier)', ouverture:'de lettrages peints', priorite:10, liste:null,
     corps:"Vous trouverez ci-après notre première proposition.\n\nCette proposition n'est pas définitive et pourra évoluer selon vos retours, si vous décidez de travailler avec nous." },
-  { id:'i-mood', etape:'MOODBOARD', nb:null, devis:null, nom:"Planches d'ambiance et croquis (dossier Glacerie Morice)", ouverture:'de lettrages peints', priorite:10, liste:null,
+  { id:'i-mood', etape:'MOODBOARD', nb:null, devis:null, nom:"Planches d'ambiance et croquis", ouverture:'de lettrages peints', priorite:10, liste:null,
     corps:"Vous trouverez ci-après nos planches d'ambiance ainsi qu'un premier croquis.\n\nCes éléments constituent des pistes créatives préliminaires et pourront évoluer selon vos retours et les orientations retenues pour votre projet." },
-  { id:'i-bat', etape:'BAT', nb:null, devis:'non_signe', nom:'Maquette à valider (dossier Alré Peinture)', ouverture:"d'un panneau peint", priorite:10,
+  { id:'i-bat', etape:'BAT', nb:null, devis:'non_signe', nom:'Maquette à valider', ouverture:"d'un panneau peint", priorite:10,
     corps:"Vous trouverez ci-après la maquette à valider avant intervention.\n\nAfin de valider la prestation et de commencer la préparation du chantier, merci de bien vouloir :",
     liste:["Signer le devis", "Signer le bon de commande ci-dessous", "Valider chaque visuel souhaité en cochant les pages en haut à droite", "Effectuer le versement de l'acompte"] },
   { id:'i-croq-1', etape:'CREA', nb:'1', devis:'non_signe', nom:"Croquis d'intention (singulier)", ouverture:'de lettrages peints', priorite:20, liste:null,
@@ -201,9 +230,9 @@ async function chargerTextes(){
 }
 
 /* ------------------------------ État ------------------------------ */
+function aujourdhui(){ const d = new Date(), p = n => String(n).padStart(2, '0'); return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); }
 function etatVierge(){
-  const d = new Date(), p = n => String(n).padStart(2,'0');
-  return { etape:'CREA', date: String(d.getFullYear()).slice(2) + p(d.getMonth()+1) + p(d.getDate()),
+  return { etape:'CREA', etapeChoisie:false, date:aujourdhui(), dateManuelle:false,
     numero:'', client:'', ville:'', interlocuteur:'', tel:'', version:1, devis:'non_signe',
     fichiers:[],      // { id, nom, cle, v, src }
     props:{},         // cle → { choix, titre, type, cotes:[{l,v}], description }
@@ -226,16 +255,17 @@ function lireNom(nom){
 }
 // Clé de regroupement : le nom sans la version finale (_V2, -V2, " V2"). Les versions d'une même clé sont des versions de la même proposition.
 function cleEtVersion(nom){
-  const base = nom.replace(/\.[a-z0-9]+$/i, '');
-  const m = /^(.*?)[\s_\-]*V(\d+)$/i.exec(base);
-  return m ? { cle: m[1].trim().toLowerCase(), v: parseInt(m[2], 10), titre: m[1].trim() } : { cle: base.trim().toLowerCase(), v: 1, titre: base.trim() };
+  // Chaque fichier ajoute sa propre page. Un .ai et son PDF/PNG de même nom forment un seul visuel. « _V2 » dans le nom sert d'étiquette de version de la page.
+  const base = nom.replace(/\.[a-z0-9]+$/i, '').trim(), m = /[\s_\-]*V(\d+)$/i.exec(base);
+  return { cle: base.toLowerCase(), v: 1, vv: m ? parseInt(m[1], 10) : 0, titre: base };
 }
 function majuscules(s){ return s.normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/[^A-Z0-9]+/g,'_').replace(/^_+|_+$/g,''); }
 function nomFichierPdf(){
   const e = E.etape, v = (e === 'BAT') ? '' : (E.version ? '_V' + E.version : '');
-  return [E.date, E.numero, majuscules(E.client), e].filter(Boolean).join('_') + v;
+  return [dateCourte(), E.numero, majuscules(E.client), e].filter(Boolean).join('_') + v;
 }
-function dateAffichee(){ const d = E.date; return d && d.length === 6 ? d.slice(4) + '/' + d.slice(2,4) + '/20' + d.slice(0,2) : ''; }
+function dateAffichee(){ const d = E.date || ''; return /^\d{4}-\d{2}-\d{2}$/.test(d) ? d.slice(8) + '/' + d.slice(5, 7) + '/' + d.slice(0, 4) : ''; }
+function dateCourte(){ const d = E.date || ''; return /^\d{4}-\d{2}-\d{2}$/.test(d) ? d.slice(2, 4) + d.slice(5, 7) + d.slice(8) : ''; }
 
 /* ------------------ Fichiers : images et PDF ------------------ */
 const MAX_PX = 2400;
@@ -452,12 +482,6 @@ async function ajouterFichiers(liste, cible){
         if(faible) avert.push('« ' + f.name + ' » : aperçu basse définition. Réenregistrez-le avec « Créer un fichier compatible PDF », ou déposez aussi son PDF.');
         aiData.alertes.forEach(a => avert.push('« ' + f.name + ' » : ' + a));
       } else pages = pdf ? await pagesPdf(f) : [await imageReduite(f)];
-      const meta = lireNom(f.name);
-      if(!E.fichiers.length && meta.client){ /* premier fichier au bon format : il renseigne le dossier */
-        Object.assign(E, { date: meta.date || E.date, numero: meta.numero || E.numero, client: meta.client || E.client });
-        if(meta.etape) E.etape = meta.etape;
-        if(meta.version) E.version = meta.version;
-      }
       pages.forEach((src, i) => {
         const cv = cleEtVersion(f.name), suffixe = pages.length > 1 ? ' — page ' + (i + 1) : '';
         const cle = cv.cle + (pages.length > 1 ? '#p' + (i + 1) : '');
@@ -469,7 +493,7 @@ async function ajouterFichiers(liste, cible){
         } else E.fichiers.push({ id:uid(), nom:f.name + suffixe, cle, v:cv.v, src, ai:aiData, faible });
         if(!E.props[cle]){
           const croquis = /croquis/i.test(f.name);
-          E.props[cle] = { choix:'', titre: (meta.numero ? '' : cv.titre) + suffixe, type: croquis ? 'Croquis' : (ETAPES[E.etape] || ETAPES.CREA).typeDefaut, cotes:[], description:'', panneau:'' };
+          E.props[cle] = { choix:'', titre: cv.titre + suffixe, vv: cv.vv, type: croquis ? 'Croquis' : (ETAPES[E.etape] || ETAPES.CREA).typeDefaut, cotes:[], description:'', panneau:'' };
           E.ordre.push(cle);
         }
         const pr = E.props[cle];
@@ -557,7 +581,7 @@ function pageProposition(cle, rang){
   const memeType = propositions().filter(c => E.props[c].type === p.type);
   const num = memeType.indexOf(cle) + 1;
   const etiquette = e.validation ? 'VALIDATION' : (p.type.toUpperCase() + (p.type === 'Croquis' ? '' : ' ' + String(num).padStart(2, '0')));
-  const sous = e.validation ? dateAffichee() : ('V' + (E.version || 1) + ' • ' + dateAffichee());
+  const sous = e.validation ? dateAffichee() : ('V' + (p.vv || E.version || 1) + ' • ' + dateAffichee());
   const cotes = p.cotes.filter(c => c.l || c.v).map(c => `<div class="c"><b>${esc(c.l)}${c.l ? ' :' : ''}</b>${esc(c.v)}</div>`).join('');
   return habiller(`${entete(etiquette, sous, e.validation)}
     <div class="corps-page"><div class="visu"><div class="visuCadre"><img src="${f.src}" alt=""></div>
@@ -661,6 +685,7 @@ async function chargerStock(){
   if(!sb){ stockEtat = 'absent'; return; }
   try{
     const r = await sb.auth.getSession(), session = r && r.data && r.data.session;
+    compte = session ? { email: session.user.email } : null;
     if(!session){ stockEtat = 'absent'; return; }
     const ms = await sb.from('members').select('establishment_id').eq('user_id', session.user.id);
     if(ms.error || !ms.data || !ms.data.length){ stockEtat = 'refuse'; return; }
@@ -715,7 +740,7 @@ function blocTeintes(){
       : (!t.reference && t.cmyk ? '<div class="tiny" style="margin:2px 0 6px">Aucune référence RAL proche : saisissez celle de la peinture.</div>' : '');
     return `<div class="prop" data-t="${t.id}">
       <div class="teinteTete"><span class="pastS" style="background:${t.hex || '#ddd'}"></span><span class="tiny">${t.cmyk ? libelleCmjn(t.cmyk) : 'ajoutée à la main'}</span><button class="btn petit" data-act="tX" title="Retirer" style="margin-left:auto">✕</button></div>
-      <div class="field" style="margin-top:6px"><label>Référence de peinture</label><input class="input" value="${esc(t.reference)}" placeholder="RAL 3020, CR4099-5…" data-tk="reference"></div>
+      <div class="field" style="margin-top:6px"><label>Référence de peinture</label><input class="input${vide(t.reference) ? ' afaire' : ''}" value="${esc(t.reference)}" placeholder="RAL 3020, CR4099-5…" data-tk="reference"></div>
       ${sug}
       <div class="grid2"><div class="field"><label>Nom (facultatif)</label><input class="input" value="${esc(t.nom)}" data-tk="nom"></div><div class="field"><label>Marque / nuancier</label><input class="input" value="${esc(t.nuancier)}" placeholder="Tollens · Cromology" data-tk="nuancier"></div></div>
       <label class="choixTexte"><input type="checkbox" data-tk="camaieu" ${t.camaieu ? 'checked' : ''}><span>Camaïeu : ajouter « + 10 % de blanc »</span></label>
@@ -739,77 +764,132 @@ function listePages(){
   return out;
 }
 
-/* ------------------------------ Saisie (colonne de gauche) ------------------------------ */
-let ouverts = { fichiers:true, dossier:true, texte:false, cotes:false, teintes:false, atelier:false };
+/* ------------------------------ Saisie guidée (colonne de gauche) ------------------------------
+   Les étapes se suivent : celle qui reste à faire s'ouvre toute seule, les autres se replient dès qu'elles sont complètes.
+   Fond rouge pâle = case à compléter ou geste à faire à la main. */
+let ouverts = {};          // undefined = automatique ; true / false = choix de la personne
+let dernierCourant = '', compte = null;
+const vide = v => !String(v == null ? '' : v).trim();
+const nomTexte = n => String(n || '').replace(/\s*\(dossier [^)]*\)/i, '');
+function etatEtapes(){
+  const props = propositions(), bat = ETAPES[E.etape].validation;
+  const cotesOk = !bat || (props.length > 0 && props.every(c => { const p = E.props[c]; return !vide(p.panneau) || p.cotes.length || !vide(p.description); }));
+  const teintesOk = E.teintes.every(t => !vide(t.reference) || !vide(t.nom));
+  return [
+    { id:'dossier',  titre:'Numéro de dossier',      ok:!vide(E.numero),                 requis:true },
+    { id:'type',     titre:'Type de dossier',        ok:!!E.etapeChoisie,                requis:true },
+    { id:'fichiers', titre:'Fichiers Illustrator',   ok:props.length > 0,                requis:true },
+    { id:'client',   titre:'Client',                 ok:!vide(E.client) && !vide(E.ville), requis:true },
+    { id:'cotes',    titre:'Cotes et description',   ok:cotesOk,                         requis:bat },
+    { id:'teintes',  titre:'Teintes et nuancier',    ok:teintesOk,                       requis:nuancierActif() && E.teintes.length > 0 },
+    { id:'texte',    titre:"Texte d'introduction",   ok:true,                            requis:false },
+    { id:'envoi',    titre:'PDF et e-mail',          ok:false,                           requis:false, final:true }
+  ];
+}
+function resumeEtape(id){
+  if(id === 'dossier') return 'n° ' + esc(E.numero);
+  if(id === 'type') return esc(ETAPES[E.etape].nom) + ' · devis ' + (E.devis === 'signe' ? 'signé' : 'non signé');
+  if(id === 'fichiers'){ const n = propositions().length; return n + ' page' + (n > 1 ? 's' : ''); }
+  if(id === 'client') return esc(E.client) + ' · ' + esc((E.ville || '').split('\n')[0]);
+  if(id === 'cotes'){ const n = propositions().length; return n + ' visuel' + (n > 1 ? 's' : ''); }
+  if(id === 'teintes') return E.teintes.length + ' teinte' + (E.teintes.length > 1 ? 's' : '');
+  if(id === 'texte') return esc(nomTexte(texteActif().nom));
+  return '';
+}
+function compteHtml(){
+  if(compte) return esc(compte.email) + ' · <button type="button" class="lien" id="bDeco">Déconnexion</button>';
+  return '<a class="lien" href="../connexion.html?mode=connexion&suite=' + encodeURIComponent(location.href) + '">Connexion</a>';
+}
+function groupeRadios(nom, options, valeur, aFaire){
+  return `<div class="groupe${aFaire ? ' afaire' : ''}">${options.map(o => `<label class="choixPil${valeur === o[0] ? ' on' : ''}"><input type="radio" name="${nom}" value="${esc(o[0])}" ${valeur === o[0] ? 'checked' : ''}>${esc(o[1])}</label>`).join('')}</div>`;
+}
+function corpsEtape(id){
+  if(id === 'dossier') return `<div class="field"><label>Numéro de dossier</label><input class="input${vide(E.numero) ? ' afaire' : ''}" inputmode="numeric" placeholder="1048" value="${esc(E.numero)}" data-k="numero"></div>
+    <p class="aide">C'est la seule référence à saisir : le client, l'adresse et le téléphone viendront ensuite de Trello (connexion à venir). D'ici là, vous les complétez à l'étape « Client ».</p>`;
+  if(id === 'type') return `<div class="field"><label>Étape du dossier</label>${groupeRadios('etape', ETAPES_CONNUES.map(k => [k, ({ CREA:'Propositions (CREA)', BAT:'Validation (BAT)', MOODBOARD:'Moodboard & croquis' })[k]]), E.etapeChoisie ? E.etape : '', !E.etapeChoisie)}</div>
+    <div class="field"><label>Statut du devis</label>${groupeRadios('devis', [['non_signe', 'Non signé'], ['signe', 'Signé']], E.devis || 'non_signe', false)}</div>
+    <div class="field" style="max-width:140px"><label>Version du dossier (V1, V2…)</label><input class="input" type="number" min="1" value="${E.version}" data-k="version"></div>`;
+  if(id === 'fichiers') return blocFichiers();
+  if(id === 'client') return `<div class="field"><label>Date du dossier</label><input class="input" type="date" value="${esc(E.date)}" data-k="date"></div>
+    <div class="field"><label>Client / projet</label><input class="input${vide(E.client) ? ' afaire' : ''}" value="${esc(E.client)}" data-k="client"></div>
+    <div class="field"><label>Localisation</label><textarea class="textarea${vide(E.ville) ? ' afaire' : ''}" rows="2" placeholder="Rue, ville, département" data-k="ville">${esc(E.ville)}</textarea></div>
+    <div class="grid2"><div class="field"><label>Interlocuteur</label><input class="input${vide(E.interlocuteur) ? ' afaire' : ''}" value="${esc(E.interlocuteur)}" data-k="interlocuteur"></div>
+    <div class="field"><label>Téléphone</label><input class="input${vide(E.tel) ? ' afaire' : ''}" value="${esc(E.tel)}" data-k="tel"></div></div>
+    <p class="aide">À saisir à la main pour l'instant ; ces informations viendront de Trello à partir du numéro de dossier.</p>`;
+  if(id === 'cotes') return blocCotes();
+  if(id === 'teintes') return blocTeintes();
+  if(id === 'texte') return blocTexte();
+  if(id === 'envoi') return `<div class="field"><label>Votre prénom (signature du message à Tristan)</label><input class="input${vide(E.signature) ? ' afaire' : ''}" value="${esc(E.signature)}" data-k="signature"></div>
+    <p class="aide">Le fichier PDF est nommé automatiquement : <b>${esc(nomFichierPdf())}.pdf</b>.<br>Boutons « Enregistrer en PDF » et « Écrire à Tristan » : en haut de l'aperçu. Joignez ensuite le PDF au message.</p>`;
+  return '';
+}
 function dessiner(){
   sauver(); lancerSync();
   const S = document.getElementById('saisie'), pages = listePages();
-  const ph = (id, titre, corps) => `<details class="bloc" data-b="${id}" ${ouverts[id] ? 'open' : ''}><summary>${titre}</summary><div class="corps">${corps}</div></details>`;
-  const champ = (cle, lib, type) => `<div class="field"><label>${lib}</label><input class="input" ${type ? 'type="' + type + '"' : ''} value="${esc(E[cle])}" data-k="${cle}"></div>`;
+  const etapes = etatEtapes(), requisFaits = etapes.filter(s => s.requis && s.ok).length, requis = etapes.filter(s => s.requis).length;
+  const courant = (etapes.find(s => s.requis && !s.ok) || etapes[etapes.length - 1]).id;
+  if(courant !== dernierCourant){ ouverts = {}; }
+  const reste = requis - requisFaits;
   S.innerHTML = `
-    <h1>Dossier de présentation</h1>
-    <p class="tiny" style="margin:0 0 6px">Glissez vos fichiers : le dossier se construit à droite. <button class="btn petit" id="bNouveau">Nouveau dossier</button></p>
-    ${ph('fichiers', 'Fichiers', blocFichiers())}
-    ${ph('dossier', 'Dossier', `
-      <div class="field"><label>Étape</label><select class="select" data-k="etape">${ETAPES_CONNUES.map(k => `<option value="${k}" ${k === E.etape ? 'selected' : ''}>${k} — ${ETAPES[k].nom}</option>`).join('')}</select></div>
-      <div class="field"><label>Statut du devis</label><select class="select" data-k="devis"><option value="non_signe" ${E.devis !== 'signe' ? 'selected' : ''}>Non signé</option><option value="signe" ${E.devis === 'signe' ? 'selected' : ''}>Signé</option></select></div>
-      <div class="grid2">${champ('numero', 'N° de dossier')}${champ('date', 'Date (AAMMJJ)')}</div>
-      <div class="grid2">${champ('client', 'Client / projet')}<div class="field"><label>Version</label><input class="input" type="number" min="0" value="${E.version}" data-k="version"></div></div>
-      <div class="field"><label>Localisation</label><textarea class="textarea" rows="2" data-k="ville">${esc(E.ville)}</textarea></div>
-      <div class="grid2">${champ('interlocuteur', 'Interlocuteur')}${champ('tel', 'Téléphone')}</div>
-      <p class="tiny">Ces champs se remplissent seuls depuis le nom des fichiers ; ils viendront de Trello plus tard.</p>`)}
-    ${ph('texte', "Texte d'introduction", blocTexte())}
-    ${ph('cotes', 'Cotes et description', blocCotes())}
-    ${ph('teintes', 'Teintes et stock', blocTeintes())}
-    ${ph('atelier', "Coordonnées de l'atelier", `
-      <div class="field"><label>Nom</label><input class="input" value="${esc(E.atelier.nom)}" data-a="nom"></div>
-      <div class="grid2"><div class="field"><label>Téléphone</label><input class="input" value="${esc(E.atelier.tel)}" data-a="tel"></div><div class="field"><label>E-mail</label><input class="input" value="${esc(E.atelier.mail)}" data-a="mail"></div></div>
-      <div class="field"><label>Adresse</label><textarea class="textarea" rows="2" data-a="adresse">${esc(E.atelier.adresse)}</textarea></div>
-      <div class="field"><label>Site</label><input class="input" value="${esc(E.atelier.web)}" data-a="web"></div>
-      <div class="field"><label>Votre prénom (signature de l'e-mail)</label><input class="input" value="${esc(E.signature)}" data-k="signature"></div>`)}
-    `;
-  const Z = document.getElementById('zone');
-  Z.innerHTML = pages.map(p => p[1]).join('');
+    <div class="enteteSaisie"><h1>Dossier de présentation</h1><div class="compte">${compteHtml()}</div></div>
+    <div class="progres"><div class="jauge"><i style="width:${requis ? Math.round(100 * requisFaits / requis) : 100}%"></i></div>
+      <span class="tiny">${reste > 0 ? 'Il reste ' + reste + ' étape' + (reste > 1 ? 's' : '') + ' à faire' : 'Tout est prêt : enregistrez le PDF'}</span>
+      <button class="btn petit" id="bNouveau">Nouveau dossier</button></div>
+    ${etapes.map((s, i) => {
+      const ouvert = ouverts[s.id] !== undefined ? ouverts[s.id] : s.id === courant;
+      const etat = s.final ? '' : s.ok ? '<span class="coche">✓</span>' : s.requis ? '<span class="aFaire">à faire</span>' : '<span class="opt">facultatif</span>';
+      return `<div class="bloc${s.ok ? ' fait' : ''}${s.id === courant ? ' courant' : ''}" data-b="${s.id}"><button type="button" class="blocTete" data-toggle="${s.id}" aria-expanded="${ouvert}"><span class="num">${i + 1}</span><span class="tt">${s.titre}</span><span class="rec">${s.ok && !ouvert ? resumeEtape(s.id) : ''}</span>${etat}</button>${ouvert ? `<div class="corps">${corpsEtape(s.id)}</div>` : ''}</div>`;
+    }).join('')}`;
+  document.getElementById('zone').innerHTML = pages.map(p => p[1]).join('');
   document.getElementById('infoPages').textContent = pages.length + ' pages A4 paysage · fichier : ' + nomFichierPdf() + '.pdf';
   ajuster();
+  if(courant !== dernierCourant){
+    dernierCourant = courant;
+    setTimeout(() => {
+      const b = S.querySelector('.bloc.courant'); if(!b) return;
+      b.scrollIntoView({ block:'nearest', behavior:'smooth' });
+      const f = b.querySelector('input.afaire, textarea.afaire');
+      if(f && (document.activeElement === document.body || !S.contains(document.activeElement))) f.focus({ preventScroll:true });
+    }, 60);
+  }
 }
 function blocFichiers(){
   const props = propositions();
-  return `<div class="depot" id="depot"><input type="file" id="fichierInput" multiple accept="image/*,.pdf,.ai" hidden>
-      <div class="depotTitre">Glissez ici vos fichiers</div>
-      <div class="tiny">PDF, PNG, JPG. Les versions (_V1, _V2…) d'un même visuel sont regroupées.</div>
+  return `<div class="depot${props.length ? '' : ' afaire'}" id="depot"><input type="file" id="fichierInput" multiple accept=".ai,.pdf,image/*" hidden>
+      <div class="depotTitre">Glissez ici vos fichiers Illustrator (.ai)</div>
+      <div class="tiny">Chaque fichier ajoute sa page au dossier. Vous pouvez en déposer plusieurs (V1, V2, V3…), en une fois ou au fur et à mesure.</div>
       <button class="btn petit" id="bChoisir" style="margin-top:8px">Choisir des fichiers</button>
       <div class="statut tiny" id="statutDepot"></div></div>
     ${props.map((c, i) => {
-      const p = E.props[c], vs = versionsDe(c), ch = fichierChoisi(c);
-      return `<div class="prop" data-c="${esc(c)}"><div class="propTete"><img src="${ch.src}" alt=""><input class="input" value="${esc(p.titre)}" data-p="titre" aria-label="Titre">
+      const p = E.props[c], ch = fichierChoisi(c);
+      return `<div class="prop" data-c="${esc(c)}"><div class="propTete"><img src="${ch.src}" alt=""><input class="input" value="${esc(p.titre)}" data-p="titre" aria-label="Nom du visuel">
         <div style="display:flex;gap:4px"><button class="btn petit" data-act="haut" ${i === 0 ? 'disabled' : ''}>↑</button><button class="btn petit" data-act="bas" ${i === props.length - 1 ? 'disabled' : ''}>↓</button><button class="btn petit" data-act="retirer">✕</button></div></div>
-        <div class="grid2" style="margin-top:8px"><div class="field" style="margin:0"><label>Page</label><select class="select" data-p="type">${TYPES.map(t => `<option ${t === p.type ? 'selected' : ''}>${t}</option>`).join('')}</select></div></div>
-        ${ch.faible ? '<div class="tiny" style="color:var(--accent);margin-top:6px">Aperçu basse définition (vignette) : réenregistrez le .ai avec « Créer un fichier compatible PDF » ou déposez son PDF.</div>' : ''}${vs.length > 1 ? `<div class="versions">${vs.map(v => `<button class="pil ${v.id === ch.id ? 'on' : ''}" data-act="version" data-id="${v.id}">V${v.v}</button>`).join('')}</div><div class="tiny">Version utilisée dans le dossier : V${ch.v}</div>` : ''}</div>`;
+        <div style="margin-top:8px">${groupeRadios('type-' + i, TYPES.map(t => [t, t]), p.type, false)}</div>
+        ${ch.faible ? '<div class="tiny alerteTxt" style="margin-top:6px">Aperçu basse définition : dans Illustrator, enregistrez de nouveau avec « Créer un fichier compatible PDF ».</div>' : ''}</div>`;
     }).join('')}
     <div class="photoL"><input type="file" id="photoInput" accept="image/*" hidden>
       <button class="btn petit" id="bPhoto">${E.photo ? 'Changer la photo du lieu' : 'Ajouter la photo du lieu (facultatif)'}</button>${E.photo ? ' <button class="btn petit" id="bPhotoOff">Retirer</button>' : ''}</div>`;
 }
 function blocTexte(){
   const act = texteActif();
-  return variantes().map(t => `<label class="choixTexte"><input type="radio" name="tx" value="${t.id}" ${t.id === act.id ? 'checked' : ''}><span><b>${esc(t.nom)}</b></span></label>`).join('') +
+  return variantes().map(t => `<label class="choixTexte"><input type="radio" name="tx" value="${t.id}" ${t.id === act.id ? 'checked' : ''}><span><b>${esc(nomTexte(t.nom))}</b></span></label>`).join('') +
     `<div class="field"><label>Texte (modifiable)</label><textarea class="textarea" rows="7" id="texteCorps">${esc(corpsTexte())}</textarea></div>
-     <p class="tiny">Le choix est préparé selon l'étape, le nombre de visuels et le statut du devis ; vous pouvez le changer. Bibliothèque : ${textesBase ? 'en base' : 'textes intégrés à la page'}.</p>
+     <p class="tiny">Choix préparé selon l'étape, le nombre de visuels et le statut du devis. Bibliothèque : ${textesBase ? 'en base' : 'textes intégrés à la page'}.</p>
      ${stockEtat === 'ok' && sb ? '<div class="barre" style="margin:0"><button class="btn petit" id="bTexteAjout">Enregistrer comme nouvelle variante</button>' + (textesBase ? '<button class="btn petit" id="bTexteMaj">Mettre à jour ce texte</button>' : '') + '</div>' : ''}`;
 }
 function blocCotes(){
   const props = propositions();
-  if(!props.length) return '<p class="tiny">Déposez d\'abord un visuel.</p>';
+  if(!props.length) return '<p class="tiny">Déposez d\'abord un fichier.</p>';
   return props.map(c => {
     const p = E.props[c], ai = (fichierChoisi(c) || {}).ai;
     const puces = ai && ai.couleurs.length ? `<div class="puces">${ai.couleurs.map(k => `<span class="puce" title="C${k.cmyk[0]} M${k.cmyk[1]} J${k.cmyk[2]} N${k.cmyk[3]} — ${Math.round(k.part * 100)} % (teinte indicative à l'écran)"><i style="background:${cmykEnHex(k.cmyk)}"></i>C${k.cmyk[0]} M${k.cmyk[1]} J${k.cmyk[2]} N${k.cmyk[3]}</span>`).join('')}</div>` : '';
     const lu = ai ? `<div class="lu ${ai.verif === 'ecart' ? 'alerte' : ''}">Lu dans le fichier : ${esc(resumeAI(ai)) || 'aucune dimension'}</div>${puces}<button class="btn petit" data-act="coteAI" style="margin:4px 0">Reprendre les cotes du fichier</button>` : '';
     return `<div class="prop" data-c="${esc(c)}"><b style="font-size:13px">${esc(p.titre || 'Visuel')}</b>${lu}
-      <div class="field" style="margin:6px 0 0"><label>Dimensions du panneau</label><input class="input" value="${esc(p.panneau || '')}" placeholder="612 cm × 149 cm" data-p="panneau"></div>
-      ${p.cotes.map((k, i) => `<div class="coteLigne" style="margin-top:6px"><input class="input" placeholder="Ligne (ex. ALRÉ)" value="${esc(k.l)}" data-ck="l" data-i="${i}"><input class="input" placeholder="13,4 cm" value="${esc(k.v)}" data-ck="v" data-i="${i}"><button class="btn petit" data-act="coteX" data-i="${i}">✕</button></div>`).join('')}
-      <button class="btn petit" data-act="coteAdd" style="margin:6px 0">+ Cote</button>
-      <div class="field" style="margin:0"><label>Description (sous le visuel)</label><textarea class="textarea" rows="3" data-p="description">${esc(p.description)}</textarea></div></div>`;
-  }).join('') + '<p class="tiny">Les cotes se liront seules dans les fichiers Illustrator au lot suivant ; saisie manuelle d\'ici là.</p>';
+      <div class="field" style="margin:6px 0 0"><label>Dimensions du panneau</label><input class="input${vide(p.panneau) ? ' afaire' : ''}" value="${esc(p.panneau || '')}" placeholder="612 cm × 149 cm" data-p="panneau"></div>
+      ${p.cotes.map((k, i) => `<div class="coteLigne" style="margin-top:6px"><input class="input${vide(k.l) ? ' afaire' : ''}" placeholder="Ligne (ex. ALRÉ)" value="${esc(k.l)}" data-ck="l" data-i="${i}"><input class="input${vide(k.v) ? ' afaire' : ''}" placeholder="13,4 cm" value="${esc(k.v)}" data-ck="v" data-i="${i}"><button class="btn petit" data-act="coteX" data-i="${i}">✕</button></div>`).join('')}
+      <button class="btn petit${p.cotes.length ? '' : ' afaire'}" data-act="coteAdd" style="margin:6px 0">+ Cote</button>
+      <div class="field" style="margin:0"><label>Description (sous le visuel)</label><textarea class="textarea${vide(p.description) ? ' afaire' : ''}" rows="3" data-p="description">${esc(p.description)}</textarea></div></div>`;
+  }).join('') + '<p class="tiny">Les cotes écrites en texte dans le fichier Illustrator se remplissent seules ; sinon saisissez-les.</p>';
 }
 
 /* ------------------------------ Événements (délégués) ------------------------------ */
@@ -819,8 +899,15 @@ saisie.addEventListener('change', e => {
   const t = e.target;
   if(t.id === 'fichierInput'){ ajouterFichiers(t.files, 'propositions'); t.value = ''; return; }
   if(t.id === 'photoInput'){ ajouterFichiers(t.files, 'photo'); t.value = ''; return; }
-  if(t.dataset.k){ const k = t.dataset.k; E[k] = (k === 'version') ? (parseInt(t.value, 10) || 0) : t.value; if(k === 'etape' || k === 'devis'){ E.texteId = ''; E.texteLibre = null; } dessiner(); return; }
-  if(t.dataset.a){ E.atelier[t.dataset.a] = t.value; dessiner(); return; }
+  if(t.name === 'etape'){ E.etape = t.value; E.etapeChoisie = true; E.texteId = ''; E.texteLibre = null; E.nuancier = null; dessiner(); return; }
+  if(t.name === 'devis'){ E.devis = t.value; E.texteId = ''; E.texteLibre = null; dessiner(); return; }
+  if(t.name && t.name.startsWith('type-')){ const p = propDe(t); if(p){ p.type = t.value; dessiner(); } return; }
+  if(t.dataset.k){
+    const k = t.dataset.k;
+    E[k] = (k === 'version') ? (parseInt(t.value, 10) || 1) : t.value;
+    if(k === 'date') E.dateManuelle = true;
+    dessiner(); return;
+  }
   if(t.name === 'tx'){ E.texteId = t.value; E.texteLibre = null; dessiner(); return; }
   if(t.id === 'texteCorps'){ E.texteLibre = { id: texteActif().id, corps: t.value }; dessiner(); return; }
   if(t.id === 'chkNuancier'){ E.nuancier = t.checked; dessiner(); return; }
@@ -828,16 +915,18 @@ saisie.addEventListener('change', e => {
   if(t.dataset.p){ const p = propDe(t); if(p){ p[t.dataset.p] = t.value; dessiner(); } return; }
   if(t.dataset.ck){ const p = propDe(t); if(p){ p.cotes[+t.dataset.i][t.dataset.ck] = t.value; dessiner(); } }
 });
-saisie.addEventListener('toggle', e => { const d = e.target; if(d.dataset && d.dataset.b) ouverts[d.dataset.b] = d.open; }, true);
-saisie.addEventListener('click', e => {
+saisie.addEventListener('click', async e => {
+  const tg = e.target.closest('[data-toggle]');
+  if(tg){ const id = tg.dataset.toggle, etapes = etatEtapes(), cour = (etapes.find(s => s.requis && !s.ok) || etapes[etapes.length - 1]).id; const ouvert = ouverts[id] !== undefined ? ouverts[id] : id === cour; ouverts[id] = !ouvert; dessiner(); return; }
   const b = e.target.closest('button'); if(!b) return;
+  if(b.id === 'bDeco'){ try{ await sb.auth.signOut(); }catch(x){ /* rien */ } location.reload(); return; }
   if(b.id === 'bChoisir'){ document.getElementById('fichierInput').click(); return; }
   if(b.id === 'bPhoto'){ document.getElementById('photoInput').click(); return; }
   if(b.id === 'bPhotoOff'){ E.photo = ''; dessiner(); return; }
-  if(b.id === 'bNouveau'){ if(confirm('Effacer ce dossier et en commencer un nouveau ?')){ E = etatVierge(); dessiner(); } return; }
+  if(b.id === 'bNouveau'){ if(confirm('Effacer ce dossier et en commencer un nouveau ?')){ E = etatVierge(); ouverts = {}; dernierCourant = ''; dessiner(); } return; }
   if(b.id === 'bTexteAjout' || b.id === 'bTexteMaj'){ enregistrerTexte(b.id === 'bTexteMaj'); return; }
   if(b.id === 'bTeinteAdd'){ E.teintes.push({ id:uid(), cmyk:'', hex:'#cccccc', reference:'', nom:'', nuancier:'', camaieu:false, commander:null, ral:null }); dessiner(); return; }
-  if(b.id === 'bCopierCommande'){ try{ navigator.clipboard.writeText(listeACommander().join('\n')); b.textContent = 'Copié ✓'; }catch(e){ /* presse-papiers indisponible */ } return; }
+  if(b.id === 'bCopierCommande'){ try{ navigator.clipboard.writeText(listeACommander().join('\n')); b.textContent = 'Copié ✓'; }catch(x){ /* presse-papiers indisponible */ } return; }
   const dt = b.closest('[data-t]');
   if(dt && b.dataset.act){
     const te = E.teintes.find(x => x.id === dt.dataset.t);
@@ -850,7 +939,6 @@ saisie.addEventListener('click', e => {
   const p = E.props[c];
   if(a === 'haut' || a === 'bas'){ const i = E.ordre.indexOf(c), j = i + (a === 'haut' ? -1 : 1); if(j >= 0 && j < E.ordre.length){ [E.ordre[i], E.ordre[j]] = [E.ordre[j], E.ordre[i]]; } }
   else if(a === 'retirer'){ E.fichiers = E.fichiers.filter(f => f.cle !== c); E.ordre = E.ordre.filter(x => x !== c); delete E.props[c]; }
-  else if(a === 'version'){ p.choix = b.dataset.id; }
   else if(a === 'coteAI'){ const ai = (fichierChoisi(c) || {}).ai; if(ai){ p.cotes = ai.cotes.map(k => ({ ...k })); if(ai.panneau) p.panneau = ai.panneau[0] + ' cm × ' + ai.panneau[1] + ' cm'; } }
   else if(a === 'coteAdd'){ p.cotes.push({ l:'', v:'' }); }
   else if(a === 'coteX'){ p.cotes.splice(+b.dataset.i, 1); }
@@ -898,7 +986,11 @@ async function reprendre(){
   try{
     const db = await ouvrirBase();
     const v = await new Promise(ok => { const r = db.transaction('etat').objectStore('etat').get('courant'); r.onsuccess = () => ok(r.result); r.onerror = () => ok(null); });
-    if(v){ const e = JSON.parse(v); E = Object.assign(etatVierge(), e); E.atelier = Object.assign({}, ATELIER_DEFAUT, e.atelier || {}); }
+    if(v){
+      const e = JSON.parse(v); E = Object.assign(etatVierge(), e); E.atelier = Object.assign({}, ATELIER_DEFAUT, e.atelier || {});
+      if(/^\d{6}$/.test(E.date)) E.date = '20' + E.date.slice(0, 2) + '-' + E.date.slice(2, 4) + '-' + E.date.slice(4);
+      if(!E.dateManuelle || !/^\d{4}-\d{2}-\d{2}$/.test(E.date)) E.date = aujourdhui();
+    }
   }catch(e){ /* rien */ }
 }
 reprendre().then(() => { dessiner(); Promise.all([chargerStock(), chargerTextes()]).then(dessiner); });
