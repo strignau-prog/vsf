@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mon parcours — copie de test — VRAI-SAVOIRFAIRE</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="../vsf-auth.js"></script>
+<style>
+:root{--fg:#111;--muted:#767676;--off:#c4c4c4;--now:#ffc400;--ok:#009e73;--alert:#d92d20;--todo:#fdecea;--soft:#f3f3f3;
+  --f-faire:#111111;--f-recevoir:#2F67B1;--f-mesurer:#7B4FB8;--f-dire:#13878A;--f-regard:#8B5A2B;
+  --font:'Inter','Helvetica Neue',Arial,sans-serif;color-scheme:light}
+*{box-sizing:border-box}
+body{margin:0;background:#fff;color:var(--fg);font-family:var(--font);font-size:16px;line-height:1.45;-webkit-font-smoothing:antialiased}
+[hidden]{display:none !important}
+.app{max-width:520px;margin:0 auto;padding:0 20px 120px;min-height:100svh;display:flex;flex-direction:column}
+.demo{display:block;background:#ff3b1f;color:#fff;font-weight:900;font-size:11px;letter-spacing:.1em;text-transform:uppercase;padding:6px 10px;margin:0 -20px 14px;text-align:center}
+.bar{display:flex;align-items:center;gap:12px;padding:18px 0 10px}
+.bar a,.bar button.ret{color:#111;text-decoration:none;font-size:26px;font-weight:700;line-height:1;background:none;border:0;cursor:pointer;padding:0 6px 0 0}
+.bar .mk{font-weight:900;font-size:14px;letter-spacing:.02em}
+.bar .et{font-size:13px;color:var(--muted);font-weight:700;margin-left:auto}
+.prog{display:flex;gap:6px;margin:4px 0 22px}.prog i{flex:1;height:5px;background:#e6e6e6}.prog i.on{background:#111}.prog i.now{background:var(--now)}
+.kick{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:800;margin:0 0 8px}
+h1{margin:0 0 12px;font-size:clamp(28px,7vw,36px);font-weight:900;letter-spacing:-.02em;line-height:1.05}
+h1 .dot{display:inline-block;width:.42em;height:.42em;border-radius:50%;background:var(--now);margin-left:.15em}
+.lead{font-size:16.5px;margin:0 0 22px;color:#222}
+.q{font-weight:800;font-size:16px;margin:22px 0 8px}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opts button,.pari button{font:inherit;font-weight:800;font-size:15px;border:2px solid #111;background:#fff;color:#111;padding:11px 14px;min-height:46px;cursor:pointer;border-radius:999px}
+.opts button.on,.pari button.on{background:#111;color:#fff}
+.pari{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.pari button{font-size:22px;font-weight:900;border-radius:0;min-height:56px}
+.deja{background:var(--soft);padding:10px 12px;font-size:14px;margin:6px 0}.deja b{font-weight:800}.deja button{font:inherit;font-weight:800;background:none;border:0;text-decoration:underline;cursor:pointer;padding:0;margin-left:8px}
+.photo{display:flex;flex-direction:column;gap:4px;border:2px dashed #111;padding:20px;text-align:center;cursor:pointer;background:#fff;font:inherit;width:100%;margin:14px 0}
+.photo b{font-size:16px;font-weight:900}.photo span{font-size:13px;color:#4a4a4a}
+.photo.ok{border-style:solid;background:var(--soft)}
+.case{display:flex;gap:12px;align-items:flex-start;margin:14px 0;cursor:pointer}
+.case input{width:22px;height:22px;margin-top:2px;accent-color:#111;flex:none}
+.case b{display:block;font-size:15px}.case span{font-size:13.5px;color:#4a4a4a}
+.note{font-size:13.5px;color:#4a4a4a;margin:14px 0}
+.cta{position:sticky;bottom:0;background:#fff;padding:14px 0 calc(14px + env(safe-area-inset-bottom));margin-top:auto}
+.cta button,.cta a{display:block;width:100%;text-align:center;font:inherit;font-weight:900;font-size:17px;background:#111;color:#fff;border:0;padding:16px;cursor:pointer;text-decoration:none;min-height:56px}
+.cta button[disabled]{background:#d9d9d9;color:#8a8a8a;cursor:default}
+.cta .l{background:none;color:#111;text-decoration:underline;font-weight:800;font-size:15px;margin-top:6px;min-height:44px}
+.mesure{background:var(--soft);padding:14px;margin:10px 0;font-size:15px}.mesure b{font-weight:900}
+.qq{margin:18px 0}.qq p{margin:0 0 8px;font-weight:800;font-size:15.5px}
+.cells{display:flex;flex-wrap:wrap;gap:4px;margin:8px 0}
+.cells i{display:inline-block;width:12px;height:22px;border:1px solid var(--off);box-sizing:border-box}
+.cells i.sus{border:1.5px dashed #111}.cells i.now{border:3px solid #111}
+.liste{margin:8px 0 0;padding:0;list-style:none}.liste li{padding:8px 0;font-size:15px;display:flex;gap:10px}
+.liste li.sus{color:#4a4a4a}.liste li.sus::before{content:"○";font-weight:900}.liste li::before{content:"●";font-size:10px;margin-top:6px}
+.tot{display:flex;justify-content:space-between;align-items:baseline;font-weight:900;font-size:20px;margin:14px 0 4px}.tot span{color:var(--muted);font-size:17px}
+.etapes3{display:grid;gap:10px;margin:8px 0 6px}.etapes3 div{display:flex;gap:12px;align-items:flex-start;font-size:15.5px}
+.etapes3 em{font-style:normal;font-weight:900;background:#111;color:#fff;border-radius:50%;width:26px;height:26px;display:inline-flex;align-items:center;justify-content:center;flex:none;font-size:13px}
+.creneaux{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.creneaux button{font:inherit;font-weight:800;font-size:14px;min-height:60px;border:2px solid #111;background:#fff;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.creneaux button.on{background:#111;color:#fff}.creneaux small{font-weight:600;font-size:12px;opacity:.8}
+.jours{display:flex;gap:6px;flex-wrap:wrap}.jours button{font:inherit;font-weight:800;font-size:13px;width:44px;height:44px;border-radius:50%;border:2px solid #111;background:#fff;cursor:pointer}.jours button.on{background:#111;color:#fff}
+.bloc{margin:18px 0}
+.nom{font-size:13px;color:var(--muted)}
+.msg{font-weight:800;margin:10px 0;padding:10px 12px;background:var(--todo)}
+.msg.ok{background:#e3f4ee}
+</style>
+</head>
+<body>
+<div class="app" id="app"><p class="kick">Chargement…</p></div>
+<script>(function(){
+function $(i){return document.getElementById(i);}
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+var Q=new URLSearchParams(location.search);
+var REEL=Q.get('reel')==='1';           /* par défaut : démonstration locale, rien n'est envoyé */
+var VOIES={eclaireur:'l’Éclaireur',diagnostic_travailleur:'ton diagnostic',direct:'la page du métier',employeur:'ton employeur'};
+var OUTILS=['Pinceaux à lettres','Règle et équerre','Fil à plomb, niveau','Crayons, craies, calques','Poncifs et molette à piquer','Peintures en pot (émail, acrylique)'];
+var DEMO_Q=[['Un pinceau à lettres sert surtout à…',['tracer des traits réguliers','poncer un support','nettoyer un panneau']],['Avant de peindre, on…',['prépare le support','commence tout de suite','change de couleur']],['Un poncif, c’est…',['un tracé piqué à reporter','un solvant','un pinceau plat']],['La dilution d’une peinture…',['change sa fluidité','change sa couleur d’origine','ne sert à rien']],['Pour tenir un trait droit, on s’aide…',['d’un appui de la main','de la force du poignet','du hasard']],['Un fond bien préparé…',['aide la peinture à tenir','n’a pas d’importance','se voit de loin']],['Quand le trait déborde…',['on le reprend proprement','on laisse','on recommence tout']],['Une lettre bien espacée…',['se lit d’un coup','est la plus grosse','n’existe pas']]];
+var MODULES_DEMO=['Se mettre en main : tenir le pinceau','Les outils de base, nommés à voix haute','Peindre des bâtons droits','Régler la fluidité de la peinture','Préparer et ranger son poste','Tirer un trait continu'];
+var ECRANS=['intro','s1','s2','s3','parcours','bienvenue','rythme','depart'];
+var S={ecran:'intro',voie:Q.get('voie')||'direct',ctx:{deja:'',depuis:'',outils:[],prerempli:{}},pari:null,photo:null,consent:false,quiz:{},paye:false,socle:false,rythme:{creneau:'matin',heure:'7 h 30',jours:[1,1,1,1,1,0,0]},accords:{therese:false,nom:false},msg:'',prenom:''};
+var DB={sb:null,user:null,parcours:null,inscription:null,positionnement:null};
+
+function sauve(){try{sessionStorage.setItem('vsf_parcours_demo',JSON.stringify(S));}catch(e){}}
+function charge(){try{var j=sessionStorage.getItem('vsf_parcours_demo');if(j&&!REEL)Object.assign(S,JSON.parse(j));}catch(e){}}
+function aller(e){S.ecran=e;S.msg='';sauve();render();scrollTo(0,0);}
+function suivant(){aller(ECRANS[ECRANS.indexOf(S.ecran)+1]);}
+function retour(){var i=ECRANS.indexOf(S.ecran);if(i>0)aller(ECRANS[i-1]);}
+function barre(etape,total,label){return '<div class="bar">'+(S.ecran!=='intro'?'<button class="ret" data-a="ret" aria-label="Retour">‹</button>':'')+'<span class="mk">VRAI-SAVOIRFAIRE</span><span class="et">'+esc(label||'')+'</span></div>'+(total?'<div class="prog" aria-hidden="true">'+Array.apply(null,{length:total}).map(function(_,i){return '<i class="'+(i<etape-1?'on':(i===etape-1?'now':''))+'"></i>';}).join('')+'</div>':'');}
+function cta(txt,act,ok,sec){return '<div class="cta"><button data-a="'+act+'"'+(ok===false?' disabled':'')+'>'+esc(txt)+'</button>'+(sec?'<button class="l" data-a="'+sec[1]+'">'+esc(sec[0])+'</button>':'')+'</div>';}
+
+/* ---------- les écrans ---------- */
+function vIntro(){
+  return barre(0,0,'')+'<p class="kick">Ton parcours · ◆ Peintre en lettres</p><h1>On commence par un test.<i class="dot"></i></h1><p class="lead">Gratuit, sans note, environ 10 à 15 minutes, en 3 étapes. Il dit juste où tu en es, pour choisir par où tu commences.</p>'+
+   '<div class="q">Tu arrives par…</div><div class="opts">'+Object.keys(VOIES).map(function(k){return '<button data-voie="'+k+'" class="'+(S.voie===k?'on':'')+'">'+esc(VOIES[k])+'</button>';}).join('')+'</div>'+
+   '<p class="note">'+(S.voie==='eclaireur'||S.voie==='diagnostic_travailleur'?'Ce que tu as déjà répondu te suit : on ne te repose pas la même question.':'Aucun compte à créer pour regarder. Le test garde ton essai et ton pari pour les comparer à la fin du premier module.')+'</p>'+cta('Commencer le test','suiv');
+}
+function v1(){
+  var pre=S.ctx.prerempli;
+  var deja=function(cle,lib,vals){return pre[cle]?'<div class="deja">✓ <b>'+esc(lib)+'</b> : '+esc(pre[cle])+' <span class="nom">· déjà répondu</span><button data-a="modif" data-c="'+cle+'">modifier</button></div>':null;};
+  var h=barre(1,3,'Test · étape 1 sur 3')+'<h1>Ton point de départ</h1><p class="lead">Quelques questions, pour ne pas te faire refaire ce que tu sais déjà.</p>';
+  h+=deja('deja','Tu as déjà fait ce métier')||('<div class="q">As-tu déjà fait ce métier ?</div><div class="opts">'+['Jamais','Un peu','Souvent'].map(function(o){return '<button data-ctx="deja" data-v="'+o+'" class="'+(S.ctx.deja===o?'on':'')+'">'+o+'</button>';}).join('')+'</div>');
+  if(S.ctx.deja&&S.ctx.deja!=='Jamais'||pre.depuis){h+=deja('depuis','Depuis')||('<div class="q">Depuis quand ?</div><div class="opts">'+['moins d’un an','1 à 3 ans','3 à 10 ans','plus de 10 ans'].map(function(o){return '<button data-ctx="depuis" data-v="'+o+'" class="'+(S.ctx.depuis===o?'on':'')+'">'+o+'</button>';}).join('')+'</div>');}
+  h+='<div class="q">Quels outils as-tu sous la main ?</div><div class="opts">'+OUTILS.map(function(o,i){return '<button data-outil="'+i+'" class="'+(S.ctx.outils.indexOf(i)>=0?'on':'')+'">'+esc(o)+'</button>';}).join('')+'</div>';
+  var ok=(S.ctx.deja||pre.deja)&&(S.ctx.deja==='Jamais'||S.ctx.depuis||pre.depuis||!S.ctx.deja);
+  return h+'<p class="note">Aucune note. Tu peux ne rien cocher dans les outils.</p>'+cta('Continuer','suiv',!!(S.ctx.deja||pre.deja));
+}
+function v2(){
+  var h=barre(2,3,'Test · étape 2 sur 3')+'<div class="kick">Essai à froid</div><h1>Peins 3 bâtons, sans modèle.</h1><p class="lead">Avec ce que tu as sous la main. On veut voir ta main telle qu’elle est aujourd’hui, pas la meilleure.</p>'+
+   '<div class="q">D’abord, ton pari : combien seront bien d’aplomb ?</div><div class="pari">'+[0,1,2,3].map(function(n){return '<button data-pari="'+n+'" class="'+(S.pari===n?'on':'')+'">'+n+'</button>';}).join('')+'</div>';
+  h+='<input type="file" id="fic" accept="image/*" capture="environment" hidden>'+
+   '<button class="photo'+(S.photo?' ok':'')+'" data-a="photo"><b>'+(S.photo?'✓ Photo prise · '+esc(S.photo.nom):'Prendre la photo de tes 3 bâtons')+'</b><span>De face, à plat, lumière du jour</span></button>';
+  if(S.photo){h+='<label class="case"><input type="checkbox" data-a="consent"'+(S.consent?' checked':'')+'><span><b>Je suis d’accord pour que cette photo soit gardée</b><span>Pour la comparer à ton essai de fin de module, et la montrer à ton valideur. Tu peux la retirer quand tu veux.</span></span></label>';
+    h+='<div class="mesure"><b>Mesure · démonstration</b><br>1 bâton sur 3 d’aplomb. <span class="nom">(la vraie mesure arrive du serveur ; ici, une valeur de démo)</span></div>';}
+  if(S.msg)h+='<div class="msg">'+esc(S.msg)+'</div>';
+  return h+'<p class="note">Ensuite, 8 questions courtes sur le vocabulaire et les outils. Aucune note : le test sert à choisir par où tu commences.</p>'+cta('Continuer','suiv',S.pari!==null&&!!S.photo&&S.consent);
+}
+function v3(){
+  var h=barre(3,3,'Test · étape 3 sur 3')+'<h1>8 questions courtes</h1><span class="demo" style="margin:0 0 12px">Questions de démonstration : les vraies viendront de la banque d’items</span><p class="lead">Réponds à ce que tu sais. « Je ne sais pas encore » est une vraie réponse.</p>';
+  DEMO_Q.forEach(function(q,i){h+='<div class="qq"><p>'+(i+1)+' · '+esc(q[0])+'</p><div class="opts">'+q[1].concat(['Je ne sais pas encore']).map(function(o,k){return '<button data-q="'+i+'" data-k="'+k+'" class="'+(S.quiz[i]===k?'on':'')+'">'+esc(o)+'</button>';}).join('')+'</div></div>';});
+  return h+cta('Voir mon parcours','suiv',Object.keys(S.quiz).length>=8);
+}
+function sus(){var bons=Object.keys(S.quiz).filter(function(i){return +S.quiz[i]===0;}).length;return (bons>=6&&S.ctx.deja&&S.ctx.deja!=='Jamais')?2:0;}
+function vParcours(){
+  var n=sus(),dep=n+1,tot=24;
+  var h=barre(0,0,'Ton parcours')+'<div class="kick">Ton parcours et son prix</div><h1>Tu commences au module '+dep+'.</h1>';
+  h+='<div class="bloc"><div class="kick">Ce que ta main sait déjà</div><ul class="liste">'+(n?'<li>Les gestes de base : tes réponses au test le montrent <span class="nom">· source : quiz</span></li>':'<li>On ne présume de rien : tu repars des bases.</li>')+(S.ctx.outils.length?'<li>Tu as '+S.ctx.outils.length+' outil(s) sous la main <span class="nom">· source : tes réponses</span></li>':'')+'</ul></div>';
+  h+='<div class="bloc"><div class="kick">Ce qu’on travaille en premier</div><p style="margin:0">L’aplomb : 1 bâton sur 3 d’aplomb, tu en avais parié '+(S.pari==null?'—':S.pari)+'.</p><p class="note" style="margin:6px 0 0">Ton pari et ton essai seront comparés à la fin du module.</p></div>';
+  h+='<div class="bloc"><div class="kick">Ton N1 · '+tot+' modules</div><div class="cells" aria-hidden="true">'+Array.apply(null,{length:tot}).map(function(_,i){return '<i class="'+(i<n?'sus':(i===n?'now':''))+'"></i>';}).join('')+'</div>'+(n?'<p class="note" style="margin:6px 0 0">Les '+n+' premiers, en pointillé : déjà sus, à confirmer au rappel J+30.</p>':'')+'</div>';
+  h+='<div class="bloc"><div class="kick">Les modules à acheter</div><ul class="liste">'+MODULES_DEMO.map(function(m,i){return '<li class="'+(i<n?'sus':'')+'">'+esc(m)+(i<n?' <span class="nom">· déjà su, retiré du prix</span>':'')+'</li>';}).join('')+'<li><span class="nom">… et les autres modules du N1 (liste de démonstration)</span></li></ul><div class="tot">Prix total <span>à fixer</span></div><p class="note" style="margin:0">Le prix est calculé à partir de ton point de départ. Les modules déjà sus n’y sont pas.</p></div>';
+  h+='<div class="bloc"><div class="kick">Ce que comprend l’achat</div><ul class="liste"><li>Le N1 : ses modules, ses tests de sous-niveau et son épreuve, 2 tentatives chacun</li><li>Le regard d’un valideur sur chacun de tes dépôts</li><li>Thérèse en option</li></ul></div>';
+  h+='<label class="case"><input type="checkbox" data-a="socle"'+(S.socle?' checked':'')+'><span><b>Ajouter le Socle Skolantreuz</b><span>Option · prix à fixer. Si tu la coches, tu passes aussi son test de positionnement.</span></span></label>';
+  return h+'<div class="cta"><button data-a="payer">Continuer vers le paiement</button><span class="note" style="display:block;text-align:center;margin:8px 0 0">Les prix ne sont pas fixés : pour ce test, le paiement est simulé.</span></div>';
+}
+function vBienvenue(){
+  return barre(0,0,'')+'<div class="kick">Paiement reçu · merci (démo)</div><h1>Bienvenue'+(S.prenom?', '+esc(S.prenom):'')+'.<i class="dot"></i></h1><p class="lead">Ton parcours ◆ Peintre en lettres est ouvert. Ici, on ne suit pas des cours : on fait progresser ta main.</p>'+
+   '<div class="bloc"><div class="kick">Ce que tu as ouvert</div><ul class="liste"><li><b>Niveau 1 · Comprendre</b> · 24 modules</li><li>Le regard d’un valideur sur chacun de tes dépôts</li><li>Thérèse en option'+(S.socle?' · le Socle Skolantreuz':'')+'</li></ul></div>'+
+   '<div class="kick">Comment ça marche</div><div class="etapes3"><div><em>1</em><span><b>Tu essaies d’abord.</b> On t’explique ensuite, sur l’erreur que tu as choisie.</span></div><div><em>2</em><span><b>10 minutes par jour.</b> Un seul point à soigner à la fois.</span></div><div><em>3</em><span><b>Un geste est acquis quand il tient un mois.</b> On te le redemande à J+1, J+7 et J+30.</span></div></div>'+
+   cta('Choisir mon rythme','suiv');
+}
+var CRENEAUX=[['matin','Matin','7 h 30'],['midi','Midi','12 h 45'],['soir','Soir','19 h']],JOURS=[['L','lundi'],['M','mardi'],['M','mercredi'],['J','jeudi'],['V','vendredi'],['S','samedi'],['D','dimanche']];
+function vRythme(){
+  return barre(0,0,'Ton rythme')+'<h1>Ton rythme</h1><p class="lead">Quand peux-tu donner 10 minutes ? On ne t’écrira qu’à ce moment-là.</p>'+
+   '<div class="creneaux">'+CRENEAUX.map(function(c){return '<button data-cren="'+c[0]+'|'+c[2]+'" class="'+(S.rythme.creneau===c[0]?'on':'')+'">'+c[1]+'<small>'+c[2]+'</small></button>';}).join('')+'</div>'+
+   '<div class="q">Quels jours ?</div><div class="jours">'+JOURS.map(function(j,i){return '<button data-jour="'+i+'" aria-label="'+j[1]+'" class="'+(S.rythme.jours[i]?'on':'')+'">'+j[0]+'</button>';}).join('')+'</div>'+
+   '<div class="q">Comment avances-tu ?</div><div class="opts"><button data-mode="guide" class="'+(S.rythme.mode!=='libre'?'on':'')+'">Je me laisse guider</button><button data-mode="libre" class="'+(S.rythme.mode==='libre'?'on':'')+'">J’avance à mon rythme</button></div>'+
+   '<p class="note">Un seul message par jour, jamais en dehors de ce créneau. Si tu sautes un jour, rien ne se perd : le parcours t’attend. Une pause est possible à tout moment.</p>'+
+   '<label class="case"><input type="checkbox" data-acc="therese"'+(S.accords.therese?' checked':'')+'><span><b>Thérèse, en option</b><span>Une question courte par semaine sur ce que tu fais. Ce que tu lui dis reste entre vous.</span></span></label>'+
+   '<label class="case"><input type="checkbox" data-acc="nom"'+(S.accords.nom?' checked':'')+'><span><b>Ton entreprise peut voir ton nom</b><span>Sans ton accord, tu comptes seulement dans ses totaux. Tu peux changer d’avis à tout moment.</span></span></label>'+
+   cta('Voir où je commence','suiv');
+}
+function vDepart(){
+  var n=sus();
+  return barre(0,0,'Ton point de départ')+'<div class="kick">Ton point de départ</div><h1>Tu commences au module '+(n+1)+' du N1.</h1>'+
+   '<div class="bloc"><div class="kick">Ton N1 · 24 modules</div><div class="cells" aria-hidden="true">'+Array.apply(null,{length:24}).map(function(_,i){return '<i class="'+(i<n?'sus':(i===n?'now':''))+'"></i>';}).join('')+'</div><p class="note" style="margin:6px 0 0">'+(n?'Modules 1 à '+n+' en pointillé : déjà sus, à confirmer au rappel J+30. ':'')+'L’ordre s’adaptera à tes résultats.</p></div>'+
+   '<div class="bloc"><p style="margin:0">Premier rendez-vous : <b>demain, '+esc(S.rythme.heure||'7 h 30')+'</b> · module '+(n+1)+' · '+esc(MODULES_DEMO[Math.min(n,MODULES_DEMO.length-1)])+'</p></div>'+
+   '<div class="cta"><button data-a="plustard">Commencer maintenant</button><button class="l" data-a="plustard">Voir mon tableau de bord</button><span class="note" style="display:block;text-align:center;margin:8px 0 0">Le tableau de bord et la séance du jour arrivent à l’étape suivante du chantier.</span></div>';
+}
+function vFin(){return barre(0,0,'')+'<h1>À l’étape suivante.<i class="dot"></i></h1><p class="lead">La séance du jour (Faire, Ancrer) et « Mon parcours » ne sont pas encore construits dans cette copie de test.</p>'+cta('Revenir au début du test','reset');}
+
+function render(){
+  var v={intro:vIntro,s1:v1,s2:v2,s3:v3,parcours:vParcours,bienvenue:vBienvenue,rythme:vRythme,depart:vDepart,fin:vFin}[S.ecran]||vIntro;
+  $('app').innerHTML=(REEL?'<span class="demo" style="background:#111">Copie de test · enregistrement réel</span>':'<span class="demo">Démonstration · rien n’est envoyé · données fictives</span>')+v();
+}
+
+/* ---------- clics ---------- */
+document.addEventListener('click',function(e){
+  var t=e.target.closest('button,[data-a]');if(!t)return;var d=t.dataset;
+  if(d.voie){S.voie=d.voie;prerempli();sauve();render();return;}
+  if(d.ctx){S.ctx[d.ctx]=d.v;sauve();render();return;}
+  if(d.outil!==undefined){var i=+d.outil,k=S.ctx.outils.indexOf(i);if(k>=0)S.ctx.outils.splice(k,1);else S.ctx.outils.push(i);sauve();render();return;}
+  if(d.pari!==undefined){S.pari=+d.pari;sauve();render();return;}
+  if(d.q!==undefined){S.quiz[d.q]=+d.k;sauve();render();return;}
+  if(d.cren){var p=d.cren.split('|');S.rythme.creneau=p[0];S.rythme.heure=p[1];sauve();render();return;}
+  if(d.jour!==undefined){S.rythme.jours[+d.jour]=S.rythme.jours[+d.jour]?0:1;sauve();render();return;}
+  if(d.mode){S.rythme.mode=d.mode;sauve();render();return;}
+  switch(d.a){
+    case 'suiv':enregistrer().then(suivant);return;
+    case 'ret':retour();return;
+    case 'photo':$('fic').click();return;
+    case 'modif':delete S.ctx.prerempli[d.c];sauve();render();return;
+    case 'payer':S.paye=true;enregistrer().then(function(){aller('bienvenue');});return;
+    case 'plustard':aller('fin');return;
+    case 'reset':try{sessionStorage.removeItem('vsf_parcours_demo');}catch(x){}location.href=location.pathname+(REEL?'?reel=1':'');return;
+  }
+});
+document.addEventListener('change',function(e){
+  var t=e.target;
+  if(t.id==='fic'&&t.files&&t.files[0]){var f=t.files[0];S.photo={nom:f.name,taille:f.size};window.__PHOTO=f;S.consent=false;sauve();render();return;}
+  if(t.dataset.a==='consent'){S.consent=t.checked;sauve();render();return;}
+  if(t.dataset.a==='socle'){S.socle=t.checked;sauve();render();return;}
+  if(t.dataset.acc){S.accords[t.dataset.acc]=t.checked;sauve();return;}
+});
+/* ce que l'Éclaireur ou le diagnostic ont déjà répondu : on ne le repose pas (démo : exemple ; réel : lecture des réponses gardées) */
+function prerempli(){
+  S.ctx.prerempli={};
+  if(S.voie==='eclaireur'||S.voie==='diagnostic_travailleur'){S.ctx.prerempli={deja:'Un peu',depuis:'1 à 3 ans'};}
+}
+
+/* ---------- enregistrement réel (seulement avec ?reel=1, connecté ; jamais testé avec de vraies données) ---------- */
+async function enregistrer(){
+  if(!REEL||!DB.sb||!DB.user)return;
+  try{
+    if(!DB.parcours){var p=await DB.sb.from('vsf_form_parcours').select('id').eq('code','peintre-en-lettres').limit(1);if(p.error||!p.data[0])throw p.error||new Error('parcours introuvable');DB.parcours=p.data[0].id;}
+    if(!DB.inscription){var i=await DB.sb.from('vsf_form_inscriptions').select('id').eq('parcours_id',DB.parcours).eq('user_id',DB.user).limit(1);
+      if(i.error)throw i.error;
+      if(i.data[0])DB.inscription=i.data[0].id;else{var n=await DB.sb.from('vsf_form_inscriptions').insert({user_id:DB.user,parcours_id:DB.parcours,voie:S.voie,statut:'test',niveau_courant:1,sous_niveau_courant:1}).select('id').single();if(n.error)throw n.error;DB.inscription=n.data.id;}}
+    var row={inscription_id:DB.inscription,contexte:{deja:S.ctx.deja,depuis:S.ctx.depuis,outils:S.ctx.outils.map(function(k){return OUTILS[k];})},pari:S.pari,quiz:S.quiz,prerempli_depuis:S.ctx.prerempli};
+    if(S.ecran==='s3')row.fait_le=new Date().toISOString();
+    var r=await DB.sb.from('vsf_form_positionnements').upsert(row,{onConflict:'inscription_id'});if(r.error)throw r.error;
+    if(S.ecran==='s2'&&window.__PHOTO&&S.consent&&!S.photoEnvoyee){
+      var chemin=DB.user+'/'+DB.inscription+'/positionnement/'+Date.now()+'.jpg';
+      var u=await DB.sb.storage.from('vsf-depots').upload(chemin,window.__PHOTO,{contentType:window.__PHOTO.type||'image/jpeg'});if(u.error)throw u.error;
+      var dp=await DB.sb.from('vsf_form_depots').insert({inscription_id:DB.inscription,etape:'essayer',genre:'photo',chemin:chemin,consentement_photo_le:new Date().toISOString()}).select('id').single();if(dp.error)throw dp.error;
+      await DB.sb.from('vsf_form_positionnements').update({essai_depot_id:dp.data.id}).eq('inscription_id',DB.inscription);S.photoEnvoyee=true;
+    }
+    if(S.ecran==='rythme'){var jr=[];S.rythme.jours.forEach(function(v,k){if(v)jr.push(k+1);});await DB.sb.from('vsf_form_rythme').upsert({inscription_id:DB.inscription,creneau:S.rythme.creneau,jours:jr,mode:S.rythme.mode==='libre'?'libre':'guide'},{onConflict:'inscription_id'});
+      await DB.sb.from('vsf_form_accords').upsert([{inscription_id:DB.inscription,type:'therese',valeur:!!S.accords.therese},{inscription_id:DB.inscription,type:'nom_visible_entreprise',valeur:!!S.accords.nom}],{onConflict:'inscription_id,type'});}
+  }catch(x){S.msg='Enregistrement impossible : '+((x&&x.message)||x);render();}
+}
+
+async function demarrer(){
+  charge();prerempli();
+  if(REEL){
+    DB.sb=window.VSF&&VSF.sb;
+    if(DB.sb){var s=await DB.sb.auth.getSession();if(!s.data.session){location.replace('../connexion.html?suite='+encodeURIComponent(location.href));return;}DB.user=s.data.session.user.id;S.prenom=((s.data.session.user.user_metadata||{}).prenom||'');}
+  }
+  render();
+}
+demarrer();
+})();
+</script>
+</body>
+</html>
