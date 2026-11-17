@@ -75,7 +75,7 @@ var DEMO_Q=[['Un pinceau à lettres sert surtout à…',['tracer des traits rég
 var MODULES_DEMO=['Se mettre en main : tenir le pinceau','Les outils de base, nommés à voix haute','Peindre des bâtons droits','Régler la fluidité de la peinture','Préparer et ranger son poste','Tirer un trait continu'];
 var ECRANS=['intro','s1','s2','s3','parcours','bienvenue','rythme','depart'];
 var S={ecran:'intro',voie:Q.get('voie')||'direct',ctx:{deja:'',depuis:'',outils:[],prerempli:{}},pari:null,photo:null,consent:false,quiz:{},paye:false,socle:false,rythme:{creneau:'matin',heure:'7 h 30',jours:[1,1,1,1,1,0,0]},accords:{therese:false,nom:false},msg:'',prenom:''};
-var DB={sb:null,user:null,parcours:null,inscription:null,positionnement:null};
+var DB={sb:null,user:null,parcours:null,inscription:null,positionnement:null,admin:false,catalogue:[]};
 
 function sauve(){try{sessionStorage.setItem('vsf_parcours_demo',JSON.stringify(S));}catch(e){}}
 function charge(){try{var j=sessionStorage.getItem('vsf_parcours_demo');if(j&&!REEL)Object.assign(S,JSON.parse(j));}catch(e){}}
@@ -123,10 +123,10 @@ function vParcours(){
   h+='<div class="bloc"><div class="kick">Ce que ta main sait déjà</div><ul class="liste">'+(n?'<li>Les gestes de base : tes réponses au test le montrent <span class="nom">· source : quiz</span></li>':'<li>On ne présume de rien : tu repars des bases.</li>')+(S.ctx.outils.length?'<li>Tu as '+S.ctx.outils.length+' outil(s) sous la main <span class="nom">· source : tes réponses</span></li>':'')+'</ul></div>';
   h+='<div class="bloc"><div class="kick">Ce qu’on travaille en premier</div><p style="margin:0">L’aplomb : 1 bâton sur 3 d’aplomb, tu en avais parié '+(S.pari==null?'—':S.pari)+'.</p><p class="note" style="margin:6px 0 0">Ton pari et ton essai seront comparés à la fin du module.</p></div>';
   h+='<div class="bloc"><div class="kick">Ton N1 · '+tot+' modules</div><div class="cells" aria-hidden="true">'+Array.apply(null,{length:tot}).map(function(_,i){return '<i class="'+(i<n?'sus':(i===n?'now':''))+'"></i>';}).join('')+'</div>'+(n?'<p class="note" style="margin:6px 0 0">Les '+n+' premiers, en pointillé : déjà sus, à confirmer au rappel J+30.</p>':'')+'</div>';
-  h+='<div class="bloc"><div class="kick">Les modules à acheter</div><ul class="liste">'+MODULES_DEMO.map(function(m,i){return '<li class="'+(i<n?'sus':'')+'">'+esc(m)+(i<n?' <span class="nom">· déjà su, retiré du prix</span>':'')+'</li>';}).join('')+'<li><span class="nom">… et les autres modules du N1 (liste de démonstration)</span></li></ul><div class="tot">Prix total <span>à fixer</span></div><p class="note" style="margin:0">Le prix est calculé à partir de ton point de départ. Les modules déjà sus n’y sont pas.</p></div>';
+  h+='<div class="bloc"><div class="kick">Les modules à acheter</div><ul class="liste">'+(REEL&&DB.catalogue.length?DB.catalogue.slice(0,8).map(function(m,i){return '<li class="'+(i<n?'sus':'')+'">'+esc(m.titre)+(i<n?' <span class="nom">· déjà su, retiré du prix</span>':'')+'</li>';}).join('')+(DB.catalogue.length>8?'<li><span class="nom">… et '+(DB.catalogue.length-8)+' autres modules du N1</span></li>':''):MODULES_DEMO.map(function(m,i){return '<li class="'+(i<n?'sus':'')+'">'+esc(m)+(i<n?' <span class="nom">· déjà su, retiré du prix</span>':'')+'</li>';}).join('')+'<li><span class="nom">… et les autres modules du N1 (liste de démonstration)</span></li>')+'</ul><div class="tot">Prix total <span>à fixer</span></div><p class="note" style="margin:0">Le prix est calculé à partir de ton point de départ. Les modules déjà sus n’y sont pas.</p></div>';
   h+='<div class="bloc"><div class="kick">Ce que comprend l’achat</div><ul class="liste"><li>Le N1 : ses modules, ses tests de sous-niveau et son épreuve, 2 tentatives chacun</li><li>Le regard d’un valideur sur chacun de tes dépôts</li><li>Thérèse en option</li></ul></div>';
   h+='<label class="case"><input type="checkbox" data-a="socle"'+(S.socle?' checked':'')+'><span><b>Ajouter le Socle Skolantreuz</b><span>Option · prix à fixer. Si tu la coches, tu passes aussi son test de positionnement.</span></span></label>';
-  return h+'<div class="cta"><button data-a="payer">Continuer vers le paiement</button><span class="note" style="display:block;text-align:center;margin:8px 0 0">Les prix ne sont pas fixés : pour ce test, le paiement est simulé.</span></div>';
+  return h+(REEL?'<div class="cta">'+(S.msg?'<div class="msg">'+esc(S.msg)+'</div>':'')+(DB.admin?'<button data-a="activer">Activer ce compte pour test (administrateur, sans paiement)</button>':'<button disabled>Le paiement n’est pas encore ouvert</button>')+'<span class="note" style="display:block;text-align:center;margin:8px 0 0">Les prix ne sont pas fixés : aucun paiement n’est possible pour l’instant.</span></div>':'<div class="cta"><button data-a="payer">Continuer vers le paiement</button><span class="note" style="display:block;text-align:center;margin:8px 0 0">Les prix ne sont pas fixés : pour ce test, le paiement est simulé.</span></div>');
 }
 function vBienvenue(){
   return barre(0,0,'')+'<div class="kick">Paiement reçu · merci (démo)</div><h1>Bienvenue'+(S.prenom?', '+esc(S.prenom):'')+'.<i class="dot"></i></h1><p class="lead">Ton parcours ◆ Peintre en lettres est ouvert. Ici, on ne suit pas des cours : on fait progresser ta main.</p>'+
@@ -150,7 +150,7 @@ function vDepart(){
   return barre(0,0,'Ton point de départ')+'<div class="kick">Ton point de départ</div><h1>Tu commences au module '+(n+1)+' du N1.</h1>'+
    '<div class="bloc"><div class="kick">Ton N1 · 24 modules</div><div class="cells" aria-hidden="true">'+Array.apply(null,{length:24}).map(function(_,i){return '<i class="'+(i<n?'sus':(i===n?'now':''))+'"></i>';}).join('')+'</div><p class="note" style="margin:6px 0 0">'+(n?'Modules 1 à '+n+' en pointillé : déjà sus, à confirmer au rappel J+30. ':'')+'L’ordre s’adaptera à tes résultats.</p></div>'+
    '<div class="bloc"><p style="margin:0">Premier rendez-vous : <b>demain, '+esc(S.rythme.heure||'7 h 30')+'</b> · module '+(n+1)+' · '+esc(MODULES_DEMO[Math.min(n,MODULES_DEMO.length-1)])+'</p></div>'+
-   '<div class="cta"><a href="mon-parcours-v2.html?vue=faire">Commencer maintenant</a><a class="l" href="mon-parcours-v2.html?vue=parcours">Voir mon tableau de bord</a><span class="note" style="display:block;text-align:center;margin:8px 0 0">Copie de test : la suite est en démonstration.</span></div>';
+   '<div class="cta"><a href="mon-parcours-v2.html?vue=faire'+(REEL?'&reel=1':'')+'">Commencer maintenant</a><a class="l" href="mon-parcours-v2.html?vue=parcours'+(REEL?'&reel=1':'')+'">Voir mon tableau de bord</a><span class="note" style="display:block;text-align:center;margin:8px 0 0">Copie de test : la suite est en démonstration.</span></div>';
 }
 function vFin(){return barre(0,0,'')+'<h1>À l’étape suivante.<i class="dot"></i></h1><p class="lead">La séance du jour (Faire, Ancrer) et « Mon parcours » ne sont pas encore construits dans cette copie de test.</p>'+cta('Revenir au début du test','reset');}
 
@@ -176,6 +176,7 @@ document.addEventListener('click',function(e){
     case 'photo':$('fic').click();return;
     case 'modif':delete S.ctx.prerempli[d.c];sauve();render();return;
     case 'payer':S.paye=true;enregistrer().then(function(){aller('bienvenue');});return;
+    case 'activer':activer();return;
     case 'plustard':aller('fin');return;
     case 'reset':try{sessionStorage.removeItem('vsf_parcours_demo');}catch(x){}location.href=location.pathname+(REEL?'?reel=1':'');return;
   }
@@ -215,11 +216,18 @@ async function enregistrer(){
   }catch(x){S.msg='Enregistrement impossible : '+((x&&x.message)||x);render();}
 }
 
+async function activer(){
+  try{await enregistrer();if(!DB.inscription)throw new Error('Inscription impossible (le test doit être commencé).');
+    var r=await DB.sb.rpc('vsf_form_activer_pour_test',{p_inscription:DB.inscription});if(r.error)throw r.error;
+    S.paye=true;aller('bienvenue');}
+  catch(x){S.msg='Impossible : '+((x&&x.message)||x);render();}
+}
 async function demarrer(){
   charge();prerempli();
   if(REEL){
     DB.sb=window.VSF&&VSF.sb;
-    if(DB.sb){var s=await DB.sb.auth.getSession();if(!s.data.session){location.replace('../connexion.html?suite='+encodeURIComponent(location.href));return;}DB.user=s.data.session.user.id;S.prenom=((s.data.session.user.user_metadata||{}).prenom||'');}
+    if(DB.sb){var s=await DB.sb.auth.getSession();if(!s.data.session){location.replace('../connexion.html?suite='+encodeURIComponent(location.href));return;}DB.user=s.data.session.user.id;S.prenom=((s.data.session.user.user_metadata||{}).prenom||'');
+      try{var a=await DB.sb.rpc('vsf_est_admin');DB.admin=a.data===true;var cat=await DB.sb.rpc('vsf_form_catalogue',{p_code:'peintre-en-lettres'});if(!cat.error&&cat.data)DB.catalogue=cat.data;}catch(x){}}
   }
   render();
 }

@@ -91,74 +91,132 @@ var REEL=Q.get('reel')==='1',ESSAI_NON=Q.get('essai')==='non';
 var JOURS_FR=['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'],MOIS=['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
 function dateFr(d){return JOURS_FR[d.getDay()].slice(0,3)+'. '+d.getDate()+' '+MOIS[d.getMonth()];}
 function plus(n){var d=new Date();d.setDate(d.getDate()+n);return d;}
-/* réglages (démo : les valeurs de départ de vsf_form_reglages) */
+function iso(d){return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);}
 var REG={tentatives:2,delaiTentatives:7,seanceMin:10,debriefQuestions:[['Comment tu t’es senti·e ?',false],['Sur quel point précis as-tu eu des difficultés ?',true],['Comment tu t’y es pris·e pour avancer ?',false]]};
 var NAV=[['aujourdhui','Aujourd’hui'],['parcours','Mon parcours'],['coffre','Coffre-fort'],['therese','Thérèse']];
+var ETAPES_NOM={essayer:'Essayer',constater:'Constater',regarder:'Regarder',faire:'Faire',comparer:'Comparer',ancrer:'Ancrer'};
 var TEST_DEMO=[['Un geste est acquis quand…',['il tient un mois','on l’a réussi une fois','on l’a vu faire']],['Le seul point à soigner, c’est…',['un seul à la fois','tous en même temps','aucun']],['Un rappel J+30 sert à…',['vérifier que le geste tient','noter la personne','sauter une étape']],['Avant de peindre, on…',['regarde l’état du support','commence','change d’outil']],['Un retour du valideur contient…',['un seul point à soigner','une note','un classement']]];
-var S=Object.assign({vue:Q.get('vue')||'aujourdhui',run:false,left:REG.seanceMin*60,photo:null,rec:false,sec:0,ancre:false,test:{phase:'quiz',tentative:1,rep:{},resultat:null,echecs:0,depot:false},mode:'guide',pause:false,ecoute:false,epreuve:false},{});
-var T=null;
-function go(v){S.vue=v;S.epreuve=false;render();scrollTo(0,0);}
+var S={vue:Q.get('vue')||'aujourdhui',run:false,left:REG.seanceMin*60,fichier:null,consent:false,rec:false,sec:0,ancre:false,test:{phase:'quiz',tentative:1,rep:{},resultat:null,echecs:0,depot:false},mode:'guide',pause:false,ecoute:false,epreuve:false,msg:'',occupe:false,charge:!REEL};
+var T=null,R=null,DB={sb:null,user:null,admin:false},MEDIA={rec:null,flux:null,morceaux:[],blob:null};
 
+/* ====================== le modèle de vue : démonstration ou données réelles ====================== */
+var DEMO={
+  kick:'◆ Peintre en lettres · 3 semaines après le départ',intro:'Ta main a validé 8 modules. Aujourd’hui, une série de 10 minutes sur l’aplomb.',
+  seance:{titre:'Série 5 · Peindre des bâtons',module:'Module 9 · Peindre des bâtons',etapeNum:4,etapeTotal:6,etape:'faire',etapeNom:'Faire',point:'L’aplomb',consigne:'Une ligne de 12 bâtons, trois fois. Ne cherche pas la vitesse.',titreFaire:'Série 5 · jour 5 sur 7',essaiSecurise:true,code:'M9',phrase:'« Soigne l’aplomb, pas la vitesse. » Dépose une photo de ta dernière ligne.'},
+  minutes:12,
+  rappel:{titre:'Rappel J+7 · module 6',detail:'Préparer la peinture, de mémoire',note:'Le dernier J+30 sur ce module avait raté : il revient.'},
+  retour:{role:'Ton valideur',duree:'30 s',texte:'« Tes bâtons penchent à droite en fin de ligne. Un seul point : l’aplomb. »',ecoute:false,court:'Série 4 · 30 s · le point à soigner aujourd’hui'},
+  attente:'Ton dépôt de la série 5 · d’ici jeudi',
+  bandes:[['N1 · Comprendre',24,'8 / 24',function(i){return i===5?'c':(i<8?'v':(i===8?'n':''));}],['N2 · Faire avec repères',30,'30',function(){return 'l';}],['N3 · Réaliser seul·e',20,'20',function(){return 'l';}],['N4 · Maîtriser et transmettre',3,'3',function(){return 'l';}]],
+  ici:'▲ tu es ici · module 9',
+  chiffres:[['8',' / 24','modules validés',33,'--f-faire'],['78',' %','rappels réussis · J+1, J+7, J+30',78,'--f-mesurer'],['11','','preuves dans ton coffre-fort',40,'--f-regard'],['1 h 40',' / 3 h','avec Thérèse en N1',55,'--f-dire']],
+  tient:[['La tenue du pinceau ne bouge plus','J+30 réussi'],['Tu nommes tes erreurs avant le valideur','valideur'],['La charge du pinceau est régulière','mesure IA']],
+  retravaille:[['L’aplomb des bâtons en fin de série','J+7 raté'],['La pression varie quand tu accélères','Thérèse'],['Module 6 · Préparer la peinture, à consolider','J+30 raté']],
+  fil:[['pl','Valideur · module 9, série 4','« L’aplomb en fin de ligne. »','non écouté · hier'],['att','En attente · dépôt de la série 5','','retour promis d’ici jeudi'],['m','Le maître artisan · module 7','« Ton poignet suit, laisse l’épaule faire. »','Ensuite : J+7 réussi sur ce module.']],
+  sem:[34,10,0,46,22,10,34],jr:['lun','mar','mer','jeu','ven','sam','dim'],regul:'5 jours sur les 7 de ton rythme cette semaine.',
+  prochaine:'Prochaine étape · le test du sous-niveau 3, puis l’épreuve du N1 · quand les 24 modules seront validés, soit dans 6 à 8 semaines à ton rythme.',
+  coffre:[['Essai à froid · test de positionnement','photo gardée avec ton accord'],['Série 4 · retour du valideur','« L’aplomb en fin de ligne. »']],therese:'1 h 40 / 3 h'
+};
+function fromR(r){
+  var ins=r.inscription,mods=r.modules||[],cur=ins.niveau_courant,niveau=function(n){return mods.filter(function(m){return m.niveau===n;});};
+  var vm={kick:'◆ Peintre en lettres',intro:'',seance:null,minutes:REG.seanceMin,rappel:null,retour:null,attente:'',bandes:[],ici:'',chiffres:[],tient:[],retravaille:[],fil:[],sem:[0,0,0,0,0,0,0],jr:[],regul:'',prochaine:'Prochaine étape · le test du prochain sous-niveau, puis l’épreuve du niveau.',coffre:[],therese:''};
+  var lvl=niveau(cur),valides=r.stats.valides,tot=lvl.length;
+  vm.intro='Ta main a validé '+valides+' module'+(valides>1?'s':'')+'.';
+  // séance du jour
+  if(r.seance){var se=r.seance,mm=mods.filter(function(m){return m.code===se.module_code;})[0]||{},et=se.etapes||[],k=et.indexOf(se.etape);
+    vm.seance={titre:se.titre,module:'Module '+(mm.rang||'')+' · '+se.titre,etapeNum:k+1,etapeTotal:et.length,etape:se.etape,etapeNom:ETAPES_NOM[se.etape],point:se.point_a_soigner||'à définir avec ton premier retour',consigne:'Étape « '+ETAPES_NOM[se.etape]+' » du module '+(mm.rang||'')+'. Un seul point à soigner à la fois.',titreFaire:ETAPES_NOM[se.etape]+' · '+se.titre,essaiSecurise:se.essai_securise===true,code:se.module_code,phrase:'Étape « '+ETAPES_NOM[se.etape]+' ». Dépose une photo si l’étape le demande.'};
+    vm.intro+=' Aujourd’hui, '+REG.seanceMin+' minutes sur « '+se.titre+' ».';}
+  else vm.intro+=' Rien n’est prévu pour l’instant.';
+  // rappel du jour
+  var auj=iso(new Date()),dus=(r.rappels||[]).filter(function(x){return !x.fait_le&&x.prevu_le<=auj;});
+  if(dus.length)vm.rappel={titre:'Rappel '+dus[0].type.replace('J','J+')+' · '+(dus[0].titre||''),detail:'De mémoire.',note:''};
+  // dernier retour
+  var rt=(r.retours||[]).filter(function(x){return !x.ecoute_le;})[0]||(r.retours||[])[0];
+  if(rt)vm.retour={id:rt.id,vocal:rt.vocal_chemin,role:rt.role_auteur==='maitre'?'Le maître artisan':'Ton valideur',duree:rt.vocal_chemin?'vocal':'',texte:'« '+(rt.point_a_soigner||rt.ligne||'')+' »',ecoute:!!rt.ecoute_le,court:'Le point à soigner'};
+  var dep=(r.depots||[]).filter(function(x){return x.statut==='depose'||x.statut==='mesure'||x.statut==='en_attente_retour';})[0];
+  if(dep)vm.attente='Ton dernier dépôt'+(dep.retour_promis_le?' · retour promis d’ici le '+dateFr(new Date(dep.retour_promis_le)):' · ton valideur le regardera');
+  // frise
+  [1,2,3,4].forEach(function(n){var L=niveau(n),verr=n>cur;vm.bandes.push([['N1 · Comprendre','N2 · Faire avec repères','N3 · Réaliser seul·e','N4 · Maîtriser et transmettre'][n-1],L.length,verr?String(L.length):(L.filter(function(m){return m.etat==='acquis';}).length+' / '+L.length),null,L.map(function(m){return verr?'l':(m.etat==='acquis'?'v':(m.etat==='a_consolider'?'c':(m.etat==='en_cours'||m.etat==='a_faire'?'n':'')));})]);});
+  vm.ici=r.seance?'▲ tu es ici · module '+((mods.filter(function(m){return m.code===r.seance.module_code;})[0]||{}).rang||''):'';
+  // chiffres
+  var faits=r.stats.rappels_faits,reus=r.stats.rappels_reussis;
+  vm.chiffres=[[String(valides),' / '+tot,'modules validés',tot?Math.round(100*valides/tot):0,'--f-faire'],[faits?String(Math.round(100*reus/faits)):'—',faits?' %':'','rappels réussis · J+1, J+7, J+30',faits?Math.round(100*reus/faits):0,'--f-mesurer'],[String(r.stats.preuves),'','preuves dans ton coffre-fort',Math.min(100,r.stats.preuves*10),'--f-regard']];
+  if(r.accords&&r.accords.therese){var mn=r.stats.therese_min;vm.chiffres.push([Math.floor(mn/60)+' h '+('0'+(mn%60)).slice(-2),'','avec Thérèse',Math.min(100,mn/1.8),'--f-dire']);vm.therese=Math.floor(mn/60)+' h '+('0'+(mn%60)).slice(-2);}
+  // ce qui tient / retravaille
+  vm.tient=mods.filter(function(m){return m.etat==='acquis'&&m.titre;}).slice(0,3).map(function(m){return [m.titre,'J+30 réussi'];});
+  vm.retravaille=(r.rappels||[]).filter(function(x){return x.resultat==='rate';}).slice(0,3).map(function(x){return [(x.titre||x.module_code)+' · à consolider',x.type.replace('J','J+')+' raté'];});
+  // retours
+  vm.fil=(r.retours||[]).slice(0,4).map(function(x){return [x.role_auteur==='maitre'?'m':(x.ecoute_le?'':'pl'),(x.role_auteur==='maitre'?'Le maître artisan':'Valideur')+' · '+(x.module_code||''),'« '+(x.point_a_soigner||x.ligne||'')+' »',x.ecoute_le?'écouté':'non écouté'];}).concat((r.depots||[]).filter(function(x){return x.statut==='depose'||x.statut==='mesure'||x.statut==='en_attente_retour';}).slice(0,2).map(function(x){return ['att','En attente · dépôt','',x.retour_promis_le?'retour promis d’ici le '+dateFr(new Date(x.retour_promis_le)):'à venir'];}));
+  vm.coffre=(r.depots||[]).map(function(x){return [x.genre+' · '+(x.module_code||'positionnement'),dateFr(new Date(x.depose_le))];});
+  // 7 jours
+  var j7=[],jrn=[];for(var i=0;i<7;i++){var d=plus(i);jrn.push(JOURS_FR[d.getDay()].slice(0,3));j7.push((r.rappels||[]).filter(function(x){return !x.fait_le&&x.prevu_le===iso(d);}).length);}
+  vm.jr=jrn;vm.sem=j7.map(function(n){return n?20+14*n:0;});
+  var jrs=(r.rythme&&r.rythme.jours?r.rythme.jours.length:5);vm.regul=(r.seances_7j||[]).length+' jour(s) sur les '+jrs+' de ton rythme ces 7 derniers jours.';
+  return vm;
+}
+function V(){return REEL&&R&&R.inscription?fromR(R):DEMO;}
+
+/* ====================== navigation ====================== */
+function go(v){S.vue=v;S.epreuve=false;S.msg='';render();scrollTo(0,0);}
 function menu(){var h=NAV.map(function(n){return '<button data-go="'+n[0]+'" class="'+(S.vue===n[0]?'on':'')+'">'+n[1]+'</button>';}).join('');$('menuH').innerHTML=h;$('menuB').innerHTML=h;}
 function mob(retour,label){return '<div class="mob">'+(retour?'<button class="ret" data-go="'+retour+'" aria-label="Retour">‹</button>':'')+'<span class="mk">VRAI-SAVOIRFAIRE</span><span class="r">'+esc(label||'')+'</span></div>';}
+function etapesBar(cur,g,total){total=total||6;var n=[];for(var i=0;i<total;i++)n.push(i);return '<div class="etbar" aria-hidden="true">'+n.map(function(i){return '<i class="'+(i<cur?'on':(i===cur?'now':''))+'"></i>';}).join('')+'</div>';}
 function etapes(cur,g){return '<div class="etbar" aria-hidden="true">'+[0,1,2,3,4,5].map(function(i){return '<i class="'+(i===0&&g?'g':(i<cur?'on':(i===cur?'now':'')))+'"></i>';}).join('')+'</div><div class="etnom">'+['Essayer','Constater','Regarder','Faire','Comparer','Ancrer'].map(function(n,i){return '<span class="'+(i===0&&g?'g':(i===cur?'now':''))+'">'+n+(i===0&&g?'<br>non sécurisé':'')+'</span>';}).join('')+'</div>';}
+function msg(){return S.msg?'<div class="msg'+(S.msg.charAt(0)==='✓'?' ok':'')+'">'+esc(S.msg)+'</div>':'';}
 
-/* ---------- Aujourd'hui (téléphone) ---------- */
+/* ====================== écrans ====================== */
 function vAujourdhui(){
-  var d=new Date(),h=['lundi','mardi','mercredi','jeudi','vendredi','samedi','dimanche'];
-  return mob('','')+'<div class="today"><div class="kick">'+esc(JOURS_FR[d.getDay()])+', 7 h 30</div><h1>Aujourd’hui</h1><p class="lead">12 minutes en tout · module 9 · Peindre des bâtons</p>'+
-   '<button class="ligne" data-go="parcours"><i class="pt"></i><span><small>D’abord · 2 min</small><b>Rappel J+7 · module 6</b><small>Préparer la peinture, de mémoire</small></span><span class="ch">›</span></button>'+
-   '<button class="serie" data-go="faire"><span class="k">Ensuite · 10 min · étape 4 sur 6</span><b>Série 5</b><span>Un seul point : l’aplomb.</span><div class="etapes6" aria-hidden="true">'+[0,1,2,3,4,5].map(function(i){return '<i class="'+(i<3?'on':(i===3?'now':''))+'"></i>';}).join('')+'</div><span class="go">Commencer →</span></button>'+
-   '<button class="ligne r" data-go="parcours"><i class="pt"></i><span><b>Ton valideur t’a répondu</b><small>Série 4 · 30 s · le point à soigner aujourd’hui</small></span><span class="ch">▶</span></button>'+
-   '<div class="ligne a" style="cursor:default"><i class="pt"></i><span><b>En attente de retour</b><small>Ton dépôt de la série 5 · d’ici jeudi</small></span></div>'+
-   '<div class="reg"><b>Régularité</b> · 5 jours sur 7 cette semaine. Demain : rien de prévu, c’est ton jour off.</div>'+
-   '<p class="hint" style="margin-top:14px"><button class="btn l" data-go="essai-test">Voir un test de sous-niveau (démo)</button> · <button class="btn l" data-go="rythme">Changer de rythme</button></p></div>';
+  var v=V(),d=new Date();
+  var h=mob('','')+'<div class="today"><div class="kick">'+esc(JOURS_FR[d.getDay()])+', '+(REEL&&R&&R.rythme?'':'7 h 30')+'</div><h1>Aujourd’hui</h1>'+msg();
+  if(!v.seance&&!v.rappel){return h+'<p class="lead">Rien n’est prévu pour l’instant. Un jour sans séance ne fait rien perdre.</p><div class="reg"><b>Régularité</b> · '+esc(v.regul)+'</div></div>';}
+  h+='<p class="lead">'+(v.seance?v.minutes+' minutes · '+esc(v.seance.module):'')+'</p>';
+  if(v.rappel)h+='<button class="ligne" data-go="parcours"><i class="pt"></i><span><small>D’abord · 2 min</small><b>'+esc(v.rappel.titre)+'</b><small>'+esc(v.rappel.detail)+'</small></span><span class="ch">›</span></button>';
+  if(v.seance)h+='<button class="serie" data-go="'+(v.seance.etape==='ancrer'?'ancrer':'faire')+'"><span class="k">Ensuite · '+v.minutes+' min · étape '+v.seance.etapeNum+' sur '+v.seance.etapeTotal+'</span><b>'+esc(v.seance.titre)+'</b><span>Un seul point : '+esc(v.seance.point)+'.</span><div class="etapes6" aria-hidden="true">'+Array.apply(null,{length:v.seance.etapeTotal}).map(function(_,i){return '<i class="'+(i<v.seance.etapeNum-1?'on':(i===v.seance.etapeNum-1?'now':''))+'"></i>';}).join('')+'</div><span class="go">Commencer →</span></button>';
+  if(v.retour)h+='<button class="ligne r" data-a="ecoute"><i class="pt"></i><span><b>'+esc(v.retour.role)+' t’a répondu</b><small>'+esc(v.retour.court)+'</small></span><span class="ch">▶</span></button>';
+  if(v.attente)h+='<div class="ligne a" style="cursor:default"><i class="pt"></i><span><b>En attente de retour</b><small>'+esc(v.attente)+'</small></span></div>';
+  h+='<div class="reg"><b>Régularité</b> · '+esc(v.regul)+(REEL?'':' Demain : rien de prévu, c’est ton jour off.')+'</div>';
+  if(!REEL)h+='<p class="hint" style="margin-top:14px"><button class="btn l" data-go="essai-test">Voir un test de sous-niveau (démo)</button> · <button class="btn l" data-go="rythme">Changer de rythme</button></p>';
+  else h+='<p class="hint" style="margin-top:14px"><button class="btn l" data-go="rythme">Changer de rythme</button></p>';
+  return h+'</div>';
 }
-/* ---------- Mon parcours (ordinateur) ---------- */
 function vParcours(){
-  var ban=function(nom,n,c,fn){var cl='';for(var i=0;i<n;i++)cl+='<i class="'+fn(i)+'"></i>';return '<div class="bande"><div class="bh"><span>'+nom+'</span><span>'+c+'</span></div><div class="cl">'+cl+'</div></div>';};
-  var sem=[34,10,0,46,22,10,34],jr=['lun','mar','mer','jeu','ven','sam','dim'];
-  var h=mob('','Mon parcours')+'<div class="kick">◆ Peintre en lettres · 3 semaines après le départ</div><h1>Bonjour.</h1><p class="lead">Ta main a validé 8 modules. Aujourd’hui, une série de 10 minutes sur l’aplomb.</p>'+
-   '<div class="cartes"><button class="carte noir" data-go="faire"><span class="k">Aujourd’hui · 10 min</span><b>Série 5 · Peindre des bâtons</b><span class="t">« Soigne l’aplomb, pas la vitesse. » Dépose une photo de ta dernière ligne.</span><span class="go">Commencer →</span></button>'+
-   '<button class="carte mes" data-go="aujourdhui"><span class="k">Avant la série · 2 min</span><b>● Rappel J+7 · module 6</b><span class="t">Préparer la peinture, de mémoire. Le dernier J+30 sur ce module avait raté : il revient.</span></button>'+
-   '<div class="carte regard"><span class="k">Retour reçu</span><b>● Ton valideur · 30 s</b><span class="t">« Tes bâtons penchent à droite en fin de ligne. Un seul point : l’aplomb. »</span><button class="btn" data-a="ecoute" style="margin-top:12px">'+(S.ecoute?'✓ écouté':'▶ Écouter')+'</button></div></div>'+
-   '<section><h2>Mon parcours, du N1 au N4</h2><p class="hint">Niveau en cours en cases ; niveaux suivants verrouillés.</p><div class="bandes">'+
-   ban('N1 · Comprendre',24,'8 / 24',function(i){return i===5?'c':(i<8?'v':(i===8?'n':''));})+ban('N2 · Faire avec repères',30,'30',function(){return 'l';})+ban('N3 · Réaliser seul·e',20,'20',function(){return 'l';})+ban('N4 · Maîtriser et transmettre',3,'3',function(){return 'l';})+'</div><div class="ici">▲ tu es ici · module 9</div>'+
-   '<div class="chiffres"><div><b>8<small> / 24</small></b><span>modules validés</span><div class="br"><i style="width:33%;background:var(--f-faire)"></i></div></div><div><b>78<small> %</small></b><span>rappels réussis · J+1, J+7, J+30</span><div class="br"><i style="width:78%;background:var(--f-mesurer)"></i></div></div><div><b>11</b><span>preuves dans ton coffre-fort</span><div class="br"><i style="width:40%;background:var(--f-regard)"></i></div></div><div><b>1 h 40<small> / 3 h</small></b><span>avec Thérèse en N1</span><div class="br"><i style="width:55%;background:var(--f-dire)"></i></div></div></div></section>'+
-   '<section class="deux"><div><h2>Ce qui tient</h2><div class="lg"><span>La tenue du pinceau ne bouge plus</span><em>J+30 réussi</em></div><div class="lg"><span>Tu nommes tes erreurs avant le valideur</span><em>valideur</em></div><div class="lg"><span>La charge du pinceau est régulière</span><em>mesure IA</em></div></div>'+
-   '<div><h2>Ce qu’on retravaille</h2><div class="lg"><span>L’aplomb des bâtons en fin de série</span><em>J+7 raté</em></div><div class="lg"><span>La pression varie quand tu accélères</span><em>Thérèse</em></div><div class="lg"><span>Module 6 · Préparer la peinture, à consolider</span><em>J+30 raté</em></div></div></section>'+
-   '<section class="deux"><div><h2>Les retours qu’on t’a faits</h2><p class="hint">Un retour, un seul point à soigner. Et ce qui a changé ensuite.</p>'+
-   '<div class="fil"><i class="p pl"></i><span><b>Valideur · module 9, série 4</b><br>« L’aplomb en fin de ligne. »<small>non écouté · hier</small></span></div>'+
-   '<div class="fil"><i class="p"></i><span><b>En attente · dépôt de la série 5</b><small>retour promis d’ici jeudi</small></span></div>'+
-   '<div class="fil"><i class="p m">M</i><span><b>Le maître artisan · module 7</b><br>« Ton poignet suit, laisse l’épaule faire. »<small>Ensuite : J+7 réussi sur ce module.</small></span></div></div>'+
-   '<div><h2>Tes 7 prochains jours</h2><p class="hint">Les rappels prévus, de plus en plus espacés.</p><div class="sem">'+sem.map(function(v,i){return '<div><i style="height:'+Math.max(v,2)+'px;'+(v?'':'background:#e4e4e4')+'"></i>'+jr[i]+'</div>';}).join('')+'</div><p style="margin:8px 0 0"><b>Régularité</b> · 5 jours sur les 7 de ton rythme cette semaine.<br><span class="hint">Un jour sauté ne fait rien perdre.</span></p><p style="margin-top:12px"><button class="btn l" data-go="rythme">Changer de rythme</button></p></div></section>'+
-   '<section><div class="prochaine"><span><b>Prochaine étape · le test du sous-niveau 3, puis l’épreuve du N1</b> · quand les 24 modules seront validés, soit dans 6 à 8 semaines à ton rythme.</span><span><button class="btn l" data-a="epreuve">Voir ce qu’elle demande →</button> <button class="btn l" data-go="essai-test">Voir un test (démo)</button></span></div>'+(S.epreuve?'<div class="msg ok">L’épreuve du N1 : un quiz de base, trois gestes observés à distance par ton valideur (sur photo ou vidéo) et un portfolio minimal. Pas de jury à ce niveau. 2 tentatives incluses.</div>':'')+'</section>';
+  var v=V();
+  var ban=function(b){var cl='';if(b[4]){cl=b[4].map(function(c){return '<i class="'+c+'"></i>';}).join('');}else{for(var i=0;i<b[1];i++)cl+='<i class="'+b[3](i)+'"></i>';}return '<div class="bande"><div class="bh"><span>'+b[0]+'</span><span>'+b[2]+'</span></div><div class="cl">'+cl+'</div></div>';};
+  var h=mob('','Mon parcours')+'<div class="kick">'+esc(v.kick)+'</div><h1>Bonjour.</h1><p class="lead">'+esc(v.intro)+'</p>'+msg()+'<div class="cartes">';
+  h+=v.seance?'<button class="carte noir" data-go="'+(v.seance.etape==='ancrer'?'ancrer':'faire')+'"><span class="k">Aujourd’hui · '+v.minutes+' min</span><b>'+esc(v.seance.titre)+'</b><span class="t">'+esc(v.seance.phrase)+'</span><span class="go">Commencer →</span></button>':'<div class="carte"><span class="k">Aujourd’hui</span><b>Rien de prévu</b><span class="t">Un jour sans séance ne fait rien perdre.</span></div>';
+  h+=v.rappel?'<button class="carte mes" data-go="aujourdhui"><span class="k">Avant la série · 2 min</span><b>● '+esc(v.rappel.titre)+'</b><span class="t">'+esc(v.rappel.detail)+' '+esc(v.rappel.note)+'</span></button>':'<div class="carte mes"><span class="k">Rappels</span><b>Aucun rappel aujourd’hui</b></div>';
+  h+=v.retour?'<div class="carte regard"><span class="k">Retour reçu</span><b>● '+esc(v.retour.role)+(v.retour.duree?' · '+esc(v.retour.duree):'')+'</b><span class="t">'+esc(v.retour.texte)+'</span><button class="btn" data-a="ecoute" style="margin-top:12px">'+(v.retour.ecoute||S.ecoute?'✓ écouté':'▶ Écouter')+'</button></div>':'<div class="carte regard"><span class="k">Retour reçu</span><b>Pas encore de retour</b></div>';
+  h+='</div><section><h2>Mon parcours, du N1 au N4</h2><p class="hint">Niveau en cours en cases ; niveaux suivants verrouillés.</p><div class="bandes">'+v.bandes.map(ban).join('')+'</div><div class="ici">'+esc(v.ici)+'</div><div class="chiffres">'+v.chiffres.map(function(c){return '<div><b>'+esc(c[0])+'<small>'+esc(c[1])+'</small></b><span>'+esc(c[2])+'</span><div class="br"><i style="width:'+c[3]+'%;background:var('+c[4]+')"></i></div></div>';}).join('')+'</div></section>';
+  var lg=function(L,vide){return L.length?L.map(function(x){return '<div class="lg"><span>'+esc(x[0])+'</span><em>'+esc(x[1])+'</em></div>';}).join(''):'<p class="hint">'+vide+'</p>';};
+  h+='<section class="deux"><div><h2>Ce qui tient</h2>'+lg(v.tient,'Un geste est acquis quand il tient un mois : rien à afficher pour l’instant.')+'</div><div><h2>Ce qu’on retravaille</h2>'+lg(v.retravaille,'Rien à retravailler pour l’instant.')+'</div></section>';
+  h+='<section class="deux"><div><h2>Les retours qu’on t’a faits</h2><p class="hint">Un retour, un seul point à soigner. Et ce qui a changé ensuite.</p>'+(v.fil.length?v.fil.map(function(f){return '<div class="fil"><i class="p '+(f[0]==='pl'?'pl':(f[0]==='m'?'m':''))+'">'+(f[0]==='m'?'M':'')+'</i><span><b>'+esc(f[1])+'</b>'+(f[2]?'<br>'+esc(f[2]):'')+'<small>'+esc(f[3])+'</small></span></div>';}).join(''):'<p class="hint">Aucun retour pour l’instant.</p>')+'</div>'+
+   '<div><h2>Tes 7 prochains jours</h2><p class="hint">Les rappels prévus, de plus en plus espacés.</p><div class="sem">'+v.sem.map(function(x,i){return '<div><i style="height:'+Math.max(x,2)+'px;'+(x?'':'background:#e4e4e4')+'"></i>'+esc(v.jr[i]||['lun','mar','mer','jeu','ven','sam','dim'][i])+'</div>';}).join('')+'</div><p style="margin:8px 0 0"><b>Régularité</b> · '+esc(v.regul)+'<br><span class="hint">Un jour sauté ne fait rien perdre.</span></p><p style="margin-top:12px"><button class="btn l" data-go="rythme">Changer de rythme</button></p></div></section>';
+  h+='<section><div class="prochaine"><span><b>'+esc(v.prochaine)+'</b></span><span><button class="btn l" data-a="epreuve">Voir ce qu’elle demande →</button>'+(REEL?'':' <button class="btn l" data-go="essai-test">Voir un test (démo)</button>')+'</span></div>'+(S.epreuve?'<div class="msg ok">L’épreuve du N1 : un quiz de base, trois gestes observés à distance par ton valideur (sur photo ou vidéo) et un portfolio minimal. Pas de jury à ce niveau. 2 tentatives incluses.</div>':'')+'</section>';
   return h;
 }
-/* ---------- Faire ---------- */
 function vFaire(){
-  var m=Math.floor(S.left/60),s=S.left%60,t=m+':'+(s<10?'0':'')+s;
-  return mob('aujourdhui','Module 9 · étape 4 sur 6')+'<div class="today">'+etapes(3,ESSAI_NON)+'<h1 style="margin-top:14px">Série 5 · jour 5 sur 7</h1><p class="lead">Une ligne de 12 bâtons, trois fois. Ne cherche pas la vitesse.</p>'+
-   '<div class="point"><span class="k">Un seul point à soigner</span><b>L’aplomb</b></div>'+
-   '<div class="rappel">Ton valideur t’avait dit : « Tes bâtons penchent à droite en fin de ligne. »</div>'+
-   (ESSAI_NON?'<p class="hint">Ce module n’a pas d’essai sécurisé : on a commencé par Constater, l’essai n’est jamais proposé.</p>':'')+
+  var v=V(),se=v.seance;if(!se)return mob('aujourdhui','')+'<div class="today"><h1>Rien à faire</h1><p class="lead">Aucun module n’est ouvert.</p></div>';
+  var m=Math.floor(S.left/60),s=S.left%60,t=m+':'+(s<10?'0':'')+s,g=ESSAI_NON||(REEL&&se.essaiSecurise===false);
+  return mob('aujourdhui',se.module+' · étape '+se.etapeNum+' sur '+se.etapeTotal)+'<div class="today">'+(REEL?etapesBar(se.etapeNum-1,false,se.etapeTotal):etapes(3,ESSAI_NON))+'<h1 style="margin-top:14px">'+esc(REEL?se.titreFaire:se.titreFaire)+'</h1><p class="lead">'+esc(se.consigne)+'</p>'+msg()+
+   '<div class="point"><span class="k">Un seul point à soigner</span><b>'+esc(se.point)+'</b></div>'+
+   (V().retour&&!REEL?'<div class="rappel">Ton valideur t’avait dit : « Tes bâtons penchent à droite en fin de ligne. »</div>':'')+
+   (g?'<p class="hint">Ce module n’a pas d’essai sécurisé : on commence par Constater, l’essai n’est jamais proposé.</p>':'')+
    '<div class="chrono"><div class="t">'+t+'</div><button class="grand b" data-a="chrono">'+(S.run?'Pause':(S.left<REG.seanceMin*60?'Reprendre':'Lancer les 10 minutes'))+'</button></div>'+
    '<input type="file" id="fic" accept="image/*" capture="environment" hidden>'+
-   '<button class="grand" data-a="photo">'+(S.photo?'✓ Photo prise · '+esc(S.photo):'Photo de ta dernière ligne')+'</button>'+
-   (S.photo?'<div class="mesure"><b>Mesure · démonstration</b><br>Aplomb : 2 bâtons sur 3. <span class="nom">(valeur de démo)</span><br>Ton valideur la regarde d’ici jeudi.</div>':'<p class="hint">La mesure de l’aplomb s’affiche tout de suite. Ton valideur la regarde d’ici jeudi.</p>')+
-   '<p style="margin-top:14px"><button class="btn l" data-go="ancrer">Dernier jour de la série ? Passer à l’ancrage →</button></p></div>';
+   '<button class="grand" data-a="photo">'+(S.fichier?'✓ Photo prise · '+esc(S.fichier.name||S.fichier):'Photo de ta dernière ligne')+'</button>'+
+   (S.fichier?(REEL?'<label class="case" style="display:flex;gap:12px;margin:14px 0"><input type="checkbox" data-a="consent"'+(S.consent?' checked':'')+' style="width:22px;height:22px"><span><b>Je suis d’accord pour que cette photo soit gardée</b><br><span class="hint">Pour la montrer à ton valideur. Tu peux la retirer quand tu veux.</span></span></label>':'<div class="mesure"><b>Mesure · démonstration</b><br>Aplomb : 2 bâtons sur 3. <span class="nom">(valeur de démo)</span><br>Ton valideur la regarde d’ici jeudi.</div>'):'<p class="hint">La mesure s’affiche tout de suite. Ton valideur la regarde d’ici quelques jours.</p>')+
+   (REEL?'<button class="grand" data-a="terminer"'+(S.occupe||(S.fichier&&!S.consent)?' disabled':'')+'>'+(S.occupe?'Envoi…':'J’ai terminé la séance')+'</button>':'<p style="margin-top:14px"><button class="btn l" data-go="ancrer">Dernier jour de la série ? Passer à l’ancrage →</button></p>')+'</div>';
 }
-/* ---------- Ancrer ---------- */
 function vAncrer(){
-  var qs=REG.debriefQuestions,cur=S.rec?Math.min(qs.length-1,Math.floor(S.sec/25)):0;
-  var h=mob('faire','Module 9 · étape 6 sur 6')+'<div class="today">'+etapes(5,ESSAI_NON)+'<div class="kick" style="color:var(--f-dire)">Ancrer · 60 à 90 secondes</div><h1>Raconte un seul bâton de ta dernière ligne.</h1><p class="lead">Pas pourquoi : comment. Les questions défilent pendant que tu parles.</p>'+
+  var v=V(),se=v.seance||DEMO.seance,qs=REG.debriefQuestions,cur=S.rec?Math.min(qs.length-1,Math.floor(S.sec/25)):0;
+  var h=mob('faire',(se.module||'')+' · étape '+(REEL?se.etapeNum:6)+' sur '+(REEL?se.etapeTotal:6))+'<div class="today">'+(REEL?etapesBar(se.etapeNum-1,false,se.etapeTotal):etapes(5,ESSAI_NON))+'<div class="kick" style="color:var(--f-dire)">Ancrer · 60 à 90 secondes</div><h1>Raconte un seul bâton de ta dernière ligne.</h1><p class="lead">Pas pourquoi : comment. Les questions défilent pendant que tu parles.</p>'+msg()+
    qs.map(function(q,i){return '<div class="qd'+(i===cur&&!S.ancre?' cur':'')+'"><b>'+(i+1)+'</b> · '+esc(q[0])+'</div>';}).join('')+
-   '<div class="rec"><button class="'+(S.rec?'on':'')+'" data-a="rec" aria-label="Enregistrer"><i></i></button><span>'+(S.ancre?'✓ Vocal enregistré · '+S.sec+' s':(S.rec?'Enregistrement · 0:'+(S.sec<10?'0':'')+S.sec+' · toucher pour finir':'Toucher pour parler'))+'</span></div>';
-  if(S.ancre){h+='<div><div class="kick">Ensuite, ce geste revient</div><div class="j3"><div><b>J+1</b><br>'+dateFr(plus(1))+'</div><div><b>J+7</b><br>'+dateFr(plus(7))+'</div><div><b>J+30</b><br>'+dateFr(plus(30))+'</div></div><p class="note hint">Le J+30 devient l’essai à froid du module suivant. Le geste est acquis s’il tient ce jour-là.</p><button class="grand" data-go="aujourdhui">Terminer la séance</button></div>';}
+   '<div class="rec"><button class="'+(S.rec?'on':'')+'" data-a="rec" aria-label="Enregistrer"'+(S.occupe?' disabled':'')+'><i></i></button><span>'+(S.ancre?'✓ Vocal enregistré · '+S.sec+' s':(S.rec?'Enregistrement · 0:'+(S.sec<10?'0':'')+S.sec+' · toucher pour finir':'Toucher pour parler'))+'</span></div>';
+  if(S.ancre){h+='<div><div class="kick">Ensuite, ce geste revient</div><div class="j3"><div><b>J+1</b><br>'+dateFr(plus(1))+'</div><div><b>J+7</b><br>'+dateFr(plus(7))+'</div><div><b>J+30</b><br>'+dateFr(plus(30))+'</div></div><p class="note hint">Le J+30 devient l’essai à froid du module suivant. Le geste est acquis s’il tient ce jour-là.</p><button class="grand" data-a="'+(REEL?'envoyervocal':'finseance')+'"'+(S.occupe?' disabled':'')+'>'+(S.occupe?'Envoi…':'Terminer la séance')+'</button></div>';}
   return h+'<p class="hint">'+(S.rec&&S.sec<60?'Encore un peu : 60 à 90 secondes, c’est assez.':'')+' Les 3 questions varient d’un jour à l’autre ; celle sur la difficulté est toujours là.</p></div>';
 }
-/* ---------- Test de sous-niveau ---------- */
 function vTest(){
+  if(REEL)return mob('aujourdhui','Test')+'<div class="today"><h1>Pas encore de test<i class="dot"></i></h1><p class="lead">Les tests de sous-niveau n’ont pas encore de questions : leur composition est à faire. Ils s’ouvriront ici.</p><p><button class="btn l" data-go="aujourdhui">Retour</button></p></div>';
   var t=S.test,n=t.tentative,ver=n===1?'A':'B';
   var h=mob('aujourdhui','Test · sous-niveau 2 · N1')+'<div class="today"><div class="kick">Test du sous-niveau 2 · N1</div><h1>Tentative '+n+' sur '+REG.tentatives+'</h1>';
   if(t.phase==='quiz'){
@@ -176,40 +234,129 @@ function vTest(){
   }
   return h+'</div>';
 }
-/* ---------- Changer de rythme ---------- */
 function vRythme(){
-  return mob('aujourdhui','Ton rythme')+'<div class="today"><h1>Changer de rythme</h1><p class="lead">Tu peux changer à tout moment. Les rappels J+1, J+7 et J+30 ne se compressent jamais.</p>'+
+  return mob('aujourdhui','Ton rythme')+'<div class="today"><h1>Changer de rythme</h1><p class="lead">Tu peux changer à tout moment. Les rappels J+1, J+7 et J+30 ne se compressent jamais.</p>'+msg()+
    '<div class="opts"><button data-mode="guide" class="'+(S.mode==='guide'?'on':'')+'">Je me laisse guider</button><button data-mode="libre" class="'+(S.mode==='libre'?'on':'')+'">J’avance à mon rythme</button></div>'+
    '<p class="hint" style="margin-top:12px">'+(S.mode==='guide'?'L’appli te propose la séance du jour.':'Tu ouvres le module suivant quand tu veux, dans la limite de 2 modules ouverts en même temps. Aucun rappel n’est sauté.')+'</p>'+
    '<div class="pause"><button class="grand b" data-a="pause">'+(S.pause?'Reprendre le parcours':'Faire une pause')+'</button><p class="hint">'+(S.pause?'En pause : rien ne se perd, le parcours t’attend.':'Une pause est possible à tout moment, sans message culpabilisant.')+'</p></div><p><button class="btn l" data-go="aujourdhui">Retour</button></p></div>';
 }
-function vCoffre(){return mob('','Coffre-fort')+'<div class="kick">Mon coffre-fort</div><h1>Tes preuves<i class="dot"></i></h1><p class="lead">Garder et partager tes preuves : tes photos, tes retours, tes badges. Gratuit, à vie.</p><div class="fil"><i class="p pl"></i><span><b>Essai à froid · test de positionnement</b><small>photo gardée avec ton accord</small></span></div><div class="fil"><i class="p pl"></i><span><b>Série 4 · retour du valideur</b><small>« L’aplomb en fin de ligne. »</small></span></div><p class="hint">Démonstration : le vrai coffre-fort lira tes dépôts et leurs retours.</p>';}
-function vTherese(){return mob('','Thérèse')+'<div class="kick">Thérèse · en option</div><h1>Une question courte par semaine<i class="dot"></i></h1><p class="lead">Ce que tu lui dis reste entre vous : ni ton entreprise, ni ton maître artisan, ni l’administration ne le voient. Seul le temps passé est compté.</p><div class="chiffres"><div><b>1 h 40<small> / 3 h</small></b><span>avec Thérèse en N1 (démo)</span><div class="br"><i style="width:55%;background:var(--f-dire)"></i></div></div></div>';}
-
-function render(){
-  menu();var v={aujourdhui:vAujourdhui,parcours:vParcours,faire:vFaire,ancrer:vAncrer,'essai-test':vTest,rythme:vRythme,coffre:vCoffre,therese:vTherese}[S.vue]||vAujourdhui;
-  $('app').innerHTML=v();
-  var hideNav=['faire','ancrer','essai-test','rythme'].indexOf(S.vue)>=0;$('menuB').hidden=hideNav;
+function vCoffre(){var v=V();return mob('','Coffre-fort')+'<div class="kick">Mon coffre-fort</div><h1>Tes preuves<i class="dot"></i></h1><p class="lead">Garder et partager tes preuves : tes photos, tes retours, tes badges. Gratuit, à vie.</p>'+(v.coffre.length?v.coffre.map(function(c){return '<div class="fil"><i class="p pl"></i><span><b>'+esc(c[0])+'</b><small>'+esc(c[1])+'</small></span></div>';}).join(''):'<p class="hint">Rien dans ton coffre-fort pour l’instant.</p>')+(REEL?'':'<p class="hint">Démonstration : le vrai coffre-fort lira tes dépôts et leurs retours.</p>');}
+function vTherese(){var v=V();return mob('','Thérèse')+'<div class="kick">Thérèse · en option</div><h1>Une question courte par semaine<i class="dot"></i></h1><p class="lead">Ce que tu lui dis reste entre vous : ni ton entreprise, ni ton maître artisan, ni l’administration ne le voient. Seul le temps passé est compté.</p>'+(v.therese?'<div class="chiffres"><div><b>'+esc(v.therese)+'</b><span>avec Thérèse</span></div></div>':'<p class="hint">Thérèse est une option : tu ne l’as pas activée.</p>');}
+function vChargement(){return mob('','')+'<p class="kick">Chargement…</p>';}
+function vBloque(){
+  var a=DB.admin&&R&&R.inscription&&R.inscription.statut!=='actif';
+  return mob('','')+'<div class="today"><h1>Ton parcours n’est pas encore ouvert<i class="dot"></i></h1>'+msg()+'<p class="lead">'+(R&&R.inscription?'Ton inscription est à l’état « '+esc(R.inscription.statut)+' ». Elle s’ouvre après le paiement.':'Aucun parcours pour ce compte : passe d’abord par le test de positionnement.')+'</p>'+
+   (a?'<button class="grand" data-a="activer"'+(S.occupe?' disabled':'')+'>Activer ce compte pour test (administrateur, sans paiement)</button>':'')+
+   '<p><a class="btn l" href="parcours-v2.html?reel=1">Aller au test de positionnement</a></p></div>';
 }
+function render(){
+  menu();
+  var actif=!REEL||(R&&R.inscription&&R.inscription.statut==='actif'||R&&R.inscription&&R.inscription.statut==='pause');
+  var v;
+  if(REEL&&!S.charge)v=vChargement;else if(REEL&&!actif)v=vBloque;else v={aujourdhui:vAujourdhui,parcours:vParcours,faire:vFaire,ancrer:vAncrer,'essai-test':vTest,rythme:vRythme,coffre:vCoffre,therese:vTherese}[S.vue]||vAujourdhui;
+  $('app').innerHTML=v();
+  $('menuB').hidden=['faire','ancrer','essai-test','rythme'].indexOf(S.vue)>=0||(REEL&&!actif);
+}
+
+/* ====================== enregistrements réels (seulement avec ?reel=1) ====================== */
+async function rpc(nom,args){var r=await DB.sb.rpc(nom,args||{});if(r.error)throw r.error;return r.data;}
+async function recharger(){R=await rpc('vsf_form_mon_parcours',{p_code:'peintre-en-lettres'});if(R&&R.inscription){S.mode=(R.rythme&&R.rythme.mode)||'guide';S.pause=R.inscription.statut==='pause';}}
+async function envelopper(f){S.occupe=true;S.msg='';render();try{await f();}catch(x){S.msg='Impossible : '+((x&&x.message)||x);}S.occupe=false;render();}
+async function deposerPhoto(module,etape){
+  var f=S.fichier;if(!f||!f.size&&!f.type)return null;
+  var chemin=DB.user+'/'+R.inscription.id+'/'+module+'/'+Date.now()+'.jpg';
+  var u=await DB.sb.storage.from('vsf-depots').upload(chemin,f,{contentType:f.type||'image/jpeg'});if(u.error)throw u.error;
+  var d=await DB.sb.from('vsf_form_depots').insert({inscription_id:R.inscription.id,module_code:module,etape:etape,genre:'photo',chemin:chemin,consentement_photo_le:new Date().toISOString()});if(d.error)throw d.error;
+  return chemin;
+}
+async function terminerSeance(){
+  var se=V().seance;if(!se)return;
+  await envelopper(async function(){
+    if(S.fichier){if(!S.consent)throw new Error('Coche la case pour garder la photo.');await deposerPhoto(se.code,se.etape);}
+    await rpc('vsf_form_enregistrer_seance',{p_module:se.code,p_etape:se.etape,p_duree_s:Math.max(0,REG.seanceMin*60-S.left),p_point:null});
+    await recharger();S.fichier=null;S.consent=false;S.left=REG.seanceMin*60;S.run=false;clearInterval(T);S.vue='aujourdhui';S.msg='✓ Séance enregistrée.';
+  });
+}
+async function demarrerMicro(){
+  try{MEDIA.flux=await navigator.mediaDevices.getUserMedia({audio:true});MEDIA.morceaux=[];MEDIA.rec=new MediaRecorder(MEDIA.flux);
+    MEDIA.rec.ondataavailable=function(e){if(e.data&&e.data.size)MEDIA.morceaux.push(e.data);};
+    MEDIA.rec.onstop=function(){MEDIA.blob=new Blob(MEDIA.morceaux,{type:MEDIA.rec.mimeType||'audio/webm'});if(MEDIA.flux)MEDIA.flux.getTracks().forEach(function(t){t.stop();});};
+    MEDIA.rec.start();return true;}
+  catch(x){S.msg='Le micro n’est pas disponible : '+((x&&x.message)||x);return false;}
+}
+async function envoyerVocal(){
+  var se=V().seance;if(!se||!MEDIA.blob)return;
+  await envelopper(async function(){
+    var ext=(MEDIA.blob.type.indexOf('mp4')>=0?'m4a':'webm'),chemin=DB.user+'/'+R.inscription.id+'/debrief/'+Date.now()+'.'+ext;
+    var u=await DB.sb.storage.from('vsf-depots').upload(chemin,MEDIA.blob,{contentType:MEDIA.blob.type});if(u.error)throw u.error;
+    var d=await DB.sb.from('vsf_form_debriefs').insert({inscription_id:R.inscription.id,module_code:se.code,chemin:chemin,duree_s:Math.max(1,Math.min(600,S.sec)),questions:REG.debriefQuestions.map(function(q){return q[0];})});if(d.error)throw d.error;
+    await rpc('vsf_form_enregistrer_seance',{p_module:se.code,p_etape:'ancrer',p_duree_s:S.sec,p_point:null});
+    await recharger();S.ancre=false;S.sec=0;MEDIA.blob=null;S.vue='aujourdhui';S.msg='✓ Vocal enregistré. Tes rappels sont prévus.';
+  });
+}
+async function ecouter(){
+  var v=V();if(!v.retour)return;
+  if(!REEL){S.ecoute=true;render();return;}
+  await envelopper(async function(){
+    if(v.retour.vocal){var s=await DB.sb.storage.from('vsf-depots').createSignedUrl(v.retour.vocal,900);if(s.error)throw s.error;var a=new Audio(s.data.signedUrl);a.play();}
+    await rpc('vsf_form_marquer_ecoute',{p_retour:v.retour.id});await recharger();
+  });
+}
+async function changerMode(m){S.mode=m;render();if(!REEL)return;await envelopper(async function(){var r=await DB.sb.from('vsf_form_rythme').upsert({inscription_id:R.inscription.id,mode:m},{onConflict:'inscription_id'});if(r.error)throw r.error;});}
+async function basculerPause(){
+  if(!REEL){S.pause=!S.pause;render();return;}
+  await envelopper(async function(){await rpc('vsf_form_mettre_en_pause',{p_inscription:R.inscription.id,p_pause:!S.pause});await recharger();});
+}
+async function activerTest(){await envelopper(async function(){await rpc('vsf_form_activer_pour_test',{p_inscription:R.inscription.id});await recharger();});}
+
+/* ====================== événements ====================== */
 document.addEventListener('click',function(e){
   var t=e.target.closest('[data-go],[data-a],[data-mode],[data-tq]');if(!t)return;var d=t.dataset;
   if(d.go){go(d.go);return;}
-  if(d.mode){S.mode=d.mode;render();return;}
+  if(d.mode){changerMode(d.mode);return;}
   if(d.tq!==undefined){S.test.rep[d.tq]=+d.k;render();return;}
   switch(d.a){
-    case 'ecoute':S.ecoute=true;render();return;
+    case 'ecoute':ecouter();return;
     case 'epreuve':S.epreuve=!S.epreuve;render();return;
     case 'photo':$('fic').click();return;
-    case 'pause':S.pause=!S.pause;render();return;
+    case 'pause':basculerPause();return;
+    case 'activer':activerTest();return;
+    case 'terminer':terminerSeance();return;
+    case 'envoyervocal':envoyerVocal();return;
+    case 'finseance':go('aujourdhui');return;
     case 'chrono':if(S.run){clearInterval(T);S.run=false;}else{S.run=true;T=setInterval(function(){if(S.left<=0){clearInterval(T);S.run=false;render();return;}S.left--;var el=document.querySelector('.chrono .t');if(el){var m=Math.floor(S.left/60),s=S.left%60;el.textContent=m+':'+(s<10?'0':'')+s;}},1000);}render();return;
-    case 'rec':if(S.rec){clearInterval(T);S.rec=false;S.ancre=true;}else{S.sec=0;S.ancre=false;S.rec=true;T=setInterval(function(){S.sec++;if(S.sec>=90){clearInterval(T);S.rec=false;S.ancre=true;}render();},1000);}render();return;
+    case 'rec':
+      if(S.rec){clearInterval(T);S.rec=false;S.ancre=true;if(REEL&&MEDIA.rec&&MEDIA.rec.state!=='inactive')MEDIA.rec.stop();render();return;}
+      (async function(){if(REEL&&!(await demarrerMicro())){render();return;}S.sec=0;S.ancre=false;S.rec=true;T=setInterval(function(){S.sec++;if(S.sec>=90){clearInterval(T);S.rec=false;S.ancre=true;if(REEL&&MEDIA.rec&&MEDIA.rec.state!=='inactive')MEDIA.rec.stop();}render();},1000);render();})();return;
     case 'envoyer':var bons=Object.keys(S.test.rep).filter(function(i){return S.test.rep[i]===0;}).length;S.test.resultat=bons>=4?'reussi':'pas_encore';if(S.test.resultat!=='reussi')S.test.echecs=S.test.tentative;S.test.phase='resultat';render();scrollTo(0,0);return;
     case 'retenter':S.test={phase:'quiz',tentative:2,rep:{},resultat:null,echecs:1,depot:false};render();scrollTo(0,0);return;
   }
 });
-document.addEventListener('change',function(e){var t=e.target;if(t.id==='fic'&&t.files&&t.files[0]){if(S.vue==='essai-test')S.test.depot=true;else S.photo=t.files[0].name;render();}});
-if(REEL){$('bandeau').textContent='Copie de test · enregistrement réel non branché dans cet écran';$('bandeau').style.background='#111';}
-render();
+document.addEventListener('change',function(e){var t=e.target;
+  if(t.id==='fic'&&t.files&&t.files[0]){if(S.vue==='essai-test')S.test.depot=true;else{S.fichier=t.files[0];S.consent=false;}render();return;}
+  if(t.dataset.a==='consent'){S.consent=t.checked;render();}
+});
+
+/* ====================== démarrage ====================== */
+async function demarrer(){
+  if(REEL){
+    $('bandeau').textContent='Copie de test · données réelles de ton compte';$('bandeau').style.background='#111';
+    DB.sb=window.VSF&&VSF.sb;if(!DB.sb){S.msg='Connexion indisponible.';S.charge=true;render();return;}
+    var s=await DB.sb.auth.getSession();if(!s.data.session){location.replace('../connexion.html?suite='+encodeURIComponent(location.href));return;}
+    DB.user=s.data.session.user.id;
+    try{var a=await DB.sb.rpc('vsf_est_admin');DB.admin=a.data===true;
+      await recharger();
+      var q=await DB.sb.from('vsf_form_questions_debrief').select('texte,toujours,seulement_vocal_libre,rang').eq('actif',true).order('rang');
+      if(!q.error&&q.data&&q.data.length){var libres=q.data.filter(function(x){return !x.seulement_vocal_libre;}),tj=libres.filter(function(x){return x.toujours;}),autres=libres.filter(function(x){return !x.toujours;}),j=Math.floor(Date.now()/86400000);
+        var choix=tj.slice(0,3);for(var k=0;choix.length<3&&autres.length;k++){choix.push(autres.splice((j+k)%autres.length,1)[0]);}
+        choix.sort(function(a,b){return a.rang-b.rang;});REG.debriefQuestions=choix.map(function(x){return [x.texte,x.toujours];});}
+    }catch(x){S.msg='Lecture impossible : '+((x&&x.message)||x)+' (la migration 70 est-elle exécutée ?)';}
+    S.charge=true;
+  }
+  render();
+}
+window.MP={etat:function(){return {S:S,R:R,DB:DB};},init:function(o){Object.assign(DB,o.DB||{});R=o.R||null;S.charge=true;S.vue='aujourdhui';S.msg='';S.fichier=null;if(o.REEL!==undefined)REEL=o.REEL;render();}};
+demarrer();
 })();
 </script>
 </body>
