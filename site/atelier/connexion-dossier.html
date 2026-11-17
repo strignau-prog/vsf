@@ -45,6 +45,7 @@
       <button type="submit" id="bEntrer">Me connecter</button>
     </form>
     <div class="msg" id="msgConnexion" role="alert"></div>
+    <p style="margin-top:18px"><a id="lienCode" href="#" style="color:inherit">Recevoir un code par e-mail à la place</a></p>
   </section>
 
   <section id="vueConnecte" class="cache">
@@ -113,6 +114,7 @@ $('formMdp').addEventListener('submit', async e => {
     message($('msgMdp'), 'Mot de passe enregistré.', true); $('mdp1').value = ''; $('mdp2').value = '';
   }catch(x){ message($('msgMdp'), 'Enregistrement impossible : ' + String((x && x.message) || '').slice(0, 100)); }
 });
+$('lienCode').href = location.origin + '/connexion.html?mode=connexion&suite=' + encodeURIComponent(location.origin + '/atelier/' + SUITE);
 afficher();
 </script>
 </body>
