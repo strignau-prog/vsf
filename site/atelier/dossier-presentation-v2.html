@@ -293,7 +293,7 @@ function dateAffichee(){ const d = E.date || ''; return /^\d{4}-\d{2}-\d{2}$/.te
 function dateCourte(){ const d = E.date || ''; return /^\d{4}-\d{2}-\d{2}$/.test(d) ? d.slice(2, 4) + d.slice(5, 7) + d.slice(8) : ''; }
 
 /* ------------------ Fichiers : images et PDF ------------------ */
-const MAX_PX = 2400;
+const MAX_PX = 4200;   // plus grand côté : net à l'impression même pour un visuel pleine largeur
 const lire = f => new Promise((ok, ko) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = () => ko(new Error('lecture impossible')); r.readAsDataURL(f); });
 const charger = src => new Promise((ok, ko) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ko(new Error('image illisible')); i.src = src; });
 async function imageReduite(f){
@@ -592,7 +592,7 @@ function pageCouverture(){
 }
 function pageIntro(){
   const t = texteActif(), e = ETAPES[E.etape];
-  const ouv = `Vous nous avez sollicités dans le cadre de la réalisation ${t.ouverture} pour votre établissement, <b>${esc(E.client || 'votre projet')}</b>${E.ville ? ', situé à ' + esc(E.ville.replace(/\n/g, ', ')) : ''}.`;
+  const ouv = `Vous nous avez sollicité dans le cadre de la réalisation ${t.ouverture} pour votre établissement, <b>${esc(E.client || 'votre projet')}</b>${E.ville ? ', situé à ' + esc(E.ville.replace(/\n/g, ', ')) : ''}.`;
   const corps = esc(corpsTexte()).replace(/\n/g, '<br>');
   const liste = t.liste ? `<ul class="liste">${t.liste.map(l => `<li>${esc(l)}</li>`).join('')}</ul>` : '';
   const bon = e.bon ? `<div class="bon"><div class="t">Bon de commande pour intervention</div>Signature précédée de la mention<br>« Lu &amp; approuvé. Bon pour commande. »<br><br>DATE : &nbsp;&nbsp;/&nbsp;&nbsp;/&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SIGNATURE :</div>` : `<div class="repere"><div class="nom">${esc(E.client)}</div><div>${esc((E.ville || '').replace(/\n/g, ', '))}</div></div>`;
@@ -1044,7 +1044,7 @@ function pageCouverture(){
   const loc = (E.ville || '').split('\n').map(x => x.trim()).filter(Boolean);
   return tpl('couverture.jpg',
     L(113.7, 61.0, 73.1, 8, 'DOSSIER / ' + esc(E.numero || '—')) + L(118.2, 78, 93.1, 10, esc(sub)) +
-    L(113.7, 315, 327.1, 8, 'PROJET /') + C(421, 231.8, 342.3, 100, esc(E.client || 'Sans nom'), { titre:1, fit:370 }) +
+    L(113.7, 315, 327.1, 8, 'PROJET /') + C(421, 221, 331.5, 100, esc(E.client || 'Sans nom'), { titre:1, fit:370 }) +
     L(113.7, 362.9, 375, 8, 'LOCALISATION /') + (loc[0] ? C(421, 353.6, 382.3, 19, esc(loc[0])) : '') + (loc[1] ? C(421, 380.2, 409, 19, esc(loc.slice(1).join(', '))) : '') +
     L(113.7, 437.5, 449.6, 8, 'INTERLOCUTEUR /') + L(201.3, 436, 451.2, 10, esc(E.interlocuteur || ''), { b:1 }) +
     L(470.3, 437.5, 449.6, 8, 'TÉLÉPHONE /') + L(538, 436, 451.2, 10, esc(E.tel || ''), { b:1 }) +
@@ -1054,7 +1054,7 @@ function pageCouverture(){
 function pageIntro(){
   const t = texteActif(), e = ETAPES[E.etape], bat = !!e.bon;
   const lieu = (E.ville || '').split('\n').map(x => x.trim()).filter(Boolean).join(', ');
-  const ouv = `Vous nous avez sollicités dans le cadre de la réalisation ${t.ouverture} pour votre établissement, ${esc(E.client || 'votre projet')}${lieu ? ', situé à ' + esc(lieu) + '.' : '.'}`;
+  const ouv = `Vous nous avez sollicité dans le cadre de la réalisation ${t.ouverture} pour votre établissement, ${esc(E.client || 'votre projet')}${lieu ? ', situé à ' + esc(lieu) + '.' : '.'}`;
   const paras = corpsTexte().split(/\n\s*\n/).map(x => x.trim()).filter(Boolean);
   const premier = paras[0] ? `<p class="gras">${esc(paras[0]).replace(/\n/g, '<br>')}</p>` : '';
   const suite = (bat ? [] : paras.slice(1)).map(x => `<p>${esc(x).replace(/\n/g, '<br>')}</p>`).join('');
