@@ -36,7 +36,9 @@ Deno.serve(async (req) => {
     if (!/^\d{1,6}$/.test(numero)) return json({ erreur: "numero" }, 400);
 
     // 3. Trello (lecture seule)
-    const cle = Deno.env.get("TRELLO_KEY"), jeton = Deno.env.get("TRELLO_TOKEN");
+    // espaces, retours à la ligne ou guillemets collés par erreur avec la valeur : on les retire
+    const nettoie = (v?: string) => (v || "").trim().replace(/^["']|["']$/g, "").trim();
+    const cle = nettoie(Deno.env.get("TRELLO_KEY")), jeton = nettoie(Deno.env.get("TRELLO_TOKEN"));
     if (!cle || !jeton) return json({ erreur: "secrets" }, 500);
     const q = `key=${encodeURIComponent(cle)}&token=${encodeURIComponent(jeton)}`;
     const [rc, rl] = await Promise.all([
