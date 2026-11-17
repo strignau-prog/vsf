@@ -1405,7 +1405,7 @@ async function chercherTrello(){
   trello = { n, etat:'cherche' }; dessiner();
   try{
     const r = await sb.functions.invoke('trello-carte', { body:{ numero:n } });
-    if(r.error){ const code = r.error.context && r.error.context.status; trello = { n, etat: code === 401 ? 'connexion' : 'erreur' }; dessiner(); return; }
+    if(r.error){ console.warn('trello-carte', r.error); const code =r.error.context && r.error.context.status; trello = { n, etat: code === 401 ? 'connexion' : 'erreur' }; dessiner(); return; }
     const d = r.data || {}, c = (d.cartes || [])[0];
     if(!c){ trello = { n, etat:'absent' }; dessiner(); return; }
     if(vide(E.client) && c.projet) E.client = c.projet;
@@ -1441,7 +1441,7 @@ async function reprendre(){
     }
   }catch(e){ /* rien */ }
 }
-reprendre().then(() => { dessiner(); Promise.all([chargerStock(), chargerTextes()]).then(dessiner); });
+reprendre().then(() => { dessiner(); Promise.all([chargerStock(), chargerTextes()]).then(() => { dessiner(); chercherTrello(); }); });
 </script>
 </body>
 </html>
