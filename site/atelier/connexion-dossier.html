@@ -45,7 +45,7 @@
       <button type="submit" id="bEntrer">Me connecter</button>
     </form>
     <div class="msg" id="msgConnexion" role="alert"></div>
-    <p style="margin-top:18px"><a id="lienCode" href="#" style="color:inherit">Recevoir un code par e-mail à la place</a></p>
+    <button type="button" class="discret" id="bCode">Recevoir un code par e-mail à la place</button>
   </section>
 
   <section id="vueConnecte" class="cache">
@@ -54,6 +54,18 @@
     <button type="button" id="bContinuer">Ouvrir le dossier de présentation</button><br>
     <button type="button" class="discret" id="bChanger">Changer mon mot de passe</button><br>
     <button type="button" class="discret" id="bSortir">Me déconnecter</button>
+  </section>
+
+  <section id="vueCode" class="cache">
+    <h1>Code reçu par e-mail</h1>
+    <p id="aideCode"></p>
+    <form id="formCode">
+      <label for="code">Code</label>
+      <input id="code" inputmode="numeric" autocomplete="one-time-code" required>
+      <button type="submit">Valider</button>
+    </form>
+    <button type="button" class="discret" id="bCodeRetour">Retour</button>
+    <div class="msg" id="msgCode" role="alert"></div>
   </section>
 
   <section id="vueMdp" class="cache">
@@ -77,7 +89,7 @@ const $ = id => document.getElementById(id);
 // Destination après connexion : seulement une page de ce dossier (jamais une adresse extérieure).
 const demande = new URLSearchParams(location.search).get('suite') || '';
 const SUITE = /^[A-Za-z0-9_\-]+\.html(\?[^#]*)?$/.test(demande) ? demande : 'dossier-presentation-v2.html';
-function vue(nom){ ['vueConnexion', 'vueConnecte', 'vueMdp'].forEach(v => $(v).classList.toggle('cache', v !== nom)); }
+function vue(nom){ ['vueConnexion', 'vueConnecte', 'vueMdp', 'vueCode'].forEach(v => $(v).classList.toggle('cache', v !== nom)); }
 function message(el, texte, ok){ el.textContent = texte || ''; el.classList.toggle('ok', !!ok); }
 function erreurFrancais(e){
   const m = String((e && e.message) || '');
@@ -114,7 +126,29 @@ $('formMdp').addEventListener('submit', async e => {
     message($('msgMdp'), 'Mot de passe enregistré.', true); $('mdp1').value = ''; $('mdp2').value = '';
   }catch(x){ message($('msgMdp'), 'Enregistrement impossible : ' + String((x && x.message) || '').slice(0, 100)); }
 });
-$('lienCode').href = location.origin + '/connexion.html?mode=connexion&suite=' + encodeURIComponent(location.origin + '/atelier/' + SUITE);
+$('bCode').addEventListener('click', async () => {
+  const mail = $('mail').value.trim();
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)){ message($('msgConnexion'), 'Saisissez d\'abord votre adresse e-mail.'); $('mail').focus(); return; }
+  message($('msgConnexion'), '');
+  try{
+    const r = await sb.auth.signInWithOtp({ email: mail, options: { shouldCreateUser: false } });   // jamais de création de compte ici
+    if(r.error) throw r.error;
+    $('aideCode').textContent = 'Un code vient d\'être envoyé à ' + mail + '. Il est valable quelques minutes.';
+    message($('msgCode'), ''); vue('vueCode'); $('code').focus();
+  }catch(x){
+    const m = String((x && x.message) || '');
+    message($('msgConnexion'), /signups not allowed|not found|user/i.test(m) ? 'Cette adresse n\'a pas de compte.' : erreurFrancais(x));
+  }
+});
+$('formCode').addEventListener('submit', async e => {
+  e.preventDefault(); message($('msgCode'), '');
+  try{
+    const r = await sb.auth.verifyOtp({ email: $('mail').value.trim(), token: $('code').value.trim(), type: 'email' });
+    if(r.error) throw r.error;
+    location.replace(SUITE);
+  }catch(x){ message($('msgCode'), 'Code incorrect ou expiré. Redemandez un code.'); $('code').value = ''; $('code').focus(); }
+});
+$('bCodeRetour').addEventListener('click', () => vue('vueConnexion'));
 afficher();
 </script>
 </body>
