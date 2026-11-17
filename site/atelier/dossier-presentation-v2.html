@@ -1,0 +1,514 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Dossier de présentation</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Anton&family=Space+Mono:wght@400;700&display=swap">
+<style>
+  :root{ --ink:#111; --muted:#6b6b6b; --line:#e2e0db; --soft:#f6f5f2; --accent:#a8461f;
+         --kraft:#c6af90; --kraftLine:rgba(23,18,10,.42); --cream:#d8d4cd; --papInk:#181510; --papRed:#ae3f37; }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--soft);color:var(--ink);font:15px/1.4 Inter,system-ui,sans-serif}
+  button,input,select,textarea{font:inherit}
+  .appli{display:grid;grid-template-columns:minmax(340px,430px) minmax(0,1fr);gap:0;min-height:100vh}
+  .saisie{background:#fff;border-right:1px solid var(--line);padding:18px 18px 40px;overflow:auto;max-height:100vh;position:sticky;top:0}
+  .apercu{padding:18px;overflow:auto}
+  h1{font-size:20px;margin:0 0 2px;font-weight:700}
+  .tiny{font-size:12px;color:var(--muted)}
+  details.bloc{border-top:1px solid var(--line);padding:12px 0}
+  details.bloc>summary{cursor:pointer;font-weight:600;list-style:none;display:flex;justify-content:space-between;align-items:center}
+  details.bloc>summary::-webkit-details-marker{display:none}
+  details.bloc>summary::after{content:"▾";color:var(--muted)}
+  details.bloc[open]>summary::after{content:"▴"}
+  .bloc .corps{padding-top:10px}
+  .field{margin-bottom:10px}
+  .field label{display:block;font-size:12px;color:var(--muted);margin-bottom:3px}
+  .input,.select,.textarea{width:100%;border:1px solid #cfcdc7;border-radius:8px;padding:7px 9px;background:#fff}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .btn{border:1px solid #cfcdc7;background:#fff;border-radius:999px;padding:8px 14px;cursor:pointer}
+  .btn:hover{border-color:#111}
+  .btn.noir{background:#111;color:#fff;border-color:#111}
+  .btn.petit{padding:4px 10px;font-size:13px}
+  .btn[disabled]{opacity:.4;cursor:default}
+  .depot{border:2px dashed #b9b2a6;border-radius:14px;background:var(--soft);padding:18px 12px;text-align:center;margin-bottom:12px}
+  .depot.survol{background:#efe9dc;border-color:#111}
+  .depotTitre{font-weight:700;font-size:16px;margin-bottom:2px}
+  .statut{min-height:18px;margin-top:6px}
+  .statut.alerte{color:var(--accent);font-weight:600}
+  .prop{border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:10px}
+  .propTete{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:10px;align-items:center}
+  .propTete img{width:64px;height:48px;object-fit:cover;border-radius:4px;border:1px solid var(--line)}
+  .versions{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 0}
+  .pil{border:1px solid #cfcdc7;border-radius:999px;padding:2px 10px;font-size:12px;background:#fff;cursor:pointer}
+  .pil.on{background:#111;color:#fff;border-color:#111}
+  .coteLigne{display:grid;grid-template-columns:minmax(0,1fr) 92px auto;gap:6px;margin-bottom:6px}
+  .choixTexte{display:flex;gap:8px;align-items:flex-start;margin-bottom:8px;font-size:13px}
+  .choixTexte input{margin-top:3px}
+  .barre{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 14px}
+  .zoneAperçu{transform-origin:top left}
+  /* --------- Pages du dossier : A4 paysage, gabarit kraft --------- */
+  .feuille{margin:0 0 18px;width:297mm;height:210mm}
+  .page{width:297mm;height:210mm;background:var(--cream);position:relative;display:flex;flex-direction:column;overflow:hidden;color:var(--papInk);font-family:'Space Mono',monospace;box-shadow:0 3px 16px rgba(0,0,0,.12)}
+  .page.kraft{background:var(--kraft)}
+  .grain{position:absolute;inset:0;pointer-events:none;opacity:.45;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E")}
+  .display{font-family:'Anton',Impact,sans-serif;text-transform:uppercase;line-height:.95;letter-spacing:.005em}
+  .barre-haut{position:relative;z-index:1;display:flex;justify-content:space-between;align-items:flex-start;font-size:10px;letter-spacing:.04em;padding:8mm 12mm 3mm;border-bottom:1px solid var(--kraftLine)}
+  .barre-haut b{font-size:11px}
+  .barre-haut .d{text-align:right;display:flex;gap:4mm;align-items:flex-start}
+  .barre-haut .sub{opacity:.7;margin-top:1mm}
+  .case{width:5mm;height:5mm;border:1.2px solid var(--papInk);margin-top:.3mm;flex:none}
+  .pied{position:relative;z-index:1;margin-top:auto;padding:3mm 12mm 6mm;border-top:1px solid var(--kraftLine);text-align:center;font-size:7px;letter-spacing:.03em;text-transform:uppercase;opacity:.7}
+  .corps-page{position:relative;z-index:1;flex:1;display:flex;min-height:0}
+  .champ{margin-bottom:5mm}
+  .champL{font-size:9.5px;letter-spacing:.06em;opacity:.7;border-bottom:1px solid var(--kraftLine);padding-bottom:1.5mm;margin-bottom:1.5mm}
+  .champV{font-size:14px;font-weight:700;border-bottom:1px solid var(--kraftLine);padding-bottom:1.5mm;min-height:6mm}
+  .intro{flex:1;display:grid;grid-template-columns:1fr 1fr;min-height:0}
+  .introG{display:flex;flex-direction:column;padding:10mm 10mm 8mm 14mm;font-size:12px;line-height:1.85}
+  .introG .liste{margin:2mm 0 0;padding-left:5mm}
+  .introD{background:var(--kraft);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
+  .introD img{width:100%;height:100%;object-fit:cover}
+  .introD .vide{font-size:10px;opacity:.6}
+  .bon{border-top:1px solid var(--kraftLine);margin-top:auto;padding-top:4mm;font-size:11px}
+  .bon .t{font-family:'Anton',Impact,sans-serif;text-transform:uppercase;font-size:15px;margin-bottom:2mm}
+  .repere{border-top:1px solid var(--kraftLine);padding-top:3mm;margin-top:6mm}
+  .repere .nom{font-family:'Anton',Impact,sans-serif;font-size:18px;text-transform:uppercase}
+  .visu{flex:1;display:flex;flex-direction:column;min-width:0;padding:6mm 10mm 2mm}
+  .visuCadre{flex:1;display:flex;align-items:center;justify-content:center;min-height:0}
+  .visuCadre img{max-width:100%;max-height:150mm;object-fit:contain;box-shadow:0 1px 8px rgba(0,0,0,.18)}
+  .legende{font-size:10px;letter-spacing:.04em;padding-top:3mm}
+  .cotes{width:62mm;flex:none;padding:8mm 10mm 4mm 0;font-style:italic;font-size:10.5px;line-height:1.5}
+  .cotes .c{margin-bottom:3mm}
+  .cotes .c b{display:block;font-style:normal;text-transform:uppercase}
+  .auto{padding:8mm 14mm 4mm;font-size:10.5px;line-height:1.6;columns:1}
+  .auto p{margin:0 0 2.5mm}
+  .auto ul{margin:1mm 0 0;padding-left:5mm;columns:2;column-gap:10mm}
+  .auto li{margin-bottom:1.2mm;break-inside:avoid}
+  .cerfa{border-bottom:1.5px solid var(--papRed);color:var(--papRed);font-weight:700;display:inline-block}
+  .contact{flex:1;display:grid;grid-template-columns:1fr 1fr}
+  .contactG{background:var(--kraft);display:flex;align-items:center;justify-content:center;position:relative}
+  .contactG img{width:60mm}
+  .contactD{background:var(--cream);position:relative;padding:12mm 12mm 12mm 22mm;display:flex;flex-direction:column;justify-content:center}
+  .contactD::before,.contactD::after{content:'';position:absolute;top:0;bottom:0;border-left:1.5px solid var(--papRed)}
+  .contactD::before{left:10mm}.contactD::after{left:12mm}
+  .contactD .nom{font-family:'Anton',Impact,sans-serif;font-size:24px;text-transform:uppercase;margin-bottom:6mm}
+  .contactD .l{font-size:12px;border-bottom:1px solid var(--kraftLine);padding-bottom:2mm;margin-bottom:3.5mm}
+  @page{size:A4 landscape;margin:0}
+  @media print{
+    html,body{background:#fff}
+    .saisie,.barre,.tiny.hors{display:none!important}
+    .appli{display:block}
+    .apercu{padding:0;overflow:visible}
+    .zoneAperçu{transform:none!important;width:auto!important}
+    .feuille{margin:0;page-break-after:always;break-after:page}
+    .feuille:last-child{page-break-after:auto;break-after:auto}
+    .page{box-shadow:none}
+  }
+  @media (max-width:980px){
+    .appli{grid-template-columns:1fr}
+    .saisie{position:static;max-height:none;border-right:0}
+  }
+</style>
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+</head>
+<body>
+<div class="appli">
+  <aside class="saisie" id="saisie"></aside>
+  <main class="apercu" id="apercu">
+    <div class="barre">
+      <button class="btn noir" id="bPdf">Enregistrer en PDF</button>
+      <button class="btn" id="bMail">Écrire à Tristan</button>
+      <span class="tiny" id="infoPages"></span>
+    </div>
+    <p class="tiny hors" id="aideMail">« Écrire à Tristan » ouvre votre messagerie avec le message prêt ; joignez ensuite le PDF à la main.</p>
+    <div id="zone" class="zoneAperçu"></div>
+  </main>
+</div>
+
+<script>
+/* =========================================================================
+   DOSSIER DE PRÉSENTATION — v2 (A4 paysage). Tout reste dans le navigateur : aucun fichier n'est envoyé nulle part.
+   Lot 1 : nom des fichiers lu automatiquement, versions regroupées, pages selon l'étape (CREA, BAT, MOODBOARD),
+   texte d'introduction à choisir, cotes saisies, PDF au bon nom, e-mail à Tristan.
+   À venir : lecture des fichiers Illustrator (lot 2), teintes et stock (lot 3), bibliothèque de textes en base (lot 4), Trello.
+   ========================================================================= */
+const esc = s => String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const uid = () => 'i' + Math.random().toString(16).slice(2, 9);
+const ETAPES_CONNUES = ['CREA', 'BAT', 'MOODBOARD'];
+const ETAPES = {
+  CREA:      { nom:'Propositions',          couv:'PROPOSITIONS', typeDefaut:'Proposition', autorisation:true,  bon:false, validation:false },
+  BAT:       { nom:'Validation (BAT)',      couv:'VALIDATION',   typeDefaut:'Maquette',    autorisation:false, bon:true,  validation:true  },
+  MOODBOARD: { nom:'Moodboard & croquis',   couv:'Moodboard & CROQUIS', typeDefaut:'Moodboard', autorisation:true, bon:false, validation:false }
+};
+const TYPES = ['Proposition', 'Moodboard', 'Croquis', 'Maquette'];
+const ATELIER_DEFAUT = { nom:'Ets. Gesret', tel:'06 79 39 04 14', adresse:'16 rue de l\'industrie\n56390 Grand-Champ', mail:'peinture@etsgesret.fr', web:'www.etsgesret.fr' };
+const DEST_MAIL = 'peinture@etsgesret.fr';
+
+/* Textes d'introduction — repris des trois dossiers réels (le dernier pour le singulier vient du prompt). Seront déplacés en base au lot 4. */
+const TEXTES = {
+  CREA: [
+    { id:'crea-pl', nom:'Premières propositions (pluriel)', ouverture:'de lettrages peints', corps:'Vous trouverez ci-après nos premières propositions.\n\nCes propositions ne sont pas définitives et pourront évoluer selon vos retours, si vous décidez de travailler avec nous.' },
+    { id:'crea-sg', nom:'Première proposition (singulier)', ouverture:'de lettrages peints', corps:'Vous trouverez ci-après notre première proposition.\n\nCette proposition n\'est pas définitive et pourra évoluer selon vos retours, si vous décidez de travailler avec nous.' }
+  ],
+  MOODBOARD: [
+    { id:'mood', nom:'Planches d\'ambiance et croquis', ouverture:'de lettrages peints', corps:'Vous trouverez ci-après nos planches d\'ambiance ainsi qu\'un premier croquis.\n\nCes éléments constituent des pistes créatives préliminaires et pourront évoluer selon vos retours et les orientations retenues pour votre projet.' }
+  ],
+  BAT: [
+    { id:'bat', nom:'Maquette à valider', ouverture:'d\'un panneau peint', corps:'Vous trouverez ci-après la maquette à valider avant intervention.\n\nAfin de valider la prestation et de commencer la préparation du chantier, merci de bien vouloir :',
+      liste:['Signer le devis', 'Signer le bon de commande ci-dessous', 'Valider chaque visuel souhaité en cochant les pages en haut à droite', 'Effectuer le versement de l\'acompte'] }
+  ]
+};
+
+/* ------------------------------ État ------------------------------ */
+function etatVierge(){
+  const d = new Date(), p = n => String(n).padStart(2,'0');
+  return { etape:'CREA', date: String(d.getFullYear()).slice(2) + p(d.getMonth()+1) + p(d.getDate()),
+    numero:'', client:'', ville:'', interlocuteur:'', tel:'', version:1,
+    fichiers:[],      // { id, nom, cle, v, src }
+    props:{},         // cle → { choix, titre, type, cotes:[{l,v}], description }
+    ordre:[],         // clés dans l'ordre d'affichage
+    photo:'', texteId:'', texteLibre:null, signature:'', atelier:{...ATELIER_DEFAUT} };
+}
+let E = etatVierge();
+
+/* ----------------- Lecture du nom de fichier -----------------
+   AAMMJJ_NUMÉRO_CLIENT(plusieurs mots)_ÉTAPE[_Vn] — ex. 261013_1048_ALRE_PEINTURE_BAT, 261026_1169_GLACERIE_MORICE_PARIS_MOODBOARD_V1 */
+function lireNom(nom){
+  const base = nom.replace(/\.[a-z0-9]+$/i, '');
+  const t = base.split('_').filter(Boolean), r = { date:'', numero:'', client:'', etape:'', version:0 };
+  if(t.length && /^\d{6}$/.test(t[0])) r.date = t.shift();
+  if(t.length && /^\d{3,6}$/.test(t[0])) r.numero = t.shift();
+  if(t.length && /^V\d+$/i.test(t[t.length-1])) r.version = parseInt(t.pop().slice(1), 10);
+  if(t.length && ETAPES_CONNUES.includes(t[t.length-1].toUpperCase())) r.etape = t.pop().toUpperCase();
+  r.client = t.join(' ');
+  return r;
+}
+// Clé de regroupement : le nom sans la version finale (_V2, -V2, " V2"). Les versions d'une même clé sont des versions de la même proposition.
+function cleEtVersion(nom){
+  const base = nom.replace(/\.[a-z0-9]+$/i, '');
+  const m = /^(.*?)[\s_\-]*V(\d+)$/i.exec(base);
+  return m ? { cle: m[1].trim().toLowerCase(), v: parseInt(m[2], 10), titre: m[1].trim() } : { cle: base.trim().toLowerCase(), v: 1, titre: base.trim() };
+}
+function majuscules(s){ return s.normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/[^A-Z0-9]+/g,'_').replace(/^_+|_+$/g,''); }
+function nomFichierPdf(){
+  const e = E.etape, v = (e === 'BAT') ? '' : (E.version ? '_V' + E.version : '');
+  return [E.date, E.numero, majuscules(E.client), e].filter(Boolean).join('_') + v;
+}
+function dateAffichee(){ const d = E.date; return d && d.length === 6 ? d.slice(4) + '/' + d.slice(2,4) + '/20' + d.slice(0,2) : ''; }
+
+/* ------------------ Fichiers : images et PDF ------------------ */
+const MAX_PX = 2400;
+const lire = f => new Promise((ok, ko) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = () => ko(new Error('lecture impossible')); r.readAsDataURL(f); });
+const charger = src => new Promise((ok, ko) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ko(new Error('image illisible')); i.src = src; });
+async function imageReduite(f){
+  const src = await lire(f);
+  if(/svg/i.test(f.type) || /\.svg$/i.test(f.name)) return src;
+  const img = await charger(src), k = Math.min(1, MAX_PX / Math.max(img.naturalWidth, img.naturalHeight));
+  const c = document.createElement('canvas'); c.width = Math.round(img.naturalWidth*k); c.height = Math.round(img.naturalHeight*k);
+  const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0,0,c.width,c.height); x.drawImage(img,0,0,c.width,c.height);
+  return c.toDataURL('image/jpeg', .9);
+}
+const avecDelai = (p, ms, msg) => Promise.race([p, new Promise((_, ko) => setTimeout(() => ko(new Error(msg)), ms))]);
+let pdfjsPret = null;
+function chargerPdfJs(){
+  if(pdfjsPret) return pdfjsPret;
+  pdfjsPret = new Promise((ok, ko) => {
+    const s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    s.onload = () => { window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; ok(window.pdfjsLib); };
+    s.onerror = () => { pdfjsPret = null; ko(new Error('lecteur de PDF indisponible (connexion ?)')); };
+    document.head.appendChild(s);
+  });
+  return pdfjsPret;
+}
+async function pagesPdf(f){
+  const lib = await chargerPdfJs();
+  const doc = await avecDelai(lib.getDocument({ data: await f.arrayBuffer(), standardFontDataUrl:'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/standard_fonts/' }).promise, 30000, 'PDF trop long à ouvrir');
+  const out = [];
+  for(let i = 1; i <= Math.min(doc.numPages, 30); i++){
+    const p = await doc.getPage(i), v0 = p.getViewport({ scale:1 }), v = p.getViewport({ scale: Math.min(4, MAX_PX / Math.max(v0.width, v0.height)) });
+    const c = document.createElement('canvas'); c.width = Math.round(v.width); c.height = Math.round(v.height);
+    const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0,0,c.width,c.height);
+    await avecDelai(p.render({ canvasContext:x, viewport:v, intent:'print' }).promise, 60000, 'page ' + i + ' trop longue à dessiner');   // « print » : ne dépend pas de l'affichage de l'onglet
+    out.push(c.toDataURL('image/jpeg', .9));
+  }
+  return out;
+}
+function statut(t, alerte){ const s = document.getElementById('statutDepot'); if(s){ s.textContent = t || ''; s.classList.toggle('alerte', !!alerte); } }
+
+async function ajouterFichiers(liste, cible){
+  const fs = Array.from(liste || []).sort((a, b) => a.name.localeCompare(b.name, 'fr', { numeric:true, sensitivity:'base' }));
+  const refus = [];
+  for(const f of fs){
+    statut('Lecture de « ' + f.name + ' »…');
+    try{
+      const pdf = f.type === 'application/pdf' || /\.pdf$/i.test(f.name);
+      const img = /^image\/(jpeg|png|webp|gif|svg\+xml|bmp|avif)$/.test(f.type) || /\.(jpe?g|png|webp|gif|svg|bmp|avif)$/i.test(f.name);
+      const ai = /\.ai$/i.test(f.name);
+      if(cible === 'photo'){ if(!img) throw new Error('format non lu'); E.photo = await imageReduite(f); continue; }
+      if(ai) throw new Error('fichier Illustrator : exportez-le en PDF ou PNG (lecture directe prévue au lot suivant)');
+      if(!pdf && !img) throw new Error('format non lu');
+      const pages = pdf ? await pagesPdf(f) : [await imageReduite(f)];
+      const meta = lireNom(f.name);
+      if(!E.fichiers.length && meta.client){ /* premier fichier au bon format : il renseigne le dossier */
+        Object.assign(E, { date: meta.date || E.date, numero: meta.numero || E.numero, client: meta.client || E.client });
+        if(meta.etape) E.etape = meta.etape;
+        if(meta.version) E.version = meta.version;
+      }
+      pages.forEach((src, i) => {
+        const cv = cleEtVersion(f.name), suffixe = pages.length > 1 ? ' — page ' + (i + 1) : '';
+        const cle = cv.cle + (pages.length > 1 ? '#p' + (i + 1) : '');
+        E.fichiers.push({ id:uid(), nom:f.name + suffixe, cle, v:cv.v, src });
+        if(!E.props[cle]){
+          const croquis = /croquis/i.test(f.name);
+          E.props[cle] = { choix:'', titre: (meta.numero ? '' : cv.titre) + suffixe, type: croquis ? 'Croquis' : (ETAPES[E.etape] || ETAPES.CREA).typeDefaut, cotes:[], description:'' };
+          E.ordre.push(cle);
+        }
+      });
+    }catch(e){ refus.push(f.name + ' (' + (e.message || 'illisible') + ')'); }
+  }
+  dessiner();
+  if(refus.length) statut('Non lus : ' + refus.join(' ; '), true);
+}
+function versionsDe(cle){ return E.fichiers.filter(f => f.cle === cle).sort((a, b) => a.v - b.v); }
+function fichierChoisi(cle){
+  const vs = versionsDe(cle), p = E.props[cle];
+  return vs.find(f => f.id === p.choix) || vs[vs.length - 1];   // par défaut : la dernière version
+}
+function propositions(){ return E.ordre.filter(c => E.props[c] && versionsDe(c).length); }
+
+/* ------------------------------ Textes ------------------------------ */
+function variantes(){ return TEXTES[E.etape] || TEXTES.CREA; }
+function texteActif(){
+  const v = variantes();
+  const n = propositions().length;
+  const auto = (E.etape === 'CREA' && n === 1) ? 'crea-sg' : v[0].id;
+  return v.find(t => t.id === E.texteId) || v.find(t => t.id === auto) || v[0];
+}
+function corpsTexte(){ const t = texteActif(); return E.texteLibre != null && E.texteLibre.id === t.id ? E.texteLibre.corps : t.corps; }
+
+/* ------------------------------ Pages ------------------------------ */
+function entete(droite, sous, avecCase){
+  const lieu = E.ville ? `<div class="sub">${esc(E.ville)}</div>` : '';
+  return `<div class="barre-haut"><div><b>${esc(E.client || 'Sans nom')}</b>${lieu}</div><div class="d">${avecCase ? '<span class="case"></span>' : ''}<div><b>${esc(droite)}</b>${sous ? `<div class="sub">${esc(sous)}</div>` : ''}</div></div></div>`;
+}
+const pied = () => `<div class="pied">Toute diffusion et reproduction interdite © ${esc(E.atelier.nom)} — reproduction ou imitation du design interdite</div>`;
+const habiller = (inner, kraft) => `<div class="feuille"><div class="page${kraft ? ' kraft' : ''}"><div class="grain"></div>${inner}</div></div>`;
+function sousVersion(){ return (ETAPES[E.etape].validation ? dateAffichee() : ('V' + (E.version || 1) + ' • ' + dateAffichee())); }
+function etiquettePage(){ return ETAPES[E.etape].validation ? 'VALIDATION' : 'PROPOSITION'; }
+
+function pageCouverture(){
+  const e = ETAPES[E.etape], titre = e.validation ? e.couv : (e.couv + (E.etape === 'MOODBOARD' ? '.V' : ' V') + (E.version || 1));
+  return habiller(`
+    <div class="barre-haut"><div><b>Dossier / ${esc(E.numero || '—')}</b><div class="sub">${esc(titre)}</div></div><div class="d">${e.validation ? '<span class="case"></span><b>VALIDATION</b>' : ''}</div></div>
+    <div class="corps-page" style="flex-direction:column;padding:10mm 14mm 4mm">
+      <div class="display" style="font-size:64px;margin:4mm 0 10mm">${esc(E.client || 'Sans nom')}</div>
+      <div class="champ"><div class="champL">Projet /</div><div class="champV">${esc(E.client || '—')}</div></div>
+      <div class="champ"><div class="champL">Localisation /</div><div class="champV">${esc((E.ville || '—').replace(/\n/g, ' — '))}</div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10mm"><div class="champ"><div class="champL">Interlocuteur /</div><div class="champV">${esc(E.interlocuteur || '—')}</div></div>
+        <div class="champ"><div class="champL">Téléphone /</div><div class="champV">${esc(E.tel || '—')}</div></div></div>
+      <div class="champ" style="margin-top:auto"><div class="champL">Date /</div><div class="champV" style="border-bottom:none">${esc(dateAffichee())}</div></div>
+    </div>${pied()}`, true);
+}
+function pageIntro(){
+  const t = texteActif(), e = ETAPES[E.etape];
+  const ouv = `Vous nous avez sollicités dans le cadre de la réalisation ${t.ouverture} pour votre établissement, <b>${esc(E.client || 'votre projet')}</b>${E.ville ? ', situé à ' + esc(E.ville.replace(/\n/g, ', ')) : ''}.`;
+  const corps = esc(corpsTexte()).replace(/\n/g, '<br>');
+  const liste = t.liste ? `<ul class="liste">${t.liste.map(l => `<li>${esc(l)}</li>`).join('')}</ul>` : '';
+  const bon = e.bon ? `<div class="bon"><div class="t">Bon de commande pour intervention</div>Signature précédée de la mention<br>« Lu &amp; approuvé. Bon pour commande. »<br><br>DATE : &nbsp;&nbsp;/&nbsp;&nbsp;/&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SIGNATURE :</div>` : `<div class="repere"><div class="nom">${esc(E.client)}</div><div>${esc((E.ville || '').replace(/\n/g, ', '))}</div></div>`;
+  const photo = E.photo ? `<img src="${E.photo}" alt="">` : '<div class="vide">Photo du lieu — facultative</div>';
+  return habiller(`${entete(etiquettePage(), sousVersion(), e.validation)}
+    <div class="intro"><div class="introG"><div class="display" style="font-size:30px;margin-bottom:6mm">Introduction</div>
+      <div>${ouv}<br><br>${corps}${liste}</div>${bon}</div><div class="introD">${photo}</div></div>${pied()}`, true);
+}
+function pageProposition(cle, rang){
+  const p = E.props[cle], f = fichierChoisi(cle), e = ETAPES[E.etape];
+  const memeType = propositions().filter(c => E.props[c].type === p.type);
+  const num = memeType.indexOf(cle) + 1;
+  const etiquette = e.validation ? 'VALIDATION' : (p.type.toUpperCase() + (p.type === 'Croquis' ? '' : ' ' + String(num).padStart(2, '0')));
+  const sous = e.validation ? dateAffichee() : ('V' + (E.version || 1) + ' • ' + dateAffichee());
+  const cotes = p.cotes.filter(c => c.l || c.v).map(c => `<div class="c"><b>${esc(c.l)}${c.l ? ' :' : ''}</b>${esc(c.v)}</div>`).join('');
+  return habiller(`${entete(etiquette, sous, e.validation)}
+    <div class="corps-page"><div class="visu"><div class="visuCadre"><img src="${f.src}" alt=""></div>
+      ${p.description ? `<div class="legende">${esc(p.description).replace(/\n/g, '<br>')}</div>` : ''}</div>
+      ${cotes ? `<div class="cotes">${cotes}</div>` : ''}</div>${pied()}`, false);
+}
+function pageAutorisation(){
+  return habiller(`${entete("Demande d'autorisation", '', false)}
+    <div class="auto"><div class="display" style="font-size:30px;margin:0 0 4mm">Demande d'autorisation</div>
+    <p><b>Avant de modifier votre façade et votre enseigne, vous devez impérativement faire une demande d'autorisation préalable auprès du service urbanisme de la mairie de votre ville.</b></p>
+    <p>&gt; <b>Pour cela, vous devez remplir le formulaire CERFA ci-dessous :</b></p>
+    <p><span class="cerfa">Formulaire 14798*01 :</span><br>Demande d'autorisation préalable pour l'installation d'un dispositif ou matériel supportant de la publicité, une enseigne ou une pré-enseigne</p>
+    <p>&gt; <b>Si votre bâtiment se trouve dans l'un des secteurs suivants,</b> il est probable que le service urbanisme de votre ville vous demande une autre déclaration et sollicite également l'avis des Architectes des Bâtiments de France. <b>Renseignez-vous bien auprès de ce service.</b></p>
+    <ul><li>Périmètre d'un site patrimonial remarquable : villes, villages ou quartiers dont la conservation, la restauration, la réhabilitation ou la mise en valeur présente, au point de vue historique, architectural, archéologique, artistique ou paysager, un intérêt public</li>
+    <li>Abords des monuments historiques</li>
+    <li>Site inscrit : monument naturel ou zone dont la préservation présente, au point de vue artistique, historique, scientifique, légendaire ou pittoresque, un intérêt général</li>
+    <li>Site classé ou en instance de classement : site et monument naturels dont la conservation ou la préservation présente un intérêt général au point de vue artistique, historique, scientifique, légendaire ou pittoresque</li>
+    <li>Réserves naturelles</li><li>À l'intérieur du cœur des parcs nationaux délimités</li><li>Immeuble protégé</li>
+    <li>Commune ou périmètre de commune où le conseil municipal a décidé de soumettre le ravalement à autorisation d'urbanisme</li></ul></div>${pied()}`, true);
+}
+function pageContact(){
+  const a = E.atelier, nl = s => esc(s || '').replace(/\n/g, '<br>');
+  return habiller(`<div class="contact"><div class="contactG"><img src="dossier-assets/logo-ets-gesret.png" alt=""></div>
+    <div class="contactD"><div class="nom">${esc(a.nom)}</div>
+    ${a.tel ? `<div class="l">${esc(a.tel)}</div>` : ''}${a.adresse ? `<div class="l">${nl(a.adresse)}</div>` : ''}
+    ${a.mail ? `<div class="l">${esc(a.mail)}</div>` : ''}${a.web ? `<div class="l" style="border-bottom:none">${esc(a.web)}</div>` : ''}</div></div>`, true);
+}
+function listePages(){
+  const e = ETAPES[E.etape], out = [['Couverture', pageCouverture()], ['Introduction', pageIntro()]];
+  propositions().forEach((c, i) => out.push([E.props[c].titre || 'Proposition', pageProposition(c, i)]));
+  if(e.autorisation) out.push(["Demande d'autorisation", pageAutorisation()]);
+  out.push(['Contact', pageContact()]);
+  return out;
+}
+
+/* ------------------------------ Saisie (colonne de gauche) ------------------------------ */
+let ouverts = { fichiers:true, dossier:true, texte:false, cotes:false, atelier:false };
+function dessiner(){
+  sauver();
+  const S = document.getElementById('saisie'), pages = listePages();
+  const ph = (id, titre, corps) => `<details class="bloc" data-b="${id}" ${ouverts[id] ? 'open' : ''}><summary>${titre}</summary><div class="corps">${corps}</div></details>`;
+  const champ = (cle, lib, type) => `<div class="field"><label>${lib}</label><input class="input" ${type ? 'type="' + type + '"' : ''} value="${esc(E[cle])}" data-k="${cle}"></div>`;
+  S.innerHTML = `
+    <h1>Dossier de présentation</h1>
+    <p class="tiny" style="margin:0 0 6px">Glissez vos fichiers : le dossier se construit à droite. <button class="btn petit" id="bNouveau">Nouveau dossier</button></p>
+    ${ph('fichiers', 'Fichiers', blocFichiers())}
+    ${ph('dossier', 'Dossier', `
+      <div class="field"><label>Étape</label><select class="select" data-k="etape">${ETAPES_CONNUES.map(k => `<option value="${k}" ${k === E.etape ? 'selected' : ''}>${k} — ${ETAPES[k].nom}</option>`).join('')}</select></div>
+      <div class="grid2">${champ('numero', 'N° de dossier')}${champ('date', 'Date (AAMMJJ)')}</div>
+      <div class="grid2">${champ('client', 'Client / projet')}<div class="field"><label>Version</label><input class="input" type="number" min="0" value="${E.version}" data-k="version"></div></div>
+      <div class="field"><label>Localisation</label><textarea class="textarea" rows="2" data-k="ville">${esc(E.ville)}</textarea></div>
+      <div class="grid2">${champ('interlocuteur', 'Interlocuteur')}${champ('tel', 'Téléphone')}</div>
+      <p class="tiny">Ces champs se remplissent seuls depuis le nom des fichiers ; ils viendront de Trello plus tard.</p>`)}
+    ${ph('texte', "Texte d'introduction", blocTexte())}
+    ${ph('cotes', 'Cotes et description', blocCotes())}
+    ${ph('atelier', "Coordonnées de l'atelier", `
+      <div class="field"><label>Nom</label><input class="input" value="${esc(E.atelier.nom)}" data-a="nom"></div>
+      <div class="grid2"><div class="field"><label>Téléphone</label><input class="input" value="${esc(E.atelier.tel)}" data-a="tel"></div><div class="field"><label>E-mail</label><input class="input" value="${esc(E.atelier.mail)}" data-a="mail"></div></div>
+      <div class="field"><label>Adresse</label><textarea class="textarea" rows="2" data-a="adresse">${esc(E.atelier.adresse)}</textarea></div>
+      <div class="field"><label>Site</label><input class="input" value="${esc(E.atelier.web)}" data-a="web"></div>
+      <div class="field"><label>Votre prénom (signature de l'e-mail)</label><input class="input" value="${esc(E.signature)}" data-k="signature"></div>`)}
+    `;
+  const Z = document.getElementById('zone');
+  Z.innerHTML = pages.map(p => p[1]).join('');
+  document.getElementById('infoPages').textContent = pages.length + ' pages A4 paysage · fichier : ' + nomFichierPdf() + '.pdf';
+  ajuster();
+}
+function blocFichiers(){
+  const props = propositions();
+  return `<div class="depot" id="depot"><input type="file" id="fichierInput" multiple accept="image/*,.pdf,.ai" hidden>
+      <div class="depotTitre">Glissez ici vos fichiers</div>
+      <div class="tiny">PDF, PNG, JPG. Les versions (_V1, _V2…) d'un même visuel sont regroupées.</div>
+      <button class="btn petit" id="bChoisir" style="margin-top:8px">Choisir des fichiers</button>
+      <div class="statut tiny" id="statutDepot"></div></div>
+    ${props.map((c, i) => {
+      const p = E.props[c], vs = versionsDe(c), ch = fichierChoisi(c);
+      return `<div class="prop" data-c="${esc(c)}"><div class="propTete"><img src="${ch.src}" alt=""><input class="input" value="${esc(p.titre)}" data-p="titre" aria-label="Titre">
+        <div style="display:flex;gap:4px"><button class="btn petit" data-act="haut" ${i === 0 ? 'disabled' : ''}>↑</button><button class="btn petit" data-act="bas" ${i === props.length - 1 ? 'disabled' : ''}>↓</button><button class="btn petit" data-act="retirer">✕</button></div></div>
+        <div class="grid2" style="margin-top:8px"><div class="field" style="margin:0"><label>Page</label><select class="select" data-p="type">${TYPES.map(t => `<option ${t === p.type ? 'selected' : ''}>${t}</option>`).join('')}</select></div></div>
+        ${vs.length > 1 ? `<div class="versions">${vs.map(v => `<button class="pil ${v.id === ch.id ? 'on' : ''}" data-act="version" data-id="${v.id}">V${v.v}</button>`).join('')}</div><div class="tiny">Version utilisée dans le dossier : V${ch.v}</div>` : ''}</div>`;
+    }).join('')}
+    <div class="photoL"><input type="file" id="photoInput" accept="image/*" hidden>
+      <button class="btn petit" id="bPhoto">${E.photo ? 'Changer la photo du lieu' : 'Ajouter la photo du lieu (facultatif)'}</button>${E.photo ? ' <button class="btn petit" id="bPhotoOff">Retirer</button>' : ''}</div>`;
+}
+function blocTexte(){
+  const act = texteActif();
+  return variantes().map(t => `<label class="choixTexte"><input type="radio" name="tx" value="${t.id}" ${t.id === act.id ? 'checked' : ''}><span><b>${esc(t.nom)}</b></span></label>`).join('') +
+    `<div class="field"><label>Texte (modifiable)</label><textarea class="textarea" rows="7" id="texteCorps">${esc(corpsTexte())}</textarea></div>
+     <p class="tiny">Le choix est préparé selon l'étape et le nombre de visuels ; vous pouvez le changer.</p>`;
+}
+function blocCotes(){
+  const props = propositions();
+  if(!props.length) return '<p class="tiny">Déposez d\'abord un visuel.</p>';
+  return props.map(c => {
+    const p = E.props[c];
+    return `<div class="prop" data-c="${esc(c)}"><b style="font-size:13px">${esc(p.titre)}</b>
+      ${p.cotes.map((k, i) => `<div class="coteLigne" style="margin-top:6px"><input class="input" placeholder="Ligne (ex. ALRÉ)" value="${esc(k.l)}" data-ck="l" data-i="${i}"><input class="input" placeholder="13,4 cm" value="${esc(k.v)}" data-ck="v" data-i="${i}"><button class="btn petit" data-act="coteX" data-i="${i}">✕</button></div>`).join('')}
+      <button class="btn petit" data-act="coteAdd" style="margin:6px 0">+ Cote</button>
+      <div class="field" style="margin:0"><label>Description (sous le visuel)</label><textarea class="textarea" rows="3" data-p="description">${esc(p.description)}</textarea></div></div>`;
+  }).join('') + '<p class="tiny">Les cotes se liront seules dans les fichiers Illustrator au lot suivant ; saisie manuelle d\'ici là.</p>';
+}
+
+/* ------------------------------ Événements (délégués) ------------------------------ */
+const saisie = document.getElementById('saisie');
+function propDe(el){ const d = el.closest('[data-c]'); return d ? E.props[d.dataset.c] : null; }
+saisie.addEventListener('change', e => {
+  const t = e.target;
+  if(t.id === 'fichierInput'){ ajouterFichiers(t.files, 'propositions'); t.value = ''; return; }
+  if(t.id === 'photoInput'){ ajouterFichiers(t.files, 'photo'); t.value = ''; return; }
+  if(t.dataset.k){ const k = t.dataset.k; E[k] = (k === 'version') ? (parseInt(t.value, 10) || 0) : t.value; if(k === 'etape'){ E.texteId = ''; E.texteLibre = null; } dessiner(); return; }
+  if(t.dataset.a){ E.atelier[t.dataset.a] = t.value; dessiner(); return; }
+  if(t.name === 'tx'){ E.texteId = t.value; E.texteLibre = null; dessiner(); return; }
+  if(t.id === 'texteCorps'){ E.texteLibre = { id: texteActif().id, corps: t.value }; dessiner(); return; }
+  if(t.dataset.p){ const p = propDe(t); if(p){ p[t.dataset.p] = t.value; dessiner(); } return; }
+  if(t.dataset.ck){ const p = propDe(t); if(p){ p.cotes[+t.dataset.i][t.dataset.ck] = t.value; dessiner(); } }
+});
+saisie.addEventListener('toggle', e => { const d = e.target; if(d.dataset && d.dataset.b) ouverts[d.dataset.b] = d.open; }, true);
+saisie.addEventListener('click', e => {
+  const b = e.target.closest('button'); if(!b) return;
+  if(b.id === 'bChoisir'){ document.getElementById('fichierInput').click(); return; }
+  if(b.id === 'bPhoto'){ document.getElementById('photoInput').click(); return; }
+  if(b.id === 'bPhotoOff'){ E.photo = ''; dessiner(); return; }
+  if(b.id === 'bNouveau'){ if(confirm('Effacer ce dossier et en commencer un nouveau ?')){ E = etatVierge(); dessiner(); } return; }
+  const d = b.closest('[data-c]'), c = d && d.dataset.c, a = b.dataset.act;
+  if(!a || !c) return;
+  const p = E.props[c];
+  if(a === 'haut' || a === 'bas'){ const i = E.ordre.indexOf(c), j = i + (a === 'haut' ? -1 : 1); if(j >= 0 && j < E.ordre.length){ [E.ordre[i], E.ordre[j]] = [E.ordre[j], E.ordre[i]]; } }
+  else if(a === 'retirer'){ E.fichiers = E.fichiers.filter(f => f.cle !== c); E.ordre = E.ordre.filter(x => x !== c); delete E.props[c]; }
+  else if(a === 'version'){ p.choix = b.dataset.id; }
+  else if(a === 'coteAdd'){ p.cotes.push({ l:'', v:'' }); }
+  else if(a === 'coteX'){ p.cotes.splice(+b.dataset.i, 1); }
+  dessiner();
+});
+saisie.addEventListener('dragover', e => { const d = e.target.closest('#depot'); if(d){ e.preventDefault(); d.classList.add('survol'); } });
+saisie.addEventListener('dragleave', e => { const d = e.target.closest('#depot'); if(d) d.classList.remove('survol'); });
+saisie.addEventListener('drop', e => { const d = e.target.closest('#depot'); if(d){ e.preventDefault(); d.classList.remove('survol'); ajouterFichiers(e.dataTransfer.files, 'propositions'); } });
+['dragover', 'drop'].forEach(n => window.addEventListener(n, e => { if(!e.target.closest || !e.target.closest('#depot')) e.preventDefault(); }));
+
+/* ------------------------------ PDF et e-mail ------------------------------ */
+document.getElementById('bPdf').addEventListener('click', () => {
+  const ancien = document.title; document.title = nomFichierPdf();   // le navigateur propose ce nom dans « Enregistrer sous »
+  const fin = () => { document.title = ancien; window.removeEventListener('afterprint', fin); };
+  window.addEventListener('afterprint', fin); window.print();
+});
+document.getElementById('bMail').addEventListener('click', () => {
+  const e = ETAPES[E.etape], ver = e.validation ? '' : ' V' + (E.version || 1);
+  const sujet = 'Dossier de présentation – ' + (E.client || 'client') + ' – ' + E.etape + ver + (E.numero ? ' (dossier ' + E.numero + ')' : '');
+  const noms = listePages().map(p => p[0]).join(', ');
+  const corps = 'Tristan,\n\nVoici le dossier de présentation pour « ' + (E.client || 'client') + ' »' + (E.numero ? ' (dossier n° ' + E.numero + ', ' : ' (') + e.nom.toLowerCase() + ver + ').\n\n' +
+    'Il comprend ' + listePages().length + ' pages : ' + noms + '.\n' +
+    'Le PDF est en pièce jointe. Les cotes et les teintes sont à valider de ton côté avant l\'envoi au client.\n\n' +
+    'Dis-moi si tu veux des modifications.\n\nBonne journée,\n' + (E.signature || '');
+  location.href = 'mailto:' + DEST_MAIL + '?subject=' + encodeURIComponent(sujet) + '&body=' + encodeURIComponent(corps);
+});
+
+/* ------------------------------ Aperçu à l'échelle ------------------------------ */
+function ajuster(){
+  const Z = document.getElementById('zone'), ap = document.getElementById('apercu');
+  const larg = ap.clientWidth - 36, plein = 297 * 96 / 25.4;   // 297 mm en pixels
+  const k = Math.min(1, larg / plein);
+  Z.style.transform = 'scale(' + k + ')'; Z.style.width = plein + 'px';
+  Z.parentElement.style.minHeight = '0';
+  const feuilles = Z.querySelectorAll('.feuille');
+  Z.style.marginBottom = (-(Z.offsetHeight * (1 - k))) + 'px';
+}
+window.addEventListener('resize', ajuster);
+
+/* ------------------------------ Mémoire du navigateur (IndexedDB) ------------------------------ */
+const ouvrirBase = () => new Promise((ok, ko) => { const r = indexedDB.open('dossier_v2', 1); r.onupgradeneeded = () => r.result.createObjectStore('etat'); r.onsuccess = () => ok(r.result); r.onerror = () => ko(r.error); });
+let minuteur = null;
+function sauver(){ clearTimeout(minuteur); minuteur = setTimeout(async () => { try{ const db = await ouvrirBase(); db.transaction('etat', 'readwrite').objectStore('etat').put(JSON.stringify(E), 'courant'); }catch(e){ /* navigation privée : pas de mémoire */ } }, 400); }
+async function reprendre(){
+  try{
+    const db = await ouvrirBase();
+    const v = await new Promise(ok => { const r = db.transaction('etat').objectStore('etat').get('courant'); r.onsuccess = () => ok(r.result); r.onerror = () => ok(null); });
+    if(v){ const e = JSON.parse(v); E = Object.assign(etatVierge(), e); E.atelier = Object.assign({}, ATELIER_DEFAUT, e.atelier || {}); }
+  }catch(e){ /* rien */ }
+}
+reprendre().then(dessiner);
+</script>
+</body>
+</html>
