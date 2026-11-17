@@ -54,7 +54,9 @@
   .nuancierGrille{display:grid;grid-template-columns:repeat(5,1fr);gap:8mm 6mm;align-items:start}
   .pastille{display:flex;flex-direction:column;gap:2mm}
   .pastilleCouleur{height:58mm;border:1px solid var(--kraftLine)}
-  .pastilleCouleur.camaieu{height:18mm}
+  .pastilleCouleur.camaieu{height:16mm}
+  .camaieuLigne{display:flex;gap:2mm}
+  .camaieuCase{flex:1;min-width:0;display:flex;flex-direction:column;gap:1mm}
   .pastilleRef{font-size:12px;font-weight:700;letter-spacing:.03em;text-transform:uppercase}
   .pastilleSous{font-size:10px;line-height:1.5;opacity:.8}
   .nuancierNote{font-size:9.5px;margin-top:6mm;opacity:.7}
@@ -123,8 +125,8 @@
   .repere{border-top:1px solid var(--kraftLine);padding-top:3mm;margin-top:6mm}
   .repere .nom{font-family:'Anton',Impact,sans-serif;font-size:18px;text-transform:uppercase}
   .visu{flex:1;display:flex;flex-direction:column;min-width:0;padding:6mm 10mm 2mm}
-  .visuCadre{flex:1;display:flex;align-items:center;justify-content:center;min-height:0}
-  .visuCadre img{max-width:100%;max-height:150mm;object-fit:contain;box-shadow:0 1px 8px rgba(0,0,0,.18)}
+  .visuCadre{flex:1;min-height:0;position:relative}
+  .visuCadre img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center}
   .legende{font-size:10px;letter-spacing:.04em;padding-top:3mm}
   .cotes{width:62mm;flex:none;padding:8mm 10mm 4mm 0;font-style:italic;font-size:10.5px;line-height:1.5}
   .cotes .c{margin-bottom:3mm}
@@ -712,7 +714,7 @@ function etatStockTeinte(ref){
 function aCommander(t){ return t.commander != null ? !!t.commander : (stockEtat === 'ok' && etatStockTeinte(t.reference).code === 'absent'); }
 function listeACommander(){ return E.teintes.filter(t => t.reference.trim() && aCommander(t)).map(t => t.reference.trim() + (t.nom ? ' (' + t.nom + ')' : '')); }
 function melangerBlanc(hex, part){ const c = hexRgb(hex).map(v => Math.round(v * (1 - part) + 255 * part)); return '#' + c.map(v => v.toString(16).padStart(2, '0')).join(''); }
-const CAMAIEU = 0.10;
+const NIVEAUX_CAMAIEU = [0.15, 0.30];   // couleur clé, puis + 15 % de blanc, puis encore + 15 % (30 % au total)
 function teintesNuancier(){ return E.teintes.filter(t => t.reference.trim() || t.nom.trim()); }
 function libelleCmjn(cle){ const p = cle.split(','); return 'C' + p[0] + ' M' + p[1] + ' J' + p[2] + ' N' + p[3]; }
 
@@ -722,7 +724,7 @@ function pageNuancier(){
     const fond = t.hex || '#dddddd';
     const sous = [t.nom, t.nuancier].filter(Boolean).map(esc).join('<br>');
     return `<div class="pastille"><div class="pastilleCouleur" style="background:${fond}"></div>
-      ${t.camaieu ? `<div class="pastilleCouleur camaieu" style="background:${melangerBlanc(fond, CAMAIEU)}"></div><div class="pastilleSous">+ 10 % de blanc</div>` : ''}
+      ${t.camaieu ? `<div class="camaieuLigne">${NIVEAUX_CAMAIEU.map(n => `<div class="camaieuCase"><div class="pastilleCouleur camaieu" style="background:${melangerBlanc(fond, n)}"></div><div class="pastilleSous">+ ${Math.round(n * 100)} % de blanc</div></div>`).join('')}</div>` : ''}
       <div class="pastilleRef">${esc(t.reference || t.nom)}</div>${sous ? `<div class="pastilleSous">${sous}</div>` : ''}</div>`;
   }).join('');
   return habiller(`${entete(e.validation ? 'VALIDATION' : 'NUANCIER', e.validation ? dateAffichee() : sousVersion(), e.validation)}
@@ -743,7 +745,7 @@ function blocTeintes(){
       <div class="field" style="margin-top:6px"><label>Référence de peinture</label><input class="input${vide(t.reference) ? ' afaire' : ''}" value="${esc(t.reference)}" placeholder="RAL 3020, CR4099-5…" data-tk="reference"></div>
       ${sug}
       <div class="grid2"><div class="field"><label>Nom (facultatif)</label><input class="input" value="${esc(t.nom)}" data-tk="nom"></div><div class="field"><label>Marque / nuancier</label><input class="input" value="${esc(t.nuancier)}" placeholder="Tollens · Cromology" data-tk="nuancier"></div></div>
-      <label class="choixTexte"><input type="checkbox" data-tk="camaieu" ${t.camaieu ? 'checked' : ''}><span>Camaïeu : ajouter « + 10 % de blanc »</span></label>
+      <label class="choixTexte"><input type="checkbox" data-tk="camaieu" ${t.camaieu ? 'checked' : ''}><span>Camaïeu : 3 niveaux (couleur, + 15 % puis + 30 % de blanc)</span></label>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="pilStock ${e.code}">${esc(e.texte)}</span>${stockEtat === 'ok' && t.reference.trim() ? `<label class="tiny"><input type="checkbox" data-tk="commander" ${cmd ? 'checked' : ''}> à commander</label>` : ''}</div></div>`;
   }).join('');
   const cmd = listeACommander();
