@@ -268,7 +268,7 @@ function dessiner() {
   var liensOk = D.liens.filter(function (a) { return a.actif && new Date(a.expire_le) > new Date(); });
   $('app').innerHTML =
     '<p class="fil"><a href="admin.html">Admin</a> ›</p><h1>Personnes et structures</h1>' +
-    '<div class="outils"><div class="rechl"><input class="rech" id="rech" type="search" placeholder="Rechercher un nom, une adresse, un sigle…" value="' + E(ST.q) + '" aria-label="Rechercher"><button type="button" class="invb" data-act="inviter">＋ Inviter</button><button type="button" class="invb" data-act="graphiste">＋ Graphiste</button></div>' +
+    '<div class="outils"><div class="rechl"><input class="rech" id="rech" type="search" placeholder="Rechercher un nom, une adresse, un sigle…" value="' + E(ST.q) + '" aria-label="Rechercher"><button type="button" class="invb" data-act="inviter">＋ Inviter</button></div>' +
     '<div class="filtres">' + filtres.map(function (f) { return tr(null, f); }).join('') + '</div></div>' +
     '<p class="toi"><b>Toi · super admin</b> · ' + E((ST.moi && ST.moi.email) || '') + ' · double authentification active · ne peut être ni suspendu ni archivé</p>' +
     '<p class="msg" id="msg" role="alert">' + E(D.erreur || '') + '</p>' +
@@ -356,12 +356,11 @@ async function envoyerAcces(a, bouton) {
 var MAIL_OK = /^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/;
 var TYPES_INV = { entreprise: 'Entreprise', personne: 'Personne', collectif: 'Collectif' };
 var STAT_INV = { a_envoyer: ['À envoyer', 'gris'], envoyee: ['Envoyée', 'jaune'], ouverte: ['Lien ouvert', 'jaune'], compte_cree: ['Compte créé', 'vert'], a_rattacher: ['Compte créé · à rattacher', 'jaune'], expiree: ['Expirée', 'gris'], annulee: ['Annulée', 'gris'] };
-function messageInvitation(type, nom, lien, fin, graph) {
+function messageInvitation(type, nom, lien, fin) {
   var intro = type === 'entreprise' ? 'Je vous invite à créer le compte de votre entreprise « ' + nom + ' » sur VraiSavoirFaire.'
     : type === 'collectif' ? 'Je vous invite à créer le compte qui permettra de suivre le collectif « ' + nom + ' » sur VraiSavoirFaire.'
-    : graph ? 'Je vous invite à créer votre compte pour préparer les dossiers de présentation d’Ets. Gesret sur VraiSavoirFaire.'
     : 'Je vous invite à créer votre compte sur VraiSavoirFaire.';
-  return 'Bonjour,\n\n' + intro + '\n\nC’est rapide : vous utilisez cette adresse e-mail, vous recevez un code pour la confirmer, et c’est fait. Aucun mot de passe à retenir.\n\nVotre lien personnel (à usage unique, valable jusqu’au ' + fin + ') :\n' + lien + '' + (graph ? '\n\nLe dossier de présentation se trouve ici, une fois votre compte créé :\n' + location.origin + '/atelier/dossier-presentation-v2.html' : '') + '\n\nSi vous avez une question, répondez simplement à ce message.\n\nCordialement,\nVraiSavoirFaire\n' + EXPEDITEUR + '\n';
+  return 'Bonjour,\n\n' + intro + '\n\nC’est rapide : vous utilisez cette adresse e-mail, vous recevez un code pour la confirmer, et c’est fait. Aucun mot de passe à retenir.\n\nVotre lien personnel (à usage unique, valable jusqu’au ' + fin + ') :\n' + lien + '\n\nSi vous avez une question, répondez simplement à ce message.\n\nCordialement,\nVraiSavoirFaire\n' + EXPEDITEUR + '\n';
 }
 function tableInvitations(q) {
   var L = D.invitations.filter(function (i) { return q([i.nom, i.email, TYPES_INV[i.type]].join(' ')); });
@@ -377,32 +376,28 @@ function tableInvitations(q) {
 function lienInvitation(jeton) { return location.origin + '/invitation.html?j=' + encodeURIComponent(jeton); }
 function modal(html) { var d = document.createElement('div'); d.className = 'dlg'; d.innerHTML = '<div role="dialog" aria-modal="true">' + html + '</div>'; document.body.appendChild(d); d.onclick = function (e) { if (e.target === d) d.remove(); }; return d; }
 /* le résultat : le lien, le message Gmail prêt, et le suivi */
-function modalLien(inv, lien, type, nom, email, graph) {
+function modalLien(inv, lien, type, nom, email) {
   var fin = jourLong(inv.expire_le), d = modal('<h3>Invitation prête</h3><p>Pour <b>' + E(nom) + '</b> · ' + E(email) + '</p><div class="lien">' + E(lien) + '</div>' +
     '<div class="col"><button type="button" class="ok" id="mG">Écrire le message dans Gmail</button><button type="button" id="mC">Copier le lien</button><button type="button" id="mF">Fermer</button></div>' +
     '<p class="cap" style="margin:12px 0 0;font-size:13px;color:var(--cap)">Gmail s’ouvre dans un nouvel onglet, depuis ' + E(EXPEDITEUR) + ', avec le message prêt à envoyer. Le lien est valable jusqu’au ' + E(fin) + ' et ne s’affiche qu’ici : « Renvoyer » en crée un nouveau.</p>');
   d.querySelector('#mG').onclick = async function () {
-    window.open(gmail(email, 'Votre compte VraiSavoirFaire', messageInvitation(type, nom, lien, fin, graph)), '_blank', 'noopener');
+    window.open(gmail(email, 'Votre compte VraiSavoirFaire', messageInvitation(type, nom, lien, fin)), '_blank', 'noopener');
     await appeler('vsf_admin_invit_envoyee', { p_id: inv.id }); await charger(); OUVERT.liens = true; dessiner();
   };
   d.querySelector('#mC').onclick = async function () { try { await navigator.clipboard.writeText(lien); this.textContent = 'Copié ✓'; } catch (e) { this.textContent = 'Copie impossible : sélectionne le lien'; } };
   d.querySelector('#mF').onclick = async function () { d.remove(); await charger(); OUVERT.liens = true; dessiner(); };
 }
-function formInviter(pre) {
-  pre = pre || {};
-  var etat = { type: pre.type || 'entreprise', graph: !!pre.graph };
-  var d = modal('<h3>' + E(pre.titre || 'Inviter') + '</h3><p>Une personne reçoit un lien pour créer son compte. Tu écris le message dans Gmail.</p>' +
+function formInviter() {
+  var etat = { type: 'entreprise' };
+  var d = modal('<h3>Inviter</h3><p>Une personne reçoit un lien pour créer son compte. Tu écris le message dans Gmail.</p>' +
     '<label>Inviter</label><div class="filtres" id="iType">' + Object.keys(TYPES_INV).map(function (k) { return '<button type="button" class="pil' + (k === etat.type ? ' on' : '') + '" data-t="' + k + '">' + TYPES_INV[k] + '</button>'; }).join('') + '</div>' +
     '<label for="iNom" id="iNomL">Nom de l’entreprise</label><input type="text" id="iNom" maxlength="120" autocomplete="off">' +
     '<label for="iMail">Adresse e-mail</label><input type="email" id="iMail" inputmode="email" maxlength="200" autocomplete="off" placeholder="prenom@exemple.fr">' +
-    '<label for="iJ">Valable</label><select id="iJ"><option value="7">7 jours</option><option value="14" selected>14 jours</option><option value="30">30 jours</option></select>' +
+    '<label for="iJ">Le lien d’invitation reste valable</label><select id="iJ"><option value="7">7 jours</option><option value="14" selected>14 jours</option><option value="30">30 jours</option></select><p style="margin:6px 0 0;font-size:13px;opacity:.7">Seul le lien expire. Une fois le compte créé, il reste ouvert sans limite de durée.</p>' +
     '<p class="er" id="iErr" role="alert"></p><div class="r" style="margin-top:14px"><button type="button" id="iNo">Annuler</button><button type="button" class="ok" id="iOk">Créer l’invitation</button></div>');
   var libelles = { entreprise: 'Nom de l’entreprise', personne: 'Prénom et nom de la personne', collectif: 'Nom du collectif' };
   d.querySelector('#iType').onclick = function (e) { var b = e.target.closest('[data-t]'); if (!b) return; etat.type = b.getAttribute('data-t'); d.querySelectorAll('#iType .pil').forEach(function (x) { x.classList.toggle('on', x === b); }); d.querySelector('#iNomL').textContent = libelles[etat.type]; };
   d.querySelector('#iNo').onclick = function () { d.remove(); };
-  if (pre.nom) d.querySelector('#iNom').value = pre.nom;
-  if (pre.mail) d.querySelector('#iMail').value = pre.mail;
-  d.querySelector('#iNomL').textContent = libelles[etat.type];
   d.querySelector('#iNom').focus();
   d.querySelector('#iOk').onclick = async function () {
     var nom = d.querySelector('#iNom').value.trim(), mail = d.querySelector('#iMail').value.trim().toLowerCase(), err = d.querySelector('#iErr');
@@ -413,7 +408,7 @@ function formInviter(pre) {
     var r = await appeler('vsf_admin_invit_creer', { p_type: etat.type, p_nom: nom, p_email: mail, p_jours: parseInt(d.querySelector('#iJ').value, 10) });
     this.disabled = false;
     if (r.error || !r.data) { err.textContent = r.error && r.error.message && r.error.message.length < 200 ? r.error.message : 'Échec : la migration 57 est-elle installée ?'; return; }
-    d.remove(); modalLien(r.data, lienInvitation(r.data.jeton), etat.type, nom, mail, etat.graph);
+    d.remove(); modalLien(r.data, lienInvitation(r.data.jeton), etat.type, nom, mail);
   };
 }
 function tableLiens(q) {
@@ -611,7 +606,6 @@ document.addEventListener('click', async function (e) {
       document.querySelector('.men-fl').setAttribute('data-pour', id2); return;
     }
     if (act === 'inviter') return formInviter();
-    if (act === 'graphiste') return formInviter({ type: 'personne', nom: 'Graphiste', mail: 'graphisme@etsgesret.fr', titre: 'Créer le profil de la graphiste', graph: true });
     if (act === 'invit-renvoyer') {
       var inv = D.invitations.filter(function (x) { return x.id === id2; })[0]; if (!inv) return;
       var rr = await appeler('vsf_admin_invit_relancer', { p_id: id2, p_jours: 14 });
