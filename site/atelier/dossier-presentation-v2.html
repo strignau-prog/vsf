@@ -756,7 +756,7 @@ function etatStockTeinte(ref){
 function aCommander(t){ return t.commander != null ? !!t.commander : (stockEtat === 'ok' && etatStockTeinte(t.reference).code === 'absent'); }
 function listeACommander(){ return E.teintes.filter(t => t.reference.trim() && aCommander(t)).map(t => t.reference.trim() + (t.nom ? ' (' + t.nom + ')' : '')); }
 function melangerBlanc(hex, part){ const c = hexRgb(hex).map(v => Math.round(v * (1 - part) + 255 * part)); return '#' + c.map(v => v.toString(16).padStart(2, '0')).join(''); }
-const NIVEAUX_CAMAIEU = [0.15, 0.30];   // couleur clé, puis + 15 % de blanc, puis encore + 15 % (30 % au total)
+const NIVEAUX_CAMAIEU = [0.20, 0.40];   // couleur clé, puis + 20 % de blanc, puis + 40 % de blanc
 function teintesNuancier(){ return E.teintes.filter(t => t.reference.trim() || t.nom.trim()); }
 function libelleCmjn(cle){ const p = cle.split(','); return 'C' + p[0] + ' M' + p[1] + ' J' + p[2] + ' N' + p[3]; }
 
@@ -787,7 +787,7 @@ function blocTeintes(){
       <div class="field" style="margin-top:6px"><label>Référence de peinture</label><input class="input${vide(t.reference) ? ' afaire' : ''}" value="${esc(t.reference)}" placeholder="RAL 3020, CR4099-5…" data-tk="reference"></div>
       ${sug}
       <div class="grid2"><div class="field"><label>Nom (facultatif)</label><input class="input" value="${esc(t.nom)}" data-tk="nom"></div><div class="field"><label>Marque / nuancier</label><input class="input" value="${esc(t.nuancier)}" placeholder="Tollens · Cromology" data-tk="nuancier"></div></div>
-      <label class="choixTexte"><input type="checkbox" data-tk="camaieu" ${t.camaieu ? 'checked' : ''}><span>Camaïeu : 3 niveaux (couleur, + 15 % puis + 30 % de blanc)</span></label>
+      <label class="choixTexte"><input type="checkbox" data-tk="camaieu" ${t.camaieu ? 'checked' : ''}><span>Camaïeu : 3 niveaux (couleur, + 20 % puis + 40 % de blanc)</span></label>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="pilStock ${e.code}">${esc(e.texte)}</span>${stockEtat === 'ok' && t.reference.trim() ? `<label class="tiny"><input type="checkbox" data-tk="commander" ${cmd ? 'checked' : ''}> à commander</label>` : ''}</div></div>`;
   }).join('');
   const cmd = listeACommander();
