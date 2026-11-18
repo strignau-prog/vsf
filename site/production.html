@@ -1197,6 +1197,7 @@ async function charger(){
   DB.role=admin?'admin':'relecteur';
   var m=await VSF.sb.from('vsf_prod_modules').select('*').order('ordre');
   if(m.error||!m.data||!m.data.length){$('app').innerHTML='<div class="kick">Production des modules</div><h1>Rien à afficher</h1><p class="lead">'+(m.error?'Les tables ne sont pas installées : migration 36 à jouer.':'Aucun module : migration 37 (import des 137 lignes) à jouer.')+'</p>';return;}
+  m.data=m.data.filter(function(r){return !r.demo;});   /* les modules de démonstration (DEMO-…) ne sont jamais comptés ici */
   S.nRem=m.data.filter(function(r){return r.statut_cadre==='remplace';}).length;
   CAPS=m.data.filter(function(r){return r.statut_cadre!=='remplace';}).map(mapRow);CAPS.forEach(function(d){DB.vu[d.c]=d.stg;});
   if(admin){
