@@ -53,11 +53,16 @@ textarea.json:focus,input:focus{outline:2px solid var(--now)}
 .brique b{font-weight:800}.brique .t{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:800}
 .empl{border:2px dashed #999;background:#fff}
 /* aperçu apprenant */
-.ap{position:sticky;top:12px}
-.ap .fm{display:flex;gap:6px;margin:0 0 12px}
+.ap{position:sticky;top:76px;max-height:calc(100vh - 92px);display:flex;flex-direction:column}
+.ap h2{flex:none}
+.apc{overflow-y:auto;flex:1;min-height:0;padding-right:4px}
+.arbre{position:sticky;top:76px;max-height:calc(100vh - 92px);overflow-y:auto;padding-right:6px}
+@media(max-width:1180px){.ap,.arbre{position:static;max-height:none}.apc{overflow:visible}}
+.ap .fm{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 12px;flex:none}
+.ap .fm .cpt{font-weight:800;font-size:13px;min-width:54px;text-align:center}
 .ap .fm button{font:inherit;font-weight:800;font-size:13px;border:2px solid #111;background:#fff;padding:7px 13px;cursor:pointer;border-radius:999px}
 .ap .fm button.on{background:#111;color:#fff}
-.tel{width:320px;max-width:100%;height:600px;margin:0 auto;border:10px solid #111;border-radius:34px;overflow:hidden;background:#fff;display:flex;flex-direction:column}
+.tel{width:320px;max-width:100%;height:min(600px,calc(100vh - 260px));min-height:420px;margin:0 auto;border:10px solid #111;border-radius:34px;overflow:hidden;background:#fff;display:flex;flex-direction:column}
 .tel .top{padding:12px 14px 6px;font-size:12px;font-weight:800;display:flex;justify-content:space-between;align-items:center}
 .tel .top i{width:12px;height:12px;border-radius:50%;background:var(--accent)}
 .tel .rail{flex:1;display:flex;overflow-x:auto;scroll-snap-type:x mandatory}
@@ -66,7 +71,7 @@ textarea.json:focus,input:focus{outline:2px solid var(--now)}
 .tel .pts i{width:7px;height:7px;border-radius:50%;background:#d5d5d5}.tel .pts i.on{background:#111}
 .ord{border:1px solid #d9d9d9;border-radius:8px;padding:14px;background:#fff}
 .ord .grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
-.imp{background:#fff;border:1px solid #cfcfcf;box-shadow:0 2px 10px rgba(0,0,0,.12);padding:22px 24px;margin:0 0 14px;aspect-ratio:210/297;overflow:auto;font-size:12.5px}
+.imp{background:#fff;border:1px solid #cfcfcf;box-shadow:0 2px 10px rgba(0,0,0,.12);padding:22px 24px;margin:0 0 14px;font-size:12.5px}
 .imp .ent{display:flex;justify-content:space-between;font-weight:800;margin-bottom:12px;padding-bottom:8px;border-bottom:3px solid var(--accent)}
 .imp .pied{margin-top:12px;font-size:10.5px;color:#555}
 .imp .case{display:inline-block;width:12px;height:12px;border:1.5px solid #111;margin-right:7px;vertical-align:-2px}
@@ -130,7 +135,7 @@ function render(){
     '<h1><i class="dot"></i>'+esc(p.nom||'Parcours')+(p.demo?'<span class="demo">démo</span>':'')+'</h1>'+
     '<p class="lead">Choisis un module, importe son brouillon, relis-le dans l’aperçu apprenant.'+(p.demo?' Ce parcours est une démonstration : aucun apprenant ne le voit, rien n’est compté.':'')+'</p>'+
     '<p><select id="parc" class="btn" aria-label="Parcours">'+opts+'</select> <a class="btn" href="production-v2.html">← Production</a></p>';
-  h+='<div class="cols"><nav class="arbre" id="arbre">'+arbre()+'</nav><main id="centre">'+(m?centre(m):'<p class="note">Choisis un module à gauche.</p>')+'</main><aside class="ap" id="ap">'+(m?apercu(m):'')+'</aside></div>';
+  h+='<div class="cols"><nav class="arbre" id="arbre">'+arbre()+'</nav><main id="centre">'+(m?centre(m):'<p class="note">Choisis un module à gauche.</p>')+'</main><aside class="ap" id="ap">'+(m?apercuWrap(apercu(m),m):'')+'</aside></div>';
   $('app').innerHTML=h;
 }
 function formeEtat(m){var n=contenusDe(m.code).filter(function(c){return briquesDe(c.id).length>0;}).length;   /* « commencé » = au moins un contenu avec des briques ; les contenus seulement prévus ne comptent pas */
@@ -204,11 +209,12 @@ function resultat(){
   return '<div class="res ok"><b>Import fait :</b> '+r.contenus+' contenus, '+r.briques+' briques. Tout est « brouillon · à relire ».'+
     (r.avertissements&&r.avertissements.length?'<ul>'+r.avertissements.map(function(a){return '<li>'+esc(a)+'</li>';}).join('')+'</ul>':'')+'</div>'+manque(r);
 }
+function mentions(code){var n=0;D.briq.forEach(function(b){var c=D.cont.filter(function(x){return x.id===b.contenu_id;})[0];if(c&&c.module_code===code)n+=(JSON.stringify(b.champs||{}).match(/\[à vérifier/g)||[]).length;});return n;}
 function manque(r){
   var m=byCode(r.module),lst=r.a_verifier||[],emp=[],h='';
   D.briq.forEach(function(b){var c=D.cont.filter(function(x){return x.id===b.contenu_id;})[0];if(c&&c.module_code===r.module&&b.emplacement)emp.push((b.type==='video'?'Vidéo : ':'Photo : ')+((b.champs&&(b.champs.titre||b.champs.consigne))||''));});
   h+='<div class="manque"><h3>À vérifier ('+(lst.length)+')</h3><ul>'+(lst.length?lst.map(function(x){return '<li>'+esc(x)+'</li>';}).join(''):'<li class="note">Rien dans la liste du fichier</li>')+'</ul>'+
-    '<p class="note">'+(r.mentions_a_verifier||0)+' mention(s) « [à vérifier] » restent dans les textes.</p>'+
+    '<p class="note">'+mentions(r.module)+' mention(s) « [à vérifier] » restent dans les textes.</p>'+
     '<h3>Photos et vidéos à prendre ('+emp.length+')</h3><ul>'+emp.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>';
   return h;
 }
@@ -241,6 +247,13 @@ function ab(x,fmt){
     });
   }
   return h+'</div>';
+}
+function majCpt(){var r=$('rail');if(!r)return;var i=Math.round(r.scrollLeft/r.clientWidth),pts=document.querySelectorAll('#pts i');for(var k=0;k<pts.length;k++)pts[k].className=k===i?'on':'';var cp=$('cpt');if(cp)cp.textContent=(i+1)+' / '+pts.length;}
+function apercuWrap(html,m){
+  var k=html.indexOf('</div>'),n=ecrans(m).length,nav='';
+  if(S.fmt==='tel'&&n)nav='<button data-act="prev" aria-label="Écran précédent">←</button><span class="cpt" id="cpt">1 / '+n+'</span><button data-act="next" aria-label="Écran suivant">→</button>';
+  if(S.fmt==='imp'&&n){nav='<button data-act="pg" data-p="0">Page 1</button>';if((html.match(/class="imp"/g)||[]).length>1)nav+='<button data-act="pg" data-p="1">Corrigé</button>';}
+  return html.slice(0,k)+nav+'</div><div class="apc" id="apc">'+html.slice(k+6)+'</div>';
 }
 function apercu(m){
   var xs=ecrans(m),ch=charte(),h='<h2>Aperçu apprenant</h2><div class="fm"><button data-fmt="tel" class="'+(S.fmt==='tel'?'on':'')+'">Téléphone</button><button data-fmt="ord" class="'+(S.fmt==='ord'?'on':'')+'">Ordinateur</button><button data-fmt="imp" class="'+(S.fmt==='imp'?'on':'')+'">Imprimé</button>'+(S.cont?'<button data-act="tout">Tout le module</button>':'')+'</div>';
@@ -282,14 +295,16 @@ document.addEventListener('click',function(e){
   if(d.valider){valider(d.valider);return;}
   if(d.fmt){S.fmt=d.fmt;render();return;}
   if(d.act==='tout'){S.cont=null;render();return;}
+  if(d.act==='prev'||d.act==='next'){var rl=$('rail');if(rl){rl.scrollBy({left:(d.act==='next'?1:-1)*rl.clientWidth,behavior:'auto'});setTimeout(majCpt,60);}return;}
+  if(d.act==='pg'){var sh=document.querySelectorAll('.apc .imp')[+d.p];if(sh)sh.scrollIntoView({behavior:'auto',block:'start'});return;}
   if(d.act==='importer'){importer();return;}
-  if(d.rep){var p=d.rep.split('|'),r0=$('rail'),x0=r0?r0.scrollLeft:0,y0=window.scrollY;S.rep[p[0]]=+p[1];render();var r1=$('rail');if(r1)r1.scrollLeft=x0;window.scrollTo(0,y0);return;}
+  if(d.rep){var p=d.rep.split('|'),r0=$('rail'),x0=r0?r0.scrollLeft:0,y0=window.scrollY,a0=$('apc'),ay=a0?a0.scrollTop:0;S.rep[p[0]]=+p[1];render();var r1=$('rail'),a1=$('apc');if(r1)r1.scrollLeft=x0;if(a1)a1.scrollTop=ay;window.scrollTo(0,y0);return;}
 });
 document.addEventListener('change',function(e){
   if(e.target.id==='parc'){S.parc=e.target.value;S.mod=null;S.cont=null;S.res=null;render();}
   if(e.target.id==='fic'&&e.target.files[0]){var fr=new FileReader();fr.onload=function(){$('json').value=fr.result;};fr.readAsText(e.target.files[0]);}
 });
-document.addEventListener('scroll',function(e){var r=e.target;if(r&&r.id==='rail'){var i=Math.round(r.scrollLeft/r.clientWidth);var pts=document.querySelectorAll('#pts i');for(var k=0;k<pts.length;k++)pts[k].className=k===i?'on':'';}},true);
+document.addEventListener('scroll',function(e){var r=e.target;if(r&&r.id==='rail'){var i=Math.round(r.scrollLeft/r.clientWidth);var pts=document.querySelectorAll('#pts i');for(var k=0;k<pts.length;k++)pts[k].className=k===i?'on':'';var cp=$('cpt');if(cp)cp.textContent=(i+1)+' / '+pts.length;}},true);
 
 /* ---------- import de test (en local seulement : reprend les règles de la fonction vsf_form_importer_brouillon) ---------- */
 function importLocal(j){
