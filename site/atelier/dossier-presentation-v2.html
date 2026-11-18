@@ -1535,7 +1535,7 @@ function dessinLegende(m, x, y){
 }
 // Une cellule : un visuel et sa légende, à l'intérieur du rectangle (X, Y, W, H). « retrait » : marge de la légende côté page.
 function composerCellule(p, f, X, Y, W, H, retrait, grandeur){
-  const bl = blocsLegende(p), a = (f.w && f.h) ? f.w / f.h : 1.5, marge = 10, nom = p.titre || 'visuel';
+  const bl = blocsLegende(p), a = (f.w && f.h) ? f.w / f.h : 1.5, marge = 7, nom = p.titre || 'visuel';
   const image = b => `<div class="tpVisu" style="left:${b[0] / PT * 100}%;top:${b[1] / PH * 100}%;width:${b[2] / PT * 100}%;height:${b[3] / PH * 100}%"><img src="${f.src}" alt=""></div>`;
   if(legendeVide(bl)) return image([X, Y, W, H]);
   let pos = p.posCotes || 'auto';
@@ -1556,15 +1556,24 @@ function composerCellule(p, f, X, Y, W, H, retrait, grandeur){
   let r = essayer(pos);
   if(!r && (pos === 'gauche' || pos === 'droite')){ r = essayer('dessous'); if(r) ALERTES.push('« ' + nom + ' » : légende trop longue pour le côté, elle passe sous l\'image.'); }
   if(!r){
-    const corps = corpsListe[corpsListe.length - 1], pos2 = (pos === 'dessus') ? 'dessus' : 'dessous', m = mesurerLegende(bl, pos2, W - 2 * retrait, corps);
-    r = { m, corps, pos: pos2 }; ALERTES.push('« ' + nom + ' » : légende très longue, l\'image devient petite. Raccourcissez la description.');
+    const corps = corpsListe[corpsListe.length - 1], pos2 = (pos === 'dessus') ? 'dessus' : 'dessous';
+    let m = mesurerLegende(bl, pos2, W - 2 * retrait, corps), coupe = false;
+    while(H - m.h - marge < Math.min(90, H * 0.35) && bl.desc.length > 40){ bl.desc = bl.desc.slice(0, Math.floor(bl.desc.length * 0.8)).replace(/\s+\S*$/, '') + '…'; coupe = true; m = mesurerLegende(bl, pos2, W - 2 * retrait, corps); }
+    r = { m, corps, pos: pos2 };
+    ALERTES.push('« ' + nom + ' » : légende très longue, ' + (coupe ? 'la description est coupée sur la page. Raccourcissez-la ou réduisez les cotes.' : 'l\'image devient petite. Raccourcissez la description.'));
   } else if(r.corps < corpsListe[0] && r.corps <= 7.5) ALERTES.push('« ' + nom + ' » : légende longue, écriture réduite à ' + String(r.corps).replace('.', ',') + ' pt.');
-  const m = r.m, hi = Math.max(40, H - m.h - marge);
-  if(r.pos === 'dessous') return image([X, Y, W, hi]) + dessinLegende(m, X + retrait, Y + H - m.h);
-  if(r.pos === 'dessus') return image([X, Y + m.h + marge, W, hi]) + dessinLegende(m, X + retrait, Y);
-  const wi = W - m.w - retrait - marge, ly = Y + Math.max(0, (H - m.h) / 2);
-  if(r.pos === 'droite') return image([X, Y, wi, H]) + dessinLegende(m, X + W - retrait - m.w, ly);
-  return image([X + retrait + m.w + marge, Y, wi, H]) + dessinLegende(m, X + retrait, ly);
+  // L'image est dessinée à sa taille réelle d'affichage et la légende se colle contre elle ; l'ensemble est centré dans la cellule.
+  let m = r.m;
+  if(r.pos === 'dessous' || r.pos === 'dessus'){
+    const hi = Math.max(40, H - m.h - marge), ih = Math.min(hi, W / a), iw = ih * a, y0 = Y + Math.max(0, (H - (ih + marge + m.h)) / 2);
+    const ix = X + (W - iw) / 2, lx = Math.min(Math.max(ix, X + retrait), X + W - retrait - m.w);
+    if(r.pos === 'dessous') return image([ix, y0, iw, ih]) + dessinLegende(m, lx, y0 + ih + marge);
+    return dessinLegende(m, lx, y0) + image([ix, y0 + m.h + marge, iw, ih]);
+  }
+  const wi = W - m.w - retrait - marge, ih = Math.min(H, wi / a), iw = ih * a, x0 = X + Math.max(0, (W - (iw + marge + m.w)) / 2), iy = Y + (H - ih) / 2;
+  const ly = Math.min(Math.max(iy + (ih - m.h) / 2, Y), Y + H - m.h);
+  if(r.pos === 'droite') return image([x0, iy, iw, ih]) + dessinLegende(m, x0 + iw + marge, ly);
+  return dessinLegende(m, x0, ly) + image([x0 + m.w + marge, iy, iw, ih]);
 }
 function etiquettePage(chunk){
   const e = ETAPES[E.etape], premier = E.props[chunk[0]], pad = n => String(n).padStart(2, '0');
