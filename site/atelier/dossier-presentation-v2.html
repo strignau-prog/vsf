@@ -84,6 +84,11 @@
   .placement .groupe{margin:0}
   @media (prefers-reduced-motion:reduce){.vignette{transition:none}}
   .alerteTxt{color:var(--accent)}
+  .voile{position:fixed;inset:0;z-index:1000;background:rgba(17,17,17,.35);display:flex;align-items:center;justify-content:center;padding:16px}
+  .dialogue{background:#fff;border-radius:14px;padding:20px 22px;max-width:420px;width:100%;box-shadow:0 20px 50px -12px rgba(0,0,0,.4)}
+  .dialogue p{margin:0 0 12px;font-size:15px;line-height:1.45}
+  .dlgBtns{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+  @media print{.voile{display:none}}
   .stick{position:sticky;top:-18px;z-index:6;background:#fff;margin:0 -18px 4px;padding:8px 18px 6px;border-bottom:1px solid var(--line);box-shadow:0 6px 8px -7px rgba(0,0,0,.18)}
   .stick .progres{margin:0}
   .bloc{scroll-margin-top:52px}
@@ -706,21 +711,38 @@ function candidatsTextes(){
 }
 function variantes(){ const c = candidatsTextes(); return c.length ? c : [TEXTE_NEUTRE]; }
 function texteActif(){ const v = variantes(); return v.find(t => t.id === E.texteId) || v[0]; }
+/* ------------------ Boîte de dialogue centrée (remplace confirm / alert / prompt du navigateur, toujours collés en haut) ------------------ */
+function boite(message, opt){
+  opt = opt || {};
+  const champ = opt.champ !== undefined;
+  return new Promise(ok => {
+    const fond = document.createElement('div'); fond.className = 'voile';
+    fond.innerHTML = `<div class="dialogue" role="dialog" aria-modal="true"><p>${esc(message)}</p>${champ ? `<input class="input" id="dlgChamp" value="${esc(opt.champ)}">` : ''}<div class="dlgBtns">${opt.non ? `<button type="button" class="btn" data-r="non">${esc(opt.non)}</button>` : ''}<button type="button" class="btn noir" data-r="oui">${esc(opt.oui || 'OK')}</button></div></div>`;
+    const cle = e => { if(e.key === 'Escape'){ e.preventDefault(); refuser(); } else if(e.key === 'Enter'){ e.preventDefault(); if(document.activeElement && document.activeElement.dataset.r === 'non') refuser(); else valider(); } };
+    const fin = v => { fond.remove(); document.removeEventListener('keydown', cle, true); ok(v); };
+    const valider = () => fin(champ ? fond.querySelector('#dlgChamp').value : true);
+    const refuser = () => fin(champ ? null : false);
+    fond.addEventListener('click', e => { const b = e.target.closest('button'); if(b){ if(b.dataset.r === 'oui') valider(); else refuser(); } else if(e.target === fond && opt.non) refuser(); });
+    document.addEventListener('keydown', cle, true);
+    document.body.appendChild(fond);
+    const ch = fond.querySelector('#dlgChamp'); (ch || fond.querySelector('[data-r=oui]')).focus(); if(ch) ch.select();
+  });
+}
 async function enregistrerTexte(maj){
   const t = texteActif(), corps = corpsTexte();
   try{
     let r;
     if(maj){
-      if(!textesBase || !textesBase.some(x => x.id === t.id)){ alert("Ce texte est intégré à la page : enregistrez-le d'abord comme nouvelle variante."); return; }
+      if(!textesBase || !textesBase.some(x => x.id === t.id)){ await boite("Ce texte est intégré à la page : enregistrez-le d'abord comme nouvelle variante."); return; }
       r = await sb.from('dossier_textes').update({ corps:corps, maj_le:new Date().toISOString() }).eq('id', t.id);
     } else {
-      const nom = prompt('Nom de cette variante :', t.nom + ' (copie)'); if(!nom) return;
+      const nom = await boite('Nom de cette variante :', { champ: t.nom + ' (copie)', oui:'Enregistrer', non:'Annuler' }); if(!nom || !nom.trim()) return;
       r = await sb.from('dossier_textes').insert({ etape:E.etape, nb:(propositions().length === 1 ? '1' : 'n'), devis:(E.devis || 'non_signe'), nom:nom, ouverture:t.ouverture, corps:corps, liste:t.liste || null, priorite:50 });
     }
     if(r.error) throw new Error(r.error.message);
     E.texteLibre = null; await chargerTextes(); dessiner();
     statut(maj ? 'Texte mis à jour dans la bibliothèque.' : 'Variante ajoutée à la bibliothèque.');
-  }catch(e){ alert('Enregistrement impossible : ' + (e.message || e)); }
+  }catch(e){ await boite('Enregistrement impossible : ' + (e.message || e)); }
 }
 function corpsTexte(){ const t = texteActif(); return E.texteLibre != null && E.texteLibre.id === t.id ? E.texteLibre.corps : t.corps; }
 
@@ -1297,7 +1319,7 @@ saisie.addEventListener('click', async e => {
   }
   if(b.id === 'bPhoto'){ document.getElementById('photoInput').click(); return; }
   if(b.id === 'bPhotoOff'){ E.photo = ''; dessiner(); return; }
-  if(b.id === 'bNouveau'){ if(confirm('Effacer ce dossier et en commencer un nouveau ?')){ E = etatVierge(); ouverts = {}; dernierCourant = ''; dessiner(); } return; }
+  if(b.id === 'bNouveau'){ if(await boite('Effacer ce dossier et en commencer un nouveau ?', { oui:'Effacer', non:'Annuler' })){ E = etatVierge(); ouverts = {}; dernierCourant = ''; dessiner(); } return; }
   if(b.id === 'bTexteAjout' || b.id === 'bTexteMaj'){ enregistrerTexte(b.id === 'bTexteMaj'); return; }
   if(b.id === 'bTeinteAdd'){ E.teintes.push({ id:uid(), cmyk:'', hex:'#cccccc', reference:'', nom:'', nuancier:'', camaieu:false, commander:null, ral:null }); dessiner(); return; }
   if(b.id === 'bCopierCommande'){ try{ navigator.clipboard.writeText(listeACommander().join('\n')); b.textContent = 'Copié ✓'; }catch(x){ /* presse-papiers indisponible */ } return; }
