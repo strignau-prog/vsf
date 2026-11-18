@@ -1060,7 +1060,12 @@ function dessiner(){
   const etapes = etatEtapes(), requisFaits = etapes.filter(s => s.requis && s.ok).length, requis = etapes.filter(s => s.requis).length;
   const courant = (etapes.find(s => s.requis && !s.ok) || etapes[etapes.length - 1]).id;
   const garde = garderOuvert; garderOuvert = '';
-  if(courant !== dernierCourant){ ouverts = {}; if(garde){ ouverts[garde] = true; if(courant !== garde) ouverts[courant] = false; } }   // après le remplissage par Trello : on reste sur la rubrique pour vérifier
+  if(courant !== dernierCourant){
+    // les rubriques que la personne a ouvertes restent ouvertes ; seul l'automatique (la rubrique « à faire ») change
+    const gardees = {}; Object.keys(ouverts).forEach(k => { if(ouverts[k] === true) gardees[k] = true; });
+    ouverts = gardees;
+    if(garde){ ouverts[garde] = true; if(courant !== garde && ouverts[courant] === undefined) ouverts[courant] = false; }
+  }   // après le remplissage par Trello : on reste sur la rubrique pour vérifier
   const reste = requis - requisFaits;
   S.innerHTML = `
     <div class="enteteSaisie"><h1>Dossier de présentation</h1><div class="compte">${compteHtml()}</div></div>
@@ -1263,7 +1268,9 @@ saisie.addEventListener('input', e => {
 });
 saisie.addEventListener('click', async e => {
   const tg = e.target.closest('[data-toggle]');
-  if(tg){ const id = tg.dataset.toggle, etapes = etatEtapes(), cour = (etapes.find(s => s.requis && !s.ok) || etapes[etapes.length - 1]).id; const ouvert = ouverts[id] !== undefined ? ouverts[id] : id === cour; ouverts[id] = !ouvert; dessiner(); return; }
+  if(tg){ const id = tg.dataset.toggle, etapes = etatEtapes(), cour = (etapes.find(s => s.requis && !s.ok) || etapes[etapes.length - 1]).id; const ouvert = ouverts[id] !== undefined ? ouverts[id] : id === cour;
+    ouverts[id] = !ouvert;   // chaque rubrique s'ouvre et se ferme seule : les autres ne bougent pas
+    dessiner(); return; }
   const b = e.target.closest('button'); if(!b) return;
   if(b.dataset.next){ ouverts[b.dataset.from] = false; ouverts[b.dataset.next] = true; dessiner(); const bl = document.querySelector('#saisie [data-b="' + b.dataset.next + '"]'); if(bl) bl.scrollIntoView({ block:'start', behavior:'smooth' }); return; }
   if(b.id === 'bDeco'){ try{ await sb.auth.signOut(); }catch(x){ /* rien */ } location.reload(); return; }
