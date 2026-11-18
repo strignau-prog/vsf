@@ -88,6 +88,12 @@ textarea.json:focus,input:focus{outline:2px solid var(--now)}
 .ab .minu{display:inline-block;font-weight:800;font-size:12px;border:2px solid #111;border-radius:999px;padding:2px 10px;margin-bottom:6px}
 .ab .pt{font-weight:800}
 .note{font-size:12.5px;color:var(--muted)}
+.media{display:block;max-width:100%;border-radius:6px}
+.brique img.media,.brique video.media{max-width:240px;margin:8px 0}
+.brique .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center}
+.brique .acts .btn{padding:4px 11px;font-size:12px}
+.brique label.btn{cursor:pointer}
+.msg{margin:10px 0;padding:10px 12px;background:var(--jaune);border-radius:6px;font-weight:700}
 .jours{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 18px}
 .jours .j{font-size:12px;font-weight:800;border:2px solid #111;border-radius:999px;padding:3px 10px;background:#fff}
 .jours .j.trop{background:#fdecea;border-color:var(--alert);color:var(--alert)}
@@ -105,7 +111,7 @@ var $=function(i){return document.getElementById(i);};
 var esc=function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
 var TEST=false;
 var D={parcs:[],axes:[],chap:[],mods:[],cont:[],briq:[],imps:[],chartes:[],err:[]};
-var S={parc:null,mod:null,cont:null,fmt:'tel',res:null,rep:{},ecran:0};
+var S={parc:null,mod:null,cont:null,fmt:'tel',res:null,rep:{},ecran:0,urls:{},msg:'',uid:null};
 
 var ETAPES=[['essayer','Essayer'],['constater','Constater'],['regarder','Regarder'],['faire','Faire'],['comparer','Comparer'],['ancrer','Ancrer']];
 var TYPES={consigne_essai:['Consigne d’essai','--f-faire'],grille_mesure:['Grille de mesure','--f-mesurer'],photo_erreur_type:['Photos d’erreur type','--f-regard'],fiche_geste:['Fiche geste','--f-recevoir'],planche_geste:['Planche de geste','--f-recevoir'],capsule_video:['Capsule vidéo','--f-recevoir'],series_guidees:['Séries guidées J1 à J7','--f-faire'],quiz_deux_versions:['Quiz en 2 versions','--f-mesurer'],consigne_depot:['Consigne de dépôt','--f-mesurer'],critere_j30:['Critère à J+30','--f-dire'],
@@ -175,7 +181,7 @@ function centre(m){
   h+='<h2>Importer un brouillon</h2><p class="note">Un fichier JSON par module. Tout arrive « brouillon · à relire ». Les images et vidéos ne sont que des emplacements.</p>'+
     '<p><input type="file" id="fic" accept=".json,application/json"></p><textarea class="json" id="json" placeholder="Colle ici le contenu du fichier JSON, ou choisis le fichier ci-dessus"></textarea>'+
     '<p><button class="btn plein" data-act="importer">Importer pour ce module</button></p><div id="res">'+resultat()+'</div>';
-  if(S.cont){var c=D.cont.filter(function(x){return x.id===S.cont;})[0];if(c)h+='<h2>'+esc(nomType(c.type))+'</h2>'+briquesDe(c.id).map(briqueEdition).join('');}
+  if(S.cont){var c=D.cont.filter(function(x){return x.id===S.cont;})[0];if(c)h+='<div id="edit"></div>'+(S.msg?'<p class="msg">'+esc(S.msg)+'</p>':'')+'<h2>'+esc(nomType(c.type))+'</h2>'+briquesDe(c.id).map(function(b,i,a){return briqueEdition(b,i,a.length);}).join('');}
   return h;
 }
 function journees(m){
@@ -193,7 +199,11 @@ function journees(m){
   var trop=rows.filter(function(r){return r.t>max;}).length;
   return '<h3>Durée des journées <span class="note">(au plus '+max+' min)</span></h3><div class="jours">'+rows.map(function(r){return '<span class="j'+(r.t>max?' trop':'')+'" title="'+esc(r.txt)+'">'+esc(r.n)+' · '+r.t+' min'+(r.t>max?' · trop long':'')+'</span>';}).join('')+'</div>'+(trop?'<p class="err">'+trop+' journée'+(trop>1?'s dépassent':' dépasse')+' '+max+' minutes : raccourcis une séance ou décale un contenu.</p>':'');
 }
-function briqueEdition(b){
+function media(b){var u=b.fichier&&S.urls[b.fichier],c=b.champs||{};
+  if(b.type==='image'&&u)return '<img class="media" src="'+esc(u)+'" alt="'+esc(c.legende||'')+'">';
+  if(b.type==='video'&&u)return '<video class="media" controls preload="metadata" src="'+esc(u)+'"></video>';
+  return '';}
+function briqueEdition(b,i,n){
   var c=b.champs||{},t=b.type,corps='';
   if(t==='carte')corps='<b>'+esc(c.titre)+'</b><br>'+esc(c.texte)+'<br><span class="note">'+mots(c.texte)+' mots</span>';
   else if(t==='image')corps='<b>'+esc(c.emplacement||'image')+'</b> · '+esc(c.consigne)+'<br>Légende : '+esc(c.legende)+' <span class="note">('+mots(c.legende)+' mots)</span>';
@@ -201,7 +211,9 @@ function briqueEdition(b){
   else if(t==='question')corps='<b>'+esc(c.question)+'</b>'+(b.version?' <span class="chip">version '+b.version+'</span>':'')+'<br>'+(c.reponses||[]).map(function(r){return (r.bonne?'✓ ':'• ')+esc(r.texte);}).join('<br>');
   else if(t==='exercice')corps='<b>'+esc(c.jour||'')+'</b> '+esc(c.consigne)+'<br>Point : '+esc(c.point_a_soigner)+' · '+esc(c.repere||'');
   else if(t==='depot')corps='<b>Dépôt '+esc(c.genre||'')+'</b> · '+esc(c.consigne);
-  return '<div class="brique '+(b.emplacement?'empl':'')+'"><div class="t">'+t+(b.emplacement?' · emplacement':'')+'</div>'+corps+'</div>';
+  var acts='<button class="btn" data-bmv="'+esc(b.id)+'|-1"'+(i===0?' disabled':'')+' aria-label="Monter">↑ Monter</button><button class="btn" data-bmv="'+esc(b.id)+'|1"'+(i===n-1?' disabled':'')+' aria-label="Descendre">↓ Descendre</button>';
+  if(t==='image'||t==='video')acts+='<label class="btn">'+(b.fichier?(t==='image'?'Remplacer la photo':'Remplacer la vidéo'):(t==='image'?'Choisir une photo':'Choisir une vidéo'))+'<input type="file" hidden accept="'+(t==='image'?'image/*':'video/*')+'" data-up="'+esc(b.id)+'"></label><span class="note">'+(t==='image'?'10 Mo au plus':'50 Mo au plus')+'</span>';
+  return '<div class="brique '+(b.emplacement?'empl':'')+'"><div class="t">'+(i+1)+' · '+t+(b.emplacement?' · emplacement : fichier à ajouter':'')+'</div>'+corps+media(b)+'<div class="acts">'+acts+'</div></div>';
 }
 function resultat(){
   var r=S.res;if(!r)return '';
@@ -234,8 +246,8 @@ function ab(x,fmt){
   var b=x.b,c=b.champs||{},col='var('+famille(x.c.type)+')',h='<div class="ab" style="--c:'+col+'"><div class="ent2">'+esc(x.e)+' · '+esc(nomType(x.c.type))+'</div>';
   var cle=b.id;
   if(b.type==='carte')h+='<h4>'+esc(c.titre)+'</h4><p>'+esc(c.texte)+'</p>';
-  else if(b.type==='image')h+='<div class="ph"><b>'+esc(c.emplacement||'image')+'</b>'+esc(c.consigne)+'</div><p class="note">'+esc(c.legende)+'</p>';
-  else if(b.type==='video')h+=(fmt==='imp'?'<div class="qr">QR<br>capsule</div> <b>'+esc(c.titre)+'</b>':'<div class="ph"><b>'+esc(c.titre)+' · '+esc(c.duree_min)+' min</b>bientôt disponible</div>');
+  else if(b.type==='image')h+=(media(b)||'<div class="ph"><b>'+esc(c.emplacement||'image')+'</b>'+esc(c.consigne)+'</div>')+'<p class="note">'+esc(c.legende)+'</p>';
+  else if(b.type==='video')h+=(fmt==='imp'?'<div class="qr">QR<br>capsule</div> <b>'+esc(c.titre)+'</b>':(media(b)||'<div class="ph"><b>'+esc(c.titre)+' · '+esc(c.duree_min)+' min</b>bientôt disponible</div>'));
   else if(b.type==='exercice')h+=(c.jour?'<h4>'+esc(c.jour)+'</h4>':'')+(c.duree_min?'<span class="minu">'+esc(c.duree_min)+' min</span>':'')+'<p>'+esc(c.consigne)+'</p><p class="pt">Un seul point : '+esc(c.point_a_soigner)+'</p><p class="note">'+esc(c.repere||'')+'</p>';
   else if(b.type==='depot')h+='<h4>Dépose ta photo</h4><p>'+esc(c.consigne)+'</p>'+(fmt==='imp'?'':'<button class="btn" disabled>Prendre la photo</button>');
   else if(b.type==='question'){
@@ -283,15 +295,50 @@ async function importer(){
   var keep=txt;render();if($('json'))$('json').value=keep;
 }
 async function rpc(nom,args){try{var r=await sb().rpc(nom,args);if(r.error)return {ok:false,message:r.error.message};return r.data;}catch(x){return {ok:false,message:String(x.message||x)};}}
+async function signer(){
+  if(TEST)return;
+  var ps=D.briq.filter(function(b){return b.fichier&&!S.urls[b.fichier];}).map(function(b){return b.fichier;});if(!ps.length)return;
+  try{var r=await sb().storage.from('vsf-contenus').createSignedUrls(ps,3600);(r.data||[]).forEach(function(x){if(x.signedUrl)S.urls[x.path]=x.signedUrl;});}catch(e){}
+}
+async function toucher(contenuId){
+  var c=D.cont.filter(function(x){return x.id===contenuId;})[0];if(c)c.relecture='brouillon';
+  if(!TEST)await sb().from('vsf_form_contenus').update({relecture:'brouillon',maj_par:S.uid,maj_le:new Date().toISOString()}).eq('id',contenuId);
+}
+async function deplacer(id,sens){
+  var b=D.briq.filter(function(x){return x.id===id;})[0];if(!b)return;
+  var l=briquesDe(b.contenu_id),i=l.indexOf(b),o=l[i+sens];if(!o)return;
+  var rb=b.rang,ro=o.rang,y0=window.scrollY;
+  if(!TEST){
+    var q=function(){return sb().from('vsf_form_briques');},T=100000+Math.floor(Math.random()*1000);
+    var e=(await q().update({rang:T}).eq('id',b.id)).error||(await q().update({rang:rb}).eq('id',o.id)).error||(await q().update({rang:ro}).eq('id',b.id)).error;
+    if(e){S.msg='Le déplacement n\u2019a pas été enregistré : '+e.message;render();return;}
+  }
+  b.rang=ro;o.rang=rb;await toucher(b.contenu_id);S.msg='';render();window.scrollTo(0,y0);
+}
+async function televerser(id,file){
+  var b=D.briq.filter(function(x){return x.id===id;})[0];if(!b)return;
+  var c=D.cont.filter(function(x){return x.id===b.contenu_id;})[0],m=c&&byCode(c.module_code),y0=window.scrollY;
+  var max=(b.type==='video'?50:10)*1048576;
+  if(file.size>max){S.msg='Fichier trop lourd ('+Math.round(file.size/1048576)+' Mo) : '+(b.type==='video'?'50':'10')+' Mo au plus.';render();window.scrollTo(0,y0);return;}
+  var ext=(file.name.split('.').pop()||'bin').toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,5)||'bin';
+  var path=(m?m.parcours_id+'/'+m.code:'divers')+'/'+b.id+'-'+Date.now()+'.'+ext;
+  if(TEST){S.urls[path]=URL.createObjectURL(file);b.fichier=path;b.emplacement=false;await toucher(b.contenu_id);S.msg='Fichier ajouté (essai local).';render();window.scrollTo(0,y0);return;}
+  var up=await sb().storage.from('vsf-contenus').upload(path,file,{contentType:file.type||undefined,upsert:false});
+  if(up.error){S.msg='Le fichier n\u2019a pas été enregistré : '+up.error.message+(/not found|bucket/i.test(up.error.message)?' — le stockage privé « vsf-contenus » est à créer dans Supabase (Storage, New bucket, privé).':'');render();window.scrollTo(0,y0);return;}
+  var r=await sb().from('vsf_form_briques').update({fichier:path,emplacement:false,maj_le:new Date().toISOString()}).eq('id',b.id);
+  if(r.error){S.msg='Le fichier est envoyé mais la brique n\u2019a pas été mise à jour : '+r.error.message;render();window.scrollTo(0,y0);return;}
+  b.fichier=path;b.emplacement=false;await toucher(b.contenu_id);await signer();S.msg='Fichier ajouté. Le contenu repasse en « brouillon · à relire ».';render();window.scrollTo(0,y0);
+}
 async function valider(id){
   var r=TEST?{ok:true}:await rpc('vsf_form_valider_contenu',{p_contenu:id});
   if(r&&r.ok!==false){var c=D.cont.filter(function(x){return x.id===id;})[0];if(c){c.relecture='relu';if(TEST&&c.etat==='bro')c.etat='rsk';}if(!TEST)await recharger();}
   render();
 }
 document.addEventListener('click',function(e){
-  var t=e.target.closest('[data-mod],[data-voir],[data-valider],[data-fmt],[data-act],[data-rep]');if(!t)return;var d=t.dataset;
-  if(d.mod){S.mod=d.mod;S.cont=null;S.res=null;S.rep={};render();return;}
-  if(d.voir){S.cont=d.voir;render();return;}
+  var t=e.target.closest('[data-mod],[data-voir],[data-valider],[data-fmt],[data-act],[data-rep],[data-bmv]');if(!t)return;var d=t.dataset;
+  if(d.mod){S.mod=d.mod;S.cont=null;S.res=null;S.rep={};S.msg='';render();return;}
+  if(d.bmv){var pp=d.bmv.split('|');deplacer(pp[0],+pp[1]);return;}
+  if(d.voir){S.cont=d.voir;S.msg='';render();var ed=$('edit');if(ed)ed.scrollIntoView({block:'start'});return;}
   if(d.valider){valider(d.valider);return;}
   if(d.fmt){S.fmt=d.fmt;render();return;}
   if(d.act==='tout'){S.cont=null;render();return;}
@@ -302,6 +349,7 @@ document.addEventListener('click',function(e){
 });
 document.addEventListener('change',function(e){
   if(e.target.id==='parc'){S.parc=e.target.value;S.mod=null;S.cont=null;S.res=null;render();}
+  if(e.target.dataset&&e.target.dataset.up&&e.target.files[0]){televerser(e.target.dataset.up,e.target.files[0]);return;}
   if(e.target.id==='fic'&&e.target.files[0]){var fr=new FileReader();fr.onload=function(){$('json').value=fr.result;};fr.readAsText(e.target.files[0]);}
 });
 document.addEventListener('scroll',function(e){var r=e.target;if(r&&r.id==='rail'){var i=Math.round(r.scrollLeft/r.clientWidth);var pts=document.querySelectorAll('#pts i');for(var k=0;k<pts.length;k++)pts[k].className=k===i?'on':'';var cp=$('cpt');if(cp)cp.textContent=(i+1)+' / '+pts.length;}},true);
@@ -339,10 +387,12 @@ async function recharger(){
   var q=function(t){return sb().from(t).select('*');};
   var r=await Promise.all([lire('modules',q('vsf_prod_modules').order('ordre')),lire('contenus',q('vsf_form_contenus')),lire('briques',q('vsf_form_briques')),lire('axes',q('vsf_form_axes')),lire('chapitres',q('vsf_form_chapitres')),lire('chartes',q('vsf_form_chartes'))]);
   D.mods=r[0];D.cont=r[1];D.briq=r[2];D.axes=r[3];D.chap=r[4];D.chartes=r[5];
+  await signer();
 }
 async function charger(){
   var s=await sb().auth.getSession();
   if(!s.data.session){location.replace('connexion.html?suite='+encodeURIComponent(location.href));return;}
+  S.uid=s.data.session.user.id;
   var a=await sb().rpc('vsf_est_admin');
   if(a.data!==true){$('app').innerHTML='<div class="kick">Constructeur de parcours</div><h1><i class="dot"></i>Accès réservé</h1><p class="lead">Cette page est réservée à Skolantreuz.</p><p><a class="btn" href="./">Retour</a></p>';return;}
   D.parcs=await lire('parcours',sb().from('vsf_form_parcours').select('*').order('cree_le'));
