@@ -1118,7 +1118,6 @@ function blocFichiers(){
       const avec = p.groupe ? props.filter(x => x !== c && E.props[x].groupe === p.groupe).map(x => '« ' + E.props[x].titre + ' »') : [];
       return `<div class="prop" data-c="${esc(c)}">${avec.length ? '<div class="tiny" style="margin-bottom:6px">Sur la même page que ' + avec.join(', ') + ' <button type="button" class="btn petit" data-act="separer">Séparer</button></div>' : ''}<div class="propTete"><img src="${ch.src}" alt=""><input class="input" value="${esc(p.titre)}" data-p="titre" aria-label="Nom du visuel">
         <div style="display:flex;gap:4px"><button class="btn petit" data-act="haut" ${i === 0 ? 'disabled' : ''}>↑</button><button class="btn petit" data-act="bas" ${i === props.length - 1 ? 'disabled' : ''}>↓</button><button class="btn petit" data-act="retirer">✕</button></div></div>
-        <div style="margin-top:8px">${groupeRadios('type-' + i, TYPES.map(t => [t, t]), p.type, false)}</div>
         <div class="field" style="margin:8px 0 0;max-width:150px"><label>Version de cette page</label><select class="select" data-p="vv" aria-label="Version de cette page">${Array.from({ length:Math.max(vm, p.vv || 1) }, (_, k) => `<option value="${k + 1}" ${(p.vv || E.version || 1) === k + 1 ? 'selected' : ''}>V${k + 1}</option>`).join('')}</select></div>
         ${ch.faible ? '<div class="tiny alerteTxt" style="margin-top:6px">Aperçu basse définition : dans Illustrator, enregistrez de nouveau avec « Créer un fichier compatible PDF ».</div>' : ''}</div>`;
     }).join('')}
@@ -1235,7 +1234,7 @@ saisie.addEventListener('change', e => {
   if(t.dataset.plc){ const it = E.plateau.find(x => x.id === t.dataset.plc); if(it){ it.coche = t.checked; dessiner(); } return; }
   if(t.name === 'vplace'){ E.versionPlacement = parseInt(t.value, 10) || 1; dessiner(); return; }
   if(t.name && t.name.startsWith('pos-')){ const p = propDe(t); if(p){ p.posCotes = t.value; dessiner(); } return; }
-  if(t.name === 'etape'){ E.etape = t.value; E.etapeChoisie = true; E.texteId = ''; E.texteLibre = null; E.nuancier = null; dessiner(); return; }
+  if(t.name === 'etape'){ E.etape = t.value; E.etapeChoisie = true; E.ordre.forEach(c => { const p = E.props[c]; if(p && p.type !== 'Croquis') p.type = (ETAPES[E.etape] || ETAPES.CREA).typeDefaut; }); E.texteId = ''; E.texteLibre = null; E.nuancier = null; dessiner(); return; }
   if(t.name === 'devis'){ E.devis = t.value; E.texteId = ''; E.texteLibre = null; dessiner(); return; }
   if(t.name && t.name.startsWith('type-')){ const p = propDe(t); if(p){ p.type = t.value; dessiner(); } return; }
   if(t.dataset.k){
