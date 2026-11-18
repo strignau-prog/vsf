@@ -82,8 +82,9 @@
   .placement .groupe{margin:0}
   @media (prefers-reduced-motion:reduce){.vignette{transition:none}}
   .alerteTxt{color:var(--accent)}
-  .stick{position:sticky;top:0;z-index:6;background:#fff;margin:-18px -18px 0;padding:16px 18px 4px;border-bottom:1px solid var(--line)}
-  .bloc{scroll-margin-top:96px}
+  .stick{position:sticky;top:-18px;z-index:6;background:#fff;margin:0 -18px 4px;padding:8px 18px 6px;border-bottom:1px solid var(--line);box-shadow:0 6px 8px -7px rgba(0,0,0,.18)}
+  .stick .progres{margin:0}
+  .bloc{scroll-margin-top:52px}
   .reste{font-size:13px;background:#fdecea;color:#8f2d1d;border-radius:8px;padding:7px 10px;margin:2px 0 12px;line-height:1.4}
   .reste.ok{background:#e8f3ea;color:#1d5a2d}
   .suite{margin-top:14px;display:flex;justify-content:flex-end}
@@ -977,8 +978,9 @@ function resumeEtape(id){
   return '';
 }
 function compteHtml(){
-  if(compte) return esc(compte.email) + ' · <button type="button" class="lien" id="bDeco">Déconnexion</button>';
-  return '<a class="lien" href="connexion-dossier.html?suite=dossier-presentation-v2.html' + '">Connexion</a>';
+  const nouveau = ' · <button type="button" class="lien" id="bNouveau">Nouveau dossier</button>';
+  if(compte) return esc(compte.email) + ' · <button type="button" class="lien" id="bDeco">Déconnexion</button>' + nouveau;
+  return '<a class="lien" href="connexion-dossier.html?suite=dossier-presentation-v2.html' + '">Connexion</a>' + nouveau;
 }
 function groupeRadios(nom, options, valeur, aFaire){
   return `<div class="groupe${aFaire ? ' afaire' : ''}">${options.map(o => `<label class="choixPil${valeur === o[0] ? ' on' : ''}"><input type="radio" name="${nom}" value="${esc(o[0])}" ${valeur === o[0] ? 'checked' : ''}>${esc(o[1])}</label>`).join('')}</div>`;
@@ -1010,10 +1012,9 @@ function dessiner(){
   if(courant !== dernierCourant){ ouverts = {}; }
   const reste = requis - requisFaits;
   S.innerHTML = `
-    <div class="stick"><div class="enteteSaisie"><h1>Dossier de présentation</h1><div class="compte">${compteHtml()}</div></div>
-    <div class="progres"><div class="jauge"><i style="width:${requis ? Math.round(100 * requisFaits / requis) : 100}%"></i></div>
-      <span class="tiny">${reste > 0 ? 'Il reste ' + reste + ' étape' + (reste > 1 ? 's' : '') + ' à faire' : 'Tout est prêt : enregistrez le PDF'}</span>
-      <button class="btn petit" id="bNouveau">Nouveau dossier</button></div></div>
+    <div class="enteteSaisie"><h1>Dossier de présentation</h1><div class="compte">${compteHtml()}</div></div>
+    <div class="stick"><div class="progres"><div class="jauge"><i style="width:${requis ? Math.round(100 * requisFaits / requis) : 100}%"></i></div>
+      <span class="tiny">${reste > 0 ? 'Il reste ' + reste + ' étape' + (reste > 1 ? 's' : '') + ' à faire' : 'Tout est prêt : enregistrez le PDF'}</span></div></div>
     ${etapes.map((s, i) => {
       const ouvert = ouverts[s.id] !== undefined ? ouverts[s.id] : s.id === courant;
       const etat = s.final ? '' : s.ok ? '<span class="coche">✓</span>' : s.requis ? '<span class="aFaire">à faire</span>' : '<span class="opt">facultatif</span>';
