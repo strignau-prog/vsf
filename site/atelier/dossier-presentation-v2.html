@@ -1107,7 +1107,7 @@ function blocFichiers(){
     <div class="placement"><span class="tiny" style="font-size:13px">Les pages cochées sont en :</span>
       ${groupeRadios('vplace', Array.from({ length:vm }, (_, k) => [String(k + 1), 'V' + (k + 1)]), String(E.versionPlacement || 1), false)}
       <button type="button" class="btn petit" data-pl="vplus" title="Ajouter une version">＋</button></div>
-    <button type="button" class="btn noir" data-pl="placer" ${nC ? '' : 'disabled'} style="margin-bottom:14px">Placer ${nC ? 'les ' + nC + ' page' + (nC > 1 ? 's cochées' : ' cochée') : 'les pages cochées'} (V${E.versionPlacement || 1})</button>
+    <button type="button" class="btn${nC ? ' afaire' : ''}" data-pl="placer" ${nC ? '' : 'disabled'} style="margin-bottom:14px">Placer ${nC > 1 ? 'les ' + nC + ' pages cochées' : nC === 1 ? 'la page cochée' : 'les pages cochées'} (V${E.versionPlacement || 1})</button>
     <button type="button" class="btn" data-pl="ensemble" ${nC >= 2 && nC <= 4 ? '' : 'disabled'} style="margin:0 0 14px 6px">Les placer ensemble sur une même page</button>
     ${nC > 4 ? '<p class="tiny">Quatre visuels au maximum sur une même page.</p>' : ''}` : '';
   const vide0 = !props.length && !pl.length;
