@@ -1060,7 +1060,7 @@ function dessiner(){
   const etapes = etatEtapes(), requisFaits = etapes.filter(s => s.requis && s.ok).length, requis = etapes.filter(s => s.requis).length;
   const courant = (etapes.find(s => s.requis && !s.ok) || etapes[etapes.length - 1]).id;
   const garde = garderOuvert; garderOuvert = '';
-  if(courant !== dernierCourant){ ouverts = {}; if(garde){ ouverts[garde] = true; ouverts[courant] = false; } }   // après le remplissage par Trello : on reste sur la rubrique pour vérifier
+  if(courant !== dernierCourant){ ouverts = {}; if(garde){ ouverts[garde] = true; if(courant !== garde) ouverts[courant] = false; } }   // après le remplissage par Trello : on reste sur la rubrique pour vérifier
   const reste = requis - requisFaits;
   S.innerHTML = `
     <div class="enteteSaisie"><h1>Dossier de présentation</h1><div class="compte">${compteHtml()}</div></div>
@@ -1231,6 +1231,7 @@ const saisie = document.getElementById('saisie');
 function propDe(el){ const d = el.closest('[data-c]'); return d ? E.props[d.dataset.c] : null; }
 saisie.addEventListener('change', e => {
   const t = e.target;
+  { const bl = t.closest && t.closest('.bloc'); if(bl && bl.dataset.b) garderOuvert = bl.dataset.b; }   // la rubrique modifiée reste ouverte : pas d'avance automatique pendant qu'on la remplit
   if(t.id === 'fichierInput'){ ajouterFichiers(t.files, 'propositions'); t.value = ''; return; }
   if(t.id === 'photoInput'){ ajouterFichiers(t.files, 'photo'); t.value = ''; return; }
   if(t.dataset.plc){ const it = E.plateau.find(x => x.id === t.dataset.plc); if(it){ it.coche = t.checked; dessiner(); } return; }
@@ -1313,7 +1314,7 @@ saisie.addEventListener('click', async e => {
 });
 saisie.addEventListener('dragover', e => { const d = e.target.closest('#depot'); if(d){ e.preventDefault(); d.classList.add('survol'); } });
 saisie.addEventListener('dragleave', e => { const d = e.target.closest('#depot'); if(d) d.classList.remove('survol'); });
-saisie.addEventListener('drop', e => { const d = e.target.closest('#depot'); if(d){ e.preventDefault(); d.classList.remove('survol'); ajouterFichiers(e.dataTransfer.files, 'propositions'); } });
+saisie.addEventListener('drop', e => { const d = e.target.closest('#depot'); if(d){ e.preventDefault(); d.classList.remove('survol'); garderOuvert = 'fichiers'; ajouterFichiers(e.dataTransfer.files, 'propositions'); } });
 ['dragover', 'drop'].forEach(n => window.addEventListener(n, e => { if(!e.target.closest || !e.target.closest('#depot')) e.preventDefault(); }));
 
 /* ------------------------------ PDF et e-mail ------------------------------ */
