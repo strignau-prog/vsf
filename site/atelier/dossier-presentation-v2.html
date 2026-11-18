@@ -966,6 +966,7 @@ function listePages(){
    Les étapes se suivent : celle qui reste à faire s'ouvre toute seule, les autres se replient dès qu'elles sont complètes.
    Fond rouge pâle = case à compléter ou geste à faire à la main. */
 let ouverts = {};          // undefined = automatique ; true / false = choix de la personne
+let garderOuvert = '';     // rubrique à ne pas refermer au prochain redessin (ex. après le remplissage par Trello)
 let dernierCourant = '', compte = null;
 const vide = v => !String(v == null ? '' : v).trim();
 const nomTexte = n => String(n || '').replace(/\s*\(dossier [^)]*\)/i, '');
@@ -974,7 +975,7 @@ function etatEtapes(){
   const cotesOk = !bat || (props.length > 0 && props.every(c => { const p = E.props[c]; return !vide(p.panneau) || p.cotes.length || !vide(p.description); }));
   const teintesOk = E.teintes.every(t => !vide(t.reference) || !vide(t.nom));
   return [
-    { id:'dossier',  titre:'Dossier et client',      ok:!vide(E.numero) && !vide(E.client) && !vide(E.ville), requis:true },
+    { id:'dossier',  titre:'Dossier et client',      ok:!vide(E.numero) && !vide(E.client) && !vide(E.ville) && !vide(E.interlocuteur) && !vide(E.tel), requis:true },
     { id:'type',     titre:'Type de dossier et texte',        ok:!!E.etapeChoisie,                requis:true },
     { id:'fichiers', titre:'Fichiers',               ok:props.length > 0,                requis:true },
     { id:'cotes',    titre:'Cotes et description',   ok:cotesOk,                         requis:bat },
@@ -1058,7 +1059,8 @@ function dessiner(){
   const S = document.getElementById('saisie'), pages = listePages();
   const etapes = etatEtapes(), requisFaits = etapes.filter(s => s.requis && s.ok).length, requis = etapes.filter(s => s.requis).length;
   const courant = (etapes.find(s => s.requis && !s.ok) || etapes[etapes.length - 1]).id;
-  if(courant !== dernierCourant){ ouverts = {}; }
+  const garde = garderOuvert; garderOuvert = '';
+  if(courant !== dernierCourant){ ouverts = {}; if(garde){ ouverts[garde] = true; ouverts[courant] = false; } }   // après le remplissage par Trello : on reste sur la rubrique pour vérifier
   const reste = requis - requisFaits;
   S.innerHTML = `
     <div class="enteteSaisie"><h1>Dossier de présentation</h1><div class="compte">${compteHtml()}</div></div>
@@ -1074,6 +1076,7 @@ function dessiner(){
   ajuster(); ajusterTextes(); if(document.fonts && document.fonts.ready) document.fonts.ready.then(ajusterTextes);
   if(courant !== dernierCourant){
     dernierCourant = courant;
+    if(garde) return;
     setTimeout(() => {
       const b = S.querySelector('.bloc.courant'); if(!b) return;
       b.scrollIntoView({ block:'nearest', behavior:'smooth' });
@@ -1610,6 +1613,7 @@ async function chercherTrello(){
     if(vide(E.ville) && c.lieu) E.ville = c.lieu;
     if(vide(E.interlocuteur) && c.interlocuteur) E.interlocuteur = c.interlocuteur;
     if(vide(E.tel) && c.telephone) E.tel = c.telephone;
+    garderOuvert = 'dossier';
     trello = { n, etat:'ok', nom:c.nom, liste:c.liste, url:c.url, nb:(d.cartes || []).length };
   }catch(e){ trello = { n, etat:'erreur' }; }
   dessiner();
