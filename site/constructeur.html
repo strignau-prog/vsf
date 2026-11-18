@@ -109,7 +109,7 @@ var ETATS={ecr:'À écrire',bro:'Brouillon préparé',rsk:'Relu par Skolantreuz'
 var famille=function(t){return (TYPES[t]||['',' --f-faire'])[1].trim();};
 var nomType=function(t){return (TYPES[t]||[t])[0];};
 var byCode=function(c){return D.mods.filter(function(m){return m.code===c;})[0]||null;};
-var QUIZ_JOUR=4; /* règle du 18 nov. : le quiz tombe le jour 4 de « Faire » (ou le dernier jour s'il y en a moins) et la séance de ce jour est raccourcie */
+var QUIZ_JOUR=4; /* règles du 18 nov. : le quiz tombe le jour 4 de « Faire » (ou le dernier jour s'il y en a moins) et la séance de ce jour est raccourcie ; le dépôt et le vocal viennent le jour suivant la dernière séance */
 var reglage=function(cle,def){var v=D.regl&&D.regl[cle];return typeof v==='number'?v:def;};
 var mots=function(s){s=String(s||'').trim();return s?s.split(/\s+/).length:0;};
 
@@ -181,8 +181,10 @@ function journees(m){
   var fin=cs.filter(function(c){return c.etape==='comparer'||c.etape==='ancrer';}).reduce(function(a,c){return a+dur(c);},0);
   var d0=cs.filter(function(c){return ['essayer','constater','regarder'].indexOf(c.etape)>-1;}).reduce(function(a,c){return a+dur(c);},0);
   var rows=[{n:'Jour 0',t:d0,txt:'sans rappel'}];
-  ex.forEach(function(b,i){var c=b.champs||{},t=(+c.duree_min||0)+(i+1===qd&&quiz?dur(quiz):0)+rap,dernier=i===ex.length-1;if(dernier)t+=fin;
-    rows.push({n:c.jour||('J'+(i+1)),t:t,txt:(i+1===qd&&quiz?'quiz · ':'')+(dernier&&fin?'dépôt et ancrage · ':'')+'rappel '+rap+' min'});});
+  ex.forEach(function(b,i){var c=b.champs||{},t=(+c.duree_min||0)+(i+1===qd&&quiz?dur(quiz):0)+rap;
+    rows.push({n:c.jour||('J'+(i+1)),t:t,txt:(i+1===qd&&quiz?'quiz · ':'')+'rappel '+rap+' min'});});
+  /* règle du 18 nov. : le dépôt (Comparer) et le vocal (Ancrer) viennent le jour qui suit la dernière séance */
+  if(fin>0)rows.push({n:'J'+(ex.length+1),t:fin+rap,txt:'dépôt et vocal · rappel '+rap+' min'});
   var trop=rows.filter(function(r){return r.t>max;}).length;
   return '<h3>Durée des journées <span class="note">(au plus '+max+' min)</span></h3><div class="jours">'+rows.map(function(r){return '<span class="j'+(r.t>max?' trop':'')+'" title="'+esc(r.txt)+'">'+esc(r.n)+' · '+r.t+' min'+(r.t>max?' · trop long':'')+'</span>';}).join('')+'</div>'+(trop?'<p class="err">'+trop+' journée'+(trop>1?'s dépassent':' dépasse')+' '+max+' minutes : raccourcis une séance ou décale un contenu.</p>':'');
 }
