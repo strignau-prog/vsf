@@ -133,7 +133,8 @@ function render(){
   h+='<div class="cols"><nav class="arbre" id="arbre">'+arbre()+'</nav><main id="centre">'+(m?centre(m):'<p class="note">Choisis un module à gauche.</p>')+'</main><aside class="ap" id="ap">'+(m?apercu(m):'')+'</aside></div>';
   $('app').innerHTML=h;
 }
-function formeEtat(m){var n=contenusDe(m.code).length;if(['pret','rel'].indexOf(m.etat)>-1)return 'plein';return n?'epais':'';}
+function formeEtat(m){var n=contenusDe(m.code).filter(function(c){return briquesDe(c.id).length>0;}).length;   /* « commencé » = au moins un contenu avec des briques ; les contenus seulement prévus ne comptent pas */
+  if(['pret','rel'].indexOf(m.etat)>-1)return 'plein';return n?'epais':'';}
 function arbre(){
   var mods=modulesDuParcours(),h='';
   var axes=D.axes.filter(function(a){return a.parcours_id===S.parc;}).sort(function(a,b){return a.ordre-b.ordre;});
