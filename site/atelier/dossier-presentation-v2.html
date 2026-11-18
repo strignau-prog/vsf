@@ -598,14 +598,15 @@ function majVersionDossier(){
   const vs = propositions().map(c => E.props[c].vv).filter(Boolean);
   if(vs.length) E.version = Math.max(...vs);
 }
-function placerCoches(){
-  const v = E.versionPlacement || 1;
+function placerCoches(ensemble){
+  const v = E.versionPlacement || 1, groupe = ensemble ? uid() : '';
   E.plateau.filter(it => it.coche).forEach(it => {
     const src = it.src || ((E.fichiers.find(f => it.cles.includes(f.cle)) || {}).src);
     if(!src) return;
     let cle = it.cle; if(E.props[cle]){ let n = 2; while(E.props[it.cle + '~' + n]) n++; cle = it.cle + '~' + n; }
     E.fichiers.push({ id:uid(), nom:it.nom, cle, v:1, src, ai:it.ai, faible:it.faible, w:it.w, h:it.h });
     const pr = E.props[cle] = { choix:'', titre:it.titre, vv:v, type: it.croquis ? 'Croquis' : (ETAPES[E.etape] || ETAPES.CREA).typeDefaut, cotes:[], description:'', panneau:'' };
+    if(groupe) pr.groupe = groupe;
     E.ordre.push(cle); it.cles.push(cle); it.src = null; it.coche = false;
     if(it.ai){   // cotes et dimensions du panneau lues dans le fichier
       if(it.ai.cotes.length) pr.cotes = it.ai.cotes.map(c => versCote({ ...c }));
@@ -884,8 +885,13 @@ function blocTeintes(){
 function listePages(){
   const e = ETAPES[E.etape], out = [['Couverture', pageCouverture()], ['Introduction', pageIntro()]];
   const props = propositions();
-  if(E.regrouper && props.length > 1){ const k = Math.max(2, Math.min(4, E.parPage || 2)); for(let i = 0; i < props.length; i += k) out.push(['Visuels', pageGroupe(props.slice(i, i + k))]); }
-  else props.forEach((c, i) => out.push([E.props[c].titre || 'Proposition', pageProposition(c, i)]));
+  for(let i = 0; i < props.length; ){
+    const g = E.props[props[i]].groupe; let j = i + 1;
+    while(g && j < props.length && j - i < 4 && E.props[props[j]].groupe === g) j++;
+    if(j - i > 1) out.push(['Visuels', pageGroupe(props.slice(i, j))]);
+    else out.push([E.props[props[i]].titre || 'Proposition', pageProposition(props[i], i)]);
+    i = j;
+  }
   if(nuancierActif() && teintesNuancier().length) out.push(['Nuancier', pageNuancier()]);
   if(e.autorisation) out.push(["Demande d'autorisation", pageAutorisation()]);
   out.push(['Contact', pageContact()]);
@@ -997,7 +1003,9 @@ function blocFichiers(){
     <div class="placement"><span class="tiny" style="font-size:13px">Les pages cochées sont en :</span>
       ${groupeRadios('vplace', Array.from({ length:vm }, (_, k) => [String(k + 1), 'V' + (k + 1)]), String(E.versionPlacement || 1), false)}
       <button type="button" class="btn petit" data-pl="vplus" title="Ajouter une version">＋</button></div>
-    <button type="button" class="btn noir" data-pl="placer" ${nC ? '' : 'disabled'} style="margin-bottom:14px">Placer ${nC ? 'les ' + nC + ' page' + (nC > 1 ? 's cochées' : ' cochée') : 'les pages cochées'} dans le dossier en V${E.versionPlacement || 1}</button>` : '';
+    <button type="button" class="btn noir" data-pl="placer" ${nC ? '' : 'disabled'} style="margin-bottom:14px">Placer ${nC ? 'les ' + nC + ' page' + (nC > 1 ? 's cochées' : ' cochée') : 'les pages cochées'} dans le dossier en V${E.versionPlacement || 1}</button>
+    <button type="button" class="btn" data-pl="ensemble" ${nC >= 2 && nC <= 4 ? '' : 'disabled'} style="margin:0 0 14px 6px">Placer les cochées ensemble sur une même page</button>
+    ${nC > 4 ? '<p class="tiny">Quatre visuels au maximum sur une même page.</p>' : ''}` : '';
   return `<div class="depot${props.length || pl.length ? '' : ' afaire'}" id="depot"><input type="file" id="fichierInput" multiple accept=".ai,.pdf,image/*" hidden>
       <div class="depotTitre">Glissez ici vos fichiers (.ai, PDF ou images)</div>
       <div class="tiny">Ils apparaissent d'abord ci-dessous : cochez ceux à mettre dans le dossier, choisissez leur version, puis placez-les. Vous pouvez déposer d'autres fichiers à tout moment.</div>
@@ -1008,7 +1016,8 @@ function blocFichiers(){
     ${props.length ? '<div class="plateauTete"><b style="font-size:14px">Pages du dossier</b><span class="tiny">dans l\'ordre du PDF</span></div>' : ''}
     ${props.map((c, i) => {
       const p = E.props[c], ch = fichierChoisi(c);
-      return `<div class="prop" data-c="${esc(c)}"><div class="propTete"><img src="${ch.src}" alt=""><input class="input" value="${esc(p.titre)}" data-p="titre" aria-label="Nom du visuel">
+      const avec = p.groupe ? props.filter(x => x !== c && E.props[x].groupe === p.groupe).map(x => '« ' + E.props[x].titre + ' »') : [];
+      return `<div class="prop" data-c="${esc(c)}">${avec.length ? '<div class="tiny" style="margin-bottom:6px">Sur la même page que ' + avec.join(', ') + ' <button type="button" class="btn petit" data-act="separer">Séparer</button></div>' : ''}<div class="propTete"><img src="${ch.src}" alt=""><input class="input" value="${esc(p.titre)}" data-p="titre" aria-label="Nom du visuel">
         <div style="display:flex;gap:4px"><button class="btn petit" data-act="haut" ${i === 0 ? 'disabled' : ''}>↑</button><button class="btn petit" data-act="bas" ${i === props.length - 1 ? 'disabled' : ''}>↓</button><button class="btn petit" data-act="retirer">✕</button></div></div>
         <div style="margin-top:8px">${groupeRadios('type-' + i, TYPES.map(t => [t, t]), p.type, false)}</div>
         <div class="field" style="margin:8px 0 0;max-width:150px"><label>Version de cette page</label><select class="select" data-p="vv" aria-label="Version de cette page">${Array.from({ length:Math.max(vm, p.vv || 1) }, (_, k) => `<option value="${k + 1}" ${(p.vv || E.version || 1) === k + 1 ? 'selected' : ''}>V${k + 1}</option>`).join('')}</select></div>
@@ -1034,15 +1043,14 @@ const coteVide = () => ({ l:'', h:'', lg:'', em:'', min:false });
 function blocCotes(){
   const props = propositions();
   if(!props.length) return '<p class="tiny">Déposez d\'abord un fichier.</p>';
-  const regroupe = props.length > 1 ? `<div class="prop"><label class="choixTexte" style="margin:0"><input type="checkbox" id="chkRegrouper" ${E.regrouper ? 'checked' : ''}><span><b>Optimiser</b> : plusieurs visuels sur une même page</span></label>
-    ${E.regrouper ? `<div class="field" style="margin:8px 0 0;max-width:200px"><label>Visuels par page</label><select class="select" id="selParPage">${[2, 3, 4].map(n => `<option value="${n}" ${(E.parPage || 2) === n ? 'selected' : ''}>${n}</option>`).join('')}</select></div><p class="tiny">Chaque visuel garde ses cotes sous lui. La disposition (côte à côte ou l'un sous l'autre) suit la forme des visuels.</p>` : ''}</div>` : '';
+  const regroupe = '';
   return regroupe + props.map(c => {
     const p = E.props[c], ai = (fichierChoisi(c) || {}).ai;
     p.cotes = p.cotes.map(versCote);
     const lu = ai ? `<div class="lu ${ai.verif === 'ecart' ? 'alerte' : ''}">Lu dans le fichier : ${esc(resumeAI(ai)) || 'aucune dimension'}</div><button class="btn petit" data-act="coteAI" style="margin:4px 0">Reprendre les cotes du fichier</button>` : '';
     const mes = (i, k, cle, lib, unite, ph) => `<label class="mes"><span>${lib}</span><span class="saisieU"><input class="input${vide(k[cle]) ? ' afaire' : ''}" inputmode="decimal" placeholder="${ph}" value="${esc(k[cle])}" data-ck="${cle}" data-i="${i}"><em>${unite}</em></span></label>`;
     const pos = p.posCotes || 'auto', idx = props.indexOf(c);
-    const posUi = !E.regrouper ? `<div style="margin-top:8px"><div class="tiny" style="margin-bottom:3px">Position des cotes</div>${groupeRadios('pos-' + idx, [['auto', 'Automatique'], ['dessous', 'Dessous'], ['gauche', 'À gauche'], ['droite', 'À droite']], pos, false)}</div>` : '';
+    const posUi = !p.groupe ? `<div style="margin-top:8px"><div class="tiny" style="margin-bottom:3px">Position des cotes</div>${groupeRadios('pos-' + idx, [['auto', 'Automatique'], ['dessous', 'Dessous'], ['gauche', 'À gauche'], ['droite', 'À droite']], pos, false)}</div>` : '';
     return `<div class="prop" data-c="${esc(c)}"><b style="font-size:13px">${esc(p.titre || 'Visuel')}</b>${lu}
       <div class="field" style="margin:6px 0 0"><label>Dimensions du panneau</label><input class="input${vide(p.panneau) ? ' afaire' : ''}" value="${esc(p.panneau || '')}" placeholder="612 cm × 149 cm" data-p="panneau"></div>
       ${p.cotes.map((k, i) => `<div class="coteBloc"><div class="coteTete"><input class="input${vide(k.l) ? ' afaire' : ''}" placeholder="Texte concerné (ex. ALRÉ)" value="${esc(k.l)}" data-ck="l" data-i="${i}"><button class="btn petit" data-act="coteX" data-i="${i}" title="Retirer cette cote">✕</button></div>
@@ -1127,8 +1135,6 @@ saisie.addEventListener('change', e => {
   if(t.id === 'photoInput'){ ajouterFichiers(t.files, 'photo'); t.value = ''; return; }
   if(t.dataset.plc){ const it = E.plateau.find(x => x.id === t.dataset.plc); if(it){ it.coche = t.checked; dessiner(); } return; }
   if(t.name === 'vplace'){ E.versionPlacement = parseInt(t.value, 10) || 1; dessiner(); return; }
-  if(t.id === 'chkRegrouper'){ E.regrouper = t.checked; dessiner(); return; }
-  if(t.id === 'selParPage'){ E.parPage = parseInt(t.value, 10) || 2; dessiner(); return; }
   if(t.name && t.name.startsWith('pos-')){ const p = propDe(t); if(p){ p.posCotes = t.value; dessiner(); } return; }
   if(t.name === 'etape'){ E.etape = t.value; E.etapeChoisie = true; E.texteId = ''; E.texteLibre = null; E.nuancier = null; dessiner(); return; }
   if(t.name === 'devis'){ E.devis = t.value; E.texteId = ''; E.texteLibre = null; dessiner(); return; }
@@ -1165,7 +1171,8 @@ saisie.addEventListener('click', async e => {
     else if(m === 'rien') E.plateau.forEach(x => { x.coche = false; });
     else if(m === 'vplus') E.versionPlacement = versMax() + 1;
     else if(m === 'plX') E.plateau = E.plateau.filter(x => x.id !== b.dataset.id);
-    else if(m === 'placer'){ placerCoches(); return; }
+    else if(m === 'placer'){ placerCoches(false); return; }
+    else if(m === 'ensemble'){ placerCoches(true); return; }
     dessiner(); return;
   }
   if(b.id === 'bPhoto'){ document.getElementById('photoInput').click(); return; }
@@ -1196,6 +1203,7 @@ saisie.addEventListener('click', async e => {
   const p = E.props[c];
   if(a === 'haut' || a === 'bas'){ const i = E.ordre.indexOf(c), j = i + (a === 'haut' ? -1 : 1); if(j >= 0 && j < E.ordre.length){ [E.ordre[i], E.ordre[j]] = [E.ordre[j], E.ordre[i]]; } }
   else if(a === 'retirer'){ const fx = E.fichiers.find(f => f.cle === c); E.plateau.forEach(it => { if(it.cles.includes(c)){ it.cles = it.cles.filter(x => x !== c); if(!it.src && fx) it.src = fx.src; } }); E.fichiers = E.fichiers.filter(f => f.cle !== c); E.ordre = E.ordre.filter(x => x !== c); delete E.props[c]; }
+  else if(a === 'separer'){ delete p.groupe; }
   else if(a === 'coteAI'){ const ai = (fichierChoisi(c) || {}).ai; if(ai){ p.cotes = ai.cotes.map(k => versCote({ ...k })); if(ai.panneau) p.panneau = ai.panneau[0] + ' cm × ' + ai.panneau[1] + ' cm'; } }
   else if(a === 'coteAdd'){ p.cotes = p.cotes.map(versCote); p.cotes.push(coteVide()); }
   else if(a === 'coteX'){ p.cotes.splice(+b.dataset.i, 1); }
