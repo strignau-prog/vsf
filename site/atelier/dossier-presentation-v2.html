@@ -995,8 +995,8 @@ function resteFaire(id){
     if(!E.etapeChoisie) r.push("choisir l'étape du dossier");
   } else if(id === 'fichiers'){
     const n = E.plateau.filter(x => x.coche).length;
-    if(!propositions().length) r.push(n ? (n > 1 ? 'placer les ' + n + ' fichiers cochés' : 'placer le fichier coché') : 'déposer au moins un fichier');
-    else if(n) r.push(pluriel(n, 'fichier coché', 'fichiers cochés') + ' à placer');
+    if(!propositions().length) r.push(n ? (n > 1 ? 'placer les ' + n + ' images cochées' : "placer l'image cochée") : 'déposer au moins un fichier');
+    else if(n) r.push(pluriel(n, 'image cochée', 'images cochées') + ' à placer');
   } else if(id === 'cotes'){
     if(ETAPES[E.etape].validation){
       const m = propositions().filter(c => { const p = E.props[c]; return vide(p.panneau) && !p.cotes.length && vide(p.description); }).length;
@@ -1101,14 +1101,14 @@ function blocFichiers(){
         <span class="carteEtat">${place ? 'placé ✓ en V' + vp : (it.faible ? '<span class="alerteTxt">aperçu flou</span>' : (it.w && it.h ? (it.w >= it.h ? 'paysage' : 'portrait') : ''))}</span></label>
       <button type="button" class="carteX" data-pl="plX" data-id="${it.id}" title="Retirer ce fichier du plateau" aria-label="Retirer du plateau">✕</button></div>`;
   };
-  const plateau = pl.length ? `<div class="plateauTete"><b style="font-size:14px">À placer dans le dossier</b><span class="tiny">${nC} sur ${pl.length} coché${nC > 1 ? 's' : ''}</span>
+  const plateau = pl.length ? `<div class="plateauTete"><b style="font-size:14px">À placer dans le dossier</b><span class="tiny">${nC} sur ${pl.length} cochée${nC > 1 ? 's' : ''}</span>
       <button type="button" class="btn petit" data-pl="tout">Tout cocher</button><button type="button" class="btn petit" data-pl="rien">Tout décocher</button></div>
     <div class="plateau">${pl.map(carte).join('')}</div>
-    <div class="placement"><span class="tiny" style="font-size:13px">Les pages cochées sont en :</span>
+    <div class="placement"><span class="tiny" style="font-size:13px">Version des images cochées :</span>
       ${groupeRadios('vplace', Array.from({ length:vm }, (_, k) => [String(k + 1), 'V' + (k + 1)]), String(E.versionPlacement || 1), false)}
       <button type="button" class="btn petit" data-pl="vplus" title="Ajouter une version">＋</button></div>
-    <button type="button" class="btn${nC ? ' afaire' : ''}" data-pl="placer" ${nC ? '' : 'disabled'} style="margin-bottom:14px">Placer ${nC > 1 ? 'les ' + nC + ' pages cochées' : nC === 1 ? 'la page cochée' : 'les pages cochées'} (V${E.versionPlacement || 1})</button>
-    <button type="button" class="btn" data-pl="ensemble" ${nC >= 2 && nC <= 4 ? '' : 'disabled'} style="margin:0 0 14px 6px">Les placer ensemble sur une même page</button>
+    <button type="button" class="btn${nC ? ' afaire' : ''}" data-pl="placer" ${nC ? '' : 'disabled'} style="margin-bottom:14px">Placer ${nC > 1 ? 'les ' + nC + ' images cochées' : nC === 1 ? "l'image cochée" : 'les images cochées'} (V${E.versionPlacement || 1})</button>
+    <button type="button" class="btn${nC >= 2 && nC <= 4 ? ' afaire' : ''}" data-pl="ensemble" ${nC >= 2 && nC <= 4 ? '' : 'disabled'} style="margin:0 0 14px 6px">Les placer ensemble sur une même page</button>
     ${nC > 4 ? '<p class="tiny">Quatre visuels au maximum sur une même page.</p>' : ''}` : '';
   const vide0 = !props.length && !pl.length;
   return `${vide0 ? `<div class="depot afaire" id="depot"><input type="file" id="fichierInput" multiple accept=".ai,.pdf,image/*" hidden>
