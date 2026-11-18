@@ -64,6 +64,23 @@
   .afaire{background:#fdecea!important;border-color:#f0b9b3!important}
   .btn.afaire:hover{border-color:#c2493b!important}
   .depot.afaire{border-color:#e7a198}
+  .plateauTete{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:4px 0}
+  .plateauTete .tiny{flex:1;min-width:90px}
+  .plateau{display:flex;flex-wrap:wrap;gap:20px 14px;padding:16px 12px 12px;margin:6px 0 10px;background:linear-gradient(#f7f4ed,#eee9dd);border-radius:14px}
+  .carteBloc{position:relative;width:calc(50% - 7px);min-width:130px;flex:1 1 130px;max-width:calc(50% - 7px)}
+  .carte{display:flex;flex-direction:column;gap:7px;cursor:pointer;position:relative}
+  .carte input{position:absolute;top:7px;left:7px;z-index:2;width:20px;height:20px;accent-color:#111;cursor:pointer}
+  .vignette{background:#fff;border-radius:6px;overflow:hidden;line-height:0;box-shadow:0 12px 18px -8px rgba(0,0,0,.38),0 2px 5px rgba(0,0,0,.14);transform:translateY(-3px) rotate(var(--incl,0deg));transition:transform .18s ease,box-shadow .18s ease}
+  .vignette img{width:100%;height:auto;max-height:170px;object-fit:contain;background:#fff}
+  .carte:hover .vignette,.carte:focus-within .vignette{transform:translateY(-8px) rotate(0deg);box-shadow:0 18px 24px -8px rgba(0,0,0,.4),0 3px 6px rgba(0,0,0,.14)}
+  .carte.coche .vignette{outline:2px solid #111}
+  .carte.placee .vignette{opacity:.5;filter:grayscale(.45)}
+  .carteNom{font-size:12px;line-height:1.3;word-break:break-word}
+  .carteEtat{font-size:11px;color:var(--muted)}
+  .carteX{position:absolute;top:4px;right:4px;z-index:3;width:22px;height:22px;border-radius:50%;border:0;background:rgba(255,255,255,.9);cursor:pointer;line-height:1;font-size:12px}
+  .placement{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 14px}
+  .placement .groupe{margin:0}
+  @media (prefers-reduced-motion:reduce){.vignette{transition:none}}
   .alerteTxt{color:var(--accent)}
   .enteteSaisie{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
   .compte{font-size:12px;color:var(--muted)}
@@ -290,6 +307,8 @@ function etatVierge(){
     fichiers:[],      // { id, nom, cle, v, src }
     props:{},         // cle → { choix, titre, type, cotes:[{l,v}], description }
     ordre:[],         // clés dans l'ordre d'affichage
+    plateau:[],       // fichiers déposés, pas encore placés : { id, nom, cle, titre, vv, src, mini, ai, faible, w, h, coche, cles:[pages placées] }
+    versionPlacement:1, versionManuelle:false,
     photo:'', texteId:'', texteLibre:null, signature:'', atelier:{...ATELIER_DEFAUT}, teintes:[], nuancier:null, regrouper:false, parPage:2 };
 }
 let E = etatVierge();
@@ -517,7 +536,7 @@ function resumeAI(a){
 
 async function ajouterFichiers(liste, cible){
   const fs = Array.from(liste || []).sort((a, b) => a.name.localeCompare(b.name, 'fr', { numeric:true, sensitivity:'base' }));
-  const refus = [], avert = [];
+  const refus = [], avert = [], nouveaux = [];
   for(const f of fs){
     statut('Lecture de « ' + f.name + ' »…');
     try{
@@ -537,30 +556,65 @@ async function ajouterFichiers(liste, cible){
         aiData.alertes.forEach(a => avert.push('« ' + f.name + ' » : ' + a));
       } else pages = pdf ? await pagesPdf(f) : [await imageReduite(f)];
       const dims = await Promise.all(pages.map(src => charger(src).then(im => [im.naturalWidth, im.naturalHeight]).catch(() => [0, 0])));
-      pages.forEach((src, i) => {
-        const cv = cleEtVersion(f.name), suffixe = pages.length > 1 ? ' — page ' + (i + 1) : '';
+      for(let i = 0; i < pages.length; i++){
+        const src = pages[i], cv = cleEtVersion(f.name), suffixe = pages.length > 1 ? ' — page ' + (i + 1) : '';
         const cle = cv.cle + (pages.length > 1 ? '#p' + (i + 1) : '');
-        // Un .ai et son PDF/PNG (même nom, même version) forment un seul visuel : l'image nette remplace la vignette, les données du .ai restent.
-        const exist = E.fichiers.find(x => x.cle === cle && x.v === cv.v);
-        if(exist){
-          if(aiData) exist.ai = aiData;
-          if(!faible && (exist.faible || !aiData)){ exist.src = src; exist.faible = false; exist.w = dims[i][0]; exist.h = dims[i][1]; }
-        } else E.fichiers.push({ id:uid(), nom:f.name + suffixe, cle, v:cv.v, src, ai:aiData, faible, w:dims[i][0], h:dims[i][1] });
-        if(!E.props[cle]){
-          const croquis = /croquis/i.test(f.name);
-          E.props[cle] = { choix:'', titre: cv.titre + suffixe, vv: cv.vv, type: croquis ? 'Croquis' : (ETAPES[E.etape] || ETAPES.CREA).typeDefaut, cotes:[], description:'', panneau:'' };
-          E.ordre.push(cle);
+        const it = E.plateau.find(x => x.cle === cle);
+        if(it){
+          // Un .ai et son PDF/PNG (même nom) forment un seul visuel : l'image nette remplace la vignette, les données du .ai restent.
+          if(aiData){ it.ai = aiData; E.fichiers.forEach(x => { if(it.cles.includes(x.cle)) x.ai = aiData; }); }
+          if(!faible && (it.faible || !aiData)){
+            it.faible = false; it.w = dims[i][0]; it.h = dims[i][1]; it.mini = await miniature(src);
+            if(it.src) it.src = src;
+            E.fichiers.forEach(x => { if(it.cles.includes(x.cle)){ x.src = src; x.faible = false; x.w = it.w; x.h = it.h; } });
+          }
+        } else {
+          const nouveau = { id:uid(), nom:f.name + suffixe, cle, titre:cv.titre + suffixe, vv:cv.vv, src, mini:await miniature(src), ai:aiData, faible, w:dims[i][0], h:dims[i][1], croquis:/croquis/i.test(f.name), coche:true, cles:[] };
+          E.plateau.push(nouveau); nouveaux.push(nouveau);
         }
-        const pr = E.props[cle];
-        if(aiData){   // cotes et dimensions du panneau lues dans le fichier, seulement si rien n'est saisi
-          if(!pr.cotes.length && aiData.cotes.length) pr.cotes = aiData.cotes.map(c => versCote({ ...c }));
-          if(!pr.panneau && aiData.panneau) pr.panneau = aiData.panneau[0] + ' cm × ' + aiData.panneau[1] + ' cm';
-        }
-      });
+      }
     }catch(e){ refus.push(f.name + ' (' + (e.message || 'illisible') + ')'); }
   }
+  { const vs = nouveaux.map(x => x.vv).filter(Boolean); if(vs.length) E.versionPlacement = Math.max(...vs); }   // « _V2 » dans le nom : version préchoisie
   dessiner();
   if(refus.length || avert.length) statut([refus.length ? 'Non lus : ' + refus.join(' ; ') : '', ...avert].filter(Boolean).join(' — '), true);
+}
+
+/* ------------------ Plateau de dépôt : cocher, choisir la version, placer ------------------ */
+async function miniature(src){
+  try{
+    const im = await charger(src), k = Math.min(1, 420 / Math.max(1, im.naturalWidth));
+    const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(im.naturalWidth * k)); c.height = Math.max(1, Math.round(im.naturalHeight * k));
+    const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(im, 0, 0, c.width, c.height);
+    return c.toDataURL('image/jpeg', 0.82);
+  }catch(e){ return src; }
+}
+const clePlacee = it => it.cles.filter(c => E.props[c]).slice(-1)[0];
+const estPlace = it => !!clePlacee(it);
+const versMax = () => Math.max(3, E.versionPlacement || 1, ...E.ordre.map(c => (E.props[c] || {}).vv || 0));
+// La couverture prend la version la plus haute des pages, sauf si la version du dossier a été saisie à la main.
+function majVersionDossier(){
+  if(E.versionManuelle) return;
+  const vs = propositions().map(c => E.props[c].vv).filter(Boolean);
+  if(vs.length) E.version = Math.max(...vs);
+}
+function placerCoches(){
+  const v = E.versionPlacement || 1;
+  E.plateau.filter(it => it.coche).forEach(it => {
+    const src = it.src || ((E.fichiers.find(f => it.cles.includes(f.cle)) || {}).src);
+    if(!src) return;
+    let cle = it.cle; if(E.props[cle]){ let n = 2; while(E.props[it.cle + '~' + n]) n++; cle = it.cle + '~' + n; }
+    E.fichiers.push({ id:uid(), nom:it.nom, cle, v:1, src, ai:it.ai, faible:it.faible, w:it.w, h:it.h });
+    const pr = E.props[cle] = { choix:'', titre:it.titre, vv:v, type: it.croquis ? 'Croquis' : (ETAPES[E.etape] || ETAPES.CREA).typeDefaut, cotes:[], description:'', panneau:'' };
+    E.ordre.push(cle); it.cles.push(cle); it.src = null; it.coche = false;
+    if(it.ai){   // cotes et dimensions du panneau lues dans le fichier
+      if(it.ai.cotes.length) pr.cotes = it.ai.cotes.map(c => versCote({ ...c }));
+      if(it.ai.panneau) pr.panneau = it.ai.panneau[0] + ' cm × ' + it.ai.panneau[1] + ' cm';
+    }
+  });
+  majVersionDossier();
+  dessiner();
+  ouverts.fichiers = true; dessiner();   // l'étape passe à « faite » : on la garde ouverte pour placer d'autres fichiers
 }
 function versionsDe(cle){ return E.fichiers.filter(f => f.cle === cle).sort((a, b) => a.v - b.v); }
 function fichierChoisi(cle){
@@ -852,7 +906,7 @@ function etatEtapes(){
   return [
     { id:'dossier',  titre:'Numéro de dossier',      ok:!vide(E.numero),                 requis:true },
     { id:'type',     titre:'Type de dossier et texte',        ok:!!E.etapeChoisie,                requis:true },
-    { id:'fichiers', titre:'Fichiers Illustrator',   ok:props.length > 0,                requis:true },
+    { id:'fichiers', titre:'Fichiers',               ok:props.length > 0,                requis:true },
     { id:'client',   titre:'Client',                 ok:!vide(E.client) && !vide(E.ville), requis:true },
     { id:'cotes',    titre:'Cotes et description',   ok:cotesOk,                         requis:bat },
     { id:'teintes',  titre:'Teintes et nuancier',    ok:teintesOk,                       requis:nuancierActif() && E.teintes.length > 0 },
@@ -927,18 +981,37 @@ function dessiner(){
   }
 }
 function blocFichiers(){
-  const props = propositions();
-  return `<div class="depot${props.length ? '' : ' afaire'}" id="depot"><input type="file" id="fichierInput" multiple accept=".ai,.pdf,image/*" hidden>
-      <div class="depotTitre">Glissez ici vos fichiers Illustrator (.ai)</div>
-      <div class="tiny">Chaque fichier ajoute sa page au dossier. Vous pouvez en déposer plusieurs (V1, V2, V3…), en une fois ou au fur et à mesure.</div>
-      <div class="consigneAi"><b>Dans Illustrator, avant d'enregistrer :</b> cochez <b>« Créer un fichier compatible PDF »</b> (Fichier &gt; Enregistrer sous, puis dans les options du format .ai). Sans cela, le visuel est une petite vignette floue dans le PDF.</div>
+  const props = propositions(), pl = E.plateau, nC = pl.filter(x => x.coche).length, vm = versMax();
+  const carte = (it, i) => {
+    const place = estPlace(it), cp = clePlacee(it), vp = cp ? (E.props[cp].vv || 1) : 0;
+    return `<div class="carteBloc" style="--incl:${((i % 3) - 1) * 1.4}deg"><label class="carte${it.coche ? ' coche' : ''}${place ? ' placee' : ''}">
+        <input type="checkbox" data-plc="${it.id}" ${it.coche ? 'checked' : ''} aria-label="Placer « ${esc(it.nom)} » dans le dossier">
+        <span class="vignette"><img src="${it.mini || it.src || ''}" alt=""></span>
+        <span class="carteNom">${esc(it.nom)}</span>
+        <span class="carteEtat">${place ? 'placé ✓ en V' + vp : (it.faible ? '<span class="alerteTxt">aperçu flou</span>' : (it.w && it.h ? (it.w >= it.h ? 'paysage' : 'portrait') : ''))}</span></label>
+      <button type="button" class="carteX" data-pl="plX" data-id="${it.id}" title="Retirer ce fichier du plateau" aria-label="Retirer du plateau">✕</button></div>`;
+  };
+  const plateau = pl.length ? `<div class="plateauTete"><b style="font-size:14px">À placer dans le dossier</b><span class="tiny">${nC} sur ${pl.length} coché${nC > 1 ? 's' : ''}</span>
+      <button type="button" class="btn petit" data-pl="tout">Tout cocher</button><button type="button" class="btn petit" data-pl="rien">Tout décocher</button></div>
+    <div class="plateau">${pl.map(carte).join('')}</div>
+    <div class="placement"><span class="tiny" style="font-size:13px">Les pages cochées sont en :</span>
+      ${groupeRadios('vplace', Array.from({ length:vm }, (_, k) => [String(k + 1), 'V' + (k + 1)]), String(E.versionPlacement || 1), false)}
+      <button type="button" class="btn petit" data-pl="vplus" title="Ajouter une version">＋</button></div>
+    <button type="button" class="btn noir" data-pl="placer" ${nC ? '' : 'disabled'} style="margin-bottom:14px">Placer ${nC ? 'les ' + nC + ' page' + (nC > 1 ? 's cochées' : ' cochée') : 'les pages cochées'} dans le dossier en V${E.versionPlacement || 1}</button>` : '';
+  return `<div class="depot${props.length || pl.length ? '' : ' afaire'}" id="depot"><input type="file" id="fichierInput" multiple accept=".ai,.pdf,image/*" hidden>
+      <div class="depotTitre">Glissez ici vos fichiers (.ai, PDF ou images)</div>
+      <div class="tiny">Ils apparaissent d'abord ci-dessous : cochez ceux à mettre dans le dossier, choisissez leur version, puis placez-les. Vous pouvez déposer d'autres fichiers à tout moment.</div>
+      <div class="consigneAi"><b>Pour un fichier Illustrator (.ai) :</b> cochez <b>« Créer un fichier compatible PDF »</b> (Fichier &gt; Enregistrer sous, puis dans les options du format .ai). Sans cela, le visuel est une petite vignette floue dans le PDF.</div>
       <button class="btn petit" id="bChoisir" style="margin-top:8px">Choisir des fichiers</button>
       <div class="statut tiny" id="statutDepot"></div></div>
+    ${plateau}
+    ${props.length ? '<div class="plateauTete"><b style="font-size:14px">Pages du dossier</b><span class="tiny">dans l\'ordre du PDF</span></div>' : ''}
     ${props.map((c, i) => {
       const p = E.props[c], ch = fichierChoisi(c);
       return `<div class="prop" data-c="${esc(c)}"><div class="propTete"><img src="${ch.src}" alt=""><input class="input" value="${esc(p.titre)}" data-p="titre" aria-label="Nom du visuel">
         <div style="display:flex;gap:4px"><button class="btn petit" data-act="haut" ${i === 0 ? 'disabled' : ''}>↑</button><button class="btn petit" data-act="bas" ${i === props.length - 1 ? 'disabled' : ''}>↓</button><button class="btn petit" data-act="retirer">✕</button></div></div>
         <div style="margin-top:8px">${groupeRadios('type-' + i, TYPES.map(t => [t, t]), p.type, false)}</div>
+        <div class="field" style="margin:8px 0 0;max-width:150px"><label>Version de cette page</label><select class="select" data-p="vv" aria-label="Version de cette page">${Array.from({ length:Math.max(vm, p.vv || 1) }, (_, k) => `<option value="${k + 1}" ${(p.vv || E.version || 1) === k + 1 ? 'selected' : ''}>V${k + 1}</option>`).join('')}</select></div>
         ${ch.faible ? '<div class="tiny alerteTxt" style="margin-top:6px">Aperçu basse définition : dans Illustrator, enregistrez de nouveau avec « Créer un fichier compatible PDF ».</div>' : ''}</div>`;
     }).join('')}
 `;
@@ -1052,6 +1125,8 @@ saisie.addEventListener('change', e => {
   const t = e.target;
   if(t.id === 'fichierInput'){ ajouterFichiers(t.files, 'propositions'); t.value = ''; return; }
   if(t.id === 'photoInput'){ ajouterFichiers(t.files, 'photo'); t.value = ''; return; }
+  if(t.dataset.plc){ const it = E.plateau.find(x => x.id === t.dataset.plc); if(it){ it.coche = t.checked; dessiner(); } return; }
+  if(t.name === 'vplace'){ E.versionPlacement = parseInt(t.value, 10) || 1; dessiner(); return; }
   if(t.id === 'chkRegrouper'){ E.regrouper = t.checked; dessiner(); return; }
   if(t.id === 'selParPage'){ E.parPage = parseInt(t.value, 10) || 2; dessiner(); return; }
   if(t.name && t.name.startsWith('pos-')){ const p = propDe(t); if(p){ p.posCotes = t.value; dessiner(); } return; }
@@ -1062,6 +1137,7 @@ saisie.addEventListener('change', e => {
     const k = t.dataset.k;
     E[k] = (k === 'version') ? (parseInt(t.value, 10) || 1) : t.value;
     if(k === 'date') E.dateManuelle = true;
+    if(k === 'version') E.versionManuelle = true;
     dessiner();
     if(k === 'numero') chercherTrello();
     return;
@@ -1071,7 +1147,7 @@ saisie.addEventListener('change', e => {
   if(t.id === 'calcRend' || t.id === 'calcCouches' || t.id === 'calcMarge'){ E.calc = calcReglages(); const v = nombre(t.value); const cle = t.id === 'calcRend' ? 'rendement' : t.id === 'calcCouches' ? 'couches' : 'marge'; if(isFinite(v) && v >= 0 && (cle !== 'rendement' || v > 0)) E.calc[cle] = v; dessiner(); return; }
   if(t.id === 'chkNuancier'){ E.nuancier = t.checked; dessiner(); return; }
   if(t.dataset.tk){ const dt = t.closest('[data-t]'), te = dt && E.teintes.find(x => x.id === dt.dataset.t); if(te){ te.ouvert = (t.dataset.tk === 'surface') ? te.ouvert : true; te[t.dataset.tk] = (t.type === 'checkbox') ? t.checked : t.value; if(t.dataset.tk === 'reference'){ memoriser(te); const mr = /RAL\s*(\d{4})/i.exec(te.reference), rr = mr && ralCodes().find(r => r.code === mr[1]); if(rr && !te.cmyk) te.hex = rr.hex; } dessiner(); } return; }
-  if(t.dataset.p){ const p = propDe(t); if(p){ p[t.dataset.p] = t.value; dessiner(); } return; }
+  if(t.dataset.p){ const p = propDe(t); if(p){ if(t.dataset.p === 'vv'){ p.vv = parseInt(t.value, 10) || 1; majVersionDossier(); } else p[t.dataset.p] = t.value; dessiner(); } return; }
   if(t.dataset.ck){ const p = propDe(t); if(p){ p.cotes = p.cotes.map(versCote); p.cotes[+t.dataset.i][t.dataset.ck] = (t.type === 'checkbox') ? t.checked : t.value; dessiner(); } }
 });
 saisie.addEventListener('input', e => {
@@ -1083,6 +1159,15 @@ saisie.addEventListener('click', async e => {
   const b = e.target.closest('button'); if(!b) return;
   if(b.id === 'bDeco'){ try{ await sb.auth.signOut(); }catch(x){ /* rien */ } location.reload(); return; }
   if(b.id === 'bChoisir'){ document.getElementById('fichierInput').click(); return; }
+  if(b.dataset.pl){
+    const m = b.dataset.pl;
+    if(m === 'tout') E.plateau.forEach(x => { x.coche = !estPlace(x); });
+    else if(m === 'rien') E.plateau.forEach(x => { x.coche = false; });
+    else if(m === 'vplus') E.versionPlacement = versMax() + 1;
+    else if(m === 'plX') E.plateau = E.plateau.filter(x => x.id !== b.dataset.id);
+    else if(m === 'placer'){ placerCoches(); return; }
+    dessiner(); return;
+  }
   if(b.id === 'bPhoto'){ document.getElementById('photoInput').click(); return; }
   if(b.id === 'bPhotoOff'){ E.photo = ''; dessiner(); return; }
   if(b.id === 'bNouveau'){ if(confirm('Effacer ce dossier et en commencer un nouveau ?')){ E = etatVierge(); ouverts = {}; dernierCourant = ''; dessiner(); } return; }
@@ -1110,7 +1195,7 @@ saisie.addEventListener('click', async e => {
   if(!a || !c) return;
   const p = E.props[c];
   if(a === 'haut' || a === 'bas'){ const i = E.ordre.indexOf(c), j = i + (a === 'haut' ? -1 : 1); if(j >= 0 && j < E.ordre.length){ [E.ordre[i], E.ordre[j]] = [E.ordre[j], E.ordre[i]]; } }
-  else if(a === 'retirer'){ E.fichiers = E.fichiers.filter(f => f.cle !== c); E.ordre = E.ordre.filter(x => x !== c); delete E.props[c]; }
+  else if(a === 'retirer'){ const fx = E.fichiers.find(f => f.cle === c); E.plateau.forEach(it => { if(it.cles.includes(c)){ it.cles = it.cles.filter(x => x !== c); if(!it.src && fx) it.src = fx.src; } }); E.fichiers = E.fichiers.filter(f => f.cle !== c); E.ordre = E.ordre.filter(x => x !== c); delete E.props[c]; }
   else if(a === 'coteAI'){ const ai = (fichierChoisi(c) || {}).ai; if(ai){ p.cotes = ai.cotes.map(k => versCote({ ...k })); if(ai.panneau) p.panneau = ai.panneau[0] + ' cm × ' + ai.panneau[1] + ' cm'; } }
   else if(a === 'coteAdd'){ p.cotes = p.cotes.map(versCote); p.cotes.push(coteVide()); }
   else if(a === 'coteX'){ p.cotes.splice(+b.dataset.i, 1); }
