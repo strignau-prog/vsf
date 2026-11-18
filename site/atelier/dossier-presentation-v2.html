@@ -1033,11 +1033,8 @@ function resteFaire(id){
   return r;
 }
 function enteteEtape(st){
-  if(st.final) return '';
-  const r = resteFaire(st.id);
-  const alertes = st.id === 'cotes' && ALERTES.length ? '<div class="reste" style="background:#fff4e0;color:#7a4a0a"><b>Mise en page :</b> ' + ALERTES.map(esc).join(' · ') + '</div>' : '';
-  if(r.length) return '<div class="reste"><b>À faire :</b> ' + r.map(esc).join(' · ') + '</div>' + alertes;
-  return (st.requis && st.ok ? '<div class="reste ok">✓ Tout est bon ici</div>' : '') + alertes;
+  // plus de liste « À faire » : les cases à compléter sont déjà en rouge pâle. Seules les remarques de mise en page restent.
+  return st.id === 'cotes' && ALERTES.length ? '<div class="reste" style="background:#fff4e0;color:#7a4a0a"><b>Mise en page :</b> ' + ALERTES.map(esc).join(' · ') + '</div>' : '';
 }
 function pieddEtape(st, suiv){
   return suiv ? `<div class="suite"><button type="button" class="btn petit${st.ok ? ' noir' : ''}" data-next="${suiv.id}" data-from="${st.id}">Suivant : ${esc(suiv.titre)} →</button></div>` : '';
