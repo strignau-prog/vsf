@@ -143,18 +143,18 @@
   .tp .tpRouge li{margin-bottom:.4em}
   .tp .tpVisu{position:absolute}
   .tp .tpVisu img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center}
-  .tp .tpLegende{position:absolute;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;line-height:1.3;font-family:'Source Code Pro','Space Mono',monospace}
+  .tp .tpLegende{position:absolute;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;overflow:hidden;overflow-wrap:anywhere;text-align:center;line-height:1.3;font-family:'Source Code Pro','Space Mono',monospace}
   .tp .tpLegende b{text-transform:uppercase}
   .tp .tpLegende i{font-size:.82em}
   .consigneAi{margin:8px auto 0;max-width:330px;font-size:12px;line-height:1.45;text-align:left;background:#fff;border:1px solid #e7a198;border-radius:8px;padding:8px 10px;color:#111}
   /* Ephemera Egyptian : police sous licence « bureau » (pas de licence web) — jamais servie par le site, utilisée seulement si elle est installée sur l'ordinateur */
   @font-face{font-family:'Ephemera Egyptian';src:local('Ephemera Egyptian Condensed'),local('Ephemera Egyptian CondensedRegular'),local('EphemeraEgyptian-CondensedRegular');font-weight:400}
-  .coteBloc{border:1px solid var(--line);border-radius:10px;padding:8px;margin-top:8px;background:#fff}
-  .coteTete{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;margin-bottom:8px}
+  .coteBloc{border:1px solid var(--line);border-radius:10px;padding:6px 8px;margin-top:6px;background:#fff}
+  .coteTete{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;margin-bottom:6px}
   .mesures{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-  .mes{display:flex;flex-direction:column;gap:2px;font-size:11px;color:var(--muted);margin:0}
-  .saisieU{display:flex;align-items:baseline;gap:4px}
-  .saisieU .input{font-size:20px;font-weight:700;padding:6px 8px;min-width:0}
+  .mes{display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--muted);margin:0}
+  .saisieU{display:flex;align-items:center;gap:4px}
+  .saisieU .input{min-width:0}
   .saisieU em{font-style:normal;font-size:12px;color:var(--muted)}
   .min{display:flex;gap:6px;align-items:center;font-size:12px;color:var(--muted);margin-top:6px}
   .palette .ralGrille{display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:6px;margin:8px 0}
@@ -166,12 +166,11 @@
   .teinteNom{flex:1;min-width:0;background:none;border:0;padding:0;text-align:left;cursor:pointer;font:inherit;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .recap .reglages{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0}
   .recap .reglages label{display:flex;flex-direction:column;gap:2px;font-size:11px;color:var(--muted)}
-  .recap .saisieU .input{font-size:16px;font-weight:600;padding:5px 7px}
   .tw2{overflow-x:auto}
   .recapT{width:100%;border-collapse:collapse;font-size:12px}
   .recapT th{text-align:left;font-weight:600;color:var(--muted);padding:4px 4px;border-bottom:1px solid var(--line)}
   .recapT td{padding:5px 4px;border-bottom:1px solid var(--line);vertical-align:middle}
-  .recapT .mini{width:62px;font-size:13px;padding:4px 6px}
+  .recapT .mini{width:62px}
   .recapT td.cmd{font-weight:700;color:#8a4a0a}
   .lu{font-size:12px;color:var(--muted);margin:4px 0}
   .lu.alerte{color:var(--accent);font-weight:600}
@@ -947,15 +946,10 @@ function blocTeintes(){
     ${blocRecapLitres()}`;
 }
 function listePages(){
+  ALERTES = [];
   const e = ETAPES[E.etape], out = [['Couverture', pageCouverture()], ['Introduction', pageIntro()]];
   const props = propositions();
-  for(let i = 0; i < props.length; ){
-    const g = E.props[props[i]].groupe; let j = i + 1;
-    while(g && j < props.length && j - i < 4 && E.props[props[j]].groupe === g) j++;
-    if(j - i > 1) out.push(['Visuels', pageGroupe(props.slice(i, j))]);
-    else out.push([E.props[props[i]].titre || 'Proposition', pageProposition(props[i], i)]);
-    i = j;
-  }
+  decoupage().forEach(ch => out.push(ch.length > 1 ? ['Visuels', pageGroupe(ch)] : [E.props[ch[0]].titre || 'Proposition', pageProposition(ch[0])]));
   if(nuancierActif() && teintesNuancier().length) out.push(['Nuancier', pageNuancier()]);
   if(e.autorisation) out.push(["Demande d'autorisation", pageAutorisation()]);
   out.push(['Contact', pageContact()]);
@@ -1011,8 +1005,9 @@ function resteFaire(id){
 function enteteEtape(st){
   if(st.final) return '';
   const r = resteFaire(st.id);
-  if(r.length) return '<div class="reste"><b>À faire :</b> ' + r.map(esc).join(' · ') + '</div>';
-  return st.requis && st.ok ? '<div class="reste ok">✓ Tout est bon ici</div>' : '';
+  const alertes = st.id === 'cotes' && ALERTES.length ? '<div class="reste" style="background:#fff4e0;color:#7a4a0a"><b>Mise en page :</b> ' + ALERTES.map(esc).join(' · ') + '</div>' : '';
+  if(r.length) return '<div class="reste"><b>À faire :</b> ' + r.map(esc).join(' · ') + '</div>' + alertes;
+  return (st.requis && st.ok ? '<div class="reste ok">✓ Tout est bon ici</div>' : '') + alertes;
 }
 function pieddEtape(st, suiv){
   return suiv ? `<div class="suite"><button type="button" class="btn petit${st.ok ? ' noir' : ''}" data-next="${suiv.id}" data-from="${st.id}">Suivant : ${esc(suiv.titre)} →</button></div>` : '';
@@ -1148,20 +1143,22 @@ const coteVide = () => ({ l:'', h:'', lg:'', em:'', min:false });
 function blocCotes(){
   const props = propositions();
   if(!props.length) return '<p class="tiny">Déposez d\'abord un fichier.</p>';
-  const regroupe = '';
-  return regroupe + props.map(c => {
+  const debutGroupe = {}; decoupage().forEach(ch => { if(ch.length > 1) debutGroupe[ch[0]] = ch; });
+  return props.map(c => {
     const p = E.props[c], ai = (fichierChoisi(c) || {}).ai;
     p.cotes = p.cotes.map(versCote);
     const lu = ai ? `<div class="lu ${ai.verif === 'ecart' ? 'alerte' : ''}">Lu dans le fichier : ${esc(resumeAI(ai)) || 'aucune dimension'}</div><button class="btn petit" data-act="coteAI" style="margin:4px 0">Reprendre les cotes du fichier</button>` : '';
     const mes = (i, k, cle, lib, unite, ph) => `<label class="mes"><span>${lib}</span><span class="saisieU"><input class="input${vide(k[cle]) ? ' afaire' : ''}" inputmode="decimal" placeholder="${ph}" value="${esc(k[cle])}" data-ck="${cle}" data-i="${i}"><em>${unite}</em></span></label>`;
     const pos = p.posCotes || 'auto', idx = props.indexOf(c);
-    const posUi = !p.groupe ? `<div style="margin-top:8px"><div class="tiny" style="margin-bottom:3px">Position des cotes</div>${groupeRadios('pos-' + idx, [['auto', 'Automatique'], ['dessous', 'Dessous'], ['gauche', 'À gauche'], ['droite', 'À droite']], pos, false)}</div>` : '';
-    return `<div class="prop" data-c="${esc(c)}"><b style="font-size:13px">${esc(p.titre || 'Visuel')}</b>${lu}
+    const posUi = `<div style="margin-top:8px"><div class="tiny" style="margin-bottom:3px">Position de la légende (cotes, panneau, description)</div>${groupeRadios('pos-' + idx, [['auto', 'Automatique'], ['dessous', 'Dessous'], ['dessus', 'Dessus'], ['gauche', 'À gauche'], ['droite', 'À droite']], pos, false)}</div>`;
+    const ch = debutGroupe[c];
+    const dispoUi = ch ? `<div class="prop" data-c="${esc(c)}"><b style="font-size:13px">Une page, ${ch.length} images</b><div class="tiny" style="margin:3px 0">Disposition des images sur la page</div>${groupeRadios('dispo-' + idx, [['auto', 'Automatique'], ['ligne', 'Côte à côte'], ['colonne', 'L\'une sous l\'autre'], ['grille', 'En grille']], E.props[c].dispo || 'auto', false)}</div>` : '';
+    return dispoUi + `<div class="prop" data-c="${esc(c)}"><b style="font-size:13px">${esc(p.titre || 'Visuel')}</b>${lu}
       <div class="field" style="margin:6px 0 0"><label>Dimensions du panneau</label><input class="input${vide(p.panneau) ? ' afaire' : ''}" value="${esc(p.panneau || '')}" placeholder="612 cm × 149 cm" data-p="panneau"></div>
       ${p.cotes.map((k, i) => `<div class="coteBloc"><div class="coteTete"><input class="input${vide(k.l) ? ' afaire' : ''}" placeholder="Texte concerné (ex. ALRÉ)" value="${esc(k.l)}" data-ck="l" data-i="${i}"><button class="btn petit" data-act="coteX" data-i="${i}" title="Retirer cette cote">✕</button></div>
         <div class="mesures">${mes(i, k, 'h', 'Hauteur', 'cm', '13,4')}${mes(i, k, 'lg', 'Longueur', 'cm', '64,5')}${mes(i, k, 'em', 'Emprise', 'm²', '0,09')}</div></div>`).join('')}
       <button class="btn petit${p.cotes.length ? '' : ' afaire'}" data-act="coteAdd" style="margin:6px 0">+ Cote</button>
-      <div class="field" style="margin:0"><label>Description (sous le visuel)</label><textarea class="textarea${vide(p.description) ? ' afaire' : ''}" rows="3" data-p="description">${esc(p.description)}</textarea></div>${posUi}</div>`;
+      <div class="field" style="margin:0"><label>Description</label><textarea class="textarea${vide(p.description) ? ' afaire' : ''}" rows="3" data-p="description">${esc(p.description)}</textarea></div>${posUi}</div>`;
   }).join('') + '<p class="tiny">Hauteur, longueur et emprise : remplissez seulement celles qui servent ; les cases vides ne sont pas imprimées. Les cotes écrites en texte dans le fichier Illustrator se remplissent seules.</p>' +
     (props.some(c => c.indexOf('#p') >= 0) ? '<p class="tiny alerteTxt">Ce fichier contient plusieurs plans de travail : chacun devient une page. Les cotes du fichier sont reprises sur chaque page : supprimez (✕) celles qui ne concernent pas le visuel.</p>' : '');
 }
@@ -1241,6 +1238,7 @@ saisie.addEventListener('change', e => {
   if(t.id === 'photoInput'){ ajouterFichiers(t.files, 'photo'); t.value = ''; return; }
   if(t.dataset.plc){ const it = E.plateau.find(x => x.id === t.dataset.plc); if(it){ it.coche = t.checked; dessiner(); } return; }
   if(t.name === 'vplace'){ E.versionPlacement = parseInt(t.value, 10) || 1; dessiner(); return; }
+  if(t.name && t.name.startsWith('dispo-')){ const p = propDe(t); if(p){ p.dispo = t.value; dessiner(); } return; }
   if(t.name && t.name.startsWith('pos-')){ const p = propDe(t); if(p){ p.posCotes = t.value; dessiner(); } return; }
   if(t.name === 'etape'){ E.etape = t.value; E.etapeChoisie = true; E.ordre.forEach(c => { const p = E.props[c]; if(p && p.type !== 'Croquis') p.type = (ETAPES[E.etape] || ETAPES.CREA).typeDefaut; }); E.texteId = ''; E.texteLibre = null; E.nuancier = null; dessiner(); return; }
   if(t.name === 'devis'){ E.devis = t.value; E.texteId = ''; E.texteLibre = null; dessiner(); return; }
@@ -1380,10 +1378,15 @@ function tag(a, x, y0, y1, s, html, st){   // étiquette claire qui épouse son 
   const h = (y1 - y0) / PT * 100;
   return `<span class="etiq" style="${pos}top:${y0 / PH * 100}%;height:${h}cqw;line-height:${h}cqw;font-size:${s / PT * 100}cqw;padding:0 ${5.5 / PT * 100}cqw;${st || ''}">${html}</span>`;
 }
+const tronquer = (t, n) => t.length > n ? t.slice(0, Math.max(1, n - 1)) + '…' : t;
+// grand titre en police condensée : au-delà d'environ 19 lettres, le corps diminue (en plus de l'ajustement en largeur)
+const tailleNom = base => Math.max(base * 0.28, base * Math.min(1, 19.5 / Math.max(1, String(E.client || 'Sans nom').length)));
+const taille = (txt, max, W) => Math.max(6.5, Math.min(max, W / (Math.max(1, String(txt).length) * 0.62)));   // corps réduit pour tenir dans la largeur W
 function entetePage(label, sous, avecCase){
   const lieu = (E.ville || '').split('\n').slice(-1)[0].trim();
+  const largeurDroite = Math.max(String(label).length * 6.2 + 11, avecCase ? 82 : 0), nomMax = Math.max(8, Math.floor((779.5 - largeurDroite - 40) / 6.2)), lieuMax = Math.max(8, Math.floor((779.5 - (String(sous || '').length * 4.34 + 11) - 40) / 4.34));
   return trait(31.2, 23, 810.7, 23, KRAFT_LIGNE, 1) +
-    tag('l', 31.2, 16.7, 28.3, 10, esc((E.client || 'Sans nom').toUpperCase())) + (lieu ? tag('l', 31.2, 28.3, 40, 7, esc(lieu.toUpperCase())) : '') +
+    tag('l', 31.2, 16.7, 28.3, 10, esc(tronquer((E.client || 'Sans nom').toUpperCase(), nomMax))) + (lieu ? tag('l', 31.2, 28.3, 40, 7, esc(tronquer(lieu.toUpperCase(), lieuMax))) : '') +
     tag('r', 810.7, 16.7, 28.3, 10, esc(label), avecCase ? 'min-width:' + (81.8 / PT * 100) + 'cqw;text-align:right' : '') + (sous ? tag('r', 810.7, 28.3, 40, 7, esc(sous)) : '') +
     (avecCase ? `<span class="caseVal" style="left:${733.6 / PT * 100}%;top:${18.9 / PH * 100}%"></span>` : '');
 }
@@ -1400,10 +1403,10 @@ function pageCouverture(){
   const loc = (E.ville || '').split('\n').map(x => x.trim()).filter(Boolean);
   return tpl('couverture.jpg',
     L(113.7, 61.0, 73.1, 8, 'DOSSIER / ' + esc(E.numero || '—')) + L(118.2, 78, 93.1, 10, esc(sub.toUpperCase())) +
-    L(113.7, 315, 327.1, 8, 'PROJET /') + C(421, 221, 331.5, 100, esc(E.client || 'Sans nom'), { titre:1, fit:370 }) +
-    L(113.7, 362.9, 375, 8, 'LOCALISATION /') + (loc[0] ? C(421, 353.6, 382.3, 19, esc(loc[0])) : '') + (loc[1] ? C(421, 380.2, 409, 19, esc(loc.slice(1).join(', '))) : '') +
-    L(113.7, 437.5, 449.6, 8, 'INTERLOCUTEUR /') + L(201.3, 436, 451.2, 10, esc(E.interlocuteur || ''), { b:1 }) +
-    L(470.3, 437.5, 449.6, 8, 'TÉLÉPHONE /') + L(538, 436, 451.2, 10, esc(E.tel || ''), { b:1 }) +
+    L(113.7, 315, 327.1, 8, 'PROJET /') + C(421, 221, 331.5, tailleNom(100), esc(E.client || 'Sans nom'), { titre:1, fit:370 }) +
+    L(113.7, 362.9, 375, 8, 'LOCALISATION /') + (loc[0] ? C(421, 353.6, 382.3, taille(loc[0], 19, 610), esc(loc[0])) : '') + (loc[1] ? C(421, 380.2, 409, taille(loc.slice(1).join(', '), 19, 610), esc(loc.slice(1).join(', '))) : '') +
+    L(113.7, 437.5, 449.6, 8, 'INTERLOCUTEUR /') + L(201.3, 436, 451.2, taille(E.interlocuteur || '', 10, 255), esc(E.interlocuteur || ''), { b:1 }) +
+    L(470.3, 437.5, 449.6, 8, 'TÉLÉPHONE /') + L(538, 436, 451.2, taille(E.tel || '', 10, 200), esc(E.tel || ''), { b:1 }) +
     L(113.7, 536.1, 548.2, 8, 'DATE /') + L(118.2, 552.2, 567.4, 10, esc(dateAffichee()), { b:1 }) +
     L(268.5, 555.4, 566, 7, LEGAL));
 }
@@ -1416,13 +1419,13 @@ function pageIntro(){
   const suite = (bat ? [] : paras.slice(1)).map(x => `<p>${esc(x).replace(/\n/g, '<br>')}</p>`).join('');
   const liste = (!bat && t.liste) ? `<ul class="tpListe">${t.liste.map(x => '<li>' + esc(x) + '</li>').join('')}</ul>` : '';
   const yTexte = bat ? 155.5 : 254.9;
-  const corps = `<div class="tpTexte" style="left:${61 / PT * 100}%;top:${yTexte / PH * 100}%;width:${258 / PT * 100}%;font-size:${10 / PT * 100}cqw;line-height:${12 / PT * 100}cqw;color:${ENCRE}"><p>${ouv}</p>${premier}${suite}${liste}</div>`;
+  const corps = `<div class="tpTexte" data-maxh="${bat ? 88 : 171}" style="left:${61 / PT * 100}%;top:${yTexte / PH * 100}%;width:${258 / PT * 100}%;font-size:${10 / PT * 100}cqw;line-height:${12 / PT * 100}cqw;color:${ENCRE}"><p>${ouv}</p>${premier}${suite}${liste}</div>`;
   let deco, bas;
   if(bat){
     const rouge = paras.slice(1).join(' ');
     deco = trait(349.2, 53.1, 349.2, 543.7, ENCRE, 1) + trait(34.2, 139.8, 348.7, 139.8, ENCRE, 1) + trait(34.2, 473.1, 348.7, 473.1, ENCRE, 1) +
       box(60.8, 247.9, 323, 367.9, 'background:#a51a16;border-radius:' + (13 / PT * 100) + 'cqw') + box(60.8, 331.5, 323, 451.5, 'background:' + CREME + ';border-radius:' + (13 / PT * 100) + 'cqw') +
-      `<div class="tpRouge" style="left:${73.1 / PT * 100}%;top:${254.4 / PH * 100}%;width:${240 / PT * 100}%;font-size:${8 / PT * 100}cqw;line-height:${8 / PT * 100}cqw"><p>${esc(rouge)}</p><ul>${(t.liste || []).map(x => '<li>' + esc(x) + '</li>').join('')}</ul></div>` +
+      `<div class="tpRouge" data-maxh="74" style="left:${73.1 / PT * 100}%;top:${254.4 / PH * 100}%;width:${240 / PT * 100}%;font-size:${8 / PT * 100}cqw;line-height:${8 / PT * 100}cqw"><p>${esc(rouge)}</p><ul>${(t.liste || []).map(x => '<li>' + esc(x) + '</li>').join('')}</ul></div>` +
       C(191.5, 340.7, 354.3, 9, 'BON DE COMMANDE POUR INTERVENTION', { b:1, c:ENCRE }) + C(191.5, 352.9, 363.5, 7, 'Signature précédée de la mention', { i:1, c:ENCRE }) + C(191.5, 360.9, 371.5, 7, '« Lu &amp; approuvé. Bon pour commande. »', { i:1, c:ENCRE }) +
       L(73.2, 426.4, 438.5, 8, 'DATE :  /  /') + L(207.5, 426.4, 438.5, 8, 'À') + trait(75.8, 439, 154.4, 439, '#a51a16', 0.8) + trait(210.2, 439, 309.6, 439, '#a51a16', 0.8);
     bas = [482.9, 521.5, 518.8, 533.9];
@@ -1433,12 +1436,7 @@ function pageIntro(){
   const yTitre = bat ? [69.1, 124.3] : [124.6, 179.8];
   return tpl(bat ? 'intro-bat.jpg' : 'intro-std.jpg', entetePage(labelPage(), sousPage(), e.validation) + deco +
     C(190, yTitre[0], yTitre[1], 50, 'INTRODUCTION', { titre:1, c:ENCRE, fit:182 }) + corps +
-    C(190, bas[0], bas[1], 35, esc(E.client || ''), { titre:1, c:ENCRE, fit:130 }) + C(190, bas[2], bas[3], 10, esc((E.ville || '').split('\n').slice(-1)[0] || ''), { c:ENCRE }) + piedPage());
-}
-function posCotes(p, f){
-  const c = p.posCotes || 'auto';
-  if(c === 'dessous' || c === 'gauche' || c === 'droite') return c;
-  return (f.w && f.h && f.w / f.h > 1.15) ? 'dessous' : 'droite';   // visuel horizontal : cotes dessous ; vertical : sur le côté
+    C(190, bas[0], bas[1], tailleNom(35), esc(E.client || ''), { titre:1, c:ENCRE, fit:130 }) + C(190, bas[2], bas[3], 10, esc((E.ville || '').split('\n').slice(-1)[0] || ''), { c:ENCRE }) + piedPage());
 }
 function coteLignes(c){
   const l = [];
@@ -1447,53 +1445,139 @@ function coteLignes(c){
   if(c.em) l.push('Emprise du lettrage : ' + c.em + 'm²');
   return l;
 }
-function pageProposition(cle){
-  const p = E.props[cle], f = fichierChoisi(cle), e = ETAPES[E.etape];
-  const memeType = propositions().filter(c => E.props[c].type === p.type), num = memeType.indexOf(cle) + 1;
-  const etiquette = e.validation ? 'VALIDATION' : (p.type.toUpperCase() + (p.type === 'Croquis' ? '' : ' ' + String(num).padStart(2, '0')));
-  const sous = e.validation ? dateAffichee() : ('V' + (p.vv || E.version || 1) + ' • ' + dateAffichee());
-  p.cotes = p.cotes.map(versCote);
-  const cotes = p.cotes.filter(c => c.l || c.h || c.lg || c.em), pos = cotes.length ? posCotes(p, f) : 'aucune';
-  const b = pos === 'dessous' ? [24.4, 55, 817.5, 392] : pos === 'gauche' ? [262, 61.1, 817.5, 486.8] : pos === 'droite' ? [24.4, 61.1, 600.2, 486.8] : [24.4, 55, 817.5, 486.8];
-  const visuel = `<div class="tpVisu" style="left:${b[0] / PT * 100}%;top:${b[1] / PH * 100}%;width:${(b[2] - b[0]) / PT * 100}%;height:${(b[3] - b[1]) / PH * 100}%"><img src="${f.src}" alt=""></div>`;
-  const bloc = (c, x, y) => {
-    const lg = coteLignes(c); let h = '', yy = y;
-    if(c.l){ h += L(x, yy, yy + 13.6, 9, esc(c.l.toUpperCase()) + ' :', { b:1 }); yy += 11; }
-    lg.forEach(t => { h += L(x, yy, yy + 13.6, 9, esc(t), { i:1 }); yy += 11; });
-    return [h, yy - y + 11];
-  };
-  let ctx = '';
-  if(pos === 'dessous'){
-    cotes.forEach((c, i) => { ctx += bloc(c, 52.4 + (i % 4) * 196, 404 + Math.floor(i / 4) * 50)[0]; });
-  } else if(pos === 'droite' || pos === 'gauche'){
-    let yc = 193.4; const x = pos === 'droite' ? 613.2 : 52.4;
-    cotes.forEach(c => { const r = bloc(c, x, yc); ctx += r[0]; yc += r[1]; });
-  }
-  let y = 494.4, legende = '';
-  if(p.panneau){ legende += L(52.4, y, y + 15.2, 10, 'PANNEAU ' + esc(p.panneau.toUpperCase()) + ' :', { b:1 }); y += 12.1; }
-  if(p.description) legende += `<div class="tpTexte gauche" style="left:${52.4 / PT * 100}%;top:${y / PH * 100}%;width:${745 / PT * 100}%;font-size:${9 / PT * 100}cqw;line-height:${11 / PT * 100}cqw">${esc(p.description).replace(/\n/g, '<br>')}</div>`;
-  return tpl('fond.jpg', entetePage(etiquette, sous, e.validation) + visuel + ctx + legende + piedPage());
+
+/* ------------------ Mise en page des visuels et de leurs légendes ------------------
+   Tout est calculé avant le dessin : la légende (cotes, panneau, description) est découpée en lignes d'après la largeur réelle de la police à chasse fixe,
+   puis l'image prend la place qui reste. Rien ne peut donc se chevaucher, ni toucher l'en-tête ou le pied de page. */
+const CHAR = 0.62;                 // largeur d'une lettre / corps (Source Code Pro = 0,60 ; marge de sécurité incluse)
+let ALERTES = [];                  // remarques de mise en page, affichées dans la rubrique « Cotes et description »
+const hLigne = corps => Math.round(corps * 1.25 * 10) / 10;
+function enLignes(texte, largeur, corps){
+  const max = Math.max(6, Math.floor(largeur / (CHAR * corps))), out = [];
+  String(texte == null ? '' : texte).split('\n').forEach(par => {
+    let ligne = '';
+    par.split(/\s+/).filter(Boolean).forEach(mot => {
+      while(mot.length > max){ if(ligne){ out.push(ligne); ligne = ''; } out.push(mot.slice(0, max)); mot = mot.slice(max); }
+      if(!ligne) ligne = mot; else if((ligne + ' ' + mot).length <= max) ligne += ' ' + mot; else { out.push(ligne); ligne = mot; }
+    });
+    out.push(ligne);
+  });
+  while(out.length && out[out.length - 1] === '') out.pop();
+  return out;
 }
-// Plusieurs visuels sur une même page (option « Optimiser »)
-function pageGroupe(chunk){
+function blocsLegende(p){
+  p.cotes = p.cotes.map(versCote);
+  return {
+    cotes: p.cotes.filter(c => c.l || c.h || c.lg || c.em).map(c => ({ titre: c.l ? c.l.toUpperCase() + ' :' : '', lignes: coteLignes(c) })),
+    panneau: p.panneau ? 'PANNEAU ' + p.panneau.toUpperCase() + ' :' : '',
+    desc: p.description || ''
+  };
+}
+const legendeVide = bl => !bl.cotes.length && !bl.panneau && !String(bl.desc).trim();
+// Découpe la légende en lignes positionnées (x, y relatifs au coin haut-gauche de la légende) pour une largeur donnée.
+function mesurerLegende(bl, pos, W, corps){
+  const h1 = hLigne(corps), lignes = [], horiz = pos === 'dessous' || pos === 'dessus';
+  const long = Math.max(0, ...bl.cotes.map(c => Math.max(c.titre.length, ...c.lignes.map(t => t.length))));
+  let largeur = W, y = 0;
+  if(horiz){
+    const n = bl.cotes.length, colMin = Math.max(150, long * CHAR * corps + 16), cols = Math.max(1, Math.min(4, n, Math.floor(W / colMin))), cw = W / cols, hauteurs = [];
+    const blocs = bl.cotes.map(c => {
+      const l = enLignes(c.titre, cw - 10, corps).map(t => ({ t, b:1 })).concat(c.lignes.flatMap(t => enLignes(t, cw - 10, corps)).map(t => ({ t, i:1 })));
+      return l;
+    });
+    blocs.forEach((l, k) => { const r = Math.floor(k / cols); hauteurs[r] = Math.max(hauteurs[r] || 0, l.length * h1); });
+    const yr = []; let acc = 0; hauteurs.forEach((hh, r) => { yr[r] = acc; acc += hh + 6; });
+    blocs.forEach((l, k) => { const r = Math.floor(k / cols), x = (k % cols) * cw; l.forEach((li, j) => lignes.push({ x, y: yr[r] + j * h1, t: li.t, b: li.b, i: li.i })); });
+    y = hauteurs.length ? acc - 6 : 0;
+  } else {
+    largeur = Math.min(W, Math.max(150, long * CHAR * corps + 6));
+    bl.cotes.forEach(c => {
+      const l = enLignes(c.titre, largeur - 4, corps).map(t => ({ t, b:1 })).concat(c.lignes.flatMap(t => enLignes(t, largeur - 4, corps)).map(t => ({ t, i:1 })));
+      l.forEach(li => { lignes.push({ x:0, y, t: li.t, b: li.b, i: li.i }); y += h1; });
+      y += 5;
+    });
+    if(bl.cotes.length) y -= 5;
+  }
+  const lw = horiz ? W : largeur;
+  const texte = (bl.panneau ? enLignes(bl.panneau, lw, corps).map(t => ({ t, b:1 })) : []).concat(bl.desc.trim() ? enLignes(bl.desc, lw, corps).map(t => ({ t })) : []);
+  if(texte.length){ if(lignes.length) y += 8; texte.forEach(li => { lignes.push({ x:0, y, t: li.t, b: li.b }); y += h1; }); }
+  return { h: y, w: horiz ? W : largeur, lignes, corps };
+}
+function dessinLegende(m, x, y){
+  return m.lignes.map(li => L(x + li.x, y + li.y, y + li.y + hLigne(m.corps), m.corps, esc(li.t), { b: li.b, i: li.i })).join('');
+}
+// Une cellule : un visuel et sa légende, à l'intérieur du rectangle (X, Y, W, H). « retrait » : marge de la légende côté page.
+function composerCellule(p, f, X, Y, W, H, retrait, grandeur){
+  const bl = blocsLegende(p), a = (f.w && f.h) ? f.w / f.h : 1.5, marge = 10, nom = p.titre || 'visuel';
+  const image = b => `<div class="tpVisu" style="left:${b[0] / PT * 100}%;top:${b[1] / PH * 100}%;width:${b[2] / PT * 100}%;height:${b[3] / PH * 100}%"><img src="${f.src}" alt=""></div>`;
+  if(legendeVide(bl)) return image([X, Y, W, H]);
+  let pos = p.posCotes || 'auto';
+  if(pos === 'auto') pos = (retrait && f.w && f.h && a <= 1.15) ? 'droite' : 'dessous';   // sur une page seule : image verticale → légende sur le côté ; à plusieurs : dessous
+  const corpsListe = grandeur === 'grand' ? [9, 8.5, 8, 7.5, 7] : [8, 7.5, 7];
+  const essayer = pos2 => {
+    for(const corps of corpsListe){
+      if(pos2 === 'dessous' || pos2 === 'dessus'){
+        const m = mesurerLegende(bl, pos2, W - 2 * retrait, corps), hi = H - m.h - marge;
+        if(hi >= Math.min(90, H * 0.35)) return { m, corps, pos: pos2 };
+      } else {
+        const m = mesurerLegende(bl, pos2, Math.min(240, W * 0.42), corps), wi = W - m.w - retrait - marge;
+        if(m.h <= H && wi >= Math.min(140, W * 0.4)) return { m, corps, pos: pos2 };
+      }
+    }
+    return null;
+  };
+  let r = essayer(pos);
+  if(!r && (pos === 'gauche' || pos === 'droite')){ r = essayer('dessous'); if(r) ALERTES.push('« ' + nom + ' » : légende trop longue pour le côté, elle passe sous l\'image.'); }
+  if(!r){
+    const corps = corpsListe[corpsListe.length - 1], pos2 = (pos === 'dessus') ? 'dessus' : 'dessous', m = mesurerLegende(bl, pos2, W - 2 * retrait, corps);
+    r = { m, corps, pos: pos2 }; ALERTES.push('« ' + nom + ' » : légende très longue, l\'image devient petite. Raccourcissez la description.');
+  } else if(r.corps < corpsListe[0] && r.corps <= 7.5) ALERTES.push('« ' + nom + ' » : légende longue, écriture réduite à ' + String(r.corps).replace('.', ',') + ' pt.');
+  const m = r.m, hi = Math.max(40, H - m.h - marge);
+  if(r.pos === 'dessous') return image([X, Y, W, hi]) + dessinLegende(m, X + retrait, Y + H - m.h);
+  if(r.pos === 'dessus') return image([X, Y + m.h + marge, W, hi]) + dessinLegende(m, X + retrait, Y);
+  const wi = W - m.w - retrait - marge, ly = Y + Math.max(0, (H - m.h) / 2);
+  if(r.pos === 'droite') return image([X, Y, wi, H]) + dessinLegende(m, X + W - retrait - m.w, ly);
+  return image([X + retrait + m.w + marge, Y, wi, H]) + dessinLegende(m, X + retrait, ly);
+}
+function etiquettePage(chunk){
   const e = ETAPES[E.etape], premier = E.props[chunk[0]], pad = n => String(n).padStart(2, '0');
   const idx = propositions().filter(c => E.props[c].type === premier.type), n1 = idx.indexOf(chunk[0]) + 1, n2 = idx.indexOf(chunk[chunk.length - 1]) + 1;
-  const etiquette = e.validation ? 'VALIDATION' : (premier.type.toUpperCase() + (premier.type === 'Croquis' ? '' : 'S ' + pad(n1) + (n2 > n1 ? '-' + pad(n2) : '')));
-  const sous = e.validation ? dateAffichee() : ('V' + (premier.vv || E.version || 1) + ' • ' + dateAffichee());
-  const fs = chunk.map(c => fichierChoisi(c)), horiz = fs.map(f => !!(f.w && f.h && f.w / f.h > 1.15)), n = chunk.length;
-  let cols, rows;
-  if(n === 1){ cols = 1; rows = 1; } else if(n === 2){ if(horiz.every(Boolean)){ cols = 1; rows = 2; } else { cols = 2; rows = 1; } }
-  else if(n === 3){ if(horiz.every(Boolean)){ cols = 1; rows = 3; } else { cols = 3; rows = 1; } } else { cols = 2; rows = 2; }
-  const x0 = 24.4, y0 = 52, x1 = 817.5, y1 = 560, gap = 10, cw = (x1 - x0 - (cols - 1) * gap) / cols, ch = (y1 - y0 - (rows - 1) * gap) / rows, th = 44;
-  const cellules = chunk.map((c, i) => {
-    const p = E.props[c], f = fs[i], cx = x0 + (i % cols) * (cw + gap), cy = y0 + Math.floor(i / cols) * (ch + gap);
-    p.cotes = p.cotes.map(versCote);
-    const lignes = p.cotes.filter(k => k.l || k.h || k.lg || k.em).map(k => (k.l ? '<b>' + esc(k.l.toUpperCase()) + '</b> ' : '') + coteLignes(k).map(esc).join(' · ')).join('<br>');
-    const texte = (p.panneau ? '<b>PANNEAU ' + esc(p.panneau.toUpperCase()) + '</b> ' : '') + (p.description ? esc(p.description).replace(/\n/g, ' ') : '');
-    return `<div class="tpVisu" style="left:${cx / PT * 100}%;top:${cy / PH * 100}%;width:${cw / PT * 100}%;height:${(ch - th) / PH * 100}%"><img src="${f.src}" alt=""></div>` +
-      `<div class="tpTexte gauche" style="left:${cx / PT * 100}%;top:${(cy + ch - th + 3) / PH * 100}%;width:${cw / PT * 100}%;font-size:${8 / PT * 100}cqw;line-height:${9.5 / PT * 100}cqw;font-style:italic">${lignes}${lignes && texte ? '<br>' : ''}${texte}</div>`;
-  }).join('');
-  return tpl('fond.jpg', entetePage(etiquette, sous, e.validation) + cellules + piedPage());
+  if(e.validation) return 'VALIDATION';
+  if(premier.type === 'Croquis') return 'CROQUIS';
+  return premier.type.toUpperCase() + (chunk.length > 1 ? 'S ' : ' ') + pad(n1) + (n2 > n1 ? '-' + pad(n2) : '');
+}
+const sousEtiquette = p => ETAPES[E.etape].validation ? dateAffichee() : ('V' + (p.vv || E.version || 1) + ' • ' + dateAffichee());
+// Zone des visuels : entre l'en-tête (≈ 42 pt) et le pied de page (≈ 567 pt).
+const ZONE = { x:24.4, y:52, w:793.1, h:508 };
+function pageProposition(cle){
+  const p = E.props[cle], f = fichierChoisi(cle);
+  return tpl('fond.jpg', entetePage(etiquettePage([cle]), sousEtiquette(p), ETAPES[E.etape].validation) + composerCellule(p, f, ZONE.x, ZONE.y + 3, ZONE.w, ZONE.h - 3, 28, 'grand') + piedPage());
+}
+// Plusieurs visuels sur une même page : « auto », « ligne » (côte à côte), « colonne » (l'un sous l'autre) ou « grille ».
+function dispositionGroupe(chunk){
+  const d = E.props[chunk[0]].dispo || 'auto', n = chunk.length;
+  const horiz = chunk.map(c => { const f = fichierChoisi(c); return !!(f.w && f.h && f.w / f.h > 1.15); });
+  if(d === 'ligne') return [n, 1];
+  if(d === 'colonne') return [1, n];
+  if(d === 'grille') return [Math.min(2, n), Math.ceil(n / 2)];
+  if(n === 1) return [1, 1];
+  if(n === 4) return [2, 2];
+  return horiz.every(Boolean) ? [1, n] : [n, 1];
+}
+function pageGroupe(chunk){
+  const premier = E.props[chunk[0]], [cols, rows] = dispositionGroupe(chunk), gap = 12;
+  const cw = (ZONE.w - (cols - 1) * gap) / cols, ch = (ZONE.h - (rows - 1) * gap) / rows;
+  const cellules = chunk.map((c, i) => composerCellule(E.props[c], fichierChoisi(c), ZONE.x + (i % cols) * (cw + gap), ZONE.y + Math.floor(i / cols) * (ch + gap), cw, ch, 0, 'petit')).join('');
+  return tpl('fond.jpg', entetePage(etiquettePage(chunk), sousEtiquette(premier), ETAPES[E.etape].validation) + cellules + piedPage());
+}
+function decoupage(){
+  const props = propositions(), out = [];
+  for(let i = 0; i < props.length; ){
+    const g = E.props[props[i]].groupe; let j = i + 1;
+    while(g && j < props.length && j - i < 4 && E.props[props[j]].groupe === g) j++;
+    out.push(props.slice(i, j)); i = j;
+  }
+  return out;
 }
 function pageAutorisation(){
   const lignes = AUTO_LIGNES.map(l => {
@@ -1527,7 +1611,7 @@ function pageContact(){
   const a = E.atelier, adr = (a.adresse || '').split('\n');
   const lieu = (E.ville || '').split('\n').slice(-1)[0].trim();
   return tpl('contact.jpg',
-    (E.client ? tag('c', 255.9, 129.8, 141.4, 10, esc(E.client)) : '') + (lieu ? tag('c', 255.9, 141.4, 153.1, 7, esc(lieu)) : '') +
+    (E.client ? tag('c', 255.9, 129.8, 141.4, 10, esc(tronquer(E.client, 60))) : '') + (lieu ? tag('c', 255.9, 141.4, 153.1, 7, esc(tronquer(lieu, 80))) : '') +
     tag('c', 255.9, 488.3, 499.9, 10, esc(ETAPES[E.etape].couv)) +
     C(593.9, 306, 350.2, 40, esc(a.nom || ''), { titre:1, fit:121 }) + C(593.9, 362.2, 378.8, 11, esc(a.tel || '')) +
     (adr[0] ? C(593.9, 377.2, 392.4, 10, esc(adr[0].toUpperCase())) : '') + (adr[1] ? C(593.9, 391.2, 406.4, 10, esc(adr[1].toUpperCase())) : '') +
@@ -1537,6 +1621,12 @@ function pageContact(){
 function ajusterTextes(){
   document.querySelectorAll('.page.tp').forEach(pg => {
     const W = pg.offsetWidth;
+    // textes longs : le corps diminue jusqu'à tenir dans la hauteur prévue (en pt du gabarit)
+    pg.querySelectorAll('[data-maxh]').forEach(el => {
+      const max = parseFloat(el.dataset.maxh) / PH * pg.offsetHeight, fs = parseFloat(el.style.fontSize), lh = parseFloat(el.style.lineHeight);
+      let k = 1; el.style.fontSize = fs + 'cqw'; el.style.lineHeight = lh + 'cqw';
+      for(let i = 0; i < 16 && el.offsetHeight > max + 0.5; i++){ k *= 0.96; el.style.fontSize = (fs * k) + 'cqw'; el.style.lineHeight = (lh * k) + 'cqw'; }
+    });
     pg.querySelectorAll('.tx.fit').forEach(el => {
       const cible = parseFloat(el.dataset.fit) / PT * W, a = el.dataset.a;
       el.style.transform = a === 'c' ? 'translateX(-50%)' : ''; el.style.transformOrigin = a === 'c' ? 'center' : 'left';
