@@ -1,3 +1,7 @@
--- Retour arrière de la migration 71 : retire la fonction d'état du stock pour le dossier de présentation (et seulement elle).
-drop function if exists dossier_stock_etat(text[]);
-select 'fonction supprimée' as controle, case when to_regprocedure('public.dossier_stock_etat(text[])') is null then 'oui' else 'NON' end as resultat;
+-- ⚠⚠⚠ ATTENTION : CE FICHIER ANNULE LA MIGRATION 71 (retire la colonne « sources » et rétablit l'ancien titre de M-B0.7).
+-- Ne l'exécutez PAS pour avancer. Il ne remet PAS le sigle du dispositif légal dans les textes (volontairement).
+begin;
+update vsf_prod_modules set titre = 'Glossaire illustré du jargon (d''après le glossaire Mike Meyer)' where code = 'M-B0.7';
+alter table vsf_prod_modules drop column if exists sources;
+commit;
+select 'migration 71 retirée' as controle;

@@ -161,7 +161,7 @@ details.rep summary::-webkit-details-marker{display:none}
 <div class="wrap" id="app"><p class="kick">Chargement…</p></div>
 <script>(function(){
 function $(i){return document.getElementById(i);}
-function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function esc(s){return String(s==null?'':s).replace(/\bAFEST\b/g,'en situation de travail').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}   /* le sigle du dispositif légal ne s'affiche jamais à l'écran (règle du prompt) */
 /* ---------- constantes du cadre de l'offre (réglages à venir : migration 66) ---------- */
 var CADRE={masterclass:18,videosParJournee:6,audiosParSeance:10,delaiRelectureJoursOuvres:5};
 var NIV=['','N1 · Comprendre','N2 · Faire avec repères','N3 · Réaliser seul·e','N4 · Maîtriser et transmettre'];
@@ -312,8 +312,9 @@ function arbre(){
 function panneau(){
   var m=byCode(S.sel);if(!m)return '<div class="panneau"><p class="hint">Cliquez sur un module pour voir sa fiche, sa place dans le parcours et l’avancement de ses 6 étapes.</p></div>';
   var L=liensDe(m.code),sit=sitsPL(),lv=D.rang.filter(function(r){return r.module_code===m.code;}).sort(function(a,b){return a.niveau-b.niveau;});
-  var place=lv.map(function(r){var N=rangsNiveau(r.niveau).filter(function(x){var mm=byCode(x.module_code);return mm&&mm.genre==='module';}),i=N.findIndex(function(x){return x.module_code===m.code;});var av=N[i-1],ap=N[i+1];
-    return 'N'+r.niveau+' · '+(i+1)+'ᵉ sur '+N.length+'<br><span class="hint">avant : '+(av?esc(av.module_code):'—')+' · après : '+(ap?esc(ap.module_code):'—')+'</span>';}).join('<br>');
+  /* le rang se lit parmi les modules DU niveau d'entrée (24 · 30 · 20 · 3), dans l'ordre de la table des rangs : le total est celui de la frise */
+  var place=(function(){var n=m.niveau_entree,B=bandMods(n),i=B.findIndex(function(x){return x.code===m.code;});if(i<0||m.genre!=='module')return '';var av=B[i-1],ap=B[i+1];
+    return 'N'+n+' · '+(i+1)+'ᵉ sur '+B.length+(lv.length>1?'<br><span class="hint">sert aussi aux niveaux '+lv.filter(function(r){return r.niveau!==n;}).map(function(r){return 'N'+r.niveau;}).join(', ')+'</span>':'')+'<br><span class="hint">avant : '+(av?esc(av.code):'—')+' · après : '+(ap?esc(ap.code):'—')+'</span>';})();
   var et=D.etap.filter(function(e){return e.module_code===m.code;});
   var ET=['essayer','constater','regarder','faire','comparer','ancrer'],EL={essayer:'Essayer',constater:'Constater',regarder:'Regarder',faire:'Faire',comparer:'Comparer',ancrer:'Ancrer'};
   var etr=ET.map(function(k){var e=et.filter(function(x){return x.etape===k;})[0],sh=e?ETAT[e.etat][1]:'ecr';if(k==='essayer'&&m.essai_securise===false)return '<div><i class="cell" style="background:#e6e6e6;border-color:#c4c4c4"></i><span style="color:#767676">'+EL[k]+'<br>non sécurisé</span></div>';return '<div><i class="cell '+sh+'"></i><span>'+EL[k]+'</span></div>';}).join('');
@@ -363,9 +364,9 @@ function cranBarre(){
   return h+'<span class="hint" style="margin:0">'+(S.cran===1?'':'Glissez une case pour la ranger dans son niveau. Un module dont le précédent change passe « à revoir » s’il était commencé.')+'</span></div>';
 }
 function cran2(lf){
-  var n=S.niv,R=rangsNiveau(n).map(function(r){return byCode(r.module_code);}).filter(function(m){return m&&m.genre==='module';});
+  var n=S.niv,R=rangsNiveau(n).map(function(r){return byCode(r.module_code);}).filter(function(m){return m&&m.genre==='module'&&m.niveau_entree===n;});
   var E=eps().filter(function(m){return m.niveaux&&m.niveaux.indexOf('N'+n)===0&&m.code!=='EN-N4F'||(n===4&&m.code==='EN-N4F');});
-  var h='<div class="kick">'+esc(NIV[n])+' · '+R.length+' modules dans l’ordre du parcours</div><div class="c2">';
+  var h='<div class="kick">'+esc(NIV[n])+' · '+R.length+' modules dans l’ordre du parcours <span style="text-transform:none;letter-spacing:0">(ceux qui continuent depuis un niveau plus bas sont comptés dans leur niveau d’entrée)</span></div><div class="c2">';
   R.forEach(function(m,i){var r=D.rang.filter(function(x){return x.module_code===m.code&&x.niveau===n;})[0],ghost=lf&&!lf(m);
     h+='<div class="c2i'+(S.sel===m.code?' sel':'')+'" draggable="true" data-drag="'+esc(m.code)+'" data-n="'+n+'" data-sel="'+esc(m.code)+'" style="'+(ghost?'opacity:.3':'')+'"><span class="n">'+(i+1)+'</span><i class="cell '+shape(m)+'"></i><span><b>'+esc(m.code)+'</b> '+esc(m.titre)+'<small>entre au '+('N'+m.niveau_entree)+' · sous-niveau '+(r?r.sous_niveau:'—')+(r&&r.sous_niveau_fixe?' (fixé)':' (par tiers)')+'</small></span><span class="pa">'+pasteTypes(m)+'</span><span class="et">'+ETAT[m.etat][0]+'</span></div>';});
   h+='</div>';
