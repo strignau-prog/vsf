@@ -359,13 +359,62 @@ function dateCourte(){ const d = E.date || ''; return /^\d{4}-\d{2}-\d{2}$/.test
 const MAX_PX = 4200;   // plus grand côté : net à l'impression même pour un visuel pleine largeur
 const lire = f => new Promise((ok, ko) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = () => ko(new Error('lecture impossible')); r.readAsDataURL(f); });
 const charger = src => new Promise((ok, ko) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ko(new Error('image illisible')); i.src = src; });
-async function imageReduite(f){
+
+/* ------------------ Fond blanc retiré : le visuel se pose sur le papier du gabarit ------------------
+   Le blanc (ou le transparent) relié au bord de l'image devient transparent ; les blancs à l'intérieur du dessin restent.
+   Si le bord n'est pas blanc (visuel pleine page, photo), l'image reste telle quelle. */
+function sansFondBlanc(c){
+  const w = c.width, h = c.height; if(!w || !h) return false;
+  const x = c.getContext('2d'), im = x.getImageData(0, 0, w, h), d = im.data, T = 240;
+  const fond = p => { const i = p * 4; return d[i + 3] < 16 || (d[i] >= T && d[i + 1] >= T && d[i + 2] >= T); };
+  let nb = 0, tot = 0;
+  const bord = p => { tot++; if(fond(p)) nb++; };
+  for(let i = 0; i < w; i++){ bord(i); bord((h - 1) * w + i); }
+  for(let j = 1; j < h - 1; j++){ bord(j * w); bord(j * w + w - 1); }
+  if(nb / tot < 0.6) return false;
+  const masque = new Uint8Array(w * h), pile = new Int32Array(w * h); let n = 0;
+  const pousser = p => { if(!masque[p] && fond(p)){ masque[p] = 1; pile[n++] = p; } };
+  for(let i = 0; i < w; i++){ pousser(i); pousser((h - 1) * w + i); }
+  for(let j = 1; j < h - 1; j++){ pousser(j * w); pousser(j * w + w - 1); }
+  while(n){
+    const p = pile[--n], px = p % w;
+    if(px > 0) pousser(p - 1); if(px < w - 1) pousser(p + 1); if(p >= w) pousser(p - w); if(p < w * (h - 1)) pousser(p + w);
+  }
+  for(let p = 0; p < w * h; p++){
+    const i = p * 4;
+    if(masque[p]){ d[i + 3] = 0; continue; }
+    // liseré : un pixel clair collé au fond devient à moitié transparent (pas d'auréole blanche)
+    const px = p % w;
+    if((px > 0 && masque[p - 1]) || (px < w - 1 && masque[p + 1]) || (p >= w && masque[p - w]) || (p < w * (h - 1) && masque[p + w])){
+      const m = Math.min(d[i], d[i + 1], d[i + 2]);
+      if(m >= 190) d[i + 3] = Math.min(d[i + 3], Math.round(255 * (255 - m) / 65));
+    }
+  }
+  x.putImageData(im, 0, 0);
+  return true;
+}
+// PNG transparent si un fond blanc a été retiré, sinon JPEG sur fond blanc
+function exporterVisuel(c){
+  if(sansFondBlanc(c)) return c.toDataURL('image/png');
+  const b = document.createElement('canvas'); b.width = c.width; b.height = c.height;
+  const y = b.getContext('2d'); y.fillStyle = '#fff'; y.fillRect(0, 0, b.width, b.height); y.drawImage(c, 0, 0);
+  return b.toDataURL('image/jpeg', .9);
+}
+async function retraiterSrc(src){
+  try{
+    const im = await charger(src), c = document.createElement('canvas'); c.width = im.naturalWidth; c.height = im.naturalHeight;
+    c.getContext('2d').drawImage(im, 0, 0); return exporterVisuel(c);
+  }catch(e){ return src; }
+}
+async function imageReduite(f, garderFond){
   const src = await lire(f);
   if(/svg/i.test(f.type) || /\.svg$/i.test(f.name)) return src;
   const img = await charger(src), k = Math.min(1, MAX_PX / Math.max(img.naturalWidth, img.naturalHeight));
   const c = document.createElement('canvas'); c.width = Math.round(img.naturalWidth*k); c.height = Math.round(img.naturalHeight*k);
-  const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0,0,c.width,c.height); x.drawImage(img,0,0,c.width,c.height);
-  return c.toDataURL('image/jpeg', .9);
+  const x = c.getContext('2d');
+  if(garderFond){ x.fillStyle = '#fff'; x.fillRect(0,0,c.width,c.height); x.drawImage(img,0,0,c.width,c.height); return c.toDataURL('image/jpeg', .9); }
+  x.drawImage(img,0,0,c.width,c.height);
+  return exporterVisuel(c);
 }
 const avecDelai = (p, ms, msg) => Promise.race([p, new Promise((_, ko) => setTimeout(() => ko(new Error(msg)), ms))]);
 let pdfjsPret = null;
@@ -386,9 +435,9 @@ async function pagesPdf(f){
   for(let i = 1; i <= Math.min(doc.numPages, 30); i++){
     const p = await doc.getPage(i), v0 = p.getViewport({ scale:1 }), v = p.getViewport({ scale: Math.min(4, MAX_PX / Math.max(v0.width, v0.height)) });
     const c = document.createElement('canvas'); c.width = Math.round(v.width); c.height = Math.round(v.height);
-    const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0,0,c.width,c.height);
+    const x = c.getContext('2d');   // fond laissé transparent : le blanc du bord est retiré ensuite
     await avecDelai(p.render({ canvasContext:x, viewport:v, intent:'print' }).promise, 60000, 'page ' + i + ' trop longue à dessiner');   // « print » : ne dépend pas de l'affichage de l'onglet
-    out.push(c.toDataURL('image/jpeg', .9));
+    out.push(exporterVisuel(c));
   }
   return out;
 }
@@ -559,14 +608,14 @@ async function ajouterFichiers(liste, cible){
       const pdf = f.type === 'application/pdf' || /\.pdf$/i.test(f.name);
       const img = /^image\/(jpeg|png|webp|gif|svg\+xml|bmp|avif)$/.test(f.type) || /\.(jpe?g|png|webp|gif|svg|bmp|avif)$/i.test(f.name);
       const ai = /\.ai$/i.test(f.name);
-      if(cible === 'photo'){ if(!img) throw new Error('format non lu'); E.photo = await imageReduite(f); continue; }
+      if(cible === 'photo'){ if(!img) throw new Error('format non lu'); E.photo = await imageReduite(f, true); continue; }
       if(!pdf && !img && !ai) throw new Error('format non lu');
       let pages, aiData = null, faible = false;
       if(ai){
         aiData = await lireAI(f);
         let net = null; try{ net = await apercuAI(f); }catch(e){ net = null; }
         const ok = !!(net && net.length);
-        pages = ok ? net : [aiData.vignette]; faible = !ok;
+        pages = ok ? net : [await retraiterSrc(aiData.vignette)]; faible = !ok;
         if(!pages[0]) throw new Error('aperçu illisible : enregistrez aussi le fichier en PDF');
         if(faible) avert.push('« ' + f.name + ' » : aperçu basse définition. Réenregistrez-le avec « Créer un fichier compatible PDF », ou déposez aussi son PDF.');
         aiData.alertes.forEach(a => avert.push('« ' + f.name + ' » : ' + a));
