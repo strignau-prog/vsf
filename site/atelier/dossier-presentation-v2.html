@@ -936,7 +936,7 @@ function etatEtapes(){
 }
 
 const pluriel = (n, un, plu) => n + ' ' + (n > 1 ? plu : un);
-let repliTexteOuvert = false, repliAiOuvert = false;
+let repliTexteOuvert = false;
 function resteFaire(id){
   const r = [];
   if(id === 'dossier'){
@@ -1057,11 +1057,11 @@ function blocFichiers(){
   const vide0 = !props.length && !pl.length;
   return `${vide0 ? `<div class="depot afaire" id="depot"><input type="file" id="fichierInput" multiple accept=".ai,.pdf,image/*" hidden>
       <div class="depotTitre">Glissez ici vos fichiers (.ai, PDF ou images)</div>
-      <div class="tiny">Ils apparaissent d'abord ci-dessous : cochez ceux à mettre dans le dossier, choisissez leur version, puis placez-les.</div>
+      <div class="tiny">Cochez ensuite ceux à placer dans le dossier.</div>
+      <div class="tiny" style="margin-top:6px">Fichier .ai : enregistrez-le avec <b>« Créer un fichier compatible PDF »</b>, sinon l'aperçu est flou.</div>
       <button class="btn petit" id="bChoisir" style="margin-top:8px">Choisir des fichiers</button>
       <div class="statut tiny" id="statutDepot"></div></div>` : `<div class="depot compact" id="depot"><input type="file" id="fichierInput" multiple accept=".ai,.pdf,image/*" hidden>
-      <span class="depotTitre">Déposer d'autres fichiers</span><button class="btn petit" id="bChoisir">Choisir des fichiers</button><div class="statut tiny" id="statutDepot" style="flex-basis:100%;text-align:center;margin:0"></div></div>`}
-    <details class="repli" id="repliAi" ${repliAiOuvert ? 'open' : ''}><summary>Fichier Illustrator (.ai) : comment l'enregistrer</summary><div class="consigneAi" style="margin:0"><b>Avant d'enregistrer :</b> cochez <b>« Créer un fichier compatible PDF »</b> (Fichier &gt; Enregistrer sous, puis dans les options du format .ai). Sans cela, le visuel est une petite vignette floue dans le PDF.</div></details>
+      <span class="depotTitre">Déposer d'autres fichiers</span><button class="btn petit" id="bChoisir">Choisir des fichiers</button><div class="tiny" style="flex-basis:100%;text-align:center">Fichier .ai : enregistrez-le avec <b>« Créer un fichier compatible PDF »</b>, sinon l'aperçu est flou.</div><div class="statut tiny" id="statutDepot" style="flex-basis:100%;text-align:center;margin:0"></div></div>`}
     ${plateau}
     ${props.length ? '<div class="plateauTete"><b style="font-size:14px">Pages du dossier</b><span class="tiny">dans l\'ordre du PDF</span></div>' : ''}
     ${props.map((c, i) => {
@@ -1206,7 +1206,7 @@ saisie.addEventListener('change', e => {
   if(t.dataset.p){ const p = propDe(t); if(p){ if(t.dataset.p === 'vv'){ p.vv = parseInt(t.value, 10) || 1; majVersionDossier(); } else p[t.dataset.p] = t.value; dessiner(); } return; }
   if(t.dataset.ck){ const p = propDe(t); if(p){ p.cotes = p.cotes.map(versCote); p.cotes[+t.dataset.i][t.dataset.ck] = (t.type === 'checkbox') ? t.checked : t.value; dessiner(); } }
 });
-saisie.addEventListener('toggle', e => { const t = e.target; if(t.id === 'repliTexte') repliTexteOuvert = t.open; if(t.id === 'repliAi') repliAiOuvert = t.open; }, true);
+saisie.addEventListener('toggle', e => { const t = e.target; if(t.id === 'repliTexte') repliTexteOuvert = t.open; }, true);
 saisie.addEventListener('input', e => {
   if(e.target.id === 'palQ'){ palRecherche = e.target.value; const g = document.getElementById('palGrille'); if(g) g.innerHTML = grillePalette(palMarque); }
 });
