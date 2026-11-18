@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex">
 <title>Dossier de présentation</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:ital,wght@0,400;0,700;1,400&display=swap">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Anton&family=Space+Mono:wght@400;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Antonio:wght@700&family=Anton&family=Space+Mono:wght@400;700&display=swap">
 <style>
   :root{ --ink:#111; --muted:#6b6b6b; --line:#e2e0db; --soft:#f6f5f2; --accent:#a8461f;
          --kraft:#c6af90; --kraftLine:rgba(23,18,10,.42); --cream:#d8d4cd; --papInk:#181510; --papRed:#ae3f37; }
@@ -147,9 +147,8 @@
   .tp .tpLegende b{text-transform:uppercase}
   .tp .tpLegende i{font-size:.82em}
   .consigneAi{margin:8px auto 0;max-width:330px;font-size:12px;line-height:1.45;text-align:left;background:#fff;border:1px solid #e7a198;border-radius:8px;padding:8px 10px;color:#111}
-  @font-face{font-family:'Kaneda Gothic';src:url('dossier-assets/fonts/KanedaGothic-Bold.woff2') format('woff2'),url('dossier-assets/fonts/KanedaGothic-Bold.otf') format('opentype');font-weight:700;font-display:swap}
-  @font-face{font-family:'Kaneda Gothic';src:url('dossier-assets/fonts/KanedaGothic-ExtraBold.woff2') format('woff2'),url('dossier-assets/fonts/KanedaGothic-ExtraBold.otf') format('opentype');font-weight:800;font-display:swap}
-  @font-face{font-family:'Ephemera Egyptian';src:url('dossier-assets/fonts/EphemeraEgyptian-Regular.woff2') format('woff2'),url('dossier-assets/fonts/EphemeraEgyptian-Regular.otf') format('opentype');font-weight:400;font-display:swap}
+  /* Ephemera Egyptian : police sous licence « bureau » (pas de licence web) — jamais servie par le site, utilisée seulement si elle est installée sur l'ordinateur */
+  @font-face{font-family:'Ephemera Egyptian';src:local('Ephemera Egyptian Condensed'),local('Ephemera Egyptian CondensedRegular'),local('EphemeraEgyptian-CondensedRegular');font-weight:400}
   .coteBloc{border:1px solid var(--line);border-radius:10px;padding:8px;margin-top:8px;background:#fff}
   .coteTete{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;margin-bottom:8px}
   .mesures{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
@@ -1350,7 +1349,7 @@ const AUTO_LIGNES = [[104.9, 58.8, 443.8, 114.0, 50.0, "030405", 0, 1, "DEMANDE 
    le dossier garde exactement ses proportions à l'écran, à l'impression et en PDF.
    Fonds (texture, pochette kraft, photo d'introduction, page de contact) : images extraites du gabarit, dans dossier-assets/tpl/. */
 const PT = 841.89, PH = 595.28, GAB = 'dossier-assets/tpl/';
-const MONO = "'Source Code Pro','Space Mono',monospace", TITRE = "'Kaneda Gothic','Anton',Impact,'Arial Narrow',sans-serif", EPHEMERA = "'Ephemera Egyptian','Source Code Pro',serif";
+const MONO = "'Source Code Pro','Space Mono',monospace", TITRE = "'Antonio','Anton',Impact,'Arial Narrow',sans-serif", EPHEMERA = "'Ephemera Egyptian','Source Code Pro',serif";
 const CREME = '#f7f4f1', KRAFT_LIGNE = '#c4af93', ENCRE = '#030405';
 function tx(a, x, y0, y1, s, html, o){
   o = o || {};
