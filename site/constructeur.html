@@ -161,7 +161,7 @@ function centre(m){
     if(!liste.length)h+='<div class="cont"><span class="vide">Aucun contenu</span></div>';
     liste.forEach(function(c){
       var nb=briquesDe(c.id).length;
-      h+='<div class="cont"><span class="nom">'+esc(nomType(c.type))+'</span><span class="chip '+(c.relecture==='relu'?'relu':'a-relire')+'">'+(c.relecture==='relu'?'relu':'brouillon · à relire')+'</span><span class="note">'+nb+' brique'+(nb>1?'s':'')+(c.duree_min?' · '+c.duree_min+' min':'')+(c.obligatoire===false?' · facultatif':'')+'</span>'+
+      h+='<div class="cont"><span class="nom">'+esc(nomType(c.type))+'</span><span class="chip '+(!nb?'':c.relecture==='relu'?'relu':'a-relire')+'">'+(!nb?'à écrire':c.relecture==='relu'?'relu':'brouillon · à relire')+'</span><span class="note">'+nb+' brique'+(nb>1?'s':'')+(c.duree_min?' · '+c.duree_min+' min':'')+(c.obligatoire===false?' · facultatif':'')+'</span>'+
         (nb?'<button class="btn" data-voir="'+esc(c.id)+'">Voir</button>':'')+(c.relecture!=='relu'&&nb?'<button class="btn plein" data-valider="'+esc(c.id)+'">Valider ce contenu</button>':'')+'</div>';
     });
     h+='</div>';
