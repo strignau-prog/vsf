@@ -83,6 +83,9 @@ textarea.json:focus,input:focus{outline:2px solid var(--now)}
 .ab .minu{display:inline-block;font-weight:800;font-size:12px;border:2px solid #111;border-radius:999px;padding:2px 10px;margin-bottom:6px}
 .ab .pt{font-weight:800}
 .note{font-size:12.5px;color:var(--muted)}
+.jours{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 18px}
+.jours .j{font-size:12px;font-weight:800;border:2px solid #111;border-radius:999px;padding:3px 10px;background:#fff}
+.jours .j.trop{background:#fdecea;border-color:var(--alert);color:var(--alert)}
 .err{color:var(--alert);font-weight:700}
 </style>
 <link rel="stylesheet" href="vsf-menu.css">
@@ -106,6 +109,8 @@ var ETATS={ecr:'À écrire',bro:'Brouillon préparé',rsk:'Relu par Skolantreuz'
 var famille=function(t){return (TYPES[t]||['',' --f-faire'])[1].trim();};
 var nomType=function(t){return (TYPES[t]||[t])[0];};
 var byCode=function(c){return D.mods.filter(function(m){return m.code===c;})[0]||null;};
+var QUIZ_JOUR=4; /* règle du 18 nov. : le quiz tombe le jour 4 de « Faire » (ou le dernier jour s'il y en a moins) et la séance de ce jour est raccourcie */
+var reglage=function(cle,def){var v=D.regl&&D.regl[cle];return typeof v==='number'?v:def;};
 var mots=function(s){s=String(s||'').trim();return s?s.split(/\s+/).length:0;};
 
 function sb(){return window.VSF&&VSF.sb;}
@@ -148,6 +153,7 @@ function ligne(m){return '<button data-mod="'+esc(m.code)+'" class="'+(m.code===
 function centre(m){
   var cs=contenusDe(m.code),h='<h2>'+esc(m.titre)+'</h2><p><span class="chip">'+esc(ETATS[m.etat]||m.etat)+'</span> <span class="chip">'+esc(m.code)+'</span> '+
     '<span class="chip">Essai sécurisé : '+(m.essai_securise===true?'oui':m.essai_securise===false?'non':'à choisir')+'</span></p>';
+  h+=journees(m);
   ETAPES.forEach(function(e,i){
     var grise=(m.essai_securise===false&&e[0]==='essayer');
     var liste=cs.filter(function(c){return c.etape===e[0];});
@@ -165,6 +171,19 @@ function centre(m){
     '<p><button class="btn plein" data-act="importer">Importer pour ce module</button></p><div id="res">'+resultat()+'</div>';
   if(S.cont){var c=D.cont.filter(function(x){return x.id===S.cont;})[0];if(c)h+='<h2>'+esc(nomType(c.type))+'</h2>'+briquesDe(c.id).map(briqueEdition).join('');}
   return h;
+}
+function journees(m){
+  var cs=contenusDe(m.code),max=reglage('journee_max_min',12),rap=reglage('rappel_minutes',2),dur=function(c){return +c.duree_min||0;};
+  var serie=cs.filter(function(c){return c.type==='series_guidees';})[0];if(!serie)return '';
+  var ex=briquesDe(serie.id).filter(function(b){return b.type==='exercice';});if(!ex.length)return '';
+  var quiz=cs.filter(function(c){return c.type==='quiz_deux_versions';})[0],qd=Math.min(QUIZ_JOUR,ex.length);
+  var fin=cs.filter(function(c){return c.etape==='comparer'||c.etape==='ancrer';}).reduce(function(a,c){return a+dur(c);},0);
+  var d0=cs.filter(function(c){return ['essayer','constater','regarder'].indexOf(c.etape)>-1;}).reduce(function(a,c){return a+dur(c);},0);
+  var rows=[{n:'Jour 0',t:d0,txt:'sans rappel'}];
+  ex.forEach(function(b,i){var c=b.champs||{},t=(+c.duree_min||0)+(i+1===qd&&quiz?dur(quiz):0)+rap,dernier=i===ex.length-1;if(dernier)t+=fin;
+    rows.push({n:c.jour||('J'+(i+1)),t:t,txt:(i+1===qd&&quiz?'quiz · ':'')+(dernier&&fin?'dépôt et ancrage · ':'')+'rappel '+rap+' min'});});
+  var trop=rows.filter(function(r){return r.t>max;}).length;
+  return '<h3>Durée des journées <span class="note">(au plus '+max+' min)</span></h3><div class="jours">'+rows.map(function(r){return '<span class="j'+(r.t>max?' trop':'')+'" title="'+esc(r.txt)+'">'+esc(r.n)+' · '+r.t+' min'+(r.t>max?' · trop long':'')+'</span>';}).join('')+'</div>'+(trop?'<p class="err">'+trop+' journée'+(trop>1?'s dépassent':' dépasse')+' '+max+' minutes : raccourcis une séance ou décale un contenu.</p>':'');
 }
 function briqueEdition(b){
   var c=b.champs||{},t=b.type,corps='';
@@ -309,6 +328,7 @@ async function charger(){
   var a=await sb().rpc('vsf_est_admin');
   if(a.data!==true){$('app').innerHTML='<div class="kick">Constructeur de parcours</div><h1><i class="dot"></i>Accès réservé</h1><p class="lead">Cette page est réservée à Skolantreuz.</p><p><a class="btn" href="./">Retour</a></p>';return;}
   D.parcs=await lire('parcours',sb().from('vsf_form_parcours').select('*').order('cree_le'));
+  (await lire('réglages',sb().from('vsf_form_reglages').select('cle,valeur'))).forEach(function(x){if(typeof x.valeur==='number'){D.regl=D.regl||{};D.regl[x.cle]=x.valeur;}});
   await recharger();
   var demande=new URLSearchParams(location.search).get('parcours');
   var p=D.parcs.filter(function(x){return x.code===demande;})[0]||D.parcs.filter(function(x){return x.demo;})[0]||D.parcs[0];
