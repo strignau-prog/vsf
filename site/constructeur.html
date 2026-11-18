@@ -165,6 +165,7 @@ function ligne(m){return '<button data-mod="'+esc(m.code)+'" class="'+(m.code===
 function centre(m){
   var cs=contenusDe(m.code),h='<h2>'+esc(m.titre)+'</h2><p><span class="chip">'+esc(ETATS[m.etat]||m.etat)+'</span> <span class="chip">'+esc(m.code)+'</span> '+
     '<span class="chip">Essai sécurisé : '+(m.essai_securise===true?'oui':m.essai_securise===false?'non':'à choisir')+'</span></p>';
+  if(S.msg&&!S.cont)h+='<p class="msg">'+esc(S.msg)+'</p>';
   h+=journees(m);
   ETAPES.forEach(function(e,i){
     var grise=(m.essai_securise===false&&e[0]==='essayer');
@@ -174,7 +175,7 @@ function centre(m){
     liste.forEach(function(c){
       var nb=briquesDe(c.id).length;
       h+='<div class="cont"><span class="nom">'+esc(nomType(c.type))+'</span><span class="chip '+(!nb?'':c.relecture==='relu'?'relu':'a-relire')+'">'+(!nb?'à écrire':c.relecture==='relu'?'relu':'brouillon · à relire')+'</span><span class="note">'+nb+' brique'+(nb>1?'s':'')+(c.duree_min?' · '+c.duree_min+' min':'')+(c.obligatoire===false?' · facultatif':'')+'</span>'+
-        (nb?'<button class="btn" data-voir="'+esc(c.id)+'">Voir</button>':'')+(c.relecture!=='relu'&&nb?'<button class="btn plein" data-valider="'+esc(c.id)+'">Valider ce contenu</button>':'')+'</div>';
+        (nb?'<button class="btn" data-voir="'+esc(c.id)+'">Voir</button>':'')+(c.relecture!=='relu'&&nb?'<button class="btn plein" data-valider="'+esc(c.id)+'">Valider ce contenu</button>':'')+(c.relecture==='relu'&&nb?'<button class="btn" data-brouillon="'+esc(c.id)+'" title="À faire avant de réimporter une nouvelle version de ce contenu">Repasser en brouillon</button>':'')+'</div>';
     });
     h+='</div>';
   });
@@ -329,17 +330,21 @@ async function televerser(id,file){
   if(r.error){S.msg='Le fichier est envoyé mais la brique n\u2019a pas été mise à jour : '+r.error.message;render();window.scrollTo(0,y0);return;}
   b.fichier=path;b.emplacement=false;await toucher(b.contenu_id);await signer();S.msg='Fichier ajouté. Le contenu repasse en « brouillon · à relire ».';render();window.scrollTo(0,y0);
 }
+async function repasserBrouillon(id){
+  var y0=window.scrollY;await toucher(id);S.msg='Le contenu est repassé en « brouillon · à relire » : tu peux réimporter une nouvelle version.';render();window.scrollTo(0,y0);
+}
 async function valider(id){
   var r=TEST?{ok:true}:await rpc('vsf_form_valider_contenu',{p_contenu:id});
   if(r&&r.ok!==false){var c=D.cont.filter(function(x){return x.id===id;})[0];if(c){c.relecture='relu';if(TEST&&c.etat==='bro')c.etat='rsk';}if(!TEST)await recharger();}
   render();
 }
 document.addEventListener('click',function(e){
-  var t=e.target.closest('[data-mod],[data-voir],[data-valider],[data-fmt],[data-act],[data-rep],[data-bmv]');if(!t)return;var d=t.dataset;
+  var t=e.target.closest('[data-mod],[data-voir],[data-valider],[data-fmt],[data-act],[data-rep],[data-bmv],[data-brouillon]');if(!t)return;var d=t.dataset;
   if(d.mod){S.mod=d.mod;S.cont=null;S.res=null;S.rep={};S.msg='';render();return;}
   if(d.bmv){var pp=d.bmv.split('|');deplacer(pp[0],+pp[1]);return;}
   if(d.voir){S.cont=d.voir;S.msg='';render();var ed=$('edit');if(ed)ed.scrollIntoView({block:'start'});return;}
   if(d.valider){valider(d.valider);return;}
+  if(d.brouillon){repasserBrouillon(d.brouillon);return;}
   if(d.fmt){S.fmt=d.fmt;render();return;}
   if(d.act==='tout'){S.cont=null;render();return;}
   if(d.act==='prev'||d.act==='next'){var rl=$('rail');if(rl){rl.scrollBy({left:(d.act==='next'?1:-1)*rl.clientWidth,behavior:'auto'});setTimeout(majCpt,60);}return;}
