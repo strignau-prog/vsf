@@ -328,7 +328,7 @@ function etatVierge(){
     props:{},         // cle → { choix, titre, type, cotes:[{l,v}], description }
     ordre:[],         // clés dans l'ordre d'affichage
     plateau:[],       // fichiers déposés, pas encore placés : { id, nom, cle, titre, vv, src, mini, ai, faible, w, h, coche, cles:[pages placées] }
-    versionPlacement:1, versionManuelle:false, typePlacement:'',
+    pistePlacement:0, typePlacement:'',   // pistePlacement : 0 = numérotation automatique (dans l'ordre), sinon n° de piste imposé aux images placées
     photo:'', texteId:'', texteLibre:null, signature:'', atelier:{...ATELIER_DEFAUT}, teintes:[], nuancier:null, regrouper:false, parPage:2 };
 }
 let E = etatVierge();
@@ -652,7 +652,7 @@ async function ajouterFichiers(liste, cible){
       }
     }catch(e){ refus.push(f.name + ' (' + (e.message || 'illisible') + ')'); }
   }
-  { const vs = nouveaux.map(x => x.vv).filter(Boolean); if(vs.length) E.versionPlacement = Math.max(...vs); }   // « _V2 » dans le nom : version préchoisie
+  { const vs = nouveaux.map(x => x.vv).filter(Boolean); if(vs.length) E.pistePlacement = Math.max(...vs); }   // « _V2 » dans le nom du fichier : piste n° 2 préchoisie (la piste prime sur la version)
   dessiner();
   if(refus.length || avert.length) statut([refus.length ? 'Non lus : ' + refus.join(' ; ') : '', ...avert].filter(Boolean).join(' — '), true);
 }
@@ -668,23 +668,27 @@ async function miniature(src){
 }
 const clePlacee = it => it.cles.filter(c => E.props[c]).slice(-1)[0];
 const estPlace = it => !!clePlacee(it);
-const versMax = () => Math.max(3, E.versionPlacement || 1, ...E.ordre.map(c => (E.props[c] || {}).vv || 0));
-// La couverture prend la version la plus haute des pages, sauf si la version du dossier a été saisie à la main.
-function majVersionDossier(){
-  if(E.versionManuelle) return;
-  const vs = propositions().map(c => E.props[c].vv).filter(Boolean);
-  if(vs.length) E.version = Math.max(...vs);
+const pisteMax = () => Math.max(3, E.pistePlacement || 0, ...E.ordre.map(c => (E.props[c] || {}).piste || 0));
+// numéro de piste affiché dans l'encart : celui qui est imposé, sinon le rang parmi les pages du même type
+function numeroPiste(c){
+  const p = E.props[c]; if(p.piste) return p.piste;
+  // numérotation automatique : plus petit numéro libre (ceux imposés à la main ne sont jamais repris)
+  const memes = propositions().filter(x => E.props[x].type === p.type), pris = new Set(memes.map(x => E.props[x].piste).filter(Boolean));
+  let n = 0;
+  for(const x of memes.filter(x => !E.props[x].piste)){ do { n++; } while(pris.has(n)); if(x === c) return n; }
+  return n;
 }
+function majVersionDossier(){ /* la version du dossier se saisit dans « Dossier et client » et ne suit plus les pages */ }
 // type des images placées : choix du plateau ; à défaut, « Croquis » si le nom du fichier le dit, sinon le type de l'étape
 const typeChoisi = it => E.typePlacement || (it.croquis ? 'Croquis' : (ETAPES[E.etape] || ETAPES.CREA).typeDefaut);
 function placerCoches(ensemble){
-  const v = E.versionPlacement || 1, groupe = ensemble ? uid() : '';
+  const v = E.pistePlacement || 0, groupe = ensemble ? uid() : '';
   E.plateau.filter(it => it.coche).forEach(it => {
     const src = it.src || ((E.fichiers.find(f => it.cles.includes(f.cle)) || {}).src);
     if(!src) return;
     let cle = it.cle; if(E.props[cle]){ let n = 2; while(E.props[it.cle + '~' + n]) n++; cle = it.cle + '~' + n; }
     E.fichiers.push({ id:uid(), nom:it.nom, cle, v:1, src, ai:it.ai, faible:it.faible, w:it.w, h:it.h });
-    const pr = E.props[cle] = { choix:'', titre:it.titre, vv:v, type: typeChoisi(it), typeAuto: !E.typePlacement && !it.croquis, cotes:[], description:'', panneau:'' };
+    const pr = E.props[cle] = { choix:'', titre:it.titre, piste:v, type: typeChoisi(it), typeAuto: !E.typePlacement && !it.croquis, cotes:[], description:'', panneau:'' };
     if(groupe) pr.groupe = groupe;
     E.ordre.push(cle); it.cles.push(cle); it.src = null; it.coche = false;
     if(it.ai){   // cotes et dimensions du panneau lues dans le fichier
@@ -1066,10 +1070,10 @@ function corpsEtape(id){
     <div class="field"><label>Localisation</label><textarea class="textarea${vide(E.ville) ? ' afaire' : ''}" rows="1" placeholder="Rue, ville, département" data-k="ville">${esc(E.ville)}</textarea></div>
     <div class="grid2"><div class="field"><label>Interlocuteur</label><input class="input${vide(E.interlocuteur) ? ' afaire' : ''}" value="${esc(E.interlocuteur)}" data-k="interlocuteur"></div>
     <div class="field"><label>Téléphone</label><input class="input${vide(E.tel) ? ' afaire' : ''}" value="${esc(E.tel)}" data-k="tel"></div></div>
-    <div class="field" style="max-width:190px"><label>Date du dossier</label><input class="input" type="date" value="${esc(E.date)}" data-k="date"></div>`;
+    <div class="grid2"><div class="field"><label>Date du dossier</label><input class="input" type="date" value="${esc(E.date)}" data-k="date"></div>
+    <div class="field"><label>Version du dossier</label><input class="input" type="number" min="1" value="${E.version}" data-k="version"></div></div>`;
   if(id === 'type') return `<div class="field"><label>Étape du dossier</label>${groupeRadios('etape', ETAPES_CONNUES.map(k => [k, ({ CREA:'Propositions (CREA)', BAT:'Validation (BAT)', MOODBOARD:'Moodboard & croquis' })[k]]), E.etapeChoisie ? E.etape : '', !E.etapeChoisie)}</div>
-    <div class="grid2"><div class="field"><label>Statut du devis</label>${groupeRadios('devis', [['non_signe', 'Non signé'], ['signe', 'Signé']], E.devis || 'non_signe', false)}</div>
-    <div class="field"><label>Version sur la couverture</label><input class="input" type="number" min="1" value="${E.version}" data-k="version" style="max-width:90px"></div></div>
+    <div class="field"><label>Statut du devis</label>${groupeRadios('devis', [['non_signe', 'Non signé'], ['signe', 'Signé']], E.devis || 'non_signe', false)}</div>
     <details class="repli" id="repliTexte" ${repliTexteOuvert ? 'open' : ''}><summary>Texte d'introduction : <b>${esc(nomTexte(texteActif().nom))}</b> <span class="tiny">choisi automatiquement · modifier</span></summary>${blocTexte()}</details>`;
   if(id === 'fichiers') return blocFichiers();
   if(id === 'cotes') return blocCotes();
@@ -1115,25 +1119,25 @@ function dessiner(){
   }
 }
 function blocFichiers(){
-  const props = propositions(), pl = E.plateau, nC = pl.filter(x => x.coche).length, vm = versMax();
+  const props = propositions(), pl = E.plateau, nC = pl.filter(x => x.coche).length, vm = pisteMax(), pad2 = n => String(n).padStart(2, '0');
   const carte = (it, i) => {
-    const place = estPlace(it), cp = clePlacee(it), vp = cp ? (E.props[cp].vv || 1) : 0;
+    const place = estPlace(it), cp = clePlacee(it), vp = cp ? numeroPiste(cp) : 0;
     return `<div class="carteBloc" style="--incl:${((i % 3) - 1) * 1.4}deg"><label class="carte${it.coche ? ' coche' : ''}${place ? ' placee' : ''}">
         <input type="checkbox" data-plc="${it.id}" ${it.coche ? 'checked' : ''} aria-label="Placer « ${esc(it.nom)} » dans le dossier">
         <span class="vignette"><img src="${it.mini || it.src || ''}" alt=""></span>
         <span class="carteNom">${esc(it.nom)}</span>
-        <span class="carteEtat">${place ? 'placé ✓ en V' + vp : (it.faible ? '<span class="alerteTxt">aperçu flou</span>' : (it.w && it.h ? (it.w >= it.h ? 'paysage' : 'portrait') : ''))}</span></label>
+        <span class="carteEtat">${place ? 'placé ✓ · piste ' + pad2(vp) : (it.faible ? '<span class="alerteTxt">aperçu flou</span>' : (it.w && it.h ? (it.w >= it.h ? 'paysage' : 'portrait') : ''))}</span></label>
       <button type="button" class="carteX" data-pl="plX" data-id="${it.id}" title="Retirer ce fichier du plateau" aria-label="Retirer du plateau">✕</button></div>`;
   };
   const plateau = pl.length ? `<div class="plateauTete"><b style="font-size:14px">À placer dans le dossier</b><span class="tiny">${nC} sur ${pl.length} cochée${nC > 1 ? 's' : ''}</span>
       <button type="button" class="btn petit" data-pl="tout">Tout cocher</button><button type="button" class="btn petit" data-pl="rien">Tout décocher</button></div>
     <div class="plateau">${pl.map(carte).join('')}</div>
-    <div class="placement"><span class="tiny" style="font-size:13px">Version des images cochées :</span>
-      ${groupeRadios('vplace', Array.from({ length:vm }, (_, k) => [String(k + 1), 'V' + (k + 1)]), String(E.versionPlacement || 1), false)}
-      <button type="button" class="btn petit" data-pl="vplus" title="Ajouter une version">＋</button></div>
+    <div class="placement"><span class="tiny" style="font-size:13px">Piste des images cochées :</span>
+      ${groupeRadios('pplace', [['0', 'Auto']].concat(Array.from({ length:vm }, (_, k) => [String(k + 1), pad2(k + 1)])), String(E.pistePlacement || 0), false)}
+      <button type="button" class="btn petit" data-pl="vplus" title="Ajouter une piste">＋</button></div>
     <div class="placement"><span class="tiny" style="font-size:13px">Type des images cochées :</span>
       ${groupeRadios('tplace', TYPES.map(t => [t, t]), E.typePlacement || (ETAPES[E.etape] || ETAPES.CREA).typeDefaut, false)}</div>
-    <button type="button" class="btn${nC ? ' afaire' : ''}" data-pl="placer" ${nC ? '' : 'disabled'} style="margin-bottom:14px">Placer ${nC > 1 ? 'les ' + nC + ' images cochées' : nC === 1 ? "l'image cochée" : 'les images cochées'} (V${E.versionPlacement || 1})</button>
+    <button type="button" class="btn${nC ? ' afaire' : ''}" data-pl="placer" ${nC ? '' : 'disabled'} style="margin-bottom:14px">Placer ${nC > 1 ? 'les ' + nC + ' images cochées' : nC === 1 ? "l'image cochée" : 'les images cochées'} (piste ${E.pistePlacement ? pad2(E.pistePlacement) : 'auto'})</button>
     <button type="button" class="btn${nC >= 2 && nC <= 4 ? ' afaire' : ''}" data-pl="ensemble" ${nC >= 2 && nC <= 4 ? '' : 'disabled'} style="margin:0 0 14px 6px">Les placer ensemble sur une même page</button>
     ${nC > 4 ? '<p class="tiny">Quatre visuels au maximum sur une même page.</p>' : ''}` : '';
   const vide0 = !props.length && !pl.length;
@@ -1151,7 +1155,7 @@ function blocFichiers(){
       const avec = p.groupe ? props.filter(x => x !== c && E.props[x].groupe === p.groupe).map(x => '« ' + E.props[x].titre + ' »') : [];
       return `<div class="prop" data-c="${esc(c)}">${avec.length ? '<div class="tiny" style="margin-bottom:6px">Sur la même page que ' + avec.join(', ') + ' <button type="button" class="btn petit" data-act="separer">Séparer</button></div>' : ''}<div class="propTete"><img src="${ch.src}" alt=""><input class="input" value="${esc(p.titre)}" data-p="titre" aria-label="Nom du visuel">
         <div style="display:flex;gap:4px"><button class="btn petit" data-act="haut" ${i === 0 ? 'disabled' : ''}>↑</button><button class="btn petit" data-act="bas" ${i === props.length - 1 ? 'disabled' : ''}>↓</button><button class="btn petit" data-act="retirer">✕</button></div></div>
-        <div class="grid2" style="margin-top:8px;max-width:340px"><div class="field" style="margin:0"><label>Type</label><select class="select" data-p="type" aria-label="Type de rendu de cette page">${TYPES.map(t => `<option ${p.type === t ? 'selected' : ''}>${t}</option>`).join('')}</select></div><div class="field" style="margin:0"><label>Version de cette page</label><select class="select" data-p="vv" aria-label="Version de cette page">${Array.from({ length:Math.max(vm, p.vv || 1) }, (_, k) => `<option value="${k + 1}" ${(p.vv || E.version || 1) === k + 1 ? 'selected' : ''}>V${k + 1}</option>`).join('')}</select></div></div>
+        <div class="grid2" style="margin-top:8px;max-width:340px"><div class="field" style="margin:0"><label>Type</label><select class="select" data-p="type" aria-label="Type de rendu de cette page">${TYPES.map(t => `<option ${p.type === t ? 'selected' : ''}>${t}</option>`).join('')}</select></div><div class="field" style="margin:0"><label>Piste n°</label><select class="select" data-p="piste" aria-label="Numéro de piste de cette page"><option value="0" ${!p.piste ? 'selected' : ''}>Auto (${pad2(numeroPiste(c))})</option>${Array.from({ length:Math.max(vm, p.piste || 0) }, (_, k) => `<option value="${k + 1}" ${p.piste === k + 1 ? 'selected' : ''}>${pad2(k + 1)}</option>`).join('')}</select></div></div>
         ${ch.faible ? '<div class="tiny alerteTxt" style="margin-top:6px">Aperçu basse définition : dans Illustrator, enregistrez de nouveau avec « Créer un fichier compatible PDF ».</div>' : ''}</div>`;
     }).join('')}
 `;
@@ -1275,7 +1279,7 @@ saisie.addEventListener('change', e => {
   if(t.id === 'photoInput'){ ajouterFichiers(t.files, 'photo'); t.value = ''; return; }
   if(t.dataset.plc){ const it = E.plateau.find(x => x.id === t.dataset.plc); if(it){ it.coche = t.checked; dessiner(); } return; }
   if(t.name === 'tplace'){ E.typePlacement = t.value; dessiner(); return; }
-  if(t.name === 'vplace'){ E.versionPlacement = parseInt(t.value, 10) || 1; dessiner(); return; }
+  if(t.name === 'pplace'){ E.pistePlacement = parseInt(t.value, 10) || 0; dessiner(); return; }
   if(t.name && t.name.startsWith('dispo-')){ const p = propDe(t); if(p){ p.dispo = t.value; dessiner(); } return; }
   if(t.name && t.name.startsWith('pos-')){ const p = propDe(t); if(p){ p.posCotes = t.value; dessiner(); } return; }
   if(t.name === 'etape'){ E.etape = t.value; E.etapeChoisie = true; E.ordre.forEach(c => { const p = E.props[c]; if(p && p.typeAuto !== false && p.type !== 'Croquis') p.type = (ETAPES[E.etape] || ETAPES.CREA).typeDefaut; }); E.texteId = ''; E.texteLibre = null; E.nuancier = null; dessiner(); return; }
@@ -1296,7 +1300,7 @@ saisie.addEventListener('change', e => {
   if(t.id === 'calcRend' || t.id === 'calcCouches' || t.id === 'calcMarge'){ E.calc = calcReglages(); const v = nombre(t.value); const cle = t.id === 'calcRend' ? 'rendement' : t.id === 'calcCouches' ? 'couches' : 'marge'; if(isFinite(v) && v >= 0 && (cle !== 'rendement' || v > 0)) E.calc[cle] = v; dessiner(); return; }
   if(t.id === 'chkNuancier'){ E.nuancier = t.checked; dessiner(); return; }
   if(t.dataset.tk){ const dt = t.closest('[data-t]'), te = dt && E.teintes.find(x => x.id === dt.dataset.t); if(te){ te.ouvert = (t.dataset.tk === 'surface' || t.dataset.tk === 'commander') ? te.ouvert : true; te[t.dataset.tk] = (t.type === 'checkbox') ? t.checked : t.value; if(t.dataset.tk === 'reference'){ memoriser(te); const mr = /RAL\s*(\d{4})/i.exec(te.reference), rr = mr && ralCodes().find(r => r.code === mr[1]); if(rr && !te.cmyk) te.hex = rr.hex; } dessiner(); } return; }
-  if(t.dataset.p){ const p = propDe(t); if(p){ if(t.dataset.p === 'vv'){ p.vv = parseInt(t.value, 10) || 1; majVersionDossier(); } else { p[t.dataset.p] = t.value; if(t.dataset.p === 'type') p.typeAuto = false; } dessiner(); } return; }
+  if(t.dataset.p){ const p = propDe(t); if(p){ if(t.dataset.p === 'piste'){ p.piste = parseInt(t.value, 10) || 0; } else { p[t.dataset.p] = t.value; if(t.dataset.p === 'type') p.typeAuto = false; } dessiner(); } return; }
   if(t.dataset.ck){ const p = propDe(t); if(p){ p.cotes = p.cotes.map(versCote); p.cotes[+t.dataset.i][t.dataset.ck] = (t.type === 'checkbox') ? t.checked : t.value; dessiner(); } }
 });
 saisie.addEventListener('toggle', e => { const t = e.target; if(t.id === 'repliTexte') repliTexteOuvert = t.open; }, true);
@@ -1320,7 +1324,7 @@ saisie.addEventListener('click', async e => {
     const m = b.dataset.pl;
     if(m === 'tout') E.plateau.forEach(x => { x.coche = !estPlace(x); });
     else if(m === 'rien') E.plateau.forEach(x => { x.coche = false; });
-    else if(m === 'vplus') E.versionPlacement = versMax() + 1;
+    else if(m === 'vplus') E.pistePlacement = pisteMax() + 1;
     else if(m === 'plX') E.plateau = E.plateau.filter(x => x.id !== b.dataset.id);
     else if(m === 'placer'){ placerCoches(false); return; }
     else if(m === 'ensemble'){ placerCoches(true); return; }
@@ -1590,12 +1594,12 @@ function composerCellule(p, f, X, Y, W, H, retrait, grandeur){
 }
 function etiquettePage(chunk){
   const e = ETAPES[E.etape], premier = E.props[chunk[0]], pad = n => String(n).padStart(2, '0');
-  const idx = propositions().filter(c => E.props[c].type === premier.type), n1 = idx.indexOf(chunk[0]) + 1, n2 = idx.indexOf(chunk[chunk.length - 1]) + 1;
+  const nums = chunk.map(numeroPiste), n1 = Math.min(...nums), n2 = Math.max(...nums);
   if(e.validation) return 'VALIDATION';
   if(premier.type === 'Croquis') return 'CROQUIS';
-  return premier.type.toUpperCase() + (chunk.length > 1 ? 'S ' : ' ') + pad(n1) + (n2 > n1 ? '-' + pad(n2) : '');
+  return premier.type.toUpperCase() + (chunk.length > 1 && n2 > n1 ? 'S ' : ' ') + pad(n1) + (n2 > n1 ? '-' + pad(n2) : '');
 }
-const sousEtiquette = p => ETAPES[E.etape].validation ? dateAffichee() : ('V' + (p.vv || E.version || 1) + ' • ' + dateAffichee());
+const sousEtiquette = p => ETAPES[E.etape].validation ? dateAffichee() : ('V' + (E.version || 1) + ' • ' + dateAffichee());
 // Zone des visuels : entre l'en-tête (≈ 42 pt) et le pied de page (≈ 567 pt).
 const ZONE = { x:24.4, y:52, w:793.1, h:508 };
 function pageProposition(cle){
