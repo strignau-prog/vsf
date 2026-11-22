@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Réalisations de l'atelier</title>
+  <script src="boite-message.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="atelier-nav.js"></script>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600;700&display=swap">
+  <style>
+    :root{ --bg:#fff; --ink:#1c1a17; --muted:#55504a; --line:#e4e0d9; --soft:#f7f5f2; --accent:#a8461f; --red:#b3261e; --ok:#1d5a2d; }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif}
+    body{font-size:15px;line-height:1.35}
+    h1,h2,.brand{font-family:Fraunces,Georgia,serif;font-weight:600}
+    button,input,select,textarea{font:inherit;color:inherit}
+    button{cursor:pointer;background:none;border:none;padding:0}
+    .app{min-height:100vh}
+    nav.topnav{background:#1c1a17;color:#fff;display:flex;align-items:center;gap:4px;padding:0 20px;height:52px;font-size:14px}
+    nav.topnav a.brand{color:#fff;text-decoration:none;font-weight:600;margin-right:24px;font-size:17px;font-family:Fraunces,Georgia,serif}
+    nav.topnav .menuItem{position:relative;height:100%;display:flex;align-items:center}
+    nav.topnav .menuItem>span,nav.topnav .menuItem>a.topLink{padding:0 14px;cursor:pointer;color:#d7dbe4;text-decoration:none}
+    nav.topnav .menuItem:hover>span,nav.topnav .menuItem>a.topLink:hover{color:#fff}
+    nav.topnav .dropdown{display:none;position:absolute;top:100%;left:0;background:#fff;color:var(--ink);min-width:220px;box-shadow:0 8px 24px rgba(0,0,0,.18);border-radius:0 0 10px 10px;overflow:hidden;z-index:50}
+    nav.topnav .menuItem:hover .dropdown{display:block}
+    nav.topnav .dropdown a{display:block;padding:10px 16px;color:var(--ink);text-decoration:none;font-size:13.5px;border-bottom:1px solid var(--line)}
+    nav.topnav .dropdown a:last-child{border-bottom:none}
+    nav.topnav .dropdown a:hover{background:var(--soft)}
+    nav.topnav .navToggle{display:none;margin-left:auto;background:none;border:none;color:#fff;font-size:20px;cursor:pointer}
+    @media (max-width:820px){
+      nav.topnav{flex-wrap:wrap;height:auto;padding:10px 16px}
+      nav.topnav .navToggle{display:block}
+      nav.topnav .menuItem{display:none;width:100%;height:auto;flex-direction:column;align-items:stretch}
+      nav.topnav.navOpen .menuItem{display:flex}
+      nav.topnav .menuItem>span,nav.topnav .menuItem>a.topLink{padding:12px 0 4px;cursor:pointer;display:block}
+      nav.topnav .dropdown{position:static;box-shadow:none;border-radius:0;background:transparent;min-width:0}
+      nav.topnav .menuItem.open .dropdown{display:block}
+      nav.topnav .dropdown a{color:#fff;padding:10px 0 10px 14px;border-bottom:1px solid rgba(255,255,255,.12)}
+    }
+    .main{padding:22px 24px 60px;max-width:1180px;margin:0 auto}
+    h1{font-size:26px;margin:0 0 4px}
+    .sub{color:var(--muted);margin:0 0 16px}
+    .muted{color:var(--muted)}
+    .tiny{font-size:12.5px;color:var(--muted)}
+    .input,.select,.textarea{width:100%;border:1px solid #cfcdc7;border-radius:8px;padding:5px 9px;font-size:14px;background:#fff}
+    .textarea{min-height:64px;resize:vertical}
+    .btn{border:1px solid #cfcdc7;background:#fff;border-radius:999px;padding:7px 14px;font-size:14px}
+    .btn:hover{border-color:#111}
+    .btn.noir{background:#1c1a17;color:#fff;border-color:#1c1a17}
+    .btn.petit{padding:4px 11px;font-size:13px}
+    .btn.danger{color:var(--red)}
+    .btn[disabled]{opacity:.45;cursor:default}
+    .puces{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
+    .puce{border:1px solid var(--line);background:var(--soft);border-radius:12px;padding:8px 14px;min-width:120px}
+    .puce b{display:block;font-size:22px;font-family:Fraunces,Georgia,serif}
+    .puce span{font-size:12.5px;color:var(--muted)}
+    .barre{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 12px}
+    .barre .input{max-width:320px}
+    .barre .select{max-width:200px}
+    .barre .espace{flex:1}
+    .tabWrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+    table.tab{width:100%;border-collapse:collapse;min-width:760px}
+    table.tab th{text-align:left;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;padding:9px 12px;border-bottom:1px solid var(--line);background:var(--soft);white-space:nowrap}
+    table.tab td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+    table.tab tr:last-child td{border-bottom:none}
+    table.tab tr:hover td{background:#fcfbf9}
+    .mini{width:64px;height:48px;border-radius:6px;object-fit:cover;background:var(--soft);border:1px solid var(--line);display:block}
+    .miniVide{width:64px;height:48px;border-radius:6px;border:1px dashed #cfcdc7;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted);text-align:center;line-height:1.1}
+    .nomEns{font-weight:600}
+    .actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+    .badge{display:inline-block;font-size:12px;font-weight:600;border-radius:999px;padding:2px 10px}
+    .badge.ok{background:#e3f1e6;color:var(--ok)}
+    .badge.brouillon{background:#fdecea;color:#8f2d1d}
+    .badge.masque{background:#eee;color:#555}
+    .voile{position:fixed;inset:0;background:rgba(20,18,15,.45);padding:30px 14px;overflow:auto;z-index:200}
+    .fenetre{background:#fff;border-radius:14px;width:min(820px,100%);margin:0 auto;padding:20px 22px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+    .fenetre h2{margin:0 0 12px;font-size:21px}
+    .field{margin-bottom:12px}
+    .field>label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:3px}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    @media (max-width:640px){.grid2{grid-template-columns:1fr}.main{padding:16px 12px 50px}}
+    .depot{border:2px dashed #b9b2a6;border-radius:12px;background:var(--soft);padding:14px;text-align:center;margin-bottom:10px;cursor:pointer}
+    .depot.survol{background:#efe9dc;border-color:#111}
+    .photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+    .photo{border:1px solid var(--line);border-radius:10px;padding:6px;background:#fff;position:relative}
+    .photo img{width:100%;height:90px;object-fit:cover;border-radius:6px;display:block}
+    .photo .bas{display:flex;justify-content:space-between;align-items:center;margin-top:5px;gap:4px}
+    .photo .bas button{border:1px solid #cfcdc7;border-radius:6px;width:26px;height:26px;font-size:12px;background:#fff}
+    .photo .couv{position:absolute;top:10px;left:10px;background:#1c1a17;color:#fff;font-size:11px;border-radius:999px;padding:1px 8px}
+    .collabs{display:flex;gap:6px;flex-wrap:wrap}
+    .collabs label{border:1px solid #cfcdc7;border-radius:999px;padding:4px 11px;font-size:13px;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+    .choix{display:flex;gap:8px;flex-wrap:wrap}
+    .choix label{border:1px solid #cfcdc7;border-radius:999px;padding:5px 13px;font-size:14px;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+    .choix label.on{background:#1c1a17;color:#fff;border-color:#1c1a17}
+    .msgKo{color:var(--red);font-weight:600;margin:8px 0}
+    .pied{display:flex;gap:8px;justify-content:flex-end;margin-top:14px;align-items:center;flex-wrap:wrap}
+    .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#1c1a17;color:#fff;border-radius:999px;padding:10px 18px;z-index:300;font-size:14px}
+    .errBox{padding:24px;color:var(--red);white-space:pre-wrap}
+    .vide{padding:30px;text-align:center;color:var(--muted)}
+  </style>
+  <script src="acces-entreprise.js" defer></script>
+  <link rel="icon" href="/favicon.ico" sizes="48x48">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
+</head>
+<body>
+<div class="app"><div style="padding:24px" class="tiny">Chargement…</div></div>
+<script>
+const SUPABASE_URL = 'https://uuuigousvpijskbdhcal.supabase.co';
+const SUPABASE_KEY = 'sb_publishable__YuNj5XCo5YF8lwhwTu5OQ_RDM1Eesp';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:true } });
+const BUCKET = 'realisations-medias';
+const STATUTS = { validee:{ label:'Publiée', cls:'ok' }, en_attente:{ label:'Brouillon', cls:'brouillon' }, refusee:{ label:'Masquée', cls:'masque' } };
+const state = { estId:'', user:null, droit:false, manque:false, lignes:[], membres:[], recherche:'', filtre:'tous', ed:null };
+
+const esc = s => String(s ?? '').replace(/[&<>"']/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;' }[m]));
+const $ = id => document.getElementById(id);
+const sans = t => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const nomMembre = id => { const m = state.membres.find(x => x.user_id === id); return m ? m.nom : 'Membre'; };
+const dateFr = t => t ? new Date(t).toLocaleDateString('fr-FR') : '';
+function toast(t){ const d = document.createElement('div'); d.className = 'toast'; d.textContent = t; document.body.appendChild(d); setTimeout(() => d.remove(), 2800); }
+
+/* ---------------------------------------------------------------- chargement */
+async function charger(){
+  const e = state.estId;
+  const d = await sb.from('realisations_droits').select('user_id').eq('establishment_id', e).eq('user_id', state.user.id);
+  if(d.error){ state.manque = true; return; }
+  state.droit = (d.data || []).length > 0;
+  if(!state.droit) return;
+  const [r, m, a] = await Promise.all([
+    sb.from('realisations').select('*').eq('establishment_id', e).order('created_at', { ascending:false }),
+    sb.from('members').select('user_id,email').eq('establishment_id', e),
+    sb.from('annuaire_public').select('user_id,prenom,nom')
+  ]);
+  if(r.error) throw r.error;
+  state.lignes = r.data || [];
+  const annu = new Map(((a && a.data) || []).map(x => [x.user_id, `${x.prenom || ''} ${x.nom || ''}`.trim()]));
+  state.membres = ((m && m.data) || []).map(x => ({ user_id:x.user_id, nom: annu.get(x.user_id) || (x.email || 'Membre').split('@')[0] }));
+}
+
+/* ---------------------------------------------------------------- tableau de bord */
+function lignesFiltrees(){
+  const q = sans(state.recherche).trim();
+  return state.lignes.filter(r => {
+    if(state.filtre === 'sans_photo' ? (r.photos || []).length : (state.filtre !== 'tous' && r.statut !== state.filtre)) return false;
+    if(!q) return true;
+    return sans([r.enseigne, r.ville, r.adresse, (r.tags || []).join(' '), nomMembre(r.peintre_user_id)].join(' ')).includes(q);
+  });
+}
+function render(){
+  const app = document.querySelector('.app');
+  const nav = `<nav class="topnav">${navAtelierHtml(state.estId, { actif:'realisations' })}</nav>`;
+  if(state.manque){ app.innerHTML = nav + `<div class="main"><h1>Réalisations</h1><p class="errBox">Cette page a besoin de la migration SQL 77 (réalisations de l'atelier), pas encore exécutée.</p></div>`; return; }
+  if(!state.droit){ app.innerHTML = nav + `<div class="main"><h1>Réalisations</h1><p class="sub">Cette page est réservée aux comptes autorisés à gérer les réalisations de l'atelier.</p></div>`; return; }
+  const L = state.lignes, n = k => L.filter(r => r.statut === k).length, sansPhoto = L.filter(r => !(r.photos || []).length).length;
+  const liste = lignesFiltrees();
+  app.innerHTML = nav + `
+  <div class="main">
+    <h1>Réalisations</h1>
+    <p class="sub">Les lieux peints par l'atelier. Les réalisations « Publiées » apparaissent sur la carte ; les brouillons restent visibles ici seulement.</p>
+    <div class="puces">
+      <div class="puce"><b>${L.length}</b><span>réalisation${L.length > 1 ? 's' : ''}</span></div>
+      <div class="puce"><b>${n('validee')}</b><span>publiée${n('validee') > 1 ? 's' : ''}</span></div>
+      <div class="puce"><b>${n('en_attente')}</b><span>brouillon${n('en_attente') > 1 ? 's' : ''}</span></div>
+      <div class="puce"><b>${sansPhoto}</b><span>sans photo</span></div>
+    </div>
+    <div class="barre">
+      <input class="input" id="recherche" placeholder="Rechercher (enseigne, ville, mot-clé, peintre…)" value="${esc(state.recherche)}" oninput="chercher(this.value)">
+      <select class="select" id="filtre" onchange="filtrer(this.value)">
+        ${[['tous', 'Toutes'], ['validee', 'Publiées'], ['en_attente', 'Brouillons'], ['refusee', 'Masquées'], ['sans_photo', 'Sans photo']].map(o => `<option value="${o[0]}" ${state.filtre === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}
+      </select>
+      <span class="espace"></span>
+      <a class="btn" href="carte-realisations.html" target="_blank" rel="noopener" style="text-decoration:none;color:inherit">Voir la carte ↗</a>
+      <button class="btn noir" onclick="ouvrir(null)">+ Ajouter une réalisation</button>
+    </div>
+    <div class="tabWrap" id="tableau">${tableau(liste)}</div>
+  </div>
+  ${state.ed ? fenetre() : ''}`;
+}
+function tableau(liste){
+  if(!liste.length) return `<div class="vide">${state.lignes.length ? 'Aucune réalisation ne correspond à la recherche.' : 'Aucune réalisation pour l\'instant. Cliquez sur « + Ajouter une réalisation » pour créer le premier lieu.'}</div>`;
+  return `<table class="tab"><thead><tr><th></th><th>Enseigne</th><th>Peintre</th><th>Photos</th><th>Statut</th><th>Ajoutée</th><th></th></tr></thead><tbody>
+    ${liste.map(r => { const p = r.photos || [], st = STATUTS[r.statut] || { label:r.statut || '—', cls:'masque' }; return `<tr>
+      <td>${p.length ? `<img class="mini" src="${esc(p[0])}" alt="" loading="lazy">` : '<div class="miniVide">sans photo</div>'}</td>
+      <td><div class="nomEns">${esc(r.enseigne)}</div><div class="tiny">${esc(r.ville || r.adresse || '')}</div></td>
+      <td>${esc(nomMembre(r.peintre_user_id))}</td>
+      <td>${p.length}</td>
+      <td><span class="badge ${st.cls}">${st.label}</span></td>
+      <td class="tiny">${dateFr(r.created_at)}</td>
+      <td><div class="actions">
+        <button class="btn petit" onclick="ouvrir('${r.id}')">Modifier</button>
+        <button class="btn petit" onclick="basculer('${r.id}')">${r.statut === 'validee' ? 'Retirer de la carte' : 'Publier'}</button>
+        <button class="btn petit danger" onclick="supprimer('${r.id}')">Supprimer</button>
+      </div></td></tr>`; }).join('')}
+  </tbody></table>`;
+}
+function chercher(v){ state.recherche = v; $('tableau').innerHTML = tableau(lignesFiltrees()); }
+function filtrer(v){ state.filtre = v; $('tableau').innerHTML = tableau(lignesFiltrees()); }
+
+/* ---------------------------------------------------------------- publier / supprimer */
+async function basculer(id){
+  const r = state.lignes.find(x => x.id === id); if(!r) return;
+  const statut = r.statut === 'validee' ? 'en_attente' : 'validee';
+  const { error } = await sb.from('realisations').update({ statut, updated_at:new Date().toISOString() }).eq('id', id);
+  if(error){ alert('Action impossible : ' + error.message); return; }
+  r.statut = statut; render(); toast(statut === 'validee' ? 'Publiée sur la carte' : 'Retirée de la carte (brouillon)');
+}
+function cheminsDe(urls){
+  return (urls || []).map(u => { const i = String(u).indexOf('/' + BUCKET + '/'); return i < 0 ? null : decodeURIComponent(String(u).slice(i + BUCKET.length + 2).split('?')[0]); }).filter(Boolean);
+}
+async function supprimerFichiers(urls){
+  const chemins = cheminsDe(urls); if(!chemins.length) return;
+  try{ await sb.storage.from(BUCKET).remove(chemins); }catch(e){ /* les fichiers d'un autre compte ne se suppriment pas : sans gravité */ }
+}
+async function supprimer(id){
+  const r = state.lignes.find(x => x.id === id); if(!r) return;
+  const n = (r.photos || []).length;
+  if(!await confirmer(`Supprimer « ${r.enseigne} » ?\nLa réalisation${n ? ' et ses ' + n + ' photo' + (n > 1 ? 's' : '') : ''} seront supprimées. Cette action est définitive.`)) return;
+  const { error } = await sb.from('realisations').delete().eq('id', id);
+  if(error){ alert('Suppression impossible : ' + error.message); return; }
+  await supprimerFichiers(r.photos);
+  state.lignes = state.lignes.filter(x => x.id !== id); render(); toast('Réalisation supprimée');
+}
+
+/* ---------------------------------------------------------------- fenêtre d'ajout / de modification */
+function ouvrir(id){
+  const r = id ? state.lignes.find(x => x.id === id) : null;
+  state.ed = {
+    id: r ? r.id : null, enseigne: r ? r.enseigne || '' : '', adresse: r ? r.adresse || '' : '', adresseInitiale: r ? r.adresse || '' : '',
+    ville: r && r.ville && r.ville !== r.adresse ? r.ville : '', lat: r ? r.lat : null, lng: r ? r.lng : null,
+    peintre: r ? r.peintre_user_id : (state.membres.some(m => m.user_id === state.user.id) ? state.user.id : ''),
+    collabs: new Set(r ? r.collaborateurs || [] : []), tags: r ? (r.tags || []).join(', ') : '',
+    temoignage: r ? r.temoignage || '' : '', auteur: r ? r.temoignage_auteur || '' : '', video: r ? r.video_url || '' : '', audio: r ? r.audio_url || '' : '',
+    statut: r ? (r.statut || 'validee') : 'validee',
+    photos: r ? (r.photos || []).map(u => ({ url:u, apercu:u })) : [], photosInitiales: r ? [...(r.photos || [])] : [],
+    erreur:'', enCours:false
+  };
+  render();
+}
+function fermer(){ (state.ed.photos || []).forEach(p => { if(p.fichier) URL.revokeObjectURL(p.apercu); }); state.ed = null; render(); }
+function fenetre(){
+  const e = state.ed;
+  return `<div class="voile" onmousedown="if(event.target===this)fermer()"><div class="fenetre" role="dialog" aria-modal="true">
+    <h2>${e.id ? 'Modifier la réalisation' : 'Ajouter une réalisation'}</h2>
+    <div class="grid2">
+      <div class="field"><label>Nom de l'enseigne *</label><input class="input" value="${esc(e.enseigne)}" oninput="state.ed.enseigne=this.value" placeholder="Ex : Boulangerie Chez Louison"></div>
+      <div class="field"><label>Peintre responsable *</label><select class="select" onchange="state.ed.peintre=this.value;majCollabs()"><option value="">Choisir…</option>${state.membres.map(m => `<option value="${m.user_id}" ${m.user_id === e.peintre ? 'selected' : ''}>${esc(m.nom)}</option>`).join('')}</select></div>
+    </div>
+    <div class="field"><label>Adresse complète * <span class="tiny">(sert à placer le point sur la carte)</span></label><input class="input" value="${esc(e.adresse)}" oninput="state.ed.adresse=this.value" placeholder="Rue, code postal, ville, pays"></div>
+    <div class="field"><label>Ville affichée (facultatif)</label><input class="input" value="${esc(e.ville)}" oninput="state.ed.ville=this.value" placeholder="Ex : Auray — sinon l'adresse est affichée"></div>
+    <div class="field"><label>Photos <span class="tiny">(la première sert de couverture ; glissez-déposez ou cliquez)</span></label>
+      <div class="depot" id="depot" onclick="$('fichierPhotos').click()">Glissez vos photos ici ou <b>cliquez pour choisir</b><input id="fichierPhotos" type="file" accept="image/*" multiple hidden onchange="ajouterPhotos(this.files);this.value=''"></div>
+      <div class="photos" id="edPhotos">${photosHtml()}</div>
+    </div>
+    <div class="field"><label>Mots-clés (séparés par des virgules)</label><input class="input" value="${esc(e.tags)}" oninput="state.ed.tags=this.value" placeholder="Lettres capitales, Doré à la feuille, Devanture"></div>
+    <div class="grid2">
+      <div class="field"><label>Témoignage du client (facultatif)</label><textarea class="textarea" oninput="state.ed.temoignage=this.value" placeholder="Ce que le client a dit…">${esc(e.temoignage)}</textarea></div>
+      <div class="field"><label>Qui a dit ça ? (facultatif)</label><input class="input" value="${esc(e.auteur)}" oninput="state.ed.auteur=this.value" placeholder="Ex : Retour du client — boulangerie Chez Louison"></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>Lien vidéo (facultatif)</label><input class="input" value="${esc(e.video)}" oninput="state.ed.video=this.value" placeholder="YouTube, Vimeo…"></div>
+      <div class="field"><label>Lien audio (facultatif)</label><input class="input" value="${esc(e.audio)}" oninput="state.ed.audio=this.value" placeholder="Lien vers le son"></div>
+    </div>
+    <div class="field"><label>Avec la participation de (facultatif)</label><div class="collabs" id="edCollabs">${collabsHtml()}</div></div>
+    <div class="field"><label>Visibilité</label><div class="choix" id="edStatut">${statutHtml()}</div></div>
+    <div class="msgKo" id="edErreur">${esc(e.erreur)}</div>
+    <div class="pied"><span class="tiny" id="edEtat"></span><button class="btn" onclick="fermer()">Annuler</button><button class="btn noir" id="btnEnregistrer" onclick="enregistrer()">Enregistrer</button></div>
+  </div></div>`;
+}
+function statutHtml(){
+  const e = state.ed;
+  return [['validee', 'Publiée sur la carte'], ['en_attente', 'Brouillon (non publié)']].map(o => `<label class="${e.statut === o[0] ? 'on' : ''}"><input type="radio" name="statut" value="${o[0]}" ${e.statut === o[0] ? 'checked' : ''} onchange="state.ed.statut=this.value;$('edStatut').innerHTML=statutHtml()" style="display:none">${o[1]}</label>`).join('');
+}
+function collabsHtml(){
+  const e = state.ed, autres = state.membres.filter(m => m.user_id !== e.peintre);
+  return autres.length ? autres.map(m => `<label><input type="checkbox" ${e.collabs.has(m.user_id) ? 'checked' : ''} onchange="basculerCollab('${m.user_id}',this.checked)">${esc(m.nom)}</label>`).join('') : '<span class="tiny">Aucun autre membre.</span>';
+}
+function majCollabs(){ state.ed.collabs.delete(state.ed.peintre); $('edCollabs').innerHTML = collabsHtml(); }
+function basculerCollab(id, oui){ if(oui) state.ed.collabs.add(id); else state.ed.collabs.delete(id); }
+
+/* photos : ajout, ordre, retrait */
+function photosHtml(){
+  const ph = state.ed.photos;
+  if(!ph.length) return '<div class="tiny">Aucune photo pour l\'instant.</div>';
+  return ph.map((p, i) => `<div class="photo">${i === 0 ? '<span class="couv">Couverture</span>' : ''}<img src="${esc(p.apercu)}" alt="">
+    <div class="bas"><button onclick="deplacerPhoto(${i},-1)" title="Avant" ${i === 0 ? 'disabled' : ''}>◀</button><button onclick="deplacerPhoto(${i},1)" title="Après" ${i === ph.length - 1 ? 'disabled' : ''}>▶</button><button onclick="retirerPhoto(${i})" title="Retirer">✕</button></div></div>`).join('');
+}
+function majPhotos(){ $('edPhotos').innerHTML = photosHtml(); }
+function ajouterPhotos(liste){
+  Array.from(liste || []).filter(f => /^image\//.test(f.type) || /\.(jpe?g|png|webp|heic|heif|gif)$/i.test(f.name)).forEach(f => state.ed.photos.push({ fichier:f, apercu:URL.createObjectURL(f) }));
+  majPhotos();
+}
+function deplacerPhoto(i, d){ const p = state.ed.photos, j = i + d; if(j < 0 || j >= p.length) return; [p[i], p[j]] = [p[j], p[i]]; majPhotos(); }
+function retirerPhoto(i){ const p = state.ed.photos[i]; if(p && p.fichier) URL.revokeObjectURL(p.apercu); state.ed.photos.splice(i, 1); majPhotos(); }
+document.addEventListener('dragover', e => { const d = e.target.closest && e.target.closest('#depot'); if(d){ e.preventDefault(); d.classList.add('survol'); } else if(state.ed) e.preventDefault(); });
+document.addEventListener('dragleave', e => { const d = e.target.closest && e.target.closest('#depot'); if(d) d.classList.remove('survol'); });
+document.addEventListener('drop', e => { const d = e.target.closest && e.target.closest('#depot'); if(d){ e.preventDefault(); d.classList.remove('survol'); ajouterPhotos(e.dataTransfer.files); } else if(state.ed) e.preventDefault(); });
+
+/* une photo de téléphone pèse souvent 5 à 10 Mo : on la ramène à 2000 px de large (JPEG) avant l'envoi */
+async function reduirePhoto(f){
+  if(!/^image\/(jpeg|png|webp)$/.test(f.type)) return f;
+  try{
+    const im = await createImageBitmap(f), k = Math.min(1, 2000 / Math.max(im.width, im.height));
+    if(k === 1 && f.size < 1.5e6) return f;
+    const c = document.createElement('canvas'); c.width = Math.round(im.width * k); c.height = Math.round(im.height * k);
+    c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+    const blob = await new Promise(ok => c.toBlob(ok, 'image/jpeg', 0.86));
+    return blob ? new File([blob], f.name.replace(/\.[^.]+$/, '') + '.jpg', { type:'image/jpeg' }) : f;
+  }catch(e){ return f; }
+}
+const nomFichier = f => f.name.replace(/[^a-zA-Z0-9._-]+/g, '_');
+async function televerser(f){
+  const fichier = await reduirePhoto(f);
+  const chemin = `${state.user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 7)}-${nomFichier(fichier)}`;
+  const { error } = await sb.storage.from(BUCKET).upload(chemin, fichier, { contentType: fichier.type || undefined });
+  if(error) throw new Error(`Envoi de « ${f.name} » impossible : ${error.message}`);
+  return sb.storage.from(BUCKET).getPublicUrl(chemin).data.publicUrl;
+}
+
+/* enregistrement */
+async function enregistrer(){
+  const e = state.ed, ko = t => { e.erreur = t; $('edErreur').textContent = t; };
+  ko('');
+  if(!e.enseigne.trim() || !e.adresse.trim() || !e.peintre){ ko("Renseignez au moins le nom de l'enseigne, l'adresse et le peintre responsable."); return; }
+  const btn = $('btnEnregistrer'), etat = $('edEtat'); btn.disabled = true; btn.textContent = 'Enregistrement…';
+  try{
+    let lat = e.lat, lng = e.lng;
+    if(!e.id || e.adresse.trim() !== e.adresseInitiale || lat == null || lng == null){
+      etat.textContent = "Recherche de l'adresse…";
+      const { data:geo, error } = await sb.functions.invoke('geocoder', { body:{ query:e.adresse.trim() } });
+      if(error || !geo || geo.error || geo.lat == null) throw new Error("Adresse introuvable — vérifiez-la (ex : « 12 rue de la République, 69002 Lyon, France »).");
+      lat = geo.lat; lng = geo.lng;
+    }
+    const urls = []; let k = 0; const aEnvoyer = e.photos.filter(p => p.fichier).length;
+    for(const p of e.photos){
+      if(p.url){ urls.push(p.url); continue; }
+      k++; etat.textContent = `Envoi de la photo ${k} sur ${aEnvoyer}…`;
+      urls.push(await televerser(p.fichier));
+    }
+    const ligne = {
+      enseigne:e.enseigne.trim(), adresse:e.adresse.trim(), ville:e.ville.trim() || e.adresse.trim(), lat, lng,
+      peintre_user_id:e.peintre, collaborateurs:[...e.collabs].filter(u => u !== e.peintre),
+      tags:e.tags.split(',').map(t => t.trim()).filter(Boolean),
+      temoignage:e.temoignage.trim() || null, temoignage_auteur:e.auteur.trim() || null,
+      photos:urls, video_url:e.video.trim() || null, audio_url:e.audio.trim() || null,
+      statut:e.statut, establishment_id:state.estId, updated_at:new Date().toISOString()
+    };
+    if(e.id){ const { error } = await sb.from('realisations').update(ligne).eq('id', e.id); if(error) throw new Error(error.message); }
+    else { ligne.cree_par = state.user.id; const { error } = await sb.from('realisations').insert(ligne); if(error) throw new Error(error.message); }
+    await supprimerFichiers(e.photosInitiales.filter(u => !urls.includes(u)));   // photos retirées de la fiche
+    const nouveau = !e.id; e.photos.forEach(p => { if(p.fichier) URL.revokeObjectURL(p.apercu); }); state.ed = null;
+    await charger(); render(); toast(nouveau ? 'Réalisation ajoutée' : 'Réalisation mise à jour');
+  }catch(err){
+    ko(err.message || String(err)); etat.textContent = ''; btn.disabled = false; btn.textContent = 'Enregistrer';
+  }
+}
+
+/* ---------------------------------------------------------------- démarrage */
+async function initApp(){
+  try{
+    const { data:{ session }, error } = await sb.auth.getSession();
+    if(error) throw error;
+    if(!session){ window.location.href = 'federation-accueil.html'; return; }
+    state.user = session.user;
+    state.estId = new URLSearchParams(window.location.search).get('est') || localStorage.getItem('ac_current_est_v1') || '';
+    if(!state.estId){ window.location.href = 'federation-accueil.html'; return; }
+    localStorage.setItem('ac_current_est_v1', state.estId);
+    await charger();
+    render();
+  }catch(e){
+    console.error(e);
+    document.body.innerHTML = `<div class="errBox">Impossible de charger les réalisations : ${esc(e.message || String(e))}</div>`;
+  }
+  sb.auth.onAuthStateChange((event, session) => { if(!session) window.location.href = 'federation-accueil.html'; });
+}
+initApp();
+</script>
+</body>
+</html>

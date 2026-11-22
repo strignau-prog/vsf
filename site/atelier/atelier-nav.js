@@ -46,6 +46,7 @@ function navAtelierHtml(estId, opts){
     </div>
     <div class="menuItem${cls('kanban')}"><a class="topLink" href="${u('client-projet.html')}">Kanban clients</a></div>
     <div class="menuItem${cls('strategie')}"><a class="topLink" href="${u('strategie-atelier.html')}">Stratégie atelier</a></div>
+    <div class="menuItem${cls('realisations')}"><a class="topLink" href="${u('realisations-atelier.html')}">Réalisations</a></div>
     <div class="menuItem"><a class="topLink" href="https://propositions.etsgesret.fr/admin" target="_blank" rel="noopener">Propositions ↗</a></div>
     <div class="navRight">
       <a class="topLink" href="federation-accueil.html">Site collectif</a>
