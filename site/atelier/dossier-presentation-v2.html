@@ -148,6 +148,7 @@
   .tp .tpRouge li{margin-bottom:.4em}
   .tp .tpVisu{position:absolute}
   .tp .tpVisu img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center}
+  .tp .tpVisu img.couvre{object-fit:cover}
   .tp .tpLegende{position:absolute;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;overflow:hidden;overflow-wrap:anywhere;text-align:center;line-height:1.3;font-family:'Source Code Pro','Space Mono',monospace}
   .tp .tpLegende b{text-transform:uppercase}
   .tp .tpLegende i{font-size:.82em}
@@ -1188,7 +1189,8 @@ function blocFichiers(){
       return `<div class="prop" data-c="${esc(c)}">${avec.length ? '<div class="tiny" style="margin-bottom:6px">Sur la même page que ' + avec.join(', ') + ' <button type="button" class="btn petit" data-act="separer">Séparer</button></div>' : ''}<div class="propTete"><img src="${ch.src}" alt=""><input class="input" value="${esc(p.titre)}" data-p="titre" aria-label="Nom du visuel">
         <div style="display:flex;gap:4px"><button class="btn petit" data-act="haut" ${i === 0 ? 'disabled' : ''}>↑</button><button class="btn petit" data-act="bas" ${i === props.length - 1 ? 'disabled' : ''}>↓</button><button class="btn petit" data-act="retirer">✕</button></div></div>
         <div class="grid2" style="margin-top:8px;max-width:340px"><div class="field" style="margin:0"><label>Type</label><select class="select" data-p="type" aria-label="Type de rendu de cette page">${TYPES.map(t => `<option ${p.type === t ? 'selected' : ''}>${t}</option>`).join('')}</select></div><div class="field" style="margin:0"><label>Piste n°</label><select class="select" data-p="piste" aria-label="Numéro de piste de cette page"><option value="0" ${!p.piste ? 'selected' : ''}>Auto (${pad2(numeroPiste(c))})</option>${Array.from({ length:Math.max(vm, p.piste || 0) }, (_, k) => `<option value="${k + 1}" ${p.piste === k + 1 ? 'selected' : ''}>${pad2(k + 1)}</option>`).join('')}</select></div></div>
-        <label class="choixTexte" style="margin:8px 0 0"><input type="checkbox" data-detour ${(p.detour !== undefined ? p.detour : p.type !== 'Croquis') ? 'checked' : ''}><span>Détourer le fond blanc de l'image</span></label>
+        <label class="choixTexte" style="margin:8px 0 0"><input type="checkbox" data-plein ${pleinEcran(c) ? 'checked' : ''}><span>Image en pleine page (sans cotes ni légende)</span></label>
+        <label class="choixTexte" style="margin:6px 0 0"><input type="checkbox" data-detour ${(p.detour !== undefined ? p.detour : p.type !== 'Croquis') ? 'checked' : ''}><span>Détourer le fond blanc de l'image</span></label>
         ${ch.faible ? '<div class="tiny alerteTxt" style="margin-top:6px">Aperçu basse définition : dans Illustrator, enregistrez de nouveau avec « Créer un fichier compatible PDF ».</div>' : ''}</div>`;
     }).join('')}
 `;
@@ -1324,6 +1326,7 @@ saisie.addEventListener('change', async e => {
   if(t.dataset.k){
     const k = t.dataset.k;
     E[k] = (k === 'version') ? (parseInt(t.value, 10) || 1) : t.value;
+    if(k === 'tel') E.tel = formaterTel(E.tel);
     if(k === 'date') E.dateManuelle = true;
     if(k === 'version') E.versionManuelle = true;
     dessiner();
@@ -1336,6 +1339,7 @@ saisie.addEventListener('change', async e => {
   if(t.id === 'calcRend' || t.id === 'calcCouches' || t.id === 'calcMarge'){ E.calc = calcReglages(); const v = nombre(t.value); const cle = t.id === 'calcRend' ? 'rendement' : t.id === 'calcCouches' ? 'couches' : 'marge'; if(isFinite(v) && v >= 0 && (cle !== 'rendement' || v > 0)) E.calc[cle] = v; dessiner(); return; }
   if(t.id === 'chkNuancier'){ E.nuancier = t.checked; dessiner(); return; }
   if(t.dataset.tk){ const dt = t.closest('[data-t]'), te = dt && E.teintes.find(x => x.id === dt.dataset.t); if(te){ te.ouvert = (t.dataset.tk === 'surface' || t.dataset.tk === 'commander') ? te.ouvert : true; te[t.dataset.tk] = (t.type === 'checkbox') ? t.checked : t.value; if(t.dataset.tk === 'reference'){ memoriser(te); const mr = /RAL\s*(\d{4})/i.exec(te.reference), rr = mr && ralCodes().find(r => r.code === mr[1]); if(rr && !te.cmyk) te.hex = rr.hex; } dessiner(); } return; }
+  if(t.dataset.plein !== undefined){ const p = propDe(t); if(p){ p.pleinEcran = t.checked; dessiner(); } return; }
   if(t.dataset.detour !== undefined){ const dc = t.closest('[data-c]'), p = dc && E.props[dc.dataset.c]; if(p){ p.detour = t.checked; p.detourAuto = false; await retraiterFichier(dc.dataset.c); dessiner(); } return; }
   if(t.dataset.p){
     const p = propDe(t), dc = t.closest('[data-c]');
@@ -1446,7 +1450,7 @@ function ajuster(){
 }
 window.addEventListener('resize', ajuster);
 
-const AUTO_LIGNES = [[104.9, 58.8, 443.8, 114.0, 50.0, "030405", 0, 1, "DEMANDE D'AUTORISATION"], [104.9, 108.1, 695.3, 126.3, 12.0, "000000", 1, 0, "Avant de modifier votre façade et votre enseigne, vous devez"], [104.9, 120.1, 731.3, 138.3, 12.0, "000000", 1, 0, "une demande d'autorisation préalable auprès du service urban"], [104.9, 132.1, 148.1, 150.3, 12.0, "000000", 1, 0, "ville."], [104.9, 168.1, 565.7, 186.3, 12.0, "000000", 1, 0, "> Pour cela, vous devez remplir le formulaire CERFA ci-desso"], [104.9, 192.1, 256.1, 210.3, 12.0, "b02121", 0, 0, "FORMULAIRE 14798*01 :"], [104.9, 205.2, 705.5, 221.8, 11.0, "000000", 0, 0, "Demande d'autorisation préalable pour l'installation d'un di"], [104.9, 217.2, 428.3, 233.8, 11.0, "000000", 0, 0, "de la publicité, une enseigne ou une pré-enseigne"], [104.9, 252.1, 551.3, 270.3, 12.0, "000000", 1, 0, "> Si votre bâtiment se trouve dans l'un des secteurs suivant"], [557.3, 253.2, 709.1, 269.8, 11.0, "000000", 0, 0, "il est probable que le"], [104.9, 265.2, 751.7, 281.8, 11.0, "000000", 0, 0, "service urbanisme de votre ville vous demande une autre décl"], [104.9, 277.2, 368.9, 293.8, 11.0, "000000", 0, 0, "des Architectes des Bâtiments de France."], [104.9, 288.1, 407.3, 306.3, 12.0, "000000", 1, 0, "Renseignez-vous bien auprès de ce service."], [104.9, 313.2, 415.1, 329.8, 11.0, "000000", 0, 0, "- Périmètre d'un site patrimonial remarquable:"], [118.9, 325.2, 686.5, 341.8, 11.0, "000000", 0, 0, "Villes, villages ou quartiers dont la conservation, la resta"], [118.9, 337.2, 712.9, 353.8, 11.0, "000000", 0, 0, "ou la mise en valeur présente, au point de vue historique, a"], [118.9, 349.2, 389.5, 365.8, 11.0, "000000", 0, 0, "artistique ou paysager, un intérêt public"], [104.9, 366.2, 329.3, 382.8, 11.0, "000000", 0, 0, "- Abords des monuments historiques"], [104.9, 383.2, 692.3, 399.8, 11.0, "000000", 0, 0, "- Site inscrit: Monument naturel ou zone dont la préservatio"], [118.9, 395.2, 666.7, 411.8, 11.0, "000000", 0, 0, "artistique, historique, scientifique, légendaire ou pittores"], [104.9, 412.2, 698.9, 428.8, 11.0, "000000", 0, 0, "- Site classé ou en instance de classement: Site et monument"], [118.9, 424.2, 699.7, 440.8, 11.0, "000000", 0, 0, "ou la préservation présente un intérêt général au point de v"], [118.9, 436.2, 376.3, 452.8, 11.0, "000000", 0, 0, "scientifique, légendaire ou pittoresque"], [104.9, 453.2, 243.5, 469.8, 11.0, "000000", 0, 0, "- Réserves naturelles"], [104.9, 470.2, 454.7, 486.8, 11.0, "000000", 0, 0, "- À l'intérieur du cœur des parcs nationaux délimités"], [104.9, 487.2, 223.7, 503.8, 11.0, "000000", 0, 0, "- Immeuble protégé"], [104.9, 504.2, 718.7, 520.8, 11.0, "000000", 0, 0, "- Commune ou périmètre de commune où le conseil municipal a "], [118.9, 516.2, 290.5, 532.8, 11.0, "000000", 0, 0, "à autorisation d'urbanisme"]];
+const AUTO_LIGNES = [[104.9, 58.8, 443.8, 114.0, 50.0, "030405", 0, 1, "DEMANDE D'AUTORISATION"], [104.9, 108.1, 695.3, 126.3, 12.0, "000000", 1, 0, "Avant de modifier votre façade et votre enseigne, vous devez impérativement faire"], [104.9, 120.1, 731.3, 138.3, 12.0, "000000", 1, 0, "une demande d'autorisation préalable auprès du service urbanisme de la mairie de votre"], [104.9, 132.1, 148.1, 150.3, 12.0, "000000", 1, 0, "ville."], [104.9, 168.1, 565.7, 186.3, 12.0, "000000", 1, 0, "> Pour cela, vous devez remplir le formulaire CERFA ci-dessous :"], [104.9, 192.1, 256.1, 210.3, 12.0, "b02121", 0, 0, "FORMULAIRE 14798*01 :"], [104.9, 205.2, 705.5, 221.8, 11.0, "000000", 0, 0, "Demande d'autorisation préalable pour l'installation d'un dispositif ou matériel supportant"], [104.9, 217.2, 428.3, 233.8, 11.0, "000000", 0, 0, "de la publicité, une enseigne ou une pré-enseigne"], [104.9, 252.1, 551.3, 270.3, 12.0, "000000", 1, 0, "> Si votre bâtiment se trouve dans l'un des secteurs suivants,"], [557.3, 253.2, 709.1, 269.8, 11.0, "000000", 0, 0, "il est probable que le"], [104.9, 265.2, 751.7, 281.8, 11.0, "000000", 0, 0, "service urbanisme de votre ville vous demande une autre déclaration et sollicite également l'avis"], [104.9, 277.2, 368.9, 293.8, 11.0, "000000", 0, 0, "des Architectes des Bâtiments de France."], [104.9, 288.1, 407.3, 306.3, 12.0, "000000", 1, 0, "Renseignez-vous bien auprès de ce service."], [104.9, 313.2, 415.1, 329.8, 11.0, "000000", 0, 0, "- Périmètre d'un site patrimonial remarquable:"], [118.9, 325.2, 686.5, 341.8, 11.0, "000000", 0, 0, "Villes, villages ou quartiers dont la conservation, la restauration, la réhabilitation"], [118.9, 337.2, 712.9, 353.8, 11.0, "000000", 0, 0, "ou la mise en valeur présente, au point de vue historique, architectural, archéologique,"], [118.9, 349.2, 389.5, 365.8, 11.0, "000000", 0, 0, "artistique ou paysager, un intérêt public"], [104.9, 366.2, 329.3, 382.8, 11.0, "000000", 0, 0, "- Abords des monuments historiques"], [104.9, 383.2, 692.3, 399.8, 11.0, "000000", 0, 0, "- Site inscrit: Monument naturel ou zone dont la préservation présente, au point de vue"], [118.9, 395.2, 666.7, 411.8, 11.0, "000000", 0, 0, "artistique, historique, scientifique, légendaire ou pittoresque, un intérêt général"], [104.9, 412.2, 698.9, 428.8, 11.0, "000000", 0, 0, "- Site classé ou en instance de classement: Site et monument naturels dont la conservation"], [118.9, 424.2, 699.7, 440.8, 11.0, "000000", 0, 0, "ou la préservation présente un intérêt général au point de vue artistique, historique,"], [118.9, 436.2, 376.3, 452.8, 11.0, "000000", 0, 0, "scientifique, légendaire ou pittoresque"], [104.9, 453.2, 243.5, 469.8, 11.0, "000000", 0, 0, "- Réserves naturelles"], [104.9, 470.2, 454.7, 486.8, 11.0, "000000", 0, 0, "- À l'intérieur du cœur des parcs nationaux délimités"], [104.9, 487.2, 223.7, 503.8, 11.0, "000000", 0, 0, "- Immeuble protégé"], [104.9, 504.2, 718.7, 520.8, 11.0, "000000", 0, 0, "- Commune ou périmètre de commune où le conseil municipal a décidé de soumettre le ravalement"], [118.9, 516.2, 290.5, 532.8, 11.0, "000000", 0, 0, "à autorisation d'urbanisme"]];
 
 /* ------------------------------ Gabarit fidèle (mesures relevées sur les PDF d'exemple) ------------------------------
    Page A4 paysage de 841,89 × 595,28 pt. Tout est positionné en pourcentages de la page et les tailles de texte en « cqw » :
@@ -1458,7 +1462,7 @@ const CREME = '#f7f4f1', KRAFT_LIGNE = '#c4af93', ENCRE = '#030405';
 function tx(a, x, y0, y1, s, html, o){
   o = o || {};
   const pos = a === 'c' ? 'left:' + (x / PT * 100) + '%;transform:translateX(-50%);' : a === 'r' ? 'right:' + ((PT - x) / PT * 100) + '%;' : 'left:' + (x / PT * 100) + '%;';
-  return `<span class="tx${o.fit ? ' fit' : ''}" data-a="${a}"${o.fit ? ' data-fit="' + o.fit + '"' : ''} style="${pos}top:${y0 / PH * 100}%;font-size:${s / PT * 100}cqw;line-height:${(y1 - y0) / PT * 100}cqw;font-family:${o.titre ? TITRE : MONO};color:${o.c || '#000'};font-weight:${(o.b || o.titre) ? 700 : 400};${o.titre ? 'font-synthesis:none;' : ''}font-style:${o.i ? 'italic' : 'normal'};${o.st || ''}">${html}</span>`;
+  return `<span class="tx${o.fit ? ' fit' : ''}" data-a="${a}"${o.fit ? ' data-fit="' + o.fit + '"' : ''} style="${pos}top:${y0 / PH * 100}%;font-size:${s / PT * 100}cqw;line-height:${(y1 - y0) / PT * 100}cqw;font-family:${o.titre ? TITRE : MONO};color:${o.c || '#000'};font-weight:${(o.b || o.titre) ? 700 : 400};${o.titre ? 'font-synthesis:none;' : ''}font-style:${o.i ? 'italic' : 'normal'};${o.ls ? 'letter-spacing:' + o.ls + 'em;' : ''}${o.st || ''}">${html}</span>`;
 }
 const L = (x, y0, y1, s, h, o) => tx('l', x, y0, y1, s, h, o), C = (x, y0, y1, s, h, o) => tx('c', x, y0, y1, s, h, o), R = (x, y0, y1, s, h, o) => tx('r', x, y0, y1, s, h, o);
 const box = (x0, y0, x1, y1, st) => `<div class="tbox" style="left:${x0 / PT * 100}%;top:${y0 / PH * 100}%;width:${(x1 - x0) / PT * 100}%;height:${(y1 - y0) / PH * 100}%;${st || ''}"></div>`;
@@ -1475,7 +1479,7 @@ function tag(a, x, y0, y1, s, html, st){   // étiquette claire qui épouse son 
 const tronquer = (t, n) => t.length > n ? t.slice(0, Math.max(1, n - 1)) + '…' : t;
 // grand titre en police condensée : au-delà d'environ 19 lettres, le corps diminue (en plus de l'ajustement en largeur)
 const tailleNom = base => base;   // le corps s'ajuste ensuite à la largeur (ajusterTextes), sans déformer la police
-const taille = (txt, max, W) => Math.max(6.5, Math.min(max, W / (Math.max(1, String(txt).length) * 0.62)));   // corps réduit pour tenir dans la largeur W
+const taille = (txt, max, W, ls) => Math.max(6.5, Math.min(max, W / (Math.max(1, String(txt).length) * (0.62 + (ls || 0)))));   // corps réduit pour tenir dans la largeur W
 function entetePage(label, sous, avecCase, sansTrait){
   const lieu = (E.ville || '').split('\n').slice(-1)[0].trim();
   const R = enteteReglages(), cw = k => ((R.police === 'code' ? 0.6 : 0.58) + R.inter / 1000) * k;   // largeur d'une lettre au corps k
@@ -1493,17 +1497,30 @@ function piedPage(sansTrait){
 const labelPage = () => ETAPES[E.etape].validation ? 'VALIDATION' : 'PROPOSITION';
 const sousPage = () => ETAPES[E.etape].validation ? dateAffichee() : ('V' + (E.version || 1) + ' • ' + dateAffichee());
 
+// Téléphone français en groupes de deux : 0663677078 → 06 63 67 70 78 (+33 6 63… accepté) ; tout autre format est laissé tel quel
+function formaterTel(t){
+  let d = String(t || '').replace(/[^\d+]/g, '');
+  if(/^(\+33|0033)/.test(d)) d = '0' + d.replace(/^(\+33|0033)0?/, '');
+  const c = d.replace(/\D/g, '');
+  return /^0[1-9]\d{8}$/.test(c) ? c.replace(/(\d{2})(?=\d)/g, '$1 ').trim() : String(t || '').trim();
+}
+// Localisation sur la couverture : une adresse écrite sur une ligne (« 11 rue Louis Lériot, Auray, Morbihan ») passe sur deux lignes comme dans le modèle (rue / ville, département)
+function lignesLieu(){
+  const l = (E.ville || '').split('\n').map(x => x.trim()).filter(Boolean);
+  if(l.length === 1 && l[0].indexOf(',') > 0 && (/^\d/.test(l[0]) || MOTS_LIEU.test(sansAccent(l[0].split(',')[0])))){ const i = l[0].indexOf(','); return [l[0].slice(0, i).trim(), l[0].slice(i + 1).trim()]; }
+  return l;
+}
 function pageCouverture(){
   const e = ETAPES[E.etape], sub = e.validation ? e.couv : (e.couv + (E.etape === 'MOODBOARD' ? '.V' : ' V') + (E.version || 1));
-  const loc = (E.ville || '').split('\n').map(x => x.trim()).filter(Boolean);
+  const loc = lignesLieu(), tel = formaterTel(E.tel), T = { ls:0.045 };   // interlettrage relevé dans un vrai PDF Gesret : ≈ 0,045 em (étiquettes, date), 0,145 em (lieu, interlocuteur), 0,03 em (téléphone)
   return tpl('couverture.jpg',
-    L(113.7, 61.0, 73.1, 8, 'DOSSIER / ' + esc(E.numero || '—')) + L(118.2, 78, 93.1, 10, esc(sub.toUpperCase())) +
-    L(113.7, 315, 327.1, 8, 'PROJET /') + C(421, 221, 331.5, tailleNom(100), esc(E.client || 'Sans nom'), { titre:1, fit:370 }) +
-    L(113.7, 362.9, 375, 8, 'LOCALISATION /') + (loc[0] ? C(421, 353.6, 382.3, taille(loc[0], 19, 610), esc(loc[0])) : '') + (loc[1] ? C(421, 380.2, 409, taille(loc.slice(1).join(', '), 19, 610), esc(loc.slice(1).join(', '))) : '') +
-    L(113.7, 437.5, 449.6, 8, 'INTERLOCUTEUR /') + L(201.3, 436, 451.2, taille(E.interlocuteur || '', 10, 255), esc(E.interlocuteur || ''), { b:1 }) +
-    L(470.3, 437.5, 449.6, 8, 'TÉLÉPHONE /') + L(538, 436, 451.2, taille(E.tel || '', 10, 200), esc(E.tel || ''), { b:1 }) +
-    L(113.7, 536.1, 548.2, 8, 'DATE /') + L(118.2, 552.2, 567.4, 10, esc(dateAffichee()), { b:1 }) +
-    L(268.5, 555.4, 566, 7, LEGAL));
+    L(118.9, 61.0, 73.1, 8, 'DOSSIER / ' + esc(E.numero || '—'), T) + L(118.2, 78, 93.1, 10, esc(sub.toUpperCase()), T) +
+    L(118.9, 315, 327.1, 8, 'PROJET /', T) + C(421, 221, 331.5, tailleNom(100), esc(E.client || 'Sans nom'), { titre:1, fit:370 }) +
+    L(118.9, 362.9, 375, 8, 'LOCALISATION /', T) + (loc[0] ? C(421, 353.6, 382.3, taille(loc[0], 19, 610, 0.145), esc(loc[0]), { ls:0.145 }) : '') + (loc[1] ? C(421, 380.2, 409, taille(loc.slice(1).join(', '), 19, 610, 0.145), esc(loc.slice(1).join(', ')), { ls:0.145 }) : '') +
+    L(118.9, 437.5, 449.6, 8, 'INTERLOCUTEUR /', T) + L(201.3, 436, 451.2, taille(E.interlocuteur || '', 10, 255, 0.15), esc(E.interlocuteur || ''), { b:1, ls:0.15 }) +
+    L(475.5, 437.5, 449.6, 8, 'TÉLÉPHONE /', T) + L(538, 436, 451.2, taille(tel, 10, 200, 0.03), esc(tel), { b:1, ls:0.03 }) +
+    L(118.9, 536.1, 548.2, 8, 'DATE /', T) + L(118.2, 552.2, 567.4, 10, esc(dateAffichee()), { b:1, ls:0.045 }) +
+    L(268.5, 555.4, 566, 7, LEGAL, T));
 }
 function pageIntro(){
   const t = texteActif(), e = ETAPES[E.etape], bat = !!e.bon;
@@ -1653,8 +1670,14 @@ function etiquettePage(chunk){
 const sousEtiquette = p => ETAPES[E.etape].validation ? dateAffichee() : ('V' + (E.version || 1) + ' • ' + dateAffichee());
 // Zone des visuels : entre l'en-tête (≈ 42 pt) et le pied de page (≈ 567 pt).
 const ZONE = { x:24.4, y:52, w:793.1, h:508 };
+// Pleine page : l'image couvre toute la feuille ; les encarts et le pied de page restent par-dessus, sans filets. Par défaut pour un moodboard.
+const pleinEcran = cle => { const p = E.props[cle]; return p.pleinEcran !== undefined ? p.pleinEcran : p.type === 'Moodboard'; };
 function pageProposition(cle){
   const p = E.props[cle], f = fichierChoisi(cle);
+  if(pleinEcran(cle)){
+    if(!legendeVide(blocsLegende(p))) ALERTES.push('« ' + (p.titre || 'visuel') + ' » : en pleine page, les cotes et la description ne sont pas affichées.');
+    return tpl('fond.jpg', `<div class="tpVisu" style="left:0;top:0;width:100%;height:100%"><img class="couvre" src="${f.src}" alt=""></div>` + entetePage(etiquettePage([cle]), sousEtiquette(p), ETAPES[E.etape].validation, true) + piedPage(true));
+  }
   return tpl('fond.jpg', entetePage(etiquettePage([cle]), sousEtiquette(p), ETAPES[E.etape].validation) + composerCellule(p, f, ZONE.x, ZONE.y + 3, ZONE.w, ZONE.h - 3, 28, 'grand') + piedPage());
 }
 // Plusieurs visuels sur une même page : « auto », « ligne » (côte à côte), « colonne » (l'un sous l'autre) ou « grille ».
@@ -1685,10 +1708,10 @@ function decoupage(){
 }
 function pageAutorisation(){
   const lignes = AUTO_LIGNES.map(l => {
-    const o = l[7] ? { titre:1, c:'#' + l[5], fit:l[2] - l[0] } : { c:'#' + l[5], b:l[6] };
+    const o = l[7] ? { titre:1, c:'#' + l[5], fit:l[2] - l[0] } : { c:'#' + l[5], b:l[5] === 'b02121' ? 1 : l[6], st: l[5] === 'b02121' ? 'text-decoration:underline;' : '' };
     return L(l[0], l[1], l[3], l[4], esc(l[8]), o);
   }).join('');
-  return tpl('fond.jpg', entetePage("DEMANDE D'AUTORISATION", '', false) + lignes + piedPage());
+  return tpl('fond-kraft.jpg', entetePage("DEMANDE D'AUTORISATION", '', false, true) + lignes + piedPage(true));
 }
 function pageNuancier(){
   // Camaïeu : trois bandes côte à côte (couleur, + 20 %, + 40 % de blanc), la première étant la couleur principale.
@@ -1845,7 +1868,7 @@ async function chercherTrello(){
     if(vide(E.client) && c.projet) E.client = c.projet;
     if(vide(E.ville) && lieu) E.ville = lieu;
     if(vide(E.interlocuteur) && personne) E.interlocuteur = personne;
-    if(vide(E.tel) && c.telephone) E.tel = c.telephone;
+    if(vide(E.tel) && c.telephone) E.tel = formaterTel(c.telephone);
     garderOuvert = 'dossier';
     trello = { n, etat:'ok', nom:c.nom, liste:c.liste, url:c.url, nb:(d.cartes || []).length, inverse };
   }catch(e){ trello = { n, etat:'erreur' }; }
