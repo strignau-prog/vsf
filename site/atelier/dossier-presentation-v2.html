@@ -1754,6 +1754,28 @@ function blocRecapLitres(){
 /* ------------------------------ Trello : le numéro de dossier préremplit le client ------------------------------
    La fonction « trello-carte » (Supabase) lit la carte « 888. Projet - Lieu - Interlocuteur > étape » ; seuls les champs encore vides sont remplis. */
 let trello = { n:'', etat:'' };
+/* ------------------------------ Lieu ou personne ? ------------------------------
+   Les cartes Trello ne suivent pas toujours l'ordre « Projet - Lieu - Interlocuteur ». L'outil reconnaît un lieu avec l'annuaire officiel des communes
+   (geo.api.gouv.fr, sans clé) et quelques repères d'adresse (chiffres, rue, avenue, port…). Il n'échange les deux champs que s'il est sûr : le second est un lieu et le premier n'en est pas un. */
+const sansAccent = t => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[-'’]/g, ' ').replace(/\s+/g, ' ').trim();
+const MOTS_LIEU = /\b(rue|avenue|av|boulevard|bd|place|chemin|impasse|quai|route|allee|zone|zi|za|lieu dit|plage|port|ile|cedex)\b/;
+async function scoreLieu(txt){
+  const n = sansAccent(txt); if(!n) return 0;
+  if(/\d/.test(n) || MOTS_LIEU.test(n)) return 1;
+  try{
+    const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 3500);
+    const r = await fetch('https://geo.api.gouv.fr/communes?nom=' + encodeURIComponent(String(txt).trim()) + '&fields=nom&limit=10', { signal: ctl.signal }); clearTimeout(t);
+    if(!r.ok) return -1;
+    const noms = (await r.json()).map(c => sansAccent(c.nom));
+    if(noms.includes(n)) return 1;                           // nom de commune exact
+    if(noms.some(x => x.startsWith(n + ' '))) return 0.7;    // début d'un nom de commune (ex. « Locmaria » → Locmaria Grand Champ)
+    return 0;
+  }catch(e){ return -1; }                                     // service injoignable : on ne touche à rien
+}
+async function aInverser(lieu, personne){
+  const [a, b] = await Promise.all([scoreLieu(lieu), scoreLieu(personne)]);
+  return a >= 0 && b >= 0 && b >= 0.7 && a < 0.5;
+}
 async function chercherTrello(){
   const n = (E.numero || '').trim();
   if(!/^\d{1,6}$/.test(n) || !sb){ trello = { n, etat:'' }; return; }
@@ -1768,19 +1790,21 @@ async function chercherTrello(){
     }
     const d = r.data || {}, c = (d.cartes || [])[0];
     if(!c){ trello = { n, etat:'absent' }; dessiner(); return; }
+    let lieu = c.lieu || '', personne = c.interlocuteur || '', inverse = false;
+    if(lieu && personne && await aInverser(lieu, personne)){ [lieu, personne] = [personne, lieu]; inverse = true; }
     if(vide(E.client) && c.projet) E.client = c.projet;
-    if(vide(E.ville) && c.lieu) E.ville = c.lieu;
-    if(vide(E.interlocuteur) && c.interlocuteur) E.interlocuteur = c.interlocuteur;
+    if(vide(E.ville) && lieu) E.ville = lieu;
+    if(vide(E.interlocuteur) && personne) E.interlocuteur = personne;
     if(vide(E.tel) && c.telephone) E.tel = c.telephone;
     garderOuvert = 'dossier';
-    trello = { n, etat:'ok', nom:c.nom, liste:c.liste, url:c.url, nb:(d.cartes || []).length };
+    trello = { n, etat:'ok', nom:c.nom, liste:c.liste, url:c.url, nb:(d.cartes || []).length, inverse };
   }catch(e){ trello = { n, etat:'erreur' }; }
   dessiner();
 }
 function messageTrello(){
   const t = trello, n = esc(E.numero || '');
   if(t.n === (E.numero || '').trim() && t.etat === 'cherche') return '<span class="tiny">Recherche de la carte Trello…</span>';
-  if(t.n === (E.numero || '').trim() && t.etat === 'ok') return `<p class="aide" style="color:#1d5a2d"><b>✓ Carte Trello trouvée</b> : ${esc(t.nom)}${t.liste ? ' · colonne « ' + esc(t.liste) + ' »' : ''}${t.nb > 1 ? ' · ' + t.nb + ' cartes avec ce numéro, la première est utilisée' : ''}.${t.url ? ' <a href="' + esc(t.url) + '" target="_blank" rel="noopener">Ouvrir la carte</a>' : ''}</p>`;
+  if(t.n === (E.numero || '').trim() && t.etat === 'ok') return `<p class="aide" style="color:#1d5a2d"><b>✓ Carte Trello trouvée</b> : ${esc(t.nom)}${t.liste ? ' · colonne « ' + esc(t.liste) + ' »' : ''}${t.nb > 1 ? ' · ' + t.nb + ' cartes avec ce numéro, la première est utilisée' : ''}${t.inverse ? ' · lieu et interlocuteur remis dans le bon ordre' : ''}.${t.url ? ' <a href="' + esc(t.url) + '" target="_blank" rel="noopener">Ouvrir la carte</a>' : ''}</p>`;
   if(t.n === (E.numero || '').trim() && t.etat === 'absent') return `<p class="aide">Aucune carte Trello avec le numéro ${n}. Saisissez les coordonnées ci-dessous.</p>`;
   if(t.n === (E.numero || '').trim() && t.etat === 'connexion') return '<p class="aide">Connectez-vous pour que le numéro préremplisse le client depuis Trello.</p>';
   if(t.n === (E.numero || '').trim() && t.etat === 'erreur') return '<p class="aide">Trello n\'est pas disponible pour le moment : saisissez les coordonnées ci-dessous.' + (t.detail ? ' <span class="tiny">(code : ' + esc(t.detail) + ')</span>' : '') + '</p>';
