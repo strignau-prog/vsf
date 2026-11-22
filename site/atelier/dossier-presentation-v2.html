@@ -1067,7 +1067,7 @@ function corpsEtape(id){
   if(id === 'dossier') return `<div class="field"><label>Numéro de dossier</label><input class="input${vide(E.numero) ? ' afaire' : ''}" inputmode="numeric" placeholder="1048" value="${esc(E.numero)}" data-k="numero"></div>
     ${messageTrello()}
     <div class="field" style="margin-top:10px"><label>Client / projet</label><input class="input${vide(E.client) ? ' afaire' : ''}" value="${esc(E.client)}" data-k="client"></div>
-    <div class="field"><label>Localisation</label><textarea class="textarea${vide(E.ville) ? ' afaire' : ''}" rows="1" placeholder="Rue, ville, département" data-k="ville">${esc(E.ville)}</textarea></div>
+    <div class="field"><div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px"><label>Localisation</label><button type="button" class="lien tiny" id="bInverser" title="Échanger la localisation et l'interlocuteur (si la carte Trello est dans l'autre ordre)">⇄ inverser avec l'interlocuteur</button></div><textarea class="textarea${vide(E.ville) ? ' afaire' : ''}" rows="1" placeholder="Rue, ville, département" data-k="ville">${esc(E.ville)}</textarea></div>
     <div class="grid2"><div class="field"><label>Interlocuteur</label><input class="input${vide(E.interlocuteur) ? ' afaire' : ''}" value="${esc(E.interlocuteur)}" data-k="interlocuteur"></div>
     <div class="field"><label>Téléphone</label><input class="input${vide(E.tel) ? ' afaire' : ''}" value="${esc(E.tel)}" data-k="tel"></div></div>
     <div class="grid2"><div class="field"><label>Date du dossier</label><input class="input" type="date" value="${esc(E.date)}" data-k="date"></div>
@@ -1333,6 +1333,7 @@ saisie.addEventListener('click', async e => {
   if(b.id === 'bPhoto'){ document.getElementById('photoInput').click(); return; }
   if(b.id === 'bPhotoOff'){ E.photo = ''; dessiner(); return; }
   if(b.id === 'bNouveau'){ if(await boite('Effacer ce dossier et en commencer un nouveau ?', { oui:'Effacer', non:'Annuler' })){ E = etatVierge(); ouverts = {}; dernierCourant = ''; dessiner(); } return; }
+  if(b.id === 'bInverser'){ const v = E.ville; E.ville = E.interlocuteur; E.interlocuteur = v; garderOuvert = 'dossier'; dessiner(); return; }
   if(b.id === 'bOuvAuto'){ E.ouvertureLibre = null; dessiner(); return; }
   if(b.id === 'bTexteAjout' || b.id === 'bTexteMaj'){ enregistrerTexte(b.id === 'bTexteMaj'); return; }
   if(b.id === 'bTeinteAdd'){ E.teintes.push({ id:uid(), cmyk:'', hex:'#cccccc', reference:'', nom:'', nuancier:'', camaieu:false, commander:null, ral:null }); dessiner(); return; }
