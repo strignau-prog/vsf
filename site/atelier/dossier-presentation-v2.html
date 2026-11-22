@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex">
 <title>Dossier de présentation</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:ital,wght@0,400;0,700;1,400&display=swap">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Antonio:wght@700&family=Anton&family=Space+Mono:wght@400;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Sans+3:wght@400;600;700&family=Antonio:wght@700&family=Anton&family=Space+Mono:wght@400;700&display=swap">
 <style>
   :root{ --ink:#111; --muted:#6b6b6b; --line:#e2e0db; --soft:#f6f5f2; --accent:#a8461f;
          --kraft:#c6af90; --kraftLine:rgba(23,18,10,.42); --cream:#d8d4cd; --papInk:#181510; --papRed:#ae3f37; }
@@ -328,7 +328,7 @@ function etatVierge(){
     props:{},         // cle → { choix, titre, type, cotes:[{l,v}], description }
     ordre:[],         // clés dans l'ordre d'affichage
     plateau:[],       // fichiers déposés, pas encore placés : { id, nom, cle, titre, vv, src, mini, ai, faible, w, h, coche, cles:[pages placées] }
-    pistePlacement:0, typePlacement:'',   // pistePlacement : 0 = numérotation automatique (dans l'ordre), sinon n° de piste imposé aux images placées
+    pistePlacement:0, typePlacement:'', entete:{ police:'code', graisse:600, inter:125 },   // pistePlacement : 0 = numérotation automatique (dans l'ordre), sinon n° de piste imposé aux images placées
     photo:'', texteId:'', texteLibre:null, signature:'', atelier:{...ATELIER_DEFAUT}, teintes:[], nuancier:null, regrouper:false, parPage:2 };
 }
 let E = etatVierge();
@@ -418,6 +418,29 @@ async function retraiterSrc(src){
     c.getContext('2d').drawImage(im, 0, 0); return exporterVisuel(c);
   }catch(e){ return src; }
 }
+// Image brute : JPEG, ou PNG si elle a de la transparence (rien n'est retiré à ce stade)
+function exporterBrut(c){
+  const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let alpha = false;
+  for(let i = 3; i < d.length; i += 4){ if(d[i] < 250){ alpha = true; break; } }
+  return alpha ? c.toDataURL('image/png') : c.toDataURL('image/jpeg', .9);
+}
+async function surBlanc(src){
+  try{
+    const im = await charger(src), c = document.createElement('canvas'); c.width = im.naturalWidth; c.height = im.naturalHeight;
+    const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(im, 0, 0);
+    return c.toDataURL('image/jpeg', .9);
+  }catch(e){ return src; }
+}
+// Image affichée : avec détourage (fond blanc → transparent) ou sans. Sans détourage, une page PDF / .ai reste sur son fond blanc ; une image reste telle quelle.
+async function traiterSrc(orig, kind, detour){
+  if(detour) return await retraiterSrc(orig);
+  return kind === 'vec' ? await surBlanc(orig) : orig;
+}
+const detourDe = cle => { const p = E.props[cle]; return p ? (p.detour !== undefined ? p.detour : p.type !== 'Croquis') : true; };
+async function retraiterFichier(cle){
+  const p = E.props[cle]; if(!p) return;
+  for(const f of E.fichiers.filter(x => x.cle === cle)){ if(f.orig) f.src = await traiterSrc(f.orig, f.kind || 'ras', detourDe(cle)); }
+}
 async function imageReduite(f, garderFond){
   const src = await lire(f);
   if(/svg/i.test(f.type) || /\.svg$/i.test(f.name)) return src;
@@ -426,7 +449,7 @@ async function imageReduite(f, garderFond){
   const x = c.getContext('2d');
   if(garderFond){ x.fillStyle = '#fff'; x.fillRect(0,0,c.width,c.height); x.drawImage(img,0,0,c.width,c.height); return c.toDataURL('image/jpeg', .9); }
   x.drawImage(img,0,0,c.width,c.height);
-  return exporterVisuel(c);
+  return exporterBrut(c);
 }
 const avecDelai = (p, ms, msg) => Promise.race([p, new Promise((_, ko) => setTimeout(() => ko(new Error(msg)), ms))]);
 let pdfjsPret = null;
@@ -449,7 +472,7 @@ async function pagesPdf(f){
     const c = document.createElement('canvas'); c.width = Math.round(v.width); c.height = Math.round(v.height);
     const x = c.getContext('2d');   // fond laissé transparent : le blanc du bord est retiré ensuite
     await avecDelai(p.render({ canvasContext:x, viewport:v, intent:'print' }).promise, 60000, 'page ' + i + ' trop longue à dessiner');   // « print » : ne dépend pas de l'affichage de l'onglet
-    out.push(exporterVisuel(c));
+    out.push(exporterBrut(c));
   }
   return out;
 }
@@ -627,11 +650,12 @@ async function ajouterFichiers(liste, cible){
         aiData = await lireAI(f);
         let net = null; try{ net = await apercuAI(f); }catch(e){ net = null; }
         const ok = !!(net && net.length);
-        pages = ok ? net : [await retraiterSrc(aiData.vignette)]; faible = !ok;
+        pages = ok ? net : [aiData.vignette]; faible = !ok;
         if(!pages[0]) throw new Error('aperçu illisible : enregistrez aussi le fichier en PDF');
         if(faible) avert.push('« ' + f.name + ' » : aperçu basse définition. Réenregistrez-le avec « Créer un fichier compatible PDF », ou déposez aussi son PDF.');
         aiData.alertes.forEach(a => avert.push('« ' + f.name + ' » : ' + a));
       } else pages = pdf ? await pagesPdf(f) : [await imageReduite(f)];
+      const kind = ((ai && !faible) || pdf) ? 'vec' : 'ras';   // vec : page dessinée (fond transparent) ; ras : image
       const dims = await Promise.all(pages.map(src => charger(src).then(im => [im.naturalWidth, im.naturalHeight]).catch(() => [0, 0])));
       for(let i = 0; i < pages.length; i++){
         const src = pages[i], cv = cleEtVersion(f.name), suffixe = pages.length > 1 ? ' — page ' + (i + 1) : '';
@@ -643,10 +667,11 @@ async function ajouterFichiers(liste, cible){
           if(!faible && (it.faible || !aiData)){
             it.faible = false; it.w = dims[i][0]; it.h = dims[i][1]; it.mini = await miniature(src);
             if(it.src) it.src = src;
-            E.fichiers.forEach(x => { if(it.cles.includes(x.cle)){ x.src = src; x.faible = false; x.w = it.w; x.h = it.h; } });
+            it.kind = kind;
+            for(const x of E.fichiers){ if(it.cles.includes(x.cle)){ x.orig = src; x.kind = kind; x.src = await traiterSrc(src, kind, detourDe(x.cle)); x.faible = false; x.w = it.w; x.h = it.h; } }
           }
         } else {
-          const nouveau = { id:uid(), nom:f.name + suffixe, cle, titre:cv.titre + suffixe, vv:cv.vv, src, mini:await miniature(src), ai:aiData, faible, w:dims[i][0], h:dims[i][1], croquis:/croquis/i.test(f.name), coche:true, cles:[] };
+          const nouveau = { id:uid(), nom:f.name + suffixe, cle, titre:cv.titre + suffixe, vv:cv.vv, src, mini:await miniature(src), ai:aiData, faible, w:dims[i][0], h:dims[i][1], kind, croquis:/croquis/i.test(f.name), coche:true, cles:[] };
           E.plateau.push(nouveau); nouveaux.push(nouveau);
         }
       }
@@ -681,21 +706,23 @@ function numeroPiste(c){
 function majVersionDossier(){ /* la version du dossier se saisit dans « Dossier et client » et ne suit plus les pages */ }
 // type des images placées : choix du plateau ; à défaut, « Croquis » si le nom du fichier le dit, sinon le type de l'étape
 const typeChoisi = it => E.typePlacement || (it.croquis ? 'Croquis' : (ETAPES[E.etape] || ETAPES.CREA).typeDefaut);
-function placerCoches(ensemble){
+async function placerCoches(ensemble){
   const v = E.pistePlacement || 0, groupe = ensemble ? uid() : '';
-  E.plateau.filter(it => it.coche).forEach(it => {
-    const src = it.src || ((E.fichiers.find(f => it.cles.includes(f.cle)) || {}).src);
-    if(!src) return;
+  for(const it of E.plateau.filter(it => it.coche)){
+    const prem = E.fichiers.find(f => it.cles.includes(f.cle)) || {};
+    const origine = it.src || prem.orig || prem.src, kind = it.kind || prem.kind || 'ras';
+    if(!origine) continue;
     let cle = it.cle; if(E.props[cle]){ let n = 2; while(E.props[it.cle + '~' + n]) n++; cle = it.cle + '~' + n; }
-    E.fichiers.push({ id:uid(), nom:it.nom, cle, v:1, src, ai:it.ai, faible:it.faible, w:it.w, h:it.h });
-    const pr = E.props[cle] = { choix:'', titre:it.titre, piste:v, type: typeChoisi(it), typeAuto: !E.typePlacement && !it.croquis, cotes:[], description:'', panneau:'' };
+    const type = typeChoisi(it), detour = type !== 'Croquis';   // un croquis, souvent sur fond blanc, n'est pas détouré par défaut
+    E.fichiers.push({ id:uid(), nom:it.nom, cle, v:1, src: await traiterSrc(origine, kind, detour), orig:origine, kind, ai:it.ai, faible:it.faible, w:it.w, h:it.h });
+    const pr = E.props[cle] = { choix:'', titre:it.titre, piste:v, type, typeAuto: !E.typePlacement && !it.croquis, detour, detourAuto:true, cotes:[], description:'', panneau:'' };
     if(groupe) pr.groupe = groupe;
     E.ordre.push(cle); it.cles.push(cle); it.src = null; it.coche = false;
     if(it.ai){   // cotes et dimensions du panneau lues dans le fichier
       if(it.ai.cotes.length) pr.cotes = it.ai.cotes.map(c => versCote({ ...c }));
       if(it.ai.panneau) pr.panneau = it.ai.panneau[0] + ' cm × ' + it.ai.panneau[1] + ' cm';
     }
-  });
+  }
   majVersionDossier();
   dessiner();
   ouverts.fichiers = true; dessiner();   // l'étape passe à « faite » : on la garde ouverte pour placer d'autres fichiers
@@ -1015,7 +1042,7 @@ function etatEtapes(){
 }
 
 const pluriel = (n, un, plu) => n + ' ' + (n > 1 ? plu : un);
-let repliTexteOuvert = false;
+let repliTexteOuvert = false, repliEnteteOuvert = false;
 function resteFaire(id){
   const r = [];
   if(id === 'dossier'){
@@ -1074,6 +1101,11 @@ function corpsEtape(id){
     <div class="field"><label>Version du dossier</label><input class="input" type="number" min="1" value="${E.version}" data-k="version"></div></div>`;
   if(id === 'type') return `<div class="field"><label>Étape du dossier</label>${groupeRadios('etape', ETAPES_CONNUES.map(k => [k, ({ CREA:'Propositions (CREA)', BAT:'Validation (BAT)', MOODBOARD:'Moodboard & croquis' })[k]]), E.etapeChoisie ? E.etape : '', !E.etapeChoisie)}</div>
     <div class="field"><label>Statut du devis</label>${groupeRadios('devis', [['non_signe', 'Non signé'], ['signe', 'Signé']], E.devis || 'non_signe', false)}</div>
+    <details class="repli" id="repliEntete" ${repliEnteteOuvert ? 'open' : ''}><summary>Encarts d'en-tête : <b>${esc(({ code:'Source Code Pro', sans:'Source Sans 3', inter:'Inter' })[enteteReglages().police])}</b> · ${({ 400:'normal', 600:'semi-gras', 700:'gras' })[enteteReglages().graisse]} · interlettrage ${enteteReglages().inter}</summary>
+      <div class="field"><label>Police</label>${groupeRadios('enpolice', [['code', 'Source Code Pro (modèle)'], ['sans', 'Source Sans 3'], ['inter', 'Inter']], enteteReglages().police, false)}</div>
+      <div class="field"><label>Graisse</label>${groupeRadios('engraisse', [['400', 'Normal'], ['600', 'Semi-gras'], ['700', 'Gras']], String(enteteReglages().graisse), false)}</div>
+      <div class="field" style="max-width:150px"><label>Interlettrage (1/1000 de corps)</label><input class="input" type="number" min="-50" max="400" step="5" value="${enteteReglages().inter}" data-en="inter"></div>
+      <button type="button" class="btn petit" id="bEnteteModele">Valeurs du modèle Gesret</button></details>
     <details class="repli" id="repliTexte" ${repliTexteOuvert ? 'open' : ''}><summary>Texte d'introduction : <b>${esc(nomTexte(texteActif().nom))}</b> <span class="tiny">choisi automatiquement · modifier</span></summary>${blocTexte()}</details>`;
   if(id === 'fichiers') return blocFichiers();
   if(id === 'cotes') return blocCotes();
@@ -1156,6 +1188,7 @@ function blocFichiers(){
       return `<div class="prop" data-c="${esc(c)}">${avec.length ? '<div class="tiny" style="margin-bottom:6px">Sur la même page que ' + avec.join(', ') + ' <button type="button" class="btn petit" data-act="separer">Séparer</button></div>' : ''}<div class="propTete"><img src="${ch.src}" alt=""><input class="input" value="${esc(p.titre)}" data-p="titre" aria-label="Nom du visuel">
         <div style="display:flex;gap:4px"><button class="btn petit" data-act="haut" ${i === 0 ? 'disabled' : ''}>↑</button><button class="btn petit" data-act="bas" ${i === props.length - 1 ? 'disabled' : ''}>↓</button><button class="btn petit" data-act="retirer">✕</button></div></div>
         <div class="grid2" style="margin-top:8px;max-width:340px"><div class="field" style="margin:0"><label>Type</label><select class="select" data-p="type" aria-label="Type de rendu de cette page">${TYPES.map(t => `<option ${p.type === t ? 'selected' : ''}>${t}</option>`).join('')}</select></div><div class="field" style="margin:0"><label>Piste n°</label><select class="select" data-p="piste" aria-label="Numéro de piste de cette page"><option value="0" ${!p.piste ? 'selected' : ''}>Auto (${pad2(numeroPiste(c))})</option>${Array.from({ length:Math.max(vm, p.piste || 0) }, (_, k) => `<option value="${k + 1}" ${p.piste === k + 1 ? 'selected' : ''}>${pad2(k + 1)}</option>`).join('')}</select></div></div>
+        <label class="choixTexte" style="margin:8px 0 0"><input type="checkbox" data-detour ${(p.detour !== undefined ? p.detour : p.type !== 'Croquis') ? 'checked' : ''}><span>Détourer le fond blanc de l'image</span></label>
         ${ch.faible ? '<div class="tiny alerteTxt" style="margin-top:6px">Aperçu basse définition : dans Illustrator, enregistrez de nouveau avec « Créer un fichier compatible PDF ».</div>' : ''}</div>`;
     }).join('')}
 `;
@@ -1272,12 +1305,15 @@ function blocPalette(){
 /* ------------------------------ Événements (délégués) ------------------------------ */
 const saisie = document.getElementById('saisie');
 function propDe(el){ const d = el.closest('[data-c]'); return d ? E.props[d.dataset.c] : null; }
-saisie.addEventListener('change', e => {
+saisie.addEventListener('change', async e => {
   const t = e.target;
   { const bl = t.closest && t.closest('.bloc'); if(bl && bl.dataset.b) garderOuvert = bl.dataset.b; }   // la rubrique modifiée reste ouverte : pas d'avance automatique pendant qu'on la remplit
   if(t.id === 'fichierInput'){ ajouterFichiers(t.files, 'propositions'); t.value = ''; return; }
   if(t.id === 'photoInput'){ ajouterFichiers(t.files, 'photo'); t.value = ''; return; }
   if(t.dataset.plc){ const it = E.plateau.find(x => x.id === t.dataset.plc); if(it){ it.coche = t.checked; dessiner(); } return; }
+  if(t.name === 'enpolice'){ E.entete = Object.assign(enteteReglages(), { police: t.value }); dessiner(); return; }
+  if(t.name === 'engraisse'){ E.entete = Object.assign(enteteReglages(), { graisse: parseInt(t.value, 10) || 600 }); dessiner(); return; }
+  if(t.dataset.en === 'inter'){ const v = parseFloat(t.value); E.entete = Object.assign(enteteReglages(), { inter: isFinite(v) ? Math.max(-50, Math.min(400, v)) : 125 }); dessiner(); return; }
   if(t.name === 'tplace'){ E.typePlacement = t.value; dessiner(); return; }
   if(t.name === 'pplace'){ E.pistePlacement = parseInt(t.value, 10) || 0; dessiner(); return; }
   if(t.name && t.name.startsWith('dispo-')){ const p = propDe(t); if(p){ p.dispo = t.value; dessiner(); } return; }
@@ -1300,10 +1336,19 @@ saisie.addEventListener('change', e => {
   if(t.id === 'calcRend' || t.id === 'calcCouches' || t.id === 'calcMarge'){ E.calc = calcReglages(); const v = nombre(t.value); const cle = t.id === 'calcRend' ? 'rendement' : t.id === 'calcCouches' ? 'couches' : 'marge'; if(isFinite(v) && v >= 0 && (cle !== 'rendement' || v > 0)) E.calc[cle] = v; dessiner(); return; }
   if(t.id === 'chkNuancier'){ E.nuancier = t.checked; dessiner(); return; }
   if(t.dataset.tk){ const dt = t.closest('[data-t]'), te = dt && E.teintes.find(x => x.id === dt.dataset.t); if(te){ te.ouvert = (t.dataset.tk === 'surface' || t.dataset.tk === 'commander') ? te.ouvert : true; te[t.dataset.tk] = (t.type === 'checkbox') ? t.checked : t.value; if(t.dataset.tk === 'reference'){ memoriser(te); const mr = /RAL\s*(\d{4})/i.exec(te.reference), rr = mr && ralCodes().find(r => r.code === mr[1]); if(rr && !te.cmyk) te.hex = rr.hex; } dessiner(); } return; }
-  if(t.dataset.p){ const p = propDe(t); if(p){ if(t.dataset.p === 'piste'){ p.piste = parseInt(t.value, 10) || 0; } else { p[t.dataset.p] = t.value; if(t.dataset.p === 'type') p.typeAuto = false; } dessiner(); } return; }
+  if(t.dataset.detour !== undefined){ const dc = t.closest('[data-c]'), p = dc && E.props[dc.dataset.c]; if(p){ p.detour = t.checked; p.detourAuto = false; await retraiterFichier(dc.dataset.c); dessiner(); } return; }
+  if(t.dataset.p){
+    const p = propDe(t), dc = t.closest('[data-c]');
+    if(p){
+      if(t.dataset.p === 'piste'){ p.piste = parseInt(t.value, 10) || 0; }
+      else { p[t.dataset.p] = t.value; if(t.dataset.p === 'type'){ p.typeAuto = false; if(p.detourAuto !== false){ p.detour = t.value !== 'Croquis'; await retraiterFichier(dc.dataset.c); } } }
+      dessiner();
+    }
+    return;
+  }
   if(t.dataset.ck){ const p = propDe(t); if(p){ p.cotes = p.cotes.map(versCote); p.cotes[+t.dataset.i][t.dataset.ck] = (t.type === 'checkbox') ? t.checked : t.value; dessiner(); } }
 });
-saisie.addEventListener('toggle', e => { const t = e.target; if(t.id === 'repliTexte') repliTexteOuvert = t.open; }, true);
+saisie.addEventListener('toggle', e => { const t = e.target; if(t.id === 'repliTexte') repliTexteOuvert = t.open; if(t.id === 'repliEntete') repliEnteteOuvert = t.open; }, true);
 saisie.addEventListener('input', e => {
   if(e.target.id === 'palQ'){ palRecherche = e.target.value; const g = document.getElementById('palGrille'); if(g) g.innerHTML = grillePalette(palMarque); }
 });
@@ -1333,6 +1378,7 @@ saisie.addEventListener('click', async e => {
   if(b.id === 'bPhoto'){ document.getElementById('photoInput').click(); return; }
   if(b.id === 'bPhotoOff'){ E.photo = ''; dessiner(); return; }
   if(b.id === 'bNouveau'){ if(await boite('Effacer ce dossier et en commencer un nouveau ?', { oui:'Effacer', non:'Annuler' })){ E = etatVierge(); ouverts = {}; dernierCourant = ''; dessiner(); } return; }
+  if(b.id === 'bEnteteModele'){ E.entete = { police:'code', graisse:600, inter:125 }; dessiner(); return; }
   if(b.id === 'bInverser'){ const v = E.ville; E.ville = E.interlocuteur; E.interlocuteur = v; garderOuvert = 'dossier'; dessiner(); return; }
   if(b.id === 'bOuvAuto'){ E.ouvertureLibre = null; dessiner(); return; }
   if(b.id === 'bTexteAjout' || b.id === 'bTexteMaj'){ enregistrerTexte(b.id === 'bTexteMaj'); return; }
@@ -1359,7 +1405,7 @@ saisie.addEventListener('click', async e => {
   if(!a || !c) return;
   const p = E.props[c];
   if(a === 'haut' || a === 'bas'){ const i = E.ordre.indexOf(c), j = i + (a === 'haut' ? -1 : 1); if(j >= 0 && j < E.ordre.length){ [E.ordre[i], E.ordre[j]] = [E.ordre[j], E.ordre[i]]; } }
-  else if(a === 'retirer'){ const fx = E.fichiers.find(f => f.cle === c); E.plateau.forEach(it => { if(it.cles.includes(c)){ it.cles = it.cles.filter(x => x !== c); if(!it.src && fx) it.src = fx.src; } }); E.fichiers = E.fichiers.filter(f => f.cle !== c); E.ordre = E.ordre.filter(x => x !== c); delete E.props[c]; }
+  else if(a === 'retirer'){ const fx = E.fichiers.find(f => f.cle === c); E.plateau.forEach(it => { if(it.cles.includes(c)){ it.cles = it.cles.filter(x => x !== c); if(!it.src && fx) it.src = fx.orig || fx.src; } }); E.fichiers = E.fichiers.filter(f => f.cle !== c); E.ordre = E.ordre.filter(x => x !== c); delete E.props[c]; }
   else if(a === 'separer'){ delete p.groupe; }
   else if(a === 'coteAI'){ const ai = (fichierChoisi(c) || {}).ai; if(ai){ p.cotes = ai.cotes.map(k => versCote({ ...k })); if(ai.panneau) p.panneau = ai.panneau[0] + ' cm × ' + ai.panneau[1] + ' cm'; } }
   else if(a === 'coteAdd'){ p.cotes = p.cotes.map(versCote); p.cotes.push(coteVide()); }
@@ -1418,10 +1464,13 @@ const L = (x, y0, y1, s, h, o) => tx('l', x, y0, y1, s, h, o), C = (x, y0, y1, s
 const box = (x0, y0, x1, y1, st) => `<div class="tbox" style="left:${x0 / PT * 100}%;top:${y0 / PH * 100}%;width:${(x1 - x0) / PT * 100}%;height:${(y1 - y0) / PH * 100}%;${st || ''}"></div>`;
 const trait = (x0, y0, x1, y1, couleur, ep) => (y1 - y0 < 0.5) ? box(x0, y0 - ep / 2, x1, y0 + ep / 2, 'background:' + couleur) : box(x0 - ep / 2, y0, x0 + ep / 2, y1, 'background:' + couleur);
 function tpl(bg, inner){ return `<div class="feuille"><div class="page tp" style="background-image:url('${GAB}${bg}')">${inner}</div></div>`; }
+const FAMILLES_ENTETE = { code:"'Source Code Pro','Space Mono',monospace", sans:"'Source Sans 3','Source Sans Pro',sans-serif", inter:"Inter,system-ui,sans-serif" };
+const enteteReglages = () => Object.assign({ police:'code', graisse:600, inter:125 }, E.entete || {});
+const largeurLettre = k => ((enteteReglages().police === 'code' ? 0.6 : 0.58) + enteteReglages().inter / 1000) * k;   // largeur d'une lettre d'encart au corps k (pt)
 function tag(a, x, y0, y1, s, html, st){   // étiquette claire qui épouse son texte (marge de 5,5 pt)
   const pos = a === 'r' ? 'right:' + ((PT - x) / PT * 100) + '%;' : a === 'c' ? 'left:' + (x / PT * 100) + '%;transform:translateX(-50%);' : 'left:' + (x / PT * 100) + '%;';
-  const h = (y1 - y0) / PT * 100;
-  return `<span class="etiq" style="${pos}top:${y0 / PH * 100}%;height:${h}cqw;line-height:${h}cqw;font-size:${s / PT * 100}cqw;padding:0 ${5.5 / PT * 100}cqw;${st || ''}">${html}</span>`;
+  const h = (y1 - y0) / PT * 100, R = enteteReglages();
+  return `<span class="etiq" style="${pos}top:${y0 / PH * 100}%;height:${h}cqw;line-height:${h}cqw;font-size:${s / PT * 100}cqw;font-family:${FAMILLES_ENTETE[R.police] || FAMILLES_ENTETE.code};font-weight:${R.graisse};letter-spacing:${R.inter / 1000}em;padding:0 ${Math.max(0, 5.5 - R.inter / 1000 * s) / PT * 100}cqw 0 ${5.5 / PT * 100}cqw;${st || ''}">${html}</span>`;
 }
 const tronquer = (t, n) => t.length > n ? t.slice(0, Math.max(1, n - 1)) + '…' : t;
 // grand titre en police condensée : au-delà d'environ 19 lettres, le corps diminue (en plus de l'ajustement en largeur)
@@ -1429,7 +1478,8 @@ const tailleNom = base => base;   // le corps s'ajuste ensuite à la largeur (aj
 const taille = (txt, max, W) => Math.max(6.5, Math.min(max, W / (Math.max(1, String(txt).length) * 0.62)));   // corps réduit pour tenir dans la largeur W
 function entetePage(label, sous, avecCase, sansTrait){
   const lieu = (E.ville || '').split('\n').slice(-1)[0].trim();
-  const largeurDroite = Math.max(String(label).length * 6.2 + 11, avecCase ? 82 : 0), nomMax = Math.max(8, Math.floor((779.5 - largeurDroite - 40) / 6.2)), lieuMax = Math.max(8, Math.floor((779.5 - (String(sous || '').length * 4.34 + 11) - 40) / 4.34));
+  const R = enteteReglages(), cw = k => ((R.police === 'code' ? 0.6 : 0.58) + R.inter / 1000) * k;   // largeur d'une lettre au corps k
+  const largeurDroite = Math.max(String(label).length * cw(10) + 11, avecCase ? 82 : 0), nomMax = Math.max(8, Math.floor((779.5 - largeurDroite - 40) / cw(10))), lieuMax = Math.max(8, Math.floor((779.5 - (String(sous || '').length * cw(7) + 11) - 40) / cw(7)));
   return (sansTrait ? '' : trait(31.2, 23, 810.7, 23, KRAFT_LIGNE, 1)) +
     tag('l', 31.2, 16.7, 28.3, 10, esc(tronquer((E.client || 'Sans nom').toUpperCase(), nomMax))) + (lieu ? tag('l', 31.2, 28.3, 40, 7, esc(tronquer(lieu.toUpperCase(), lieuMax))) : '') +
     tag('r', 810.7, 16.7, 28.3, 10, esc(label), avecCase ? 'min-width:' + (81.8 / PT * 100) + 'cqw;text-align:right' : '') + (sous ? tag('r', 810.7, 28.3, 40, 7, esc(sous)) : '') +
@@ -1665,7 +1715,7 @@ function pageContact(){
   const a = E.atelier, adr = (a.adresse || '').split('\n');
   const lieu = (E.ville || '').split('\n').slice(-1)[0].trim();
   return tpl('contact.jpg',
-    (E.client ? tag('c', 255.9, 129.8, 141.4, 10, esc(tronquer(E.client, 60).toUpperCase())) : '') + (lieu ? tag('c', 255.9, 141.4, 153.1, 7, esc(tronquer(lieu, 80).toUpperCase())) : '') +
+    (E.client ? tag('c', 255.9, 129.8, 141.4, 10, esc(tronquer(E.client, Math.max(10, Math.floor(430 / largeurLettre(10)))).toUpperCase())) : '') + (lieu ? tag('c', 255.9, 141.4, 153.1, 7, esc(tronquer(lieu, Math.max(10, Math.floor(430 / largeurLettre(7)))).toUpperCase())) : '') +
     tag('c', 255.9, 488.3, 499.9, 10, esc(ETAPES[E.etape].couv.toUpperCase())) +
     C(593.9, 306, 350.2, 40, esc(a.nom || ''), { titre:1, fit:121 }) + C(593.9, 362.2, 378.8, 11, esc(a.tel || '')) +
     (adr[0] ? C(593.9, 377.2, 392.4, 10, esc(adr[0].toUpperCase())) : '') + (adr[1] ? C(593.9, 391.2, 406.4, 10, esc(adr[1].toUpperCase())) : '') +
