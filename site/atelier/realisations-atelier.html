@@ -197,6 +197,7 @@ function render(){
             ${[['tous', 'Toutes'], ['validee', 'Publiées'], ['en_attente', 'Brouillons'], ['refusee', 'Masquées'], ['sans_photo', 'Sans photo'], ['a_localiser', 'Fiches incomplètes (sans adresse)']].map(o => `<option value="${o[0]}" ${state.filtre === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}
           </select>
           <a class="btn" href="https://realisations.etsgesret.fr/" target="_blank" rel="noopener" style="text-decoration:none;color:inherit">Voir la carte publique ↗</a>
+          <a class="btn" href="realisation-ajout.html#zoneImport" style="text-decoration:none;color:inherit" title="Importer plusieurs lieux d'un coup depuis un fichier Excel ou CSV">Importer un tableau (Excel)</a>
         </div>
         <div id="tableau">${tableau(liste)}</div>
       </section>

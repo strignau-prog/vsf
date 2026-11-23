@@ -439,7 +439,7 @@ async function init(){
     ? 'Tu es webmaster : tes ajouts sont publiés tout de suite sur la carte. Les ajouts des peintres apparaissent plus bas, dans « À valider ».'
     : 'Ton ajout sera visible sur la carte après validation par le webmaster.';
   $('formZone').style.display = '';
-  if(state.comite || state.atelierId){ $('zoneImport').style.display = ''; $('peintreDefaut').innerHTML = $('peintre').innerHTML; }
+  if(state.comite || state.atelierId){ $('zoneImport').style.display = ''; $('peintreDefaut').innerHTML = $('peintre').innerHTML; if(location.hash === '#zoneImport') $('zoneImport').scrollIntoView(); }
   else{ const z = document.createElement('div'); z.className = 'note'; z.innerHTML = "<b>Intégration en masse</b> : réservée au webmaster. Vous êtes connecté avec <b>" + esc(state.user.email || 'un compte sans e-mail') + "</b> ; connectez-vous avec <b>" + COMITE_EMAIL + "</b> pour la voir."; $('zoneImport').parentNode.insertBefore(z, $('zoneImport')); }
   renderCollabs();
   brancherSuggestionsAdresse($('adresse'), c => {
