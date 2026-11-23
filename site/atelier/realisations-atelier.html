@@ -83,6 +83,11 @@
     @media (max-width:640px){.grid2{grid-template-columns:1fr}.main{padding:16px 12px 50px}}
     .depot{border:2px dashed #b9b2a6;border-radius:12px;background:var(--soft);padding:14px;text-align:center;margin-bottom:10px;cursor:pointer}
     .depot.survol{background:#efe9dc;border-color:#111}
+    .colD.glisse{outline:3px dashed #1c1a17;outline-offset:-8px;background:#faf6ec}
+    .colD.glisse::after{content:"Déposez vos photos et vidéos ici";position:sticky;display:block;bottom:40%;text-align:center;font-weight:700;font-size:18px;background:#1c1a17;color:#fff;padding:10px 16px;border-radius:999px;width:max-content;margin:0 auto;pointer-events:none}
+    .vid{display:flex;gap:12px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:6px;background:#fff}
+    .vid video{width:150px;height:90px;object-fit:cover;border-radius:6px;background:#000;flex:none}
+    .vid .nom{flex:1;min-width:0;word-break:break-all;font-size:13px}
     .photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
     .photo{border:1px solid var(--line);border-radius:10px;padding:6px;background:#fff;position:relative}
     .photo img{width:100%;height:90px;object-fit:cover;border-radius:6px;display:block}
@@ -255,7 +260,7 @@ async function supprimer(id){
   if(!await confirmer(`Supprimer « ${r.enseigne} » ?\nLa réalisation${n ? ' et ses ' + n + ' photo' + (n > 1 ? 's' : '') : ''} seront supprimées. Cette action est définitive.`)) return;
   const { error } = await sb.from('realisations').delete().eq('id', id);
   if(error){ alert('Suppression impossible : ' + error.message); return; }
-  await supprimerFichiers(r.photos);
+  await supprimerFichiers([...(r.photos || []), ...(r.video_url ? [r.video_url] : [])]);
   state.lignes = state.lignes.filter(x => x.id !== id); if(state.ed && state.ed.id === id){ libererApercus(); state.ed = formulaire(null); } render(); toast('Réalisation supprimée');
 }
 
@@ -272,13 +277,13 @@ function formulaire(r){
     ville: r && r.ville && r.ville !== r.adresse ? r.ville : '', lat: r ? r.lat : null, lng: r ? r.lng : null,
     peintre: r ? r.peintre_user_id : peintreParDefaut(),
     collabs: new Set(r ? r.collaborateurs || [] : []), tags: r ? (r.tags || []).join(', ') : '',
-    video: r ? r.video_url || '' : '', audio: r ? r.audio_url || '' : '',
+    video: r ? r.video_url || '' : '', videoFichier:null, videoApercu:'', videoInitiale: r ? r.video_url || '' : '', audio: r ? r.audio_url || '' : '',
     statut: r ? (r.statut || 'validee') : 'validee',
     photos: r ? (r.photos || []).map(u => ({ url:u, apercu:u })) : [], photosInitiales: r ? [...(r.photos || [])] : [],
     erreur:'', enCours:false
   };
 }
-function libererApercus(){ if(state.ed) (state.ed.photos || []).forEach(p => { if(p.fichier) URL.revokeObjectURL(p.apercu); }); }
+function libererApercus(){ if(state.ed){ (state.ed.photos || []).forEach(p => { if(p.fichier) URL.revokeObjectURL(p.apercu); }); if(state.ed.videoApercu) URL.revokeObjectURL(state.ed.videoApercu); } }
 function ouvrir(id){
   libererApercus();
   state.ed = formulaire(id ? state.lignes.find(x => x.id === id) : null);
@@ -296,14 +301,12 @@ function fenetre(){
     <div class="field"><label>Adresse complète * <span class="tiny">(des propositions apparaissent en tapant ; elles placent le point sur la carte)</span></label><input class="input" id="edAdresse" value="${esc(e.adresse)}" oninput="state.ed.adresse=this.value" placeholder="Commencez à taper : 12 rue de la… la ville se propose"></div>
     <div class="field"><label>Ville affichée (facultatif)</label><input class="input" id="edVille" value="${esc(e.ville)}" oninput="state.ed.ville=this.value" placeholder="Ex : Auray — sinon l'adresse est affichée"></div>
     <div class="field"><label>Photos <span class="tiny">(la première sert de couverture ; glissez-déposez ou cliquez)</span></label>
-      <div class="depot" id="depot" onclick="$('fichierPhotos').click()">Glissez vos photos ici ou <b>cliquez pour choisir</b><input id="fichierPhotos" type="file" accept="image/*" multiple hidden onchange="ajouterPhotos(this.files);this.value=''"></div>
+      <div class="depot" id="depot" onclick="$('fichierPhotos').click()">Glissez vos photos et vos vidéos ici (n'importe où sur la fiche) ou <b>cliquez pour choisir</b><input id="fichierPhotos" type="file" accept="image/*,video/*" multiple hidden onchange="ajouterMedias(this.files);this.value=''"></div>
       <div class="photos" id="edPhotos">${photosHtml()}</div>
     </div>
     <div class="field"><label>Mots-clés (séparés par des virgules)</label><input class="input" value="${esc(e.tags)}" oninput="state.ed.tags=this.value" placeholder="Lettres capitales, Doré à la feuille, Devanture"></div>
-    <div class="grid2">
-      <div class="field"><label>Lien vidéo (facultatif)</label><input class="input" value="${esc(e.video)}" oninput="state.ed.video=this.value" placeholder="YouTube, Vimeo…"></div>
-      <div class="field"><label>Lien audio (facultatif)</label><input class="input" value="${esc(e.audio)}" oninput="state.ed.audio=this.value" placeholder="Lien vers le son"></div>
-    </div>
+    <div class="field"><label>Vidéo (facultatif)</label><div id="edVideo">${videoHtml()}</div></div>
+    <div class="field"><label>Lien audio (facultatif)</label><input class="input" value="${esc(e.audio)}" oninput="state.ed.audio=this.value" placeholder="Lien vers le son"></div>
     <div class="field"><label>Avec la participation de (facultatif)</label><div class="collabs" id="edCollabs">${collabsHtml()}</div></div>
     <div class="field"><label>Visibilité</label><div class="choix" id="edStatut">${statutHtml()}</div></div>
     <div class="msgKo" id="edErreur">${esc(e.erreur)}</div>
@@ -334,9 +337,44 @@ function ajouterPhotos(liste){
 }
 function deplacerPhoto(i, d){ const p = state.ed.photos, j = i + d; if(j < 0 || j >= p.length) return; [p[i], p[j]] = [p[j], p[i]]; majPhotos(); }
 function retirerPhoto(i){ const p = state.ed.photos[i]; if(p && p.fichier) URL.revokeObjectURL(p.apercu); state.ed.photos.splice(i, 1); majPhotos(); }
-document.addEventListener('dragover', e => { const d = e.target.closest && e.target.closest('#depot'); if(d){ e.preventDefault(); d.classList.add('survol'); } else if(state.ed) e.preventDefault(); });
-document.addEventListener('dragleave', e => { const d = e.target.closest && e.target.closest('#depot'); if(d) d.classList.remove('survol'); });
-document.addEventListener('drop', e => { const d = e.target.closest && e.target.closest('#depot'); if(d){ e.preventDefault(); d.classList.remove('survol'); ajouterPhotos(e.dataTransfer.files); } else if(state.ed) e.preventDefault(); });
+/* vidéo : un fichier glissé (MP4, MOV…) est envoyé comme les photos ; à défaut, un lien YouTube / Vimeo */
+const LIMITE_VIDEO = 50 * 1024 * 1024;   // plafond d'envoi de la base (offre actuelle)
+const estImage = f => /^image\//.test(f.type) || /\.(jpe?g|png|webp|heic|heif|gif)$/i.test(f.name);
+const estVideo = f => /^video\//.test(f.type) || /\.(mp4|mov|m4v|webm)$/i.test(f.name);
+const estHebergee = u => !!u && u.includes('/' + BUCKET + '/');
+const mo = n => (n / 1048576).toFixed(n < 1e7 ? 1 : 0).replace('.', ',') + ' Mo';
+function videoHtml(){
+  const e = state.ed;
+  if(e.videoFichier) return `<div class="vid"><video src="${esc(e.videoApercu)}" muted preload="metadata"></video><div class="nom">${esc(e.videoFichier.name)}<div class="tiny">${mo(e.videoFichier.size)} · sera envoyée à l'enregistrement</div></div><button class="btn petit danger" onclick="retirerVideo()">Retirer</button></div>`;
+  if(estHebergee(e.video)) return `<div class="vid"><video src="${esc(e.video)}" controls muted preload="metadata"></video><div class="nom">Vidéo enregistrée</div><button class="btn petit danger" onclick="retirerVideo()">Retirer</button></div>`;
+  return `<input class="input" value="${esc(e.video)}" oninput="state.ed.video=this.value" placeholder="Collez un lien YouTube, Vimeo…"><div class="tiny" style="margin-top:3px">Ou glissez un fichier vidéo sur la fiche (50 Mo au maximum).</div>`;
+}
+function majVideo(){ const z = $('edVideo'); if(z) z.innerHTML = videoHtml(); }
+function retirerVideo(){
+  const e = state.ed; if(e.videoApercu) URL.revokeObjectURL(e.videoApercu);
+  e.videoFichier = null; e.videoApercu = ''; if(estHebergee(e.video)) e.video = ''; majVideo();
+}
+function ajouterMedias(liste){
+  const f = Array.from(liste || []), videos = f.filter(estVideo), ignores = f.filter(x => !estImage(x) && !estVideo(x));
+  ajouterPhotos(f);
+  if(videos.length){
+    const v = videos[0];
+    if(v.size > LIMITE_VIDEO) alert(`La vidéo « ${v.name} » pèse ${mo(v.size)} : au-delà de 50 Mo l'envoi est refusé.\nRéduisez-la (compression) ou collez un lien YouTube / Vimeo à la place.`);
+    else {
+      if(state.ed.videoApercu) URL.revokeObjectURL(state.ed.videoApercu);
+      state.ed.videoFichier = v; state.ed.videoApercu = URL.createObjectURL(v); if(estHebergee(state.ed.video)) state.ed.video = ''; majVideo();
+      if(videos.length > 1) toast('Une seule vidéo par lieu : la première est gardée');
+    }
+  }
+  if(ignores.length) toast(ignores.length === 1 ? 'Fichier ignoré : ' + ignores[0].name + ' (ni photo ni vidéo)' : ignores.length + ' fichiers ignorés (ni photos ni vidéos)');
+}
+// glisser-déposer : sur toute la fiche (colonne de droite) ; ailleurs, on évite seulement que le navigateur ouvre le fichier
+const porteFichiers = e => !!e.dataTransfer && Array.from(e.dataTransfer.types || []).includes('Files');
+const surFiche = e => !!(state.ed && e.target.closest && e.target.closest('#colD'));
+const finGlisse = () => { const c = $('colD'); if(c) c.classList.remove('glisse'); const d = $('depot'); if(d) d.classList.remove('survol'); };
+document.addEventListener('dragover', e => { if(!porteFichiers(e)) return; e.preventDefault(); if(surFiche(e)){ $('colD').classList.add('glisse'); const d = e.target.closest('#depot'); if(d) d.classList.add('survol'); else $('depot').classList.remove('survol'); } else finGlisse(); });
+document.addEventListener('dragleave', e => { if(porteFichiers(e) && (!e.relatedTarget || !$('colD') || !$('colD').contains(e.relatedTarget))) finGlisse(); });
+document.addEventListener('drop', e => { if(!porteFichiers(e)) return; e.preventDefault(); finGlisse(); if(surFiche(e)) ajouterMedias(e.dataTransfer.files); });
 
 /* une photo de téléphone pèse souvent 5 à 10 Mo : on la ramène à 2000 px de large (JPEG) avant l'envoi */
 async function reduirePhoto(f){
@@ -379,16 +417,18 @@ async function enregistrer(){
       k++; etat.textContent = `Envoi de la photo ${k} sur ${aEnvoyer}…`;
       urls.push(await televerser(p.fichier));
     }
+    let videoUrl = e.video.trim() || null;
+    if(e.videoFichier){ etat.textContent = 'Envoi de la vidéo (patientez)…'; videoUrl = await televerser(e.videoFichier); }
     const ligne = {
       enseigne:e.enseigne.trim(), adresse:e.adresse.trim(), ville:e.ville.trim() || e.adresse.trim(), lat, lng,
       peintre_user_id:e.peintre, collaborateurs:[...e.collabs].filter(u => u !== e.peintre),
       tags:e.tags.split(',').map(t => t.trim()).filter(Boolean),
-      photos:urls, video_url:e.video.trim() || null, audio_url:e.audio.trim() || null,
+      photos:urls, video_url:videoUrl, audio_url:e.audio.trim() || null,
       statut:e.statut, establishment_id:state.estId, updated_at:new Date().toISOString()
     };
     if(e.id){ const { error } = await sb.from('realisations').update(ligne).eq('id', e.id); if(error) throw new Error(error.message); }
     else { ligne.cree_par = state.user.id; const { error } = await sb.from('realisations').insert(ligne); if(error) throw new Error(error.message); }
-    await supprimerFichiers(e.photosInitiales.filter(u => !urls.includes(u)));   // photos retirées de la fiche
+    await supprimerFichiers([...e.photosInitiales.filter(u => !urls.includes(u)), ...(e.videoInitiale && e.videoInitiale !== videoUrl ? [e.videoInitiale] : [])]);   // photos et vidéo retirées de la fiche
     const nouveau = !e.id; libererApercus(); state.ed = null;
     await charger(); state.ed = formulaire(null); render(); toast(nouveau ? 'Réalisation ajoutée' : 'Réalisation mise à jour');   // la fiche repart vide pour la suivante
   }catch(err){
