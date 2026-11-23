@@ -12,6 +12,9 @@
 <style>
 :root{--fg:#111;--muted:#767676;--now:#ffc400;--ok:#0a8a5a;--alert:#d92d20;--soft:#f3f3f3;--jaune:#fff4cc;--accent:#ffc400;--rosep:#fdecea;--vertp:#e3f6ee;
   --f-faire:#111111;--f-recevoir:#2F67B1;--f-mesurer:#7B4FB8;--f-dire:#13878A;--f-regard:#8B5A2B;--hh:110px;
+  --moucheté-brun:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='n' x='0' y='0' width='100%25' height='100%25'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' seed='11'/><feColorMatrix values='0 0 0 0 0.40  0 0 0 0 0.31  0 0 0 0 0.20  0 0 0 22 -16.4'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  --moucheté-clair:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='n' x='0' y='0' width='100%25' height='100%25'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' seed='23'/><feColorMatrix values='0 0 0 0 0.64  0 0 0 0 0.61  0 0 0 0 0.56  0 0 0 22 -16.4'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  --moucheté-clair-sur-brun:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='n' x='0' y='0' width='100%25' height='100%25'><feTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='2' seed='5'/><feColorMatrix values='0 0 0 0 0.90  0 0 0 0 0.85  0 0 0 0 0.77  0 0 0 24 -19.6'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
   --font:'Inter','Helvetica Neue',Arial,sans-serif;color-scheme:light}
 *{box-sizing:border-box}
 body{margin:0;background:#fff;color:var(--fg);font-family:var(--font);font-size:15px;line-height:1.4;-webkit-font-smoothing:antialiased}
@@ -176,6 +179,25 @@ textarea.json{width:100%;min-height:150px;font:12.5px/1.45 ui-monospace,Consolas
 .ab .ret{font-size:13px;margin:4px 0 8px;padding:8px 10px;background:var(--soft);border-radius:6px}
 .ab .minu{display:inline-block;font-weight:800;font-size:12px;border:2px solid #111;border-radius:999px;padding:2px 10px;margin-bottom:6px}
 .ab .pt{font-weight:800}
+
+/* aperçu à la charte de l'atelier : réglages lus dans vsf_form_chartes.theme */
+.tel.themee,.ord.themee{background-color:var(--fclair,#F6F4F2)}
+.tel.themee.fond-blanc,.ord.themee.fond-blanc{--carte-et:var(--sec,#C4AE8F);background-image:var(--moucheté-clair)}
+.tel.themee.fond-brun,.ord.themee.fond-brun{--carte-et:#fff;background-color:var(--sec,#C4AE8F);background-image:var(--moucheté-brun),var(--moucheté-clair-sur-brun)}
+.bandeau-at{display:flex;align-items:center;gap:12px;padding:8px 14px;border-bottom:4px solid var(--accent);background-color:var(--sec,#C4AE8F);background-image:var(--moucheté-brun),var(--moucheté-clair-sur-brun);flex:none}
+.fond-blanc .bandeau-at{background-color:#fff;background-image:var(--moucheté-clair)}
+.bandeau-at img{height:56px;width:auto;display:block}
+.bandeau-at .nom{font-family:var(--fd,'Fjalla One'),Impact,sans-serif;text-transform:uppercase;font-size:15px;letter-spacing:.03em;line-height:1.1;color:#000}
+.bandeau-at .nom small{display:block;font-family:Inter,Arial,sans-serif;text-transform:none;font-size:11px;color:#3a3226;letter-spacing:0}
+.themee .et{margin:0 0 12px;background:#111;padding:3px;clip-path:polygon(0 13px,13px 0,calc(100% - 13px) 0,100% 13px,100% calc(100% - 13px),calc(100% - 13px) 100%,13px 100%,0 calc(100% - 13px))}
+.themee .et .in.ab{margin:0;border-left:0;padding:12px 14px;background:var(--carte-et,#fff);clip-path:polygon(0 10px,10px 0,calc(100% - 10px) 0,100% 10px,100% calc(100% - 10px),calc(100% - 10px) 100%,10px 100%,0 calc(100% - 10px))}
+.themee .ab h4{font-family:var(--fd,'Fjalla One'),Impact,sans-serif;text-transform:uppercase;font-weight:400;font-size:19px;letter-spacing:.02em}
+.themee .ab .rep{border-color:var(--accent);border-radius:8px;background:#fff}
+.themee .ab .rep.pris{background:var(--accent);color:#fff}
+.themee .ab .btn{border-radius:8px;border-color:var(--accent);color:var(--accent)}
+.themee .ab .ent2{color:var(--c)}
+.themee.police-atelier .ab p,.themee.police-atelier .ab .rep,.themee.police-atelier .ab .note,.themee.police-atelier .ab .ent2,.themee.police-atelier .ab .ret{font-family:var(--ft,'Source Code Pro'),monospace;font-weight:600;font-size:12.5px}
+.thb{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:0 0 10px}
 </style>
 <link rel="stylesheet" href="vsf-menu.css">
 </head>
@@ -485,7 +507,7 @@ function ecrans(m){
     if(S.cont&&!S.tout&&S.cont!==c.id)return;
     briquesDe(c.id).forEach(function(b){out.push({e:e[1],c:c,b:b});});});});
   return out;}
-function ab(x,fmt){
+function abBrut(x,fmt){
   var b=x.b,c=b.champs||{},col=famCss(FAMILLE[x.c.type]||'faire'),h='<div class="ab" data-ab="'+esc(b.id)+'" style="--c:'+col+'"><div class="ent2">'+esc(x.e)+' · '+esc(nomType(x.c.type))+'</div>';
   var cle=b.id;
   if(b.type==='carte')h+='<h4>'+esc(c.titre)+'</h4><p>'+esc(c.texte)+'</p>';
@@ -504,6 +526,11 @@ function ab(x,fmt){
   }
   return h+'</div>';
 }
+function ab(x,fmt){
+  var h=abBrut(x,fmt);
+  if(!theme())return h;
+  return '<div class="et">'+h.replace('<div class="ab"','<div class="in ab"')+'</div>';
+}
 function majCpt(){var r=$('rail');if(!r)return;var i=Math.round(r.scrollLeft/r.clientWidth),pts=document.querySelectorAll('#pts i');for(var k=0;k<pts.length;k++)pts[k].className=k===i?'on':'';var cp=$('cpt');if(cp)cp.textContent=(i+1)+' / '+pts.length;}
 function apercuWrap(html,m){
   var f=html.indexOf('class="fm"'),k=html.indexOf('</div>',f),n=ecrans(m).length,nav='';
@@ -514,12 +541,16 @@ function apercuWrap(html,m){
 function apercu(m){
   var xs=ecrans(m),ch=charte(),h='<div class="aph"><h2>Aperçu apprenant</h2><span class="dr"><button class="btn petit" data-act="epingler">'+(S.apEpingle?'Désépingler':'Épingler à droite')+'</button><button class="btn petit" data-act="fermerap" aria-label="Fermer l’aperçu">✕</button></span></div>'+
     '<div class="fm"><button data-fmt="tel" class="'+(S.fmt==='tel'?'on':'')+'">Téléphone</button><button data-fmt="ord" class="'+(S.fmt==='ord'?'on':'')+'">Ordinateur</button><button data-fmt="imp" class="'+(S.fmt==='imp'?'on':'')+'">Imprimé</button>'+(S.cont?'<button data-act="tout">'+(S.tout?'Ce contenu':'Tout le module')+'</button>':'')+'</div>';
+  if(theme())h+=barreCharte();
   if(!xs.length)return h+'<p class="note">Rien à montrer : pas encore de contenu. Un contenu pas encore fait apparaît en pointillé : « bientôt disponible ».</p>';
-  var ent=esc(ch.nom||'Atelier')+'';
+  var th=theme(),ent=th?('<img src="'+esc(th.logo)+'" alt="" style="height:30px;vertical-align:middle;margin-right:8px">'+esc(th.nom)):esc(ch.nom||'Atelier');
+  var tcls=th?' themee fond-'+(th.fond_ecran==='brun'?'brun':'blanc')+(th.police_atelier_texte?' police-atelier':''):'';
+  var tsty=th?' style="--fd:\''+esc(th.police_titres||'Fjalla One')+'\';--ft:\''+esc(th.police_texte_atelier||'Source Code Pro')+'\';--sec:'+esc(th.secondaire||'#C4AE8F')+';--fclair:'+esc(th.fond_clair||'#F6F4F2')+';--accent:'+esc(th.accent||'#A60000')+'"':'';
+  if(th)chargerPolices();
   if(S.fmt==='tel'){
-    h+='<div class="tel"><div class="top"><span>'+esc(m.titre)+'</span><i></i></div><div class="rail" id="rail">'+xs.map(function(x){return '<div class="ecran">'+ab(x,'tel')+'</div>';}).join('')+'</div><div class="pts" id="pts">'+xs.map(function(_,i){return '<i class="'+(i===0?'on':'')+'"></i>';}).join('')+'</div></div><p class="note" style="text-align:center">Une brique par écran : fais glisser, ou utilise les flèches.</p>';
+    h+='<div class="tel'+tcls+'"'+tsty+'>'+(th?'<div class="bandeau-at"><img src="'+esc(th.logo)+'" alt="'+esc(th.nom)+'"><div class="nom">'+esc(th.nom)+'<small>'+esc(th.sous_titre||'')+'</small></div></div>':'<div class="top"><span>'+esc(m.titre)+'</span><i></i></div>')+'<div class="rail" id="rail">'+xs.map(function(x){return '<div class="ecran">'+ab(x,'tel')+'</div>';}).join('')+'</div><div class="pts" id="pts">'+xs.map(function(_,i){return '<i class="'+(i===0?'on':'')+'"></i>';}).join('')+'</div></div><p class="note" style="text-align:center">Une brique par écran : fais glisser, ou utilise les flèches.</p>';
   }else if(S.fmt==='ord'){
-    h+='<div class="ord"><div class="grille">'+xs.map(function(x){return ab(x,'ord');}).join('')+'</div></div>';
+    h+='<div class="ord'+tcls+'"'+tsty+'><div class="grille">'+xs.map(function(x){return ab(x,'ord');}).join('')+'</div></div>';
   }else{
     var feuille=function(titre,corps,pg){return '<div class="imp"><div class="ent"><span>'+ent+'</span><span>'+esc(titre)+'</span></div>'+corps+'<div class="pied">'+ent+' · '+esc(m.code)+' · version 1 · relu : à fixer · '+esc(ch.mention_droits||'mention de droits : texte à fixer')+' · page '+pg+'</div></div>';};
     h+=feuille(m.titre,xs.map(function(x){return ab(x,'imp');}).join(''),1);
@@ -528,6 +559,19 @@ function apercu(m){
   }
   return h;
 }
+
+/* ---------- la charte de l'atelier ---------- */
+function theme(){var t=charte().theme;return t&&t.logo?t:null;}
+var POLICES_OK=false;
+function chargerPolices(){if(POLICES_OK||TEST&&location.protocol==='file:')return;POLICES_OK=true;var l=document.createElement('link');l.rel='stylesheet';l.href='https://fonts.googleapis.com/css2?family=Fjalla+One&family=Source+Code+Pro:wght@600&display=swap';document.head.appendChild(l);}
+async function majTheme(patch){
+  var ch=charte();if(!ch.parcours_id)return;
+  ch.theme=Object.assign({},ch.theme||{},patch);
+  if(!TEST){var r=await sb().from('vsf_form_chartes').update({theme:ch.theme,maj_le:new Date().toISOString()}).eq('parcours_id',ch.parcours_id);if(r.error)S.msg='Réglage de charte non enregistré : '+r.error.message;}
+  majApercu();
+}
+function barreCharte(){var t=theme();if(!t)return '';
+  return '<div class="thb"><span class="note">Charte :</span><button class="btn petit" data-th="police">Police de l’atelier pour le texte : '+(t.police_atelier_texte?'oui':'non')+'</button><button class="btn petit" data-th="fond">Fond : '+(t.fond_ecran==='brun'?'brun moucheté':'blanc moucheté')+'</button></div>';}
 function majApercu(){
   var m=S.mod&&byCode(S.mod);if(!S.apOuvert||!m)return;
   var ap=$('ap');if(!ap)return;
@@ -728,7 +772,7 @@ function importLocal(j){
 }
 
 /* ---------- les clics ---------- */
-var SEL='[data-mod],[data-voir],[data-valider],[data-fmt],[data-act],[data-rep],[data-bmv],[data-brouillon],[data-badd],[data-bdel],[data-bdelno],[data-bver],[data-radd],[data-rdel],[data-etape],[data-jour],[data-creer],[data-plus],[data-ins],[data-plier],[data-voirbr]';
+var SEL='[data-mod],[data-voir],[data-valider],[data-fmt],[data-act],[data-rep],[data-bmv],[data-brouillon],[data-badd],[data-bdel],[data-bdelno],[data-bver],[data-radd],[data-rdel],[data-etape],[data-jour],[data-creer],[data-plus],[data-ins],[data-plier],[data-voirbr],[data-th]';
 function garderScroll(f){var y=window.scrollY;f();window.scrollTo(0,y);}
 document.addEventListener('click',function(e){
   var t=e.target.closest(SEL);if(!t||t.disabled)return;var d=t.dataset;
@@ -741,6 +785,8 @@ document.addEventListener('click',function(e){
   if(d.ins){var pi=d.ins.split('|');inserer(pi[0],pi[1],+pi[2]);return;}
   if(d.plier){garderScroll(function(){S.plie[d.plier]=!S.plie[d.plier];render();});return;}
   if(d.voirbr){ouvrirApercu(d.voirbr);return;}
+  if(d.th==='police'){var t1=theme()||{};majTheme({police_atelier_texte:!t1.police_atelier_texte});return;}
+  if(d.th==='fond'){var t2=theme()||{};majTheme({fond_ecran:t2.fond_ecran==='brun'?'blanc':'brun'});return;}
   if(d.bmv){var pp=d.bmv.split('|');deplacer(pp[0],+pp[1]);return;}
   if(d.valider){valider(d.valider);return;}
   if(d.brouillon){repasserBrouillon(d.brouillon);return;}
