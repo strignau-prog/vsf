@@ -198,6 +198,16 @@ textarea.json{width:100%;min-height:150px;font:12.5px/1.45 ui-monospace,Consolas
 .themee .ab .ent2{color:var(--c)}
 .themee.police-atelier .ab p,.themee.police-atelier .ab .rep,.themee.police-atelier .ab .note,.themee.police-atelier .ab .ent2,.themee.police-atelier .ab .ret{font-family:var(--ft,'Source Code Pro'),monospace;font-weight:600;font-size:12.5px}
 .thb{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:0 0 10px}
+
+/* première prise en main : « Mon premier module » */
+.pm{position:fixed;left:16px;bottom:16px;width:340px;max-width:calc(100vw - 32px);background:#fff;box-shadow:0 6px 28px rgba(0,0,0,.28);border-radius:12px;padding:14px;z-index:40}
+.pmh{display:flex;gap:8px;align-items:center;margin-bottom:8px}.pmh b{font-size:15px;font-weight:900}.pmh .btn{margin-left:auto}
+.pmm{display:flex;gap:10px;align-items:center;padding:6px 0;font-size:13.5px}
+.pmm .pmc{width:20px;height:20px;border-radius:50%;border:2px solid #111;flex:none;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900}
+.pmm.ok{color:#056b4d}.pmm.ok .pmc{background:var(--ok);border-color:var(--ok);color:#fff}
+.pmm .info{margin-left:auto;background:#fff}
+.pma{margin:0 0 6px 30px;background:var(--jaune);border-radius:6px;padding:6px 9px}
+.pmfin{font-weight:900;margin:8px 0;color:#056b4d}
 </style>
 <link rel="stylesheet" href="vsf-menu.css">
 </head>
@@ -344,13 +354,15 @@ function render(){
   document.documentElement.style.setProperty('--accent',(charte().couleur_accent)||'#ffc400');
   var opts=D.parcs.map(function(x){return '<option value="'+esc(x.id)+'"'+(x.id===S.parc?' selected':'')+'>'+esc(x.nom)+(x.demo&&!/démonstration/i.test(x.nom)?' (démonstration)':'')+'</option>';}).join('');
   var h=ICON_DEFS+'<div class="kick">Constructeur de parcours</div><h1><i class="dot"></i>'+esc(p.nom||'Parcours')+(p.demo?'<span class="demo">démo</span>':'')+'</h1>'+
-    '<p><select id="parc" class="btn" aria-label="Parcours">'+opts+'</select> <a class="btn" href="production-v2.html">← Production</a>'+(m?'':' <button class="btn" data-act="menu">'+(S.arbreOuvert?'Masquer le menu':'Afficher le menu')+'</button>')+(p.demo?' <span class="note">Parcours de démonstration : aucun apprenant ne le voit, rien n’est compté.</span>':'')+'</p>';
+    '<p><select id="parc" class="btn" aria-label="Parcours">'+opts+'</select> <a class="btn" href="production-v2.html">← Production</a>'+(m?'':' <button class="btn" data-act="menu">'+(S.arbreOuvert?'Masquer le menu':'Afficher le menu')+'</button>')+' <button class="btn petit" data-pm="demarrer" title="Prise en main : un module d’entraînement et 6 missions">? Prise en main</button>'+(p.demo?' <span class="note">Parcours de démonstration : aucun apprenant ne le voit, rien n’est compté.</span>':'')+'</p>';
+  h+=pmOffre();
   if(m)h+=haut(m);
   var apOn=!!(S.apOuvert&&m),pin=apOn&&S.apEpingle;
   var cols=(S.arbreOuvert?'260px ':'')+'minmax(0,1fr)'+(pin?' 430px':'');
   h+='<div class="cols" style="grid-template-columns:'+cols+'">'+(S.arbreOuvert?'<nav class="arbre" id="arbre">'+arbre()+'</nav>':'')+
     '<main id="centre">'+(m?centre(m):'<p class="note">Choisis un module dans le menu.</p>')+'</main>'+
     (m?'<aside class="ap '+(pin?'epingle':'flot')+(apOn?' ouvert':'')+'" id="ap">'+(apOn?apercuWrap(apercu(m),m):'')+'</aside>':'')+'</div>';
+  h+=pmPanneau();
   $('app').innerHTML=h;
   var hb=$('haut');document.documentElement.style.setProperty('--hh',(hb?hb.offsetHeight+18:60)+'px');
 }
@@ -560,6 +572,52 @@ function apercu(m){
   return h;
 }
 
+
+/* ---------- première prise en main ---------- */
+var PM_CODE='DEMO-ENTRAINEMENT';
+function pmFlags(){try{return JSON.parse(localStorage.getItem('vsf_cp_pm_'+(S.uid||'test'))||'{}');}catch(e){return {};}}
+function pmSauver(o){try{localStorage.setItem('vsf_cp_pm_'+(S.uid||'test'),JSON.stringify(o));}catch(e){}}
+function pmNote(k){if(!S.pm||S.mod!==PM_CODE)return;var f=pmFlags();f.fait=f.fait||{};if(!f.fait[k]){f.fait[k]=true;pmSauver(f);}}
+function pmMissions(){
+  var cs=contenusDe(PM_CODE),bs=D.briq.filter(function(b){return cs.some(function(c){return c.id===b.contenu_id;});}),f=pmFlags().fait||{};
+  var phrases=function(t){return String(t||'').split(/[.!?]+\s*/).filter(function(x){return x.trim();}).length;};
+  var DEFR=['Oui, parce que…','Pas tout à fait : regarde…','Pas ici : cela sert à…'];
+  return [
+    {t:'Crée un contenu et ajoute une carte de 2 phrases',aide:'Dans « Regarder », clique sur « Créer » à côté de « Fiche geste », puis remplace le texte d’une carte par 2 phrases à toi.',ok:bs.some(function(b){return b.type==='carte'&&phrases(b.champs.texte)>=2&&String(b.champs.texte).indexOf('[à remplacer]')<0;})},
+    {t:'Ajoute une photo',aide:'Sur une brique Image, clique sur « Choisir une photo » et prends un fichier de ton ordinateur.',ok:bs.some(function(b){return b.type==='image'&&b.fichier;})},
+    {t:'Crée une question avec 3 réponses et un retour pour chacune',aide:'Ajoute une brique Question, écris 3 réponses et, sous chacune, ce que l’apprenant lit s’il la choisit.',ok:bs.some(function(b){return b.type==='question'&&(b.champs.reponses||[]).length>=3&&(b.champs.reponses||[]).every(function(r){return String(r.texte||'').trim()&&String(r.retour||'').trim()&&String(r.texte+r.retour).indexOf('[à remplacer]')<0&&DEFR.indexOf(r.retour)<0;});})},
+    {t:'Déplace une brique',aide:'Attrape la poignée ⋮⋮ d’une brique et glisse-la, ou utilise les flèches ↑ ↓.',ok:!!f.deplacer},
+    {t:'Ouvre l’aperçu et réponds comme l’apprenant',aide:'Clique sur « Aperçu apprenant », puis choisis une réponse à une question.',ok:!!f.apercu&&!!f.repondre},
+    {t:'Valide le contenu',aide:'Quand tu as relu, clique sur « Valider ce contenu », en bas du contenu.',ok:cs.some(function(c){return c.relecture==='relu'&&briquesDe(c.id).length;})}];}
+function pmPanneau(){
+  if(!S.pm)return '';
+  var ms=pmMissions(),n=ms.filter(function(x){return x.ok;}).length;
+  return '<aside class="pm" id="pm"><div class="pmh"><b>Mon premier module</b><span class="note">'+n+' sur '+ms.length+'</span><button class="btn petit" data-pm="quitter">Quitter</button></div>'+
+    ms.map(function(x,i){return '<div class="pmm'+(x.ok?' ok':'')+'"><span class="pmc">'+(x.ok?'✓':'')+'</span><span>'+esc(x.t)+'</span><button class="info" data-pm="aide|'+i+'" title="Aide">?</button></div>'+(S.pmAide===i?'<p class="note pma">'+esc(x.aide)+'</p>':'');}).join('')+
+    (n===ms.length?'<p class="pmfin">Tu sais construire un module.</p>':'')+'<button class="btn petit" data-pm="reset" title="Efface tout ce que tu as écrit dans ce module d’entraînement">Remettre à zéro</button></aside>';}
+function pmRafraichir(){var el=$('pm');if(S.pm&&el)el.outerHTML=pmPanneau();}
+function pmOffre(){return !S.pm&&!pmFlags().vu?'<p class="msg">Première fois ici ? Essaie « Mon premier module » : 6 petites missions, sans risque, dans un module d’entraînement que personne ne voit. <button class="btn petit" data-pm="demarrer">Commencer</button> <button class="btn petit" data-pm="plustard">Plus tard</button></p>':'';}
+async function pmDemarrer(){
+  var dp=D.parcs.filter(function(p){return p.demo;})[0];
+  if(!dp){S.msg='Il n’y a pas de parcours de démonstration : l’entraînement est indisponible.';render();return;}
+  if(!byCode(PM_CODE)){
+    var ch=D.chap.filter(function(c){return D.axes.some(function(a){return a.id===c.axe_id&&a.parcours_id===dp.id;});})[0];
+    var row={code:PM_CODE,titre:'Mon premier module',ordre:9100,axe:'B2',chapitre:'B2 — Démonstration',sous_chapitre:'B2.D1 Exemple pédagogique',epreuve:false,niveaux:'N1',modalite:'Entraînement',statut_ref:'new',duree_min:0,pratique_min:0,formats:{},etat:'ecr',liens:[],parcours_id:dp.id,niveau_entree:1,genre:'module',essai_securise:true,chapitre_id:ch?ch.id:null,demo:true,notes:'Module d’entraînement : invisible des apprenants, hors des compteurs.'};
+    if(TEST)D.mods.push(row);
+    else{var r=await sb().from('vsf_prod_modules').insert(row).select().single();if(r.error){S.msg='Le module d’entraînement n’a pas pu être créé : '+r.error.message;render();return;}D.mods.push(r.data);}
+  }
+  var f=pmFlags();f.vu=true;pmSauver(f);
+  S.pm=true;S.parc=dp.id;S.mod=PM_CODE;S.cont=null;S.msg='';S.res=null;S.pmAide=null;render();window.scrollTo(0,0);
+}
+async function pmReset(){
+  var cs=contenusDe(PM_CODE),fichiers=[];
+  cs.forEach(function(c){briquesDe(c.id).forEach(function(b){if(b.fichier)fichiers.push(b.fichier);((b.champs&&b.champs.reponses)||[]).forEach(function(r){if(r.fichier)fichiers.push(r.fichier);});});});
+  if(!TEST){var r=await sb().from('vsf_form_contenus').delete().eq('module_code',PM_CODE);if(r.error){S.msg='Remise à zéro impossible : '+r.error.message;render();return;}
+    if(fichiers.length){try{await sb().storage.from('vsf-contenus').remove(fichiers);}catch(e){}}}
+  D.briq=D.briq.filter(function(b){return !cs.some(function(c){return c.id===b.contenu_id;});});D.cont=D.cont.filter(function(c){return c.module_code!==PM_CODE;});
+  var f=pmFlags();f.fait={};pmSauver(f);S.cont=null;S.msg='Le module d’entraînement est remis à zéro.';render();
+}
+
 /* ---------- la charte de l'atelier ---------- */
 function theme(){var t=charte().theme;return t&&t.logo?t:null;}
 var POLICES_OK=false;
@@ -573,6 +631,7 @@ async function majTheme(patch){
 function barreCharte(){var t=theme();if(!t)return '';
   return '<div class="thb"><span class="note">Charte :</span><button class="btn petit" data-th="police">Police de l’atelier pour le texte : '+(t.police_atelier_texte?'oui':'non')+'</button><button class="btn petit" data-th="fond">Fond : '+(t.fond_ecran==='brun'?'brun moucheté':'blanc moucheté')+'</button></div>';}
 function majApercu(){
+  pmRafraichir();
   var m=S.mod&&byCode(S.mod);if(!S.apOuvert||!m)return;
   var ap=$('ap');if(!ap)return;
   var r=$('rail'),x=r?r.scrollLeft:0,a=$('apc'),y=a?a.scrollTop:0;
@@ -580,7 +639,7 @@ function majApercu(){
   var r2=$('rail'),a2=$('apc');if(r2){r2.scrollLeft=x;majCpt();}if(a2)a2.scrollTop=y;
 }
 function ouvrirApercu(brId){
-  S.apOuvert=true;prefsSauver();render();
+  pmNote('apercu');S.apOuvert=true;prefsSauver();render();
   if(!brId)return;
   var m=byCode(S.mod),xs=m?ecrans(m):[],idx=-1;xs.forEach(function(x,i){if(x.b.id===brId)idx=i;});
   var r=$('rail');if(r&&idx>-1){r.scrollLeft=idx*r.clientWidth;majCpt();}
@@ -597,7 +656,7 @@ async function sauver(b){
   var c=contenuParId(b.contenu_id),etaitRelu=c&&c.relecture==='relu';
   await toucher(b.contenu_id);
   st=$('sauv');if(st)st.textContent='Enregistré'+(etaitRelu?' · le contenu repasse en « brouillon · à relire »':'');
-  majApercu();
+  pmRafraichir();majApercu();
 }
 async function colonne(b,col,val){
   b[col]=val;
@@ -659,7 +718,7 @@ async function deposer(id,cibleId,avant){
   await deposerOrdre(b.contenu_id,ids,id);
 }
 async function deposerOrdre(cid,ids,idDeplace){
-  var y0=window.scrollY,ok=await renumeroter(cid,ids);
+  var y0=window.scrollY,ok=await renumeroter(cid,ids);if(ok)pmNote('deplacer');
   if(!ok){render();return;}
   await toucher(cid);S.msg='';
   if(S.apOuvert)ouvrirApercu(idDeplace);else render();
@@ -772,7 +831,7 @@ function importLocal(j){
 }
 
 /* ---------- les clics ---------- */
-var SEL='[data-mod],[data-voir],[data-valider],[data-fmt],[data-act],[data-rep],[data-bmv],[data-brouillon],[data-badd],[data-bdel],[data-bdelno],[data-bver],[data-radd],[data-rdel],[data-etape],[data-jour],[data-creer],[data-plus],[data-ins],[data-plier],[data-voirbr],[data-th]';
+var SEL='[data-mod],[data-voir],[data-valider],[data-fmt],[data-act],[data-rep],[data-bmv],[data-brouillon],[data-badd],[data-bdel],[data-bdelno],[data-bver],[data-radd],[data-rdel],[data-etape],[data-jour],[data-creer],[data-plus],[data-ins],[data-plier],[data-voirbr],[data-th],[data-pm]';
 function garderScroll(f){var y=window.scrollY;f();window.scrollTo(0,y);}
 document.addEventListener('click',function(e){
   var t=e.target.closest(SEL);if(!t||t.disabled)return;var d=t.dataset;
@@ -784,6 +843,12 @@ document.addEventListener('click',function(e){
   if(d.plus!==undefined){garderScroll(function(){S.plusPos=(S.plusPos===+d.plus?null:+d.plus);render();});return;}
   if(d.ins){var pi=d.ins.split('|');inserer(pi[0],pi[1],+pi[2]);return;}
   if(d.plier){garderScroll(function(){S.plie[d.plier]=!S.plie[d.plier];render();});return;}
+  if(d.pm){var q=d.pm.split('|');
+    if(q[0]==='demarrer'){pmDemarrer();return;}
+    if(q[0]==='plustard'){var f0=pmFlags();f0.vu=true;pmSauver(f0);render();return;}
+    if(q[0]==='quitter'){S.pm=false;render();return;}
+    if(q[0]==='aide'){S.pmAide=(S.pmAide===+q[1]?null:+q[1]);pmRafraichir();return;}
+    if(q[0]==='reset'){pmReset();return;}}
   if(d.voirbr){ouvrirApercu(d.voirbr);return;}
   if(d.th==='police'){var t1=theme()||{};majTheme({police_atelier_texte:!t1.police_atelier_texte});return;}
   if(d.th==='fond'){var t2=theme()||{};majTheme({fond_ecran:t2.fond_ecran==='brun'?'blanc':'brun'});return;}
@@ -807,7 +872,7 @@ document.addEventListener('click',function(e){
   if(d.act==='prev'||d.act==='next'){var rl=$('rail');if(rl){rl.scrollBy({left:(d.act==='next'?1:-1)*rl.clientWidth,behavior:'auto'});setTimeout(majCpt,60);}return;}
   if(d.act==='pg'){var sh=document.querySelectorAll('.apc .imp')[+d.p];if(sh)sh.scrollIntoView({behavior:'auto',block:'start'});return;}
   if(d.act==='importer'){importer();return;}
-  if(d.rep){var p=d.rep.split('|');S.rep[p[0]]=+p[1];majApercu();return;}
+  if(d.rep){var p=d.rep.split('|');S.rep[p[0]]=+p[1];pmNote('repondre');majApercu();return;}
 });
 document.addEventListener('keydown',function(e){if(e.key==='Escape'&&S.apOuvert)fermerApercu();});
 document.addEventListener('input',function(e){
