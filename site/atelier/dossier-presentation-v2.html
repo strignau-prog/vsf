@@ -1462,7 +1462,7 @@ const CREME = '#f7f4f1', KRAFT_LIGNE = '#c4af93', ENCRE = '#030405';
 function tx(a, x, y0, y1, s, html, o){
   o = o || {};
   const pos = a === 'c' ? 'left:' + (x / PT * 100) + '%;transform:translateX(-50%);' : a === 'r' ? 'right:' + ((PT - x) / PT * 100) + '%;' : 'left:' + (x / PT * 100) + '%;';
-  return `<span class="tx${o.fit ? ' fit' : ''}" data-a="${a}"${o.fit ? ' data-fit="' + o.fit + '"' : ''} style="${pos}top:${y0 / PH * 100}%;font-size:${s / PT * 100}cqw;line-height:${(y1 - y0) / PT * 100}cqw;font-family:${o.titre ? TITRE : MONO};color:${o.c || '#000'};font-weight:${(o.b || o.titre) ? 700 : 400};${o.titre ? 'font-synthesis:none;' : ''}font-style:${o.i ? 'italic' : 'normal'};${o.ls ? 'letter-spacing:' + o.ls + 'em;' : ''}${o.st || ''}">${html}</span>`;
+  return `<span class="tx${o.fit ? ' fit' : ''}" data-a="${a}"${o.fit ? ' data-fit="' + o.fit + '"' : ''}${o.base ? ' data-base="' + o.base + '"' : ''} style="${pos}top:${y0 / PH * 100}%;font-size:${s / PT * 100}cqw;line-height:${(y1 - y0) / PT * 100}cqw;font-family:${o.titre ? TITRE : MONO};color:${o.c || '#000'};font-weight:${(o.b || o.titre) ? 700 : 400};${o.titre ? 'font-synthesis:none;' : ''}font-style:${o.i ? 'italic' : 'normal'};${o.ls ? 'letter-spacing:' + o.ls + 'em;' : ''}${o.st || ''}">${html}</span>`;
 }
 const L = (x, y0, y1, s, h, o) => tx('l', x, y0, y1, s, h, o), C = (x, y0, y1, s, h, o) => tx('c', x, y0, y1, s, h, o), R = (x, y0, y1, s, h, o) => tx('r', x, y0, y1, s, h, o);
 const box = (x0, y0, x1, y1, st) => `<div class="tbox" style="left:${x0 / PT * 100}%;top:${y0 / PH * 100}%;width:${(x1 - x0) / PT * 100}%;height:${(y1 - y0) / PH * 100}%;${st || ''}"></div>`;
@@ -1515,7 +1515,7 @@ function pageCouverture(){
   const loc = lignesLieu(), tel = formaterTel(E.tel), T = { ls:0.045 };   // interlettrage relevé dans un vrai PDF Gesret : ≈ 0,045 em (étiquettes, date), 0,145 em (lieu, interlocuteur), 0,03 em (téléphone)
   return tpl('couverture.jpg',
     L(118.9, 61.0, 73.1, 8, 'DOSSIER / ' + esc(E.numero || '—'), T) + L(118.2, 78, 93.1, 10, esc(sub.toUpperCase()), T) +
-    L(118.9, 315, 327.1, 8, 'PROJET /', T) + C(421, 221, 331.5, tailleNom(100), esc(E.client || 'Sans nom'), { titre:1, fit:370 }) +
+    L(118.9, 315, 327.1, 8, 'PROJET /', T) + C(421, 221, 331.5, tailleNom(100), esc(E.client || 'Sans nom'), { titre:1, fit:370, base:321.9 }) +
     L(118.9, 362.9, 375, 8, 'LOCALISATION /', T) + (loc[0] ? C(421, 353.6, 382.3, taille(loc[0], 19, 610, 0.145), esc(loc[0]), { ls:0.145 }) : '') + (loc[1] ? C(421, 380.2, 409, taille(loc.slice(1).join(', '), 19, 610, 0.145), esc(loc.slice(1).join(', ')), { ls:0.145 }) : '') +
     L(118.9, 437.5, 449.6, 8, 'INTERLOCUTEUR /', T) + L(201.3, 436, 451.2, taille(E.interlocuteur || '', 10, 255, 0.15), esc(E.interlocuteur || ''), { b:1, ls:0.15 }) +
     L(475.5, 437.5, 449.6, 8, 'TÉLÉPHONE /', T) + L(538, 436, 451.2, taille(tel, 10, 200, 0.03), esc(tel), { b:1, ls:0.03 }) +
@@ -1758,11 +1758,16 @@ function ajusterTextes(){
       // la police garde ses proportions : si le texte dépasse la largeur voulue, c'est le corps qui diminue (jamais d'étirement)
       const cible = parseFloat(el.dataset.fit) / PT * W, a = el.dataset.a;
       if(el.dataset.fs0 === undefined) el.dataset.fs0 = parseFloat(el.style.fontSize);
-      const fs0 = parseFloat(el.dataset.fs0);
+      if(el.dataset.top0 === undefined) el.dataset.top0 = parseFloat(el.style.top);
+      const fs0 = parseFloat(el.dataset.fs0), top0 = parseFloat(el.dataset.top0), rp = pg.getBoundingClientRect(), H = rp.height, pgTop = rp.top;   // tout en pixels écran (la page peut être mise à l'échelle)
+      const baseline = () => { const p = document.createElement('span'); p.style.cssText = 'display:inline-block;width:0;height:0;vertical-align:baseline'; el.appendChild(p); const y = p.getBoundingClientRect().bottom; p.remove(); return y; };
       el.style.transform = a === 'c' ? 'translateX(-50%)' : ''; el.style.transformOrigin = a === 'c' ? 'center' : 'left';
-      el.style.fontSize = fs0 + 'cqw';
+      el.style.fontSize = fs0 + 'cqw'; el.style.top = top0 + '%';
       const reel = el.offsetWidth; if(!reel) return;
-      if(reel > cible) el.style.fontSize = (fs0 * Math.max(0.3, cible / reel)) + 'cqw';
+      // ligne de base à tenir : celle demandée (data-base, en pt) ou, à défaut, celle du texte à sa taille normale
+      const cibleY = el.dataset.base ? pgTop + parseFloat(el.dataset.base) / PH * H : baseline();
+      if(reel > cible) el.style.fontSize = (fs0 * Math.max(0.1, cible / reel)) + 'cqw';
+      el.style.top = (top0 + (cibleY - baseline()) / H * 100) + '%';
     });
   });
 }
