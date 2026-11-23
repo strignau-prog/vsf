@@ -208,6 +208,15 @@ textarea.json{width:100%;min-height:150px;font:12.5px/1.45 ui-monospace,Consolas
 .pmm .info{margin-left:auto;background:#fff}
 .pma{margin:0 0 6px 30px;background:var(--jaune);border-radius:6px;padding:6px 9px}
 .pmfin{font-weight:900;margin:8px 0;color:#056b4d}
+
+/* commentaires */
+.rem{background:var(--soft);border-radius:8px;padding:8px 10px;margin:6px 0;font-size:13.5px}
+.rem .rh{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12px}.rem .rh b{font-weight:800}
+.rem p{margin:4px 0 0}.rem.applique{background:var(--vertp)}.rem.refuse,.rem.non_applique{background:var(--jaune)}
+.cm{padding:0 16px 12px 16px}.cm textarea{width:100%;font:inherit;border:0;background:var(--soft);padding:8px 10px;border-radius:6px;min-height:60px}
+.cm .acts2{margin-top:6px}
+.nbcm{display:inline-block;background:var(--now);color:#111;border-radius:999px;font-size:11px;font-weight:900;padding:1px 7px;margin-left:6px}
+.lecture .poignee,.lecture [data-bmv],.lecture [data-bdel],.lecture [data-plus],.lecture .plus,.lecture .ajout,.lecture .bas,.lecture details.imp-det,.lecture [data-creer],.lecture [data-valider],.lecture [data-brouillon],.lecture [data-pm],.lecture .pm,.lecture .brique .acts2:not(.cmacts),.lecture [data-th]{display:none !important}
 </style>
 <link rel="stylesheet" href="vsf-menu.css">
 </head>
@@ -220,8 +229,8 @@ textarea.json{width:100%;min-height:150px;font:12.5px/1.45 ui-monospace,Consolas
 var $=function(i){return document.getElementById(i);};
 var esc=function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
 var TEST=false;
-var D={parcs:[],axes:[],chap:[],mods:[],cont:[],briq:[],liens:[],sit:[],imps:[],chartes:[],regl:{},err:[]};
-var S={parc:null,mod:null,cont:null,fmt:'tel',res:null,rep:{},urls:{},msg:'',uid:null,confirmDel:null,arbreOuvert:true,apOuvert:false,apEpingle:false,jour:null,tout:false,plie:{},plusPos:null};
+var D={parcs:[],axes:[],chap:[],mods:[],cont:[],briq:[],liens:[],sit:[],rem:[],imps:[],chartes:[],regl:{},err:[]};
+var S={parc:null,mod:null,cont:null,fmt:'tel',res:null,rep:{},urls:{},msg:'',uid:null,confirmDel:null,arbreOuvert:true,apOuvert:false,apEpingle:false,jour:null,tout:false,plie:{},plusPos:null,role:'admin',cmOuvert:{}};
 
 /* ---------- le modèle du rituel : fixé, il décide de « obligatoire » et « en option » ---------- */
 var ETAPES=[['essayer','Essayer'],['constater','Constater'],['regarder','Regarder'],['faire','Faire'],['comparer','Comparer'],['ancrer','Ancrer']];
@@ -364,6 +373,7 @@ function render(){
     (m?'<aside class="ap '+(pin?'epingle':'flot')+(apOn?' ouvert':'')+'" id="ap">'+(apOn?apercuWrap(apercu(m),m):'')+'</aside>':'')+'</div>';
   h+=pmPanneau();
   $('app').innerHTML=h;
+  lectureSeule();
   var hb=$('haut');document.documentElement.style.setProperty('--hh',(hb?hb.offsetHeight+18:60)+'px');
 }
 function formeEtat(m){var n=contenusDe(m.code).filter(function(c){return briquesDe(c.id).length>0;}).length;
@@ -382,7 +392,7 @@ function arbre(){
   if(sans.length){h+='<div class="ax">Sans chapitre</div>';sans.forEach(function(m){h+=ligne(m);});}
   return h||'<p class="note">Aucun module dans ce parcours.</p>';
 }
-function ligne(m){return '<button data-mod="'+esc(m.code)+'" class="'+(m.code===S.mod?'sel':'')+'"><span class="forme '+formeEtat(m)+'"></span><span>'+esc(m.titre)+'<br><span class="note">'+esc(m.code)+'</span></span></button>';}
+function ligne(m){return '<button data-mod="'+esc(m.code)+'" class="'+(m.code===S.mod?'sel':'')+'"><span class="forme '+formeEtat(m)+'"></span><span>'+esc(m.titre)+'<br><span class="note">'+esc(m.code)+'</span>'+(function(){var o=nbOuverts(function(r){return r.module_code===m.code;});return o?'<span class="nbcm">'+o+'</span>':'';})()+'</span></button>';}
 
 /* ---------- 1 · la vue d'un module ---------- */
 function ligneContenu(m,e,t,i){
@@ -390,8 +400,9 @@ function ligneContenu(m,e,t,i){
   var libO=o?'<span class="obl'+(st==='afaire'?' manque':'')+'">obligatoire</span>':'<span class="opt">en option</span>';
   var chip=st==='afaire'?'<span class="etat afaire'+(o?' obl2':'')+'"><i></i>À faire</span>':st==='relu'?'<span class="etat relu">Relu</span>':'<span class="etat bro">Brouillon · à relire</span>';
   var meta=st==='afaire'?'':'<span class="meta">'+nb+' brique'+(nb>1?'s':'')+' · '+fmtContenu(c)+'</span>';
+  var oc=c?nbOuverts(function(r){return r.contenu_id===c.id;}):0,chipC=oc?'<span class="chip a-relire">'+oc+' commentaire'+(oc>1?'s':'')+' ouvert'+(oc>1?'s':'')+'</span>':'';
   var btn=st==='afaire'?'<button class="btn plein" data-creer="'+e+'|'+t+'">Créer</button>':'<button class="btn" data-voir="'+esc(c.id)+'">Ouvrir</button>';
-  return '<div class="cont"><svg class="pic"><use href="#i-'+ICONE[t]+'"/></svg><span class="nom">'+esc(nomType(t))+'</span>'+libO+chip+meta+btn+'</div>';}
+  return '<div class="cont"><svg class="pic"><use href="#i-'+ICONE[t]+'"/></svg><span class="nom">'+esc(nomType(t))+'</span>'+libO+chip+meta+chipC+btn+'</div>';}
 function blocEtape(m,i){
   var e=ETAPES[i][0],st=etatEtape(m,i);
   return '<div class="bloc'+(st.grise?' grise':'')+'" id="etape-'+i+'" style="--c:'+famCss(ETAPE_FAM[i])+';--t:'+ETAPE_TEINTE[i]+'"><div class="tete"><h3 class="eh">'+(i+1)+' · '+ETAPES[i][1]+'</h3><span class="cpt">'+esc(st.cpt)+'</span></div><p class="expl">'+esc(EXPL[i])+'</p>'+
@@ -482,9 +493,9 @@ function briqueEdition(b,i,n,cible){
   var permis=cible&&PERMISES[cible.type]&&PERMISES[cible.type].indexOf(t)<0?'<p class="note err">Cette brique n’est pas prévue dans ce contenu. Elle reste, mais vérifie qu’elle a sa place ici.</p>':'';
   return '<div class="brique'+(b.emplacement&&!b.fichier?' empl':'')+'" data-bid="'+id+'" data-n="'+(i+1)+'" style="--c:'+famCss(BFAM[t])+'">'+
     '<div class="bh"><span class="poignee tip" data-tip="Glisse pour changer l’ordre d’affichage chez l’apprenant">⋮⋮</span><svg><use href="#i-'+BICONE[t]+'"/></svg><span class="t">Écran '+(i+1)+' · '+NOMS_BRIQUE[t]+(b.version?' · version '+esc(b.version):'')+'</span><span class="tt">'+esc(titreBrique(b))+'</span><span class="vu">L’apprenant voit cette brique en '+ordinal(i+1)+(b.emplacement&&!b.fichier?' · fichier à ajouter':'')+'</span>'+
-    '<span class="acts"><button class="btn petit fantome" data-voirbr="'+id+'">Voir comme l’apprenant</button><button class="btn petit fantome" disabled title="Les commentaires arrivent avec la migration des commentaires">Commenter</button>'+
+    '<span class="acts"><button class="btn petit fantome" data-voirbr="'+id+'">Voir comme l’apprenant</button>'+cmBouton(b)+
     '<button class="btn petit tip" data-tip="Change l’ordre d’affichage chez l’apprenant" data-bmv="'+id+'|-1"'+(i===0?' disabled':'')+'>↑</button><button class="btn petit tip" data-tip="Change l’ordre d’affichage chez l’apprenant" data-bmv="'+id+'|1"'+(i===n-1?' disabled':'')+'>↓</button>'+
-    '<button class="btn petit" data-plier="'+id+'">'+(plie?'Déplier':'Replier')+'</button></span></div>'+
+    '<button class="btn petit" data-plier="'+id+'">'+(plie?'Déplier':'Replier')+'</button></span></div>'+cmPanneau(b)+
     '<div class="bb'+(plie?' ferme':'')+'">'+permis+corps+'<div class="hint">'+hint(b)+'</div><div class="acts2">'+acts2+'</div></div></div>';
 }
 function sequence(m){var out=[];ETAPES.forEach(function(e){MODELE[e[0]].forEach(function(t){var c=contenu(m.code,e[0],t);if(c&&briquesDe(c.id).length)out.push(c);});});return out;}
@@ -572,6 +583,38 @@ function apercu(m){
   return h;
 }
 
+
+
+/* ---------- les commentaires ---------- */
+function remDe(filtre){return D.rem.filter(filtre);}
+function nbOuverts(f){return D.rem.filter(function(r){return r.statut==='ouvert'&&f(r);}).length;}
+function libRole(r){return r==='maitre'?'Maître artisan':'Administrateur';}
+function dateFr(d){try{return new Date(d).toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'});}catch(e){return '';}}
+var LIB_STATUT={ouvert:'ouvert',applique:'appliqué',refuse:'refusé',non_applique:'non appliqué'};
+function cmBouton(b){var n=remDe(function(r){return r.brique_id===b.id;}).length,o=nbOuverts(function(r){return r.brique_id===b.id;});
+  return '<button class="btn petit fantome" data-cm="'+esc(b.id)+'" title="Écrire un commentaire sur cette brique">Commenter'+(o?'<span class="nbcm">'+o+'</span>':(n?' ('+n+')':''))+'</button>';}
+function cmPanneau(b){
+  if(!S.cmOuvert[b.id])return '';
+  var l=remDe(function(r){return r.brique_id===b.id;}).sort(function(a,c){return String(a.cree_le).localeCompare(String(c.cree_le));});
+  return '<div class="cm" data-cmbid="'+esc(b.id)+'">'+l.map(function(r){
+    return '<div class="rem '+esc(r.statut)+'"><div class="rh"><b>'+libRole(r.auteur_role)+'</b><span>'+dateFr(r.cree_le)+'</span><span class="chip">'+LIB_STATUT[r.statut]+'</span>'+
+      (r.auteur_id===S.uid&&r.statut==='ouvert'?'<button class="btn petit" data-cmdel="'+esc(r.id)+'">Supprimer</button>':'')+'</div><p>'+esc(r.texte)+'</p>'+(r.raison?'<p class="note">Raison : '+esc(r.raison)+'</p>':'')+'</div>';}).join('')+
+    '<textarea class="cmtxt" data-cmtxt="'+esc(b.id)+'" placeholder="Ta remarque sur cette brique (ce qui est faux, trop long, à reprendre…)"></textarea><div class="acts2 cmacts"><button class="btn petit plein" data-cmsend="'+esc(b.id)+'">Envoyer le commentaire</button><button class="btn petit" data-cm="'+esc(b.id)+'">Fermer</button></div></div>';}
+async function cmEnvoyer(bid){
+  var ta=document.querySelector('[data-cmtxt="'+bid+'"]'),txt=ta?ta.value.trim():'';if(!txt)return;
+  var b=briqueParId(bid),c=b&&contenuParId(b.contenu_id),m=c&&byCode(c.module_code);if(!m)return;
+  var rang=briquesDe(c.id).indexOf(b)+1,y0=window.scrollY;
+  var row={parcours_id:m.parcours_id,module_code:m.code,contenu_id:c.id,brique_id:b.id,lieu_libelle:nomType(c.type)+' · brique '+rang,texte:txt.slice(0,2000),source:'clavier',auteur_id:S.uid,auteur_role:S.role,statut:'ouvert'};
+  if(TEST){row.id='r'+Date.now();row.cree_le=new Date().toISOString();D.rem.push(row);}
+  else{var r=await sb().from('vsf_form_remarques').insert(row).select().single();if(r.error){S.msg='Commentaire non enregistré : '+r.error.message;render();window.scrollTo(0,y0);return;}D.rem.push(r.data);}
+  S.msg='';render();window.scrollTo(0,y0);
+}
+async function cmSupprimer(id){
+  var y0=window.scrollY;
+  if(!TEST){var r=await sb().from('vsf_form_remarques').delete().eq('id',id);if(r.error){S.msg='Commentaire non supprimé : '+r.error.message;render();window.scrollTo(0,y0);return;}}
+  D.rem=D.rem.filter(function(x){return x.id!==id;});render();window.scrollTo(0,y0);
+}
+function lectureSeule(){if(S.role!=='maitre')return;Array.prototype.forEach.call(document.querySelectorAll('#centre .brique input,#centre .brique select,#centre .brique textarea:not(.cmtxt)'),function(e){e.disabled=true;});}
 
 /* ---------- première prise en main ---------- */
 var PM_CODE='DEMO-ENTRAINEMENT';
@@ -831,7 +874,7 @@ function importLocal(j){
 }
 
 /* ---------- les clics ---------- */
-var SEL='[data-mod],[data-voir],[data-valider],[data-fmt],[data-act],[data-rep],[data-bmv],[data-brouillon],[data-badd],[data-bdel],[data-bdelno],[data-bver],[data-radd],[data-rdel],[data-etape],[data-jour],[data-creer],[data-plus],[data-ins],[data-plier],[data-voirbr],[data-th],[data-pm]';
+var SEL='[data-mod],[data-voir],[data-valider],[data-fmt],[data-act],[data-rep],[data-bmv],[data-brouillon],[data-badd],[data-bdel],[data-bdelno],[data-bver],[data-radd],[data-rdel],[data-etape],[data-jour],[data-creer],[data-plus],[data-ins],[data-plier],[data-voirbr],[data-th],[data-pm],[data-cm],[data-cmsend],[data-cmdel]';
 function garderScroll(f){var y=window.scrollY;f();window.scrollTo(0,y);}
 document.addEventListener('click',function(e){
   var t=e.target.closest(SEL);if(!t||t.disabled)return;var d=t.dataset;
@@ -849,6 +892,9 @@ document.addEventListener('click',function(e){
     if(q[0]==='quitter'){S.pm=false;render();return;}
     if(q[0]==='aide'){S.pmAide=(S.pmAide===+q[1]?null:+q[1]);pmRafraichir();return;}
     if(q[0]==='reset'){pmReset();return;}}
+  if(d.cm){garderScroll(function(){S.cmOuvert[d.cm]=!S.cmOuvert[d.cm];render();});return;}
+  if(d.cmsend){cmEnvoyer(d.cmsend);return;}
+  if(d.cmdel){cmSupprimer(d.cmdel);return;}
   if(d.voirbr){ouvrirApercu(d.voirbr);return;}
   if(d.th==='police'){var t1=theme()||{};majTheme({police_atelier_texte:!t1.police_atelier_texte});return;}
   if(d.th==='fond'){var t2=theme()||{};majTheme({fond_ecran:t2.fond_ecran==='brun'?'blanc':'brun'});return;}
@@ -910,17 +956,25 @@ document.addEventListener('dragend',nettoyerDnd);
 async function lire(nom,q){try{var r=await q;if(r.error){D.err.push(nom);return [];}return r.data||[];}catch(x){D.err.push(nom);return [];}}
 async function recharger(){
   var q=function(t){return sb().from(t).select('*');};
-  var r=await Promise.all([lire('modules',q('vsf_prod_modules').order('ordre')),lire('contenus',q('vsf_form_contenus')),lire('briques',q('vsf_form_briques')),lire('axes',q('vsf_form_axes')),lire('chapitres',q('vsf_form_chapitres')),lire('chartes',q('vsf_form_chartes')),lire('liens',q('vsf_form_module_situations')),lire('situations',q('vsf_fiche_situations'))]);
-  D.mods=r[0];D.cont=r[1];D.briq=r[2];D.axes=r[3];D.chap=r[4];D.chartes=r[5];D.liens=r[6];D.sit=r[7];
+  var r=await Promise.all([lire('modules',q('vsf_prod_modules').order('ordre')),lire('contenus',q('vsf_form_contenus')),lire('briques',q('vsf_form_briques')),lire('axes',q('vsf_form_axes')),lire('chapitres',q('vsf_form_chapitres')),lire('chartes',q('vsf_form_chartes')),lire('liens',q('vsf_form_module_situations')),lire('situations',q('vsf_fiche_situations')),lire('remarques',q('vsf_form_remarques'))]);
+  D.mods=r[0];D.cont=r[1];D.briq=r[2];D.axes=r[3];D.chap=r[4];D.chartes=r[5];D.liens=r[6];D.sit=r[7];D.rem=r[8];
   await signer();
 }
 async function charger(){
   var s=await sb().auth.getSession();
   if(!s.data.session){location.replace('connexion.html?suite='+encodeURIComponent(location.href));return;}
   S.uid=s.data.session.user.id;prefsCharger();
-  var a=await sb().rpc('vsf_est_admin');
-  if(a.data!==true){$('app').innerHTML='<div class="kick">Constructeur de parcours</div><h1><i class="dot"></i>Accès réservé</h1><p>Cette page est réservée à Skolantreuz.</p><p><a class="btn" href="./">Retour</a></p>';return;}
+  var a=await sb().rpc('vsf_est_admin'),mesParcours=null;
+  if(a.data===true)S.role='admin';
+  else{
+    var rl=await sb().rpc('vsf_est_relecteur');
+    var mp=rl.data===true?await lire('rattachements',sb().from('vsf_form_maitres_parcours').select('parcours_id,actif').eq('user_id',S.uid)):[];
+    mesParcours=mp.filter(function(x){return x.actif;}).map(function(x){return x.parcours_id;});
+    if(!mesParcours.length){$('app').innerHTML='<div class="kick">Constructeur de parcours</div><h1><i class="dot"></i>Accès réservé</h1><p>Cette page est réservée à Skolantreuz et au maître artisan d’un parcours. Si tu es maître artisan, demande à Stéphane de te rattacher à ton parcours.</p><p><a class="btn" href="./">Retour</a></p>';return;}
+    S.role='maitre';document.body.classList.add('lecture');
+  }
   D.parcs=await lire('parcours',sb().from('vsf_form_parcours').select('*').order('cree_le'));
+  if(mesParcours)D.parcs=D.parcs.filter(function(x){return mesParcours.indexOf(x.id)>-1;});
   (await lire('réglages',sb().from('vsf_form_reglages').select('cle,valeur'))).forEach(function(x){D.regl[x.cle]=x.valeur;});
   await recharger();
   var demande=new URLSearchParams(location.search).get('parcours');
