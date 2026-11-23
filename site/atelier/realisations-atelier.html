@@ -39,7 +39,7 @@
       nav.topnav .menuItem.open .dropdown{display:block}
       nav.topnav .dropdown a{color:#fff;padding:10px 0 10px 14px;border-bottom:1px solid rgba(255,255,255,.12)}
     }
-    .main{padding:22px 24px 60px;max-width:1180px;margin:0 auto}
+    .main{padding:22px 24px 60px;max-width:1500px;margin:0 auto}
     h1{font-size:26px;margin:0 0 4px}
     .sub{color:var(--muted);margin:0 0 16px}
     .muted{color:var(--muted)}
@@ -99,6 +99,16 @@
     .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#1c1a17;color:#fff;border-radius:999px;padding:10px 18px;z-index:300;font-size:14px}
     .errBox{padding:24px;color:var(--red);white-space:pre-wrap}
     .vide{padding:30px;text-align:center;color:var(--muted)}
+    .deux{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(0,1fr);gap:22px;align-items:start}
+    .colG h2,.entetePanneau h2{margin:0;font-size:21px}
+    .colD{position:sticky;top:64px;max-height:calc(100vh - 80px);overflow:auto;border:1px solid var(--line);border-radius:14px;padding:16px 18px 18px;background:#fff}
+    .entetePanneau{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+    .rang{display:grid;grid-template-columns:72px minmax(0,1fr);gap:4px 12px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;margin-bottom:8px;background:#fff}
+    .rang.sel{border-color:#1c1a17;box-shadow:0 0 0 1px #1c1a17}
+    .rang .info .tiny{margin:1px 0 6px}
+    .rang .actions{grid-column:2;justify-content:flex-start}
+    .barre .input{max-width:none;flex:1;min-width:180px}
+    @media (max-width:1000px){ .deux{grid-template-columns:1fr} .colD{position:static;max-height:none} }
   </style>
   <script src="acces-entreprise.js" defer></script>
   <link rel="icon" href="/favicon.ico" sizes="48x48">
@@ -161,49 +171,68 @@ function render(){
   app.innerHTML = nav + `
   <div class="main">
     <h1>Réalisations</h1>
-    <p class="sub">Les lieux peints par l'atelier. Les réalisations « Publiées » apparaissent sur la carte ; les brouillons restent visibles ici seulement.</p>
+    <p class="sub">Les lieux peints par l'atelier. À gauche, ceux qui existent ; à droite, la fiche pour en créer un nouveau ou modifier celui qu'on choisit. Les « Publiées » apparaissent sur la carte publique ; les brouillons restent ici seulement.</p>
     <div class="puces">
       <div class="puce"><b>${L.length}</b><span>réalisation${L.length > 1 ? 's' : ''}</span></div>
       <div class="puce"><b>${n('validee')}</b><span>publiée${n('validee') > 1 ? 's' : ''}</span></div>
       <div class="puce"><b>${n('en_attente')}</b><span>brouillon${n('en_attente') > 1 ? 's' : ''}</span></div>
       <div class="puce"><b>${sansPhoto}</b><span>sans photo</span></div>
     </div>
-    <div class="barre">
-      <input class="input" id="recherche" placeholder="Rechercher (enseigne, ville, mot-clé, peintre…)" value="${esc(state.recherche)}" oninput="chercher(this.value)">
-      <select class="select" id="filtre" onchange="filtrer(this.value)">
-        ${[['tous', 'Toutes'], ['validee', 'Publiées'], ['en_attente', 'Brouillons'], ['refusee', 'Masquées'], ['sans_photo', 'Sans photo']].map(o => `<option value="${o[0]}" ${state.filtre === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}
-      </select>
-      <span class="espace"></span>
-      <a class="btn" href="carte-realisations.html" target="_blank" rel="noopener" style="text-decoration:none;color:inherit">Voir la carte ↗</a>
-      <button class="btn noir" onclick="ouvrir(null)">+ Ajouter une réalisation</button>
+    <div class="deux">
+      <section class="colG">
+        <div class="barre">
+          <input class="input" id="recherche" placeholder="Rechercher (enseigne, ville, mot-clé, peintre…)" value="${esc(state.recherche)}" oninput="chercher(this.value)">
+          <select class="select" id="filtre" onchange="filtrer(this.value)">
+            ${[['tous', 'Toutes'], ['validee', 'Publiées'], ['en_attente', 'Brouillons'], ['refusee', 'Masquées'], ['sans_photo', 'Sans photo']].map(o => `<option value="${o[0]}" ${state.filtre === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}
+          </select>
+          <a class="btn" href="https://realisations.etsgesret.fr/" target="_blank" rel="noopener" style="text-decoration:none;color:inherit">Voir la carte publique ↗</a>
+        </div>
+        <div id="tableau">${tableau(liste)}</div>
+      </section>
+      <section class="colD" id="colD">${fenetre()}</section>
     </div>
-    <div class="tabWrap" id="tableau">${tableau(liste)}</div>
-  </div>
-  ${state.ed ? fenetre() : ''}`;
+  </div>`;
   if(state.ed) brancherSuggestionsAdresse($('edAdresse'), c => {
     const e = state.ed; e.adresse = c.label; e.adresseInitiale = c.label; e.lat = c.lat; e.lng = c.lng;   // adresse choisie : le point est déjà connu
     if(!e.ville.trim()){ e.ville = c.ville; $('edVille').value = c.ville; }
   });
 }
 function tableau(liste){
-  if(!liste.length) return `<div class="vide">${state.lignes.length ? 'Aucune réalisation ne correspond à la recherche.' : 'Aucune réalisation pour l\'instant. Cliquez sur « + Ajouter une réalisation » pour créer le premier lieu.'}</div>`;
-  return `<table class="tab"><thead><tr><th></th><th>Enseigne</th><th>Peintre</th><th>Photos</th><th>Statut</th><th>Ajoutée</th><th></th></tr></thead><tbody>
-    ${liste.map(r => { const p = r.photos || [], st = STATUTS[r.statut] || { label:r.statut || '—', cls:'masque' }; return `<tr>
-      <td>${p.length ? `<img class="mini" src="${esc(p[0])}" alt="" loading="lazy">` : '<div class="miniVide">sans photo</div>'}</td>
-      <td><div class="nomEns">${esc(r.enseigne)}</div><div class="tiny">${esc(r.ville || r.adresse || '')}</div></td>
-      <td>${esc(nomMembre(r.peintre_user_id))}</td>
-      <td>${p.length}</td>
-      <td><span class="badge ${st.cls}">${st.label}</span></td>
-      <td class="tiny">${dateFr(r.created_at)}</td>
-      <td><div class="actions">
+  if(!liste.length){
+    if(state.lignes.length) return '<div class="vide">Aucune réalisation ne correspond à la recherche.</div>';
+    return `<div class="vide">Aucune réalisation pour l'instant.<br>Remplissez la fiche à droite pour créer le premier lieu,<br>ou essayez avec des lieux d'exemple :<br><br><button class="btn" onclick="creerExemples()">Ajouter 4 lieux d'exemple (brouillons)</button></div>`;
+  }
+  return liste.map(r => {
+    const p = r.photos || [], st = STATUTS[r.statut] || { label:r.statut || '—', cls:'masque' }, sel = state.ed && state.ed.id === r.id;
+    return `<div class="rang${sel ? ' sel' : ''}">
+      ${p.length ? `<img class="mini" src="${esc(p[0])}" alt="" loading="lazy">` : '<div class="miniVide">sans photo</div>'}
+      <div class="info"><div class="nomEns">${esc(r.enseigne)} <span class="badge ${st.cls}">${st.label}</span></div>
+        <div class="tiny">${esc(r.ville || r.adresse || '')} · ${esc(nomMembre(r.peintre_user_id))} · ${p.length} photo${p.length > 1 ? 's' : ''} · ${dateFr(r.created_at)}</div></div>
+      <div class="actions">
         <button class="btn petit" onclick="ouvrir('${r.id}')">Modifier</button>
         <button class="btn petit" onclick="basculer('${r.id}')">${r.statut === 'validee' ? 'Retirer de la carte' : 'Publier'}</button>
         <button class="btn petit danger" onclick="supprimer('${r.id}')">Supprimer</button>
-      </div></td></tr>`; }).join('')}
-  </tbody></table>`;
+      </div></div>`;
+  }).join('');
 }
 function chercher(v){ state.recherche = v; $('tableau').innerHTML = tableau(lignesFiltrees()); }
 function filtrer(v){ state.filtre = v; $('tableau').innerHTML = tableau(lignesFiltrees()); }
+
+/* ---------------------------------------------------------------- lieux d'exemple */
+const EXEMPLES = [
+  { enseigne:'Boulangerie Chez Louison — exemple', adresse:'1 place du Four, 56400 Auray', ville:'Auray', lat:47.668, lng:-2.982, tags:['Lettres capitales', 'Doré à la feuille'], photos:['https://picsum.photos/seed/gesret1/900/675', 'https://picsum.photos/seed/gesret2/900/675', 'https://picsum.photos/seed/gesret3/900/675'] },
+  { enseigne:'Librairie Les Orageuses — exemple', adresse:'Quai Vauban, 56360 Le Palais', ville:'Le Palais', lat:47.349, lng:-3.153, tags:['Devanture'], photos:['https://picsum.photos/seed/gesret4/900/675'] },
+  { enseigne:'Hôtel du Port — exemple', adresse:'1 quai du Port, 56000 Vannes', ville:'Vannes', lat:47.656, lng:-2.76, tags:['Enseigne', 'Dorure'], photos:[] },
+  { enseigne:'Café de la Gare — exemple', adresse:'Place de la Gare, 35000 Rennes', ville:'Rennes', lat:48.103, lng:-1.672, tags:['Vitrine'], photos:['https://picsum.photos/seed/gesret5/900/675', 'https://picsum.photos/seed/gesret6/900/675'] }
+];
+async function creerExemples(){
+  const peintre = peintreParDefaut();
+  if(!peintre){ alert("Aucun peintre responsable disponible : choisissez-en un dans la fiche d'abord."); return; }
+  const lignes = EXEMPLES.map(x => ({ ...x, peintre_user_id:peintre, collaborateurs:[], statut:'en_attente', cree_par:state.user.id, establishment_id:state.estId }));
+  const { error } = await sb.from('realisations').insert(lignes);
+  if(error){ alert('Création des exemples impossible : ' + error.message); return; }
+  await charger(); render(); toast('4 lieux d\'exemple ajoutés (brouillons) : modifiez, publiez ou supprimez-les');
+}
 
 /* ---------------------------------------------------------------- publier / supprimer */
 async function basculer(id){
@@ -227,7 +256,7 @@ async function supprimer(id){
   const { error } = await sb.from('realisations').delete().eq('id', id);
   if(error){ alert('Suppression impossible : ' + error.message); return; }
   await supprimerFichiers(r.photos);
-  state.lignes = state.lignes.filter(x => x.id !== id); render(); toast('Réalisation supprimée');
+  state.lignes = state.lignes.filter(x => x.id !== id); if(state.ed && state.ed.id === id){ libererApercus(); state.ed = formulaire(null); } render(); toast('Réalisation supprimée');
 }
 
 /* ---------------------------------------------------------------- fenêtre d'ajout / de modification */
@@ -236,25 +265,30 @@ function peintreParDefaut(){
   const p = state.membres.find(m => (m.email || '').toLowerCase() === 'peinture@etsgesret.fr');
   return p ? p.user_id : (state.membres.some(m => m.user_id === state.user.id) ? state.user.id : '');
 }
-function ouvrir(id){
-  const r = id ? state.lignes.find(x => x.id === id) : null;
-  state.ed = {
+// contenu du formulaire : vide pour une création, repris d'une réalisation pour une modification
+function formulaire(r){
+  return {
     id: r ? r.id : null, enseigne: r ? r.enseigne || '' : '', adresse: r ? r.adresse || '' : '', adresseInitiale: r ? r.adresse || '' : '',
     ville: r && r.ville && r.ville !== r.adresse ? r.ville : '', lat: r ? r.lat : null, lng: r ? r.lng : null,
     peintre: r ? r.peintre_user_id : peintreParDefaut(),
     collabs: new Set(r ? r.collaborateurs || [] : []), tags: r ? (r.tags || []).join(', ') : '',
-    temoignage: r ? r.temoignage || '' : '', auteur: r ? r.temoignage_auteur || '' : '', video: r ? r.video_url || '' : '', audio: r ? r.audio_url || '' : '',
+    video: r ? r.video_url || '' : '', audio: r ? r.audio_url || '' : '',
     statut: r ? (r.statut || 'validee') : 'validee',
     photos: r ? (r.photos || []).map(u => ({ url:u, apercu:u })) : [], photosInitiales: r ? [...(r.photos || [])] : [],
     erreur:'', enCours:false
   };
-  render();
 }
-function fermer(){ (state.ed.photos || []).forEach(p => { if(p.fichier) URL.revokeObjectURL(p.apercu); }); state.ed = null; render(); }
+function libererApercus(){ if(state.ed) (state.ed.photos || []).forEach(p => { if(p.fichier) URL.revokeObjectURL(p.apercu); }); }
+function ouvrir(id){
+  libererApercus();
+  state.ed = formulaire(id ? state.lignes.find(x => x.id === id) : null);
+  render();
+  if(window.matchMedia('(max-width:1000px)').matches) $('colD').scrollIntoView({ behavior:'smooth', block:'start' });
+}
+function fermer(){ ouvrir(null); }   // « Annuler » ramène la fiche en mode création
 function fenetre(){
   const e = state.ed;
-  return `<div class="voile" onmousedown="if(event.target===this)fermer()"><div class="fenetre" role="dialog" aria-modal="true">
-    <h2>${e.id ? 'Modifier la réalisation' : 'Ajouter une réalisation'}</h2>
+  return `<div class="entetePanneau"><h2>${e.id ? 'Modifier : ' + esc(e.enseigne || 'réalisation') : 'Nouvelle réalisation'}</h2>${e.id ? '<button class="btn petit" onclick="fermer()">+ Nouvelle réalisation</button>' : ''}</div>
     <div class="grid2">
       <div class="field"><label>Nom de l'enseigne *</label><input class="input" value="${esc(e.enseigne)}" oninput="state.ed.enseigne=this.value" placeholder="Ex : Boulangerie Chez Louison"></div>
       <div class="field"><label>Peintre responsable *</label><select class="select" onchange="state.ed.peintre=this.value;majCollabs()"><option value="">Choisir…</option>${state.membres.map(m => `<option value="${m.user_id}" ${m.user_id === e.peintre ? 'selected' : ''}>${esc(m.nom)}</option>`).join('')}</select></div>
@@ -267,18 +301,13 @@ function fenetre(){
     </div>
     <div class="field"><label>Mots-clés (séparés par des virgules)</label><input class="input" value="${esc(e.tags)}" oninput="state.ed.tags=this.value" placeholder="Lettres capitales, Doré à la feuille, Devanture"></div>
     <div class="grid2">
-      <div class="field"><label>Témoignage du client (facultatif)</label><textarea class="textarea" oninput="state.ed.temoignage=this.value" placeholder="Ce que le client a dit…">${esc(e.temoignage)}</textarea></div>
-      <div class="field"><label>Qui a dit ça ? (facultatif)</label><input class="input" value="${esc(e.auteur)}" oninput="state.ed.auteur=this.value" placeholder="Ex : Retour du client — boulangerie Chez Louison"></div>
-    </div>
-    <div class="grid2">
       <div class="field"><label>Lien vidéo (facultatif)</label><input class="input" value="${esc(e.video)}" oninput="state.ed.video=this.value" placeholder="YouTube, Vimeo…"></div>
       <div class="field"><label>Lien audio (facultatif)</label><input class="input" value="${esc(e.audio)}" oninput="state.ed.audio=this.value" placeholder="Lien vers le son"></div>
     </div>
     <div class="field"><label>Avec la participation de (facultatif)</label><div class="collabs" id="edCollabs">${collabsHtml()}</div></div>
     <div class="field"><label>Visibilité</label><div class="choix" id="edStatut">${statutHtml()}</div></div>
     <div class="msgKo" id="edErreur">${esc(e.erreur)}</div>
-    <div class="pied"><span class="tiny" id="edEtat"></span><button class="btn" onclick="fermer()">Annuler</button><button class="btn noir" id="btnEnregistrer" onclick="enregistrer()">Enregistrer</button></div>
-  </div></div>`;
+    <div class="pied"><span class="tiny" id="edEtat"></span><button class="btn" onclick="fermer()">${e.id ? 'Annuler la modification' : 'Vider la fiche'}</button><button class="btn noir" id="btnEnregistrer" onclick="enregistrer()">${e.id ? 'Enregistrer les modifications' : 'Créer la réalisation'}</button></div>`;
 }
 function statutHtml(){
   const e = state.ed;
@@ -354,15 +383,14 @@ async function enregistrer(){
       enseigne:e.enseigne.trim(), adresse:e.adresse.trim(), ville:e.ville.trim() || e.adresse.trim(), lat, lng,
       peintre_user_id:e.peintre, collaborateurs:[...e.collabs].filter(u => u !== e.peintre),
       tags:e.tags.split(',').map(t => t.trim()).filter(Boolean),
-      temoignage:e.temoignage.trim() || null, temoignage_auteur:e.auteur.trim() || null,
       photos:urls, video_url:e.video.trim() || null, audio_url:e.audio.trim() || null,
       statut:e.statut, establishment_id:state.estId, updated_at:new Date().toISOString()
     };
     if(e.id){ const { error } = await sb.from('realisations').update(ligne).eq('id', e.id); if(error) throw new Error(error.message); }
     else { ligne.cree_par = state.user.id; const { error } = await sb.from('realisations').insert(ligne); if(error) throw new Error(error.message); }
     await supprimerFichiers(e.photosInitiales.filter(u => !urls.includes(u)));   // photos retirées de la fiche
-    const nouveau = !e.id; e.photos.forEach(p => { if(p.fichier) URL.revokeObjectURL(p.apercu); }); state.ed = null;
-    await charger(); render(); toast(nouveau ? 'Réalisation ajoutée' : 'Réalisation mise à jour');
+    const nouveau = !e.id; libererApercus(); state.ed = null;
+    await charger(); state.ed = formulaire(null); render(); toast(nouveau ? 'Réalisation ajoutée' : 'Réalisation mise à jour');   // la fiche repart vide pour la suivante
   }catch(err){
     ko(err.message || String(err)); etat.textContent = ''; btn.disabled = false; btn.textContent = 'Enregistrer';
   }
@@ -379,6 +407,7 @@ async function initApp(){
     if(!state.estId){ window.location.href = 'federation-accueil.html'; return; }
     localStorage.setItem('ac_current_est_v1', state.estId);
     await charger();
+    state.ed = formulaire(null);
     render();
   }catch(e){
     console.error(e);
