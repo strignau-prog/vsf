@@ -364,7 +364,7 @@ async function analyserImport(){
     const cle = norm(l.enseigne) + '|' + norm(l.adresse || l.ville);
     if(deja.has(cle) || lus.has(cle)){ l.etat = 'dup'; l.erreur = 'Déjà présente (ignorée)'; continue; }
     lus.add(cle);
-    const pe = l.peintreTexte ? trouverPeintre(l.peintreTexte) : state.membres.find(m => m.user_id === defaut);
+    const pe = l.peintreTexte ? trouverPeintre(l.peintreTexte) : (state.membres.find(m => m.user_id === defaut) || (defaut ? { user_id:defaut, prenom:($('peintreDefaut').selectedOptions[0] || {}).textContent || 'Peintre', nom:'' } : null));   // compte sans fiche dans l'annuaire (ex. peinture@) : on garde le peintre choisi dans le menu
     if(!pe){ l.etat = 'ko'; l.erreur = `Peintre « ${l.peintreTexte} » introuvable dans l'annuaire`; continue; }
     l.peintreId = pe.user_id; l.peintreNom = nom(pe);
     l.lat = null; l.lng = null; l.etat = 'ok';   // sans adresse (ou adresse introuvable) : importée comme fiche incomplète, hors carte
