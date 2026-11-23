@@ -7,6 +7,7 @@
   <script src="boite-message.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="atelier-nav.js"></script>
+  <script src="adresse-suggestions.js"></script>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600;700&display=swap">
   <style>
     :root{ --bg:#fff; --ink:#1c1a17; --muted:#55504a; --line:#e4e0d9; --soft:#f7f5f2; --accent:#a8461f; --red:#b3261e; --ok:#1d5a2d; }
@@ -112,6 +113,7 @@ const SUPABASE_URL = 'https://uuuigousvpijskbdhcal.supabase.co';
 const SUPABASE_KEY = 'sb_publishable__YuNj5XCo5YF8lwhwTu5OQ_RDM1Eesp';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:true } });
 const BUCKET = 'realisations-medias';
+const NOM_PAR_EMAIL = { 'peinture@etsgesret.fr':'Tristan Gesret' };   // nom affiché pour un compte sans fiche dans l'annuaire
 const STATUTS = { validee:{ label:'Publiée', cls:'ok' }, en_attente:{ label:'Brouillon', cls:'brouillon' }, refusee:{ label:'Masquée', cls:'masque' } };
 const state = { estId:'', user:null, droit:false, manque:false, lignes:[], membres:[], recherche:'', filtre:'tous', ed:null };
 
@@ -137,7 +139,7 @@ async function charger(){
   if(r.error) throw r.error;
   state.lignes = r.data || [];
   const annu = new Map(((a && a.data) || []).map(x => [x.user_id, `${x.prenom || ''} ${x.nom || ''}`.trim()]));
-  state.membres = ((m && m.data) || []).map(x => ({ user_id:x.user_id, nom: annu.get(x.user_id) || (x.email || 'Membre').split('@')[0] }));
+  state.membres = ((m && m.data) || []).map(x => ({ user_id:x.user_id, email:x.email, nom: NOM_PAR_EMAIL[(x.email || '').toLowerCase()] || annu.get(x.user_id) || (x.email || 'Membre').split('@')[0] }));
 }
 
 /* ---------------------------------------------------------------- tableau de bord */
@@ -178,6 +180,10 @@ function render(){
     <div class="tabWrap" id="tableau">${tableau(liste)}</div>
   </div>
   ${state.ed ? fenetre() : ''}`;
+  if(state.ed) brancherSuggestionsAdresse($('edAdresse'), c => {
+    const e = state.ed; e.adresse = c.label; e.adresseInitiale = c.label; e.lat = c.lat; e.lng = c.lng;   // adresse choisie : le point est déjà connu
+    if(!e.ville.trim()){ e.ville = c.ville; $('edVille').value = c.ville; }
+  });
 }
 function tableau(liste){
   if(!liste.length) return `<div class="vide">${state.lignes.length ? 'Aucune réalisation ne correspond à la recherche.' : 'Aucune réalisation pour l\'instant. Cliquez sur « + Ajouter une réalisation » pour créer le premier lieu.'}</div>`;
@@ -225,12 +231,17 @@ async function supprimer(id){
 }
 
 /* ---------------------------------------------------------------- fenêtre d'ajout / de modification */
+// peintre proposé d'office pour une nouvelle réalisation : Tristan Gesret (compte peinture@), à défaut la personne connectée
+function peintreParDefaut(){
+  const p = state.membres.find(m => (m.email || '').toLowerCase() === 'peinture@etsgesret.fr');
+  return p ? p.user_id : (state.membres.some(m => m.user_id === state.user.id) ? state.user.id : '');
+}
 function ouvrir(id){
   const r = id ? state.lignes.find(x => x.id === id) : null;
   state.ed = {
     id: r ? r.id : null, enseigne: r ? r.enseigne || '' : '', adresse: r ? r.adresse || '' : '', adresseInitiale: r ? r.adresse || '' : '',
     ville: r && r.ville && r.ville !== r.adresse ? r.ville : '', lat: r ? r.lat : null, lng: r ? r.lng : null,
-    peintre: r ? r.peintre_user_id : (state.membres.some(m => m.user_id === state.user.id) ? state.user.id : ''),
+    peintre: r ? r.peintre_user_id : peintreParDefaut(),
     collabs: new Set(r ? r.collaborateurs || [] : []), tags: r ? (r.tags || []).join(', ') : '',
     temoignage: r ? r.temoignage || '' : '', auteur: r ? r.temoignage_auteur || '' : '', video: r ? r.video_url || '' : '', audio: r ? r.audio_url || '' : '',
     statut: r ? (r.statut || 'validee') : 'validee',
@@ -248,8 +259,8 @@ function fenetre(){
       <div class="field"><label>Nom de l'enseigne *</label><input class="input" value="${esc(e.enseigne)}" oninput="state.ed.enseigne=this.value" placeholder="Ex : Boulangerie Chez Louison"></div>
       <div class="field"><label>Peintre responsable *</label><select class="select" onchange="state.ed.peintre=this.value;majCollabs()"><option value="">Choisir…</option>${state.membres.map(m => `<option value="${m.user_id}" ${m.user_id === e.peintre ? 'selected' : ''}>${esc(m.nom)}</option>`).join('')}</select></div>
     </div>
-    <div class="field"><label>Adresse complète * <span class="tiny">(sert à placer le point sur la carte)</span></label><input class="input" value="${esc(e.adresse)}" oninput="state.ed.adresse=this.value" placeholder="Rue, code postal, ville, pays"></div>
-    <div class="field"><label>Ville affichée (facultatif)</label><input class="input" value="${esc(e.ville)}" oninput="state.ed.ville=this.value" placeholder="Ex : Auray — sinon l'adresse est affichée"></div>
+    <div class="field"><label>Adresse complète * <span class="tiny">(des propositions apparaissent en tapant ; elles placent le point sur la carte)</span></label><input class="input" id="edAdresse" value="${esc(e.adresse)}" oninput="state.ed.adresse=this.value" placeholder="Commencez à taper : 12 rue de la… la ville se propose"></div>
+    <div class="field"><label>Ville affichée (facultatif)</label><input class="input" id="edVille" value="${esc(e.ville)}" oninput="state.ed.ville=this.value" placeholder="Ex : Auray — sinon l'adresse est affichée"></div>
     <div class="field"><label>Photos <span class="tiny">(la première sert de couverture ; glissez-déposez ou cliquez)</span></label>
       <div class="depot" id="depot" onclick="$('fichierPhotos').click()">Glissez vos photos ici ou <b>cliquez pour choisir</b><input id="fichierPhotos" type="file" accept="image/*" multiple hidden onchange="ajouterPhotos(this.files);this.value=''"></div>
       <div class="photos" id="edPhotos">${photosHtml()}</div>
@@ -327,7 +338,7 @@ async function enregistrer(){
   const btn = $('btnEnregistrer'), etat = $('edEtat'); btn.disabled = true; btn.textContent = 'Enregistrement…';
   try{
     let lat = e.lat, lng = e.lng;
-    if(!e.id || e.adresse.trim() !== e.adresseInitiale || lat == null || lng == null){
+    if(e.adresse.trim() !== e.adresseInitiale || lat == null || lng == null){
       etat.textContent = "Recherche de l'adresse…";
       const { data:geo, error } = await sb.functions.invoke('geocoder', { body:{ query:e.adresse.trim() } });
       if(error || !geo || geo.error || geo.lat == null) throw new Error("Adresse introuvable — vérifiez-la (ex : « 12 rue de la République, 69002 Lyon, France »).");
