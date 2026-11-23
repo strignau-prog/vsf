@@ -181,7 +181,7 @@
 const sb = supabase.createClient('https://uuuigousvpijskbdhcal.supabase.co', 'sb_publishable__YuNj5XCo5YF8lwhwTu5OQ_RDM1Eesp', { auth:{ persistSession:true, autoRefreshToken:true } });
 const COMITE_EMAIL = 'contact@vraisavoirfaire.fr';
 const ROLES = { peintre_dirigeant:'Peintre dirigeant', graphiste:'Graphiste', regisseur:'Régisseur' };
-const state = { user:null, comite:false, membres:[], collabs:new Set() };
+const state = { user:null, comite:false, atelierId:'', atelierNom:'', membres:[], collabs:new Set() };
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
 const nom = m => m ? `${m.prenom||''} ${m.nom||''}`.trim() || 'Membre' : 'Membre';
@@ -228,12 +228,13 @@ async function soumettre(){
       tags: $('tags').value.split(',').map(t => t.trim()).filter(Boolean),
       temoignage: $('temoignage').value.trim() || null, temoignage_auteur: $('temoignageAuteur').value.trim() || null,
       photos, video_url: video, audio_url: audio,
-      statut: state.comite ? 'validee' : 'en_attente'
+      statut: (state.comite || state.atelierId) ? 'validee' : 'en_attente',
+      establishment_id: state.atelierId || null
     };
     const { error } = await sb.from('realisations').insert(ligne);
     if(error) throw new Error(error.message);
     msg.className = 'msgOk';
-    msg.textContent = state.comite ? 'Réalisation publiée : elle est déjà visible sur la carte.' : 'Réalisation enregistrée : elle sera visible sur la carte après validation par le webmaster.';
+    msg.textContent = (state.comite || state.atelierId) ? 'Réalisation publiée : elle est déjà visible sur la carte.' : 'Réalisation enregistrée : elle sera visible sur la carte après validation par le webmaster.';
     for(const id of ['enseigne','adresse','villeAffichee','tags','temoignage','temoignageAuteur','videoLien','audioLien','collabFiltre']) $(id).value = '';
     for(const id of ['photos','videoFichier','audioFichier']) $(id).value = '';
     state.collabs.clear(); renderCollabs();
@@ -266,7 +267,7 @@ async function decider(id, statut){
   await chargerListes();
 }
 async function chargerListes(){
-  const { data: mes } = await sb.from('realisations').select('*').eq('cree_par', state.user.id).order('created_at', { ascending:false });
+  const { data: mes } = await sb.from('realisations').select('*').or(state.atelierId ? `cree_par.eq.${state.user.id},establishment_id.eq.${state.atelierId}` : `cree_par.eq.${state.user.id}`).order('created_at', { ascending:false });
   $('listeMesAjouts').className = '';
   $('listeMesAjouts').innerHTML = (mes||[]).length ? mes.map(r => carteRealisation(r, false)).join('') : '<div class="sub">Aucun ajout pour l\'instant.</div>';
   if(state.comite){
@@ -372,7 +373,7 @@ async function importerLignes(){
   const btn = $('btnImporter'); btn.disabled = true; $('msgImport').className = ''; $('msgImport').textContent = 'Import en cours…';
   const lignes = prêtes.map(l => ({ enseigne:l.enseigne, adresse:l.adresse, ville:l.ville || l.adresse, lat:l.lat, lng:l.lng,
     peintre_user_id:l.peintreId, collaborateurs:[], tags:l.tags, temoignage:l.temoignage || null, temoignage_auteur:l.auteur || null,
-    photos:l.photos, video_url:l.video || null, audio_url:l.audio || null, statut:'validee' }));
+    photos:l.photos, video_url:l.video || null, audio_url:l.audio || null, statut:'validee', establishment_id:state.atelierId || null }));
   let faites = 0;
   for(let i=0;i<lignes.length;i+=50){
     const { error } = await sb.from('realisations').insert(lignes.slice(i, i+50));
@@ -389,17 +390,27 @@ async function init(){
   if(!session){ window.location.href = 'federation-accueil.html'; return; }
   state.user = session.user;
   state.comite = (session.user.email || '').toLowerCase() === COMITE_EMAIL;
+  try{   // compte branché à un atelier (migration 77) : les ajouts sont rattachés à cet atelier et publiés tout de suite
+    const { data: dr } = await sb.from('realisations_droits').select('establishment_id').eq('user_id', session.user.id);
+    if(dr && dr.length){
+      state.atelierId = dr[0].establishment_id;
+      const { data: et } = await sb.from('establishments').select('name').eq('id', state.atelierId).maybeSingle();
+      state.atelierNom = (et && et.name) || 'votre atelier';
+    }
+  }catch(e){ /* sans atelier : comportement habituel */ }
   const { data: ms, error } = await sb.from('annuaire_public').select('user_id,numero_membre,prenom,nom,role_public').order('nom');
   if(error){ $('regle').textContent = 'Impossible de charger l\'annuaire : ' + error.message; return; }
   state.membres = ms || [];
   const peintres = state.membres.filter(m => m.role_public === 'peintre_dirigeant');
   const options = peintres.length ? peintres : state.membres;
   $('peintre').innerHTML = options.map(m => `<option value="${m.user_id}" ${m.user_id===state.user.id?'selected':''}>${esc(nom(m))}</option>`).join('');
-  $('regle').textContent = state.comite
+  if(state.atelierId){
+    $('regle').innerHTML = `Branché à l'atelier <b>${esc(state.atelierNom)}</b> : tes ajouts sont rattachés à l'atelier et publiés tout de suite sur la carte. Pour les modifier, les supprimer ou gérer leurs photos : <a href="realisations-atelier.html?est=${encodeURIComponent(state.atelierId)}">tableau de bord de l'atelier →</a>`;
+  } else $('regle').textContent = state.comite
     ? 'Tu es webmaster : tes ajouts sont publiés tout de suite sur la carte. Les ajouts des peintres apparaissent plus bas, dans « À valider ».'
     : 'Ton ajout sera visible sur la carte après validation par le webmaster.';
   $('formZone').style.display = '';
-  if(state.comite){ $('zoneImport').style.display = ''; $('peintreDefaut').innerHTML = $('peintre').innerHTML; }
+  if(state.comite || state.atelierId){ $('zoneImport').style.display = ''; $('peintreDefaut').innerHTML = $('peintre').innerHTML; }
   else{ const z = document.createElement('div'); z.className = 'note'; z.innerHTML = "<b>Intégration en masse</b> : réservée au webmaster. Vous êtes connecté avec <b>" + esc(state.user.email || 'un compte sans e-mail') + "</b> ; connectez-vous avec <b>" + COMITE_EMAIL + "</b> pour la voir."; $('zoneImport').parentNode.insertBefore(z, $('zoneImport')); }
   renderCollabs();
   await chargerListes();
