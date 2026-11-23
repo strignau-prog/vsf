@@ -392,7 +392,7 @@ async function importerLignes(){
   const lignes = prêtes.map(l => ({ enseigne:l.enseigne, adresse:l.adresse || null, ville:l.ville || l.adresse || null, lat:l.lat, lng:l.lng,
     peintre_user_id:l.peintreId, collaborateurs:[], tags:l.tags, temoignage:l.temoignage || null, temoignage_auteur:l.auteur || null,
     photos:l.photos, video_url:l.video || null, audio_url:l.audio || null, statut:statutImport(l.statut), establishment_id:state.atelierId || null,
-    ...(dateImport(l.date) ? { created_at:dateImport(l.date) } : {}) }));
+    created_at:dateImport(l.date) || new Date().toISOString() }));   // toujours présent : dans un envoi groupé, une clé absente d'une ligne serait envoyée vide (NULL) à la base
   let faites = 0;
   for(let i=0;i<lignes.length;i+=50){
     const { error } = await sb.from('realisations').insert(lignes.slice(i, i+50));
