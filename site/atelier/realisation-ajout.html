@@ -81,7 +81,7 @@
       <input id="enseigne" class="input" placeholder="Ex : Enseigne « Chez Louison »">
     </div>
     <div class="field">
-      <label for="adresse">Adresse complète *</label>
+      <label for="adresse">Adresse complète <span style="font-weight:400;font-size:12px;color:#777">(facultative : sans adresse, la fiche est incomplète et n'apparaît pas sur la carte)</span></label>
       <input id="adresse" class="input" placeholder="Commencez à taper : 12 rue de la… la ville se propose">
       <div class="hint">Des propositions apparaissent en tapant ; elles servent à placer le point sur la carte.</div>
     </div>
@@ -143,7 +143,7 @@
 
   <div id="zoneImport" style="display:none">
     <h2>Intégration en masse</h2>
-    <p class="sub">Pour ajouter plusieurs lieux d'un coup : remplissez un tableau (une ligne par réalisation), collez-le ou chargez le fichier. Chaque adresse est placée sur la carte automatiquement, vous vérifiez, puis vous importez. Les réalisations importées sont publiées tout de suite.</p>
+    <p class="sub">Pour ajouter plusieurs lieux d'un coup : remplissez un tableau (une ligne par réalisation), collez-le ou chargez le fichier. Chaque adresse est placée sur la carte automatiquement ; une ligne sans adresse (ou dont l'adresse est introuvable) est importée comme « fiche incomplète », hors carte, à compléter ensuite. Vous vérifiez, puis vous importez. Les réalisations importées sont publiées tout de suite.</p>
     <div class="note">
       <b>Colonnes</b> (première ligne = titres, dans n'importe quel ordre) : <b>Enseigne</b> *, <b>Adresse</b> * (complète, avec code postal et ville), Ville affichée, <b>Peintre</b> (prénom nom, ou numéro de membre — sinon le peintre par défaut ci-dessous), Mots-clés (séparés par des virgules), Témoignage, Auteur du témoignage, Photos (liens séparés par « | »), Vidéo (lien), Audio (lien).
       Les photos se donnent par liens (adresses web) ; pour téléverser des fichiers photo, utilisez le formulaire d'ajout ci-dessus, ligne par ligne.
@@ -214,23 +214,22 @@ async function televerser(fichier){
 async function soumettre(){
   const msg = $('msg'); msg.className = ''; msg.textContent = '';
   const enseigne = $('enseigne').value.trim(), adresse = $('adresse').value.trim(), peintre = $('peintre').value;
-  if(!enseigne || !adresse || !peintre){ msg.className = 'msgKo'; msg.textContent = "Renseigne au moins le nom de l'enseigne, l'adresse et le peintre responsable."; return; }
+  if(!enseigne || !peintre){ msg.className = 'msgKo'; msg.textContent = "Renseigne au moins le nom de l'enseigne et le peintre responsable."; return; }
   const btn = $('btnEnvoyer'); btn.disabled = true; btn.textContent = 'Enregistrement…';
   try{
     let geo = state.geoChoisi && state.geoChoisi.adresse === adresse ? state.geoChoisi : null;   // adresse choisie dans les propositions : point déjà connu
-    if(!geo){
-      const rep = await sb.functions.invoke('geocoder', { body: { query: adresse } });
-      geo = rep.data;
-      if(rep.error || !geo || geo.error || geo.lat == null) throw new Error("Adresse introuvable — vérifie-la (ex : « 12 rue de la République, 69002 Lyon, France »).");
+    if(!geo && adresse){
+      try{ const rep = await sb.functions.invoke('geocoder', { body: { query: adresse } }); if(!rep.error && rep.data && !rep.data.error && rep.data.lat != null) geo = rep.data; }catch(_){}
     }
+    const sansPoint = !geo || geo.lat == null;   // pas d'adresse, ou introuvable : fiche incomplète, hors carte, mais enregistrée
     const photos = [];
     for(const f of $('photos').files) photos.push(await televerser(f));
     let video = $('videoLien').value.trim() || null, audio = $('audioLien').value.trim() || null;
     if($('videoFichier').files[0]) video = await televerser($('videoFichier').files[0]);
     if($('audioFichier').files[0]) audio = await televerser($('audioFichier').files[0]);
     const ligne = {
-      enseigne, adresse, ville: $('villeAffichee').value.trim() || adresse,
-      lat: geo.lat, lng: geo.lng, peintre_user_id: peintre, collaborateurs: [...state.collabs],
+      enseigne, adresse: adresse || null, ville: $('villeAffichee').value.trim() || adresse || null,
+      lat: sansPoint ? null : geo.lat, lng: sansPoint ? null : geo.lng, peintre_user_id: peintre, collaborateurs: [...state.collabs],
       tags: $('tags').value.split(',').map(t => t.trim()).filter(Boolean),
       temoignage: $('temoignage').value.trim() || null, temoignage_auteur: $('temoignageAuteur').value.trim() || null,
       photos, video_url: video, audio_url: audio,
@@ -240,7 +239,8 @@ async function soumettre(){
     const { error } = await sb.from('realisations').insert(ligne);
     if(error) throw new Error(error.message);
     msg.className = 'msgOk';
-    msg.textContent = (state.comite || state.atelierId) ? 'Réalisation publiée : elle est déjà visible sur la carte.' : 'Réalisation enregistrée : elle sera visible sur la carte après validation par le webmaster.';
+    msg.textContent = sansPoint ? (adresse ? 'Adresse introuvable : fiche enregistrée comme incomplète (hors carte). Corrigez l\'adresse depuis la page Réalisations de l\'atelier.' : 'Fiche enregistrée comme incomplète : sans adresse, elle n\'apparaît pas sur la carte.')
+      : (state.comite || state.atelierId) ? 'Réalisation publiée : elle est déjà visible sur la carte.' : 'Réalisation enregistrée : elle sera visible sur la carte après validation par le webmaster.';
     for(const id of ['enseigne','adresse','villeAffichee','tags','temoignage','temoignageAuteur','videoLien','audioLien','collabFiltre']) $(id).value = '';
     for(const id of ['photos','videoFichier','audioFichier']) $(id).value = '';
     state.collabs.clear(); renderCollabs();
@@ -335,10 +335,10 @@ async function analyserImport(){
   if(brut.length < 2){ alert("Le tableau est vide : collez-le ou chargez un fichier (première ligne = titres des colonnes, puis une ligne par réalisation)."); return; }
   const titres = brut[0].map(norm), idx = {};
   for(const [cle, noms] of Object.entries(COLONNES)) idx[cle] = titres.findIndex(t => noms.includes(t));
-  if(idx.enseigne < 0 || idx.adresse < 0){ alert("Colonnes obligatoires introuvables : il faut au moins « Enseigne » et « Adresse » sur la première ligne."); return; }
+  if(idx.enseigne < 0){ alert("Colonne obligatoire introuvable : il faut au moins « Enseigne » sur la première ligne (l'adresse est facultative)."); return; }
   const btn = $('btnAnalyser'); btn.disabled = true; $('btnImporter').style.display = 'none'; $('msgImport').textContent = '';
-  const { data: existantes } = await sb.from('realisations').select('enseigne,adresse');
-  const deja = new Set((existantes||[]).map(r => norm(r.enseigne) + '|' + norm(r.adresse)));
+  const { data: existantes } = await sb.from('realisations').select('enseigne,adresse,ville');
+  const deja = new Set((existantes||[]).map(r => norm(r.enseigne) + '|' + norm(r.adresse || r.ville || '')));
   const defaut = $('peintreDefaut').value, lus = new Set();
   const lignes = brut.slice(1).map((c, i) => {
     const val = k => idx[k] >= 0 ? String(c[idx[k]] ?? '').trim() : '';
@@ -350,25 +350,27 @@ async function analyserImport(){
   for(let i=0;i<lignes.length;i++){
     const l = lignes[i];
     $('progressionImport').textContent = `Analyse ${i+1} / ${lignes.length}…`; $('barreImport').firstElementChild.style.width = Math.round((i+1)/lignes.length*100) + '%';
-    if(!l.enseigne || !l.adresse){ l.etat = 'ko'; l.erreur = 'Enseigne ou adresse manquante'; continue; }
-    const cle = norm(l.enseigne) + '|' + norm(l.adresse);
+    if(!l.enseigne){ l.etat = 'ko'; l.erreur = 'Enseigne manquante'; continue; }
+    const cle = norm(l.enseigne) + '|' + norm(l.adresse || l.ville);
     if(deja.has(cle) || lus.has(cle)){ l.etat = 'dup'; l.erreur = 'Déjà présente (ignorée)'; continue; }
     lus.add(cle);
     const pe = l.peintreTexte ? trouverPeintre(l.peintreTexte) : state.membres.find(m => m.user_id === defaut);
     if(!pe){ l.etat = 'ko'; l.erreur = `Peintre « ${l.peintreTexte} » introuvable dans l'annuaire`; continue; }
     l.peintreId = pe.user_id; l.peintreNom = nom(pe);
+    l.lat = null; l.lng = null; l.etat = 'ok';   // sans adresse (ou adresse introuvable) : importée comme fiche incomplète, hors carte
+    if(!l.adresse){ l.erreur = 'sans adresse'; continue; }
     try{
       const { data: geo, error } = await sb.functions.invoke('geocoder', { body: { query: l.adresse } });
       if(error || !geo || geo.error || geo.lat == null) throw new Error('Adresse introuvable');
-      l.lat = geo.lat; l.lng = geo.lng; l.etat = 'ok';
-    }catch(e){ l.etat = 'ko'; l.erreur = 'Adresse introuvable — à corriger'; }
+      l.lat = geo.lat; l.lng = geo.lng;
+    }catch(e){ l.erreur = 'adresse introuvable'; }
     await new Promise(r => setTimeout(r, 250));
   }
   lignesImport = lignes;
   const ok = lignes.filter(l=>l.etat==='ok').length, ko = lignes.filter(l=>l.etat==='ko').length, dup = lignes.filter(l=>l.etat==='dup').length;
   $('progressionImport').textContent = `${ok} prête(s) à importer · ${ko} à corriger · ${dup} déjà présente(s).`;
   $('barreImport').style.display = 'none';
-  $('resultatImport').innerHTML = `<table class="tabImport"><tr><th>Ligne</th><th>Enseigne</th><th>Adresse</th><th>Peintre</th><th>État</th></tr>${lignes.map(l => `<tr><td>${l.n}</td><td>${esc(l.enseigne)}</td><td>${esc(l.adresse)}</td><td>${esc(l.peintreNom||l.peintreTexte)}</td><td class="${l.etat==='ok'?'etatOk':l.etat==='dup'?'etatDup':'etatKo'}">${l.etat==='ok'?'✓ placée':esc(l.erreur)}</td></tr>`).join('')}</table>`;
+  $('resultatImport').innerHTML = `<table class="tabImport"><tr><th>Ligne</th><th>Enseigne</th><th>Adresse</th><th>Peintre</th><th>État</th></tr>${lignes.map(l => `<tr><td>${l.n}</td><td>${esc(l.enseigne)}</td><td>${esc(l.adresse)}</td><td>${esc(l.peintreNom||l.peintreTexte)}</td><td class="${l.etat==='ok'?'etatOk':l.etat==='dup'?'etatDup':'etatKo'}">${l.etat==='ok'?(l.lat==null?'⚠ fiche incomplète (' + esc(l.erreur) + ')':'✓ placée'):esc(l.erreur)}</td></tr>`).join('')}</table>`;
   if(ok){ $('btnImporter').style.display = ''; $('btnImporter').textContent = `Importer ${ok} réalisation${ok>1?'s':''}`; }
   btn.disabled = false;
 }
@@ -377,7 +379,7 @@ async function importerLignes(){
   if(!prêtes.length) return;
   if(!confirm(`Importer ${prêtes.length} réalisation(s) ? Elles seront publiées tout de suite sur la carte.`)) return;
   const btn = $('btnImporter'); btn.disabled = true; $('msgImport').className = ''; $('msgImport').textContent = 'Import en cours…';
-  const lignes = prêtes.map(l => ({ enseigne:l.enseigne, adresse:l.adresse, ville:l.ville || l.adresse, lat:l.lat, lng:l.lng,
+  const lignes = prêtes.map(l => ({ enseigne:l.enseigne, adresse:l.adresse || null, ville:l.ville || l.adresse || null, lat:l.lat, lng:l.lng,
     peintre_user_id:l.peintreId, collaborateurs:[], tags:l.tags, temoignage:l.temoignage || null, temoignage_auteur:l.auteur || null,
     photos:l.photos, video_url:l.video || null, audio_url:l.audio || null, statut:'validee', establishment_id:state.atelierId || null }));
   let faites = 0;
@@ -386,7 +388,7 @@ async function importerLignes(){
     if(error){ $('msgImport').className = 'msgKo'; $('msgImport').textContent = `Import interrompu après ${faites} réalisation(s) : ${error.message}`; btn.disabled = false; await chargerListes(); return; }
     faites += Math.min(50, lignes.length - i);
   }
-  $('msgImport').className = 'msgOk'; $('msgImport').textContent = `${faites} réalisation(s) importée(s) : elles sont visibles sur la carte.`;
+  $('msgImport').className = 'msgOk'; { const inc = lignes.filter(l => l.lat == null).length; $('msgImport').textContent = `${faites} réalisation(s) importée(s)` + (inc ? ` : ${faites - inc} visible(s) sur la carte, ${inc} fiche(s) incomplète(s) (sans adresse) à compléter depuis la page Réalisations de l'atelier.` : ' : elles sont visibles sur la carte.'); }
   lignesImport = []; $('resultatImport').innerHTML = ''; btn.style.display = 'none'; btn.disabled = false; $('texteImport').value = ''; $('fichierImport').value = '';
   await chargerListes();
 }

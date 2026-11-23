@@ -68,12 +68,14 @@
     table.tab tr:hover td{background:#fcfbf9}
     .mini{width:64px;height:48px;border-radius:6px;object-fit:cover;background:var(--soft);border:1px solid var(--line);display:block}
     .miniVide{width:64px;height:48px;border-radius:6px;border:1px dashed #cfcdc7;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted);text-align:center;line-height:1.1}
-    .nomEns{font-weight:600}
+    .nomEns{font-weight:600;text-transform:uppercase}
     .actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
     .badge{display:inline-block;font-size:12px;font-weight:600;border-radius:999px;padding:2px 10px}
     .badge.ok{background:#e3f1e6;color:var(--ok)}
     .badge.brouillon{background:#fdecea;color:#8f2d1d}
     .badge.masque{background:#eee;color:#555}
+    .badge{text-transform:none}
+    .badge.incomplet{background:#c0241a;color:#fff;margin-left:4px}
     .voile{position:fixed;inset:0;background:rgba(20,18,15,.45);padding:30px 14px;overflow:auto;z-index:200}
     .fenetre{background:#fff;border-radius:14px;width:min(820px,100%);margin:0 auto;padding:20px 22px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
     .fenetre h2{margin:0 0 12px;font-size:21px}
@@ -131,6 +133,7 @@ const SUPABASE_KEY = 'sb_publishable__YuNj5XCo5YF8lwhwTu5OQ_RDM1Eesp';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:true } });
 const BUCKET = 'realisations-medias';
 const NOM_PAR_EMAIL = { 'peinture@etsgesret.fr':'Tristan Gesret' };   // nom affiché pour un compte sans fiche dans l'annuaire
+const incomplete = r => r.lat == null || r.lng == null;   // sans adresse placée : la fiche reste utilisable mais n'apparaît pas sur la carte
 const STATUTS = { validee:{ label:'Publiée', cls:'ok' }, en_attente:{ label:'Brouillon', cls:'brouillon' }, refusee:{ label:'Masquée', cls:'masque' } };
 const state = { estId:'', user:null, droit:false, manque:false, lignes:[], membres:[], recherche:'', filtre:'tous', ed:null };
 
@@ -163,7 +166,7 @@ async function charger(){
 function lignesFiltrees(){
   const q = sans(state.recherche).trim();
   return state.lignes.filter(r => {
-    if(state.filtre === 'sans_photo' ? (r.photos || []).length : (state.filtre !== 'tous' && r.statut !== state.filtre)) return false;
+    if(state.filtre === 'sans_photo' ? (r.photos || []).length : state.filtre === 'a_localiser' ? !incomplete(r) : (state.filtre !== 'tous' && r.statut !== state.filtre)) return false;
     if(!q) return true;
     return sans([r.enseigne, r.ville, r.adresse, (r.tags || []).join(' '), nomMembre(r.peintre_user_id)].join(' ')).includes(q);
   });
@@ -184,13 +187,14 @@ function render(){
       <div class="puce"><b>${n('validee')}</b><span>publiée${n('validee') > 1 ? 's' : ''}</span></div>
       <div class="puce"><b>${n('en_attente')}</b><span>brouillon${n('en_attente') > 1 ? 's' : ''}</span></div>
       <div class="puce"><b>${sansPhoto}</b><span>sans photo</span></div>
+      <div class="puce"><b>${L.filter(incomplete).length}</b><span>fiche${L.filter(incomplete).length > 1 ? 's' : ''} incomplète${L.filter(incomplete).length > 1 ? 's' : ''}</span></div>
     </div>
     <div class="deux">
       <section class="colG">
         <div class="barre">
           <input class="input" id="recherche" placeholder="Rechercher (enseigne, ville, mot-clé, peintre…)" value="${esc(state.recherche)}" oninput="chercher(this.value)">
           <select class="select" id="filtre" onchange="filtrer(this.value)">
-            ${[['tous', 'Toutes'], ['validee', 'Publiées'], ['en_attente', 'Brouillons'], ['refusee', 'Masquées'], ['sans_photo', 'Sans photo']].map(o => `<option value="${o[0]}" ${state.filtre === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}
+            ${[['tous', 'Toutes'], ['validee', 'Publiées'], ['en_attente', 'Brouillons'], ['refusee', 'Masquées'], ['sans_photo', 'Sans photo'], ['a_localiser', 'Fiches incomplètes (sans adresse)']].map(o => `<option value="${o[0]}" ${state.filtre === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}
           </select>
           <a class="btn" href="https://realisations.etsgesret.fr/" target="_blank" rel="noopener" style="text-decoration:none;color:inherit">Voir la carte publique ↗</a>
         </div>
@@ -213,7 +217,7 @@ function tableau(liste){
     const p = r.photos || [], st = STATUTS[r.statut] || { label:r.statut || '—', cls:'masque' }, sel = state.ed && state.ed.id === r.id;
     return `<div class="rang${sel ? ' sel' : ''}">
       ${p.length ? `<img class="mini" src="${esc(p[0])}" alt="" loading="lazy">` : '<div class="miniVide">sans photo</div>'}
-      <div class="info"><div class="nomEns">${esc(r.enseigne)} <span class="badge ${st.cls}">${st.label}</span></div>
+      <div class="info"><div class="nomEns">${esc(r.enseigne)} <span class="badge ${st.cls}">${st.label}</span>${incomplete(r) ? '<span class="badge incomplet" title="Adresse manquante : cette fiche n\'apparaît pas sur la carte publique">Fiche incomplète</span>' : ''}</div>
         <div class="tiny">${esc(r.ville || r.adresse || '')} · ${esc(nomMembre(r.peintre_user_id))} · ${p.length} photo${p.length > 1 ? 's' : ''} · ${dateFr(r.created_at)}</div></div>
       <div class="actions">
         <button class="btn petit" onclick="ouvrir('${r.id}')">Modifier</button>
@@ -300,7 +304,7 @@ function fenetre(){
       <div class="field"><label>Nom de l'enseigne *</label><input class="input" value="${esc(e.enseigne)}" oninput="state.ed.enseigne=this.value" placeholder="Ex : Boulangerie Chez Louison"></div>
       <div class="field"><label>Peintre responsable *</label><select class="select" onchange="state.ed.peintre=this.value;majCollabs()"><option value="">Choisir…</option>${state.membres.map(m => `<option value="${m.user_id}" ${m.user_id === e.peintre ? 'selected' : ''}>${esc(m.nom)}</option>`).join('')}</select></div>
     </div>
-    <div class="field"><label>Adresse complète * <span class="tiny">(des propositions apparaissent en tapant ; elles placent le point sur la carte)</span></label><input class="input" id="edAdresse" value="${esc(e.adresse)}" oninput="state.ed.adresse=this.value" placeholder="Commencez à taper : 12 rue de la… la ville se propose"></div>
+    <div class="field"><label>Adresse complète <span class="tiny">(facultative : sans adresse, la fiche est « incomplète » et n'apparaît pas sur la carte ; des propositions apparaissent en tapant et placent le point)</span></label><input class="input" id="edAdresse" value="${esc(e.adresse)}" oninput="state.ed.adresse=this.value" placeholder="Commencez à taper : 12 rue de la… la ville se propose"></div>
     <div class="field"><label>Ville affichée (facultatif)</label><input class="input" id="edVille" value="${esc(e.ville)}" oninput="state.ed.ville=this.value" placeholder="Ex : Auray — sinon l'adresse est affichée"></div>
     <div class="field"><label>Photos <span class="tiny">(la première sert de couverture ; glissez-déposez ou cliquez)</span></label>
       <div class="depot" id="depot" onclick="$('fichierPhotos').click()">Glissez vos photos et vos vidéos ici (n'importe où sur la fiche) ou <b>cliquez pour choisir</b><input id="fichierPhotos" type="file" accept="image/*,video/*" multiple hidden onchange="ajouterMedias(this.files);this.value=''"></div>
@@ -405,15 +409,18 @@ async function televerser(f){
 async function enregistrer(){
   const e = state.ed, ko = t => { e.erreur = t; $('edErreur').textContent = t; };
   ko('');
-  if(!e.enseigne.trim() || !e.adresse.trim() || !e.peintre){ ko("Renseignez au moins le nom de l'enseigne, l'adresse et le peintre responsable."); return; }
+  if(!e.enseigne.trim() || !e.peintre){ ko("Renseignez au moins le nom de l'enseigne et le peintre responsable."); return; }
   const btn = $('btnEnregistrer'), etat = $('edEtat'); btn.disabled = true; btn.textContent = 'Enregistrement…';
   try{
-    let lat = e.lat, lng = e.lng;
-    if(e.adresse.trim() !== e.adresseInitiale || lat == null || lng == null){
+    let lat = e.lat, lng = e.lng, avertir = '';
+    const adr = e.adresse.trim();
+    if(!adr){ lat = null; lng = null; }   // pas d'adresse : fiche incomplète, hors carte, mais enregistrée
+    else if(adr !== e.adresseInitiale || lat == null || lng == null){
       etat.textContent = "Recherche de l'adresse…";
-      const { data:geo, error } = await sb.functions.invoke('geocoder', { body:{ query:e.adresse.trim() } });
-      if(error || !geo || geo.error || geo.lat == null) throw new Error("Adresse introuvable — vérifiez-la (ex : « 12 rue de la République, 69002 Lyon, France »).");
-      lat = geo.lat; lng = geo.lng;
+      let geo = null;
+      try{ const r = await sb.functions.invoke('geocoder', { body:{ query:adr } }); if(!r.error && r.data && !r.data.error && r.data.lat != null) geo = r.data; }catch(_){}
+      if(geo){ lat = geo.lat; lng = geo.lng; }
+      else { lat = null; lng = null; avertir = "Adresse introuvable : la fiche est enregistrée comme incomplète (hors carte). Corrigez l'adresse pour la placer."; }
     }
     const urls = []; let k = 0; const aEnvoyer = e.photos.filter(p => p.fichier).length;
     for(const p of e.photos){
@@ -424,7 +431,7 @@ async function enregistrer(){
     let videoUrl = e.video.trim() || null;
     if(e.videoFichier){ etat.textContent = 'Envoi de la vidéo (patientez)…'; videoUrl = await televerser(e.videoFichier); }
     const ligne = {
-      enseigne:e.enseigne.trim(), adresse:e.adresse.trim(), ville:e.ville.trim() || e.adresse.trim(), lat, lng,
+      enseigne:e.enseigne.trim(), adresse:adr || null, ville:e.ville.trim() || adr || null, lat, lng,
       peintre_user_id:e.peintre, collaborateurs:[...e.collabs].filter(u => u !== e.peintre),
       tags:e.tags.split(',').map(t => t.trim()).filter(Boolean),
       photos:urls, video_url:videoUrl, audio_url:e.audio.trim() || null,
@@ -434,7 +441,7 @@ async function enregistrer(){
     else { ligne.cree_par = state.user.id; const { error } = await sb.from('realisations').insert(ligne); if(error) throw new Error(error.message); }
     await supprimerFichiers([...e.photosInitiales.filter(u => !urls.includes(u)), ...(e.videoInitiale && e.videoInitiale !== videoUrl ? [e.videoInitiale] : [])]);   // photos et vidéo retirées de la fiche
     const nouveau = !e.id; libererApercus(); state.ed = null;
-    await charger(); state.ed = formulaire(null); render(); toast(nouveau ? 'Réalisation ajoutée' : 'Réalisation mise à jour');   // la fiche repart vide pour la suivante
+    await charger(); state.ed = formulaire(null); render(); toast(avertir || ((nouveau ? 'Réalisation ajoutée' : 'Réalisation mise à jour') + (lat == null ? ' — fiche incomplète : sans adresse, elle n\'apparaît pas sur la carte' : '')));   // la fiche repart vide pour la suivante
   }catch(err){
     ko(err.message || String(err)); etat.textContent = ''; btn.disabled = false; btn.textContent = 'Enregistrer';
   }
